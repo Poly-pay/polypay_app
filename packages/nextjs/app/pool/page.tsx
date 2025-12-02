@@ -1,35 +1,43 @@
 "use client";
 
-import { type FC, useMemo, useState } from "react";
-import { TransactionData } from "../create/page";
+import { type FC, useEffect, useState } from "react";
 import { TransactionItem } from "./_components";
-import { useInterval } from "usehooks-ts";
-import { useChainId } from "wagmi";
-import {
-  useDeployedContractInfo,
-  useScaffoldContract,
-  useScaffoldEventHistory,
-  useScaffoldReadContract,
-} from "~~/hooks/scaffold-eth";
-import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
-import { getPoolServerUrl } from "~~/utils/getPoolServerUrl";
+import { useScaffoldContract, useScaffoldEventHistory, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { notification } from "~~/utils/scaffold-eth";
 
+export interface PendingTransaction {
+  txId: bigint;
+  to: string;
+  value: bigint;
+  data: `0x${string}`;
+  requiredApprovalsWhenExecuted: bigint;
+  validSignatures: bigint;
+  executed: boolean;
+}
 const Pool: FC = () => {
-  const [transactions, setTransactions] = useState<TransactionData[]>();
-  // const [subscriptionEventsHashes, setSubscriptionEventsHashes] = useState<`0x${string}`[]>([]);
-  const { targetNetwork } = useTargetNetwork();
-  const poolServerUrl = getPoolServerUrl(targetNetwork.id);
-  const { data: contractInfo } = useDeployedContractInfo({ contractName: "MetaMultiSigWallet" });
-  const chainId = useChainId();
+  const [transactions, setTransactions] = useState<PendingTransaction[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const { data: nonce } = useScaffoldReadContract({
     contractName: "MetaMultiSigWallet",
     functionName: "nonce",
+    watch: true,
   });
 
-  const { data: eventsHistory } = useScaffoldEventHistory({
+  const { data: signaturesRequired } = useScaffoldReadContract({
     contractName: "MetaMultiSigWallet",
-    eventName: "ExecuteTransaction",
+    functionName: "signaturesRequired",
+  });
+
+  const { data: executedEvents } = useScaffoldEventHistory({
+    contractName: "MetaMultiSigWallet",
+    eventName: "TransactionExecuted",
+    watch: true,
+  });
+
+  const { data: signatureEvents } = useScaffoldEventHistory({
+    contractName: "MetaMultiSigWallet",
+    eventName: "SignatureSubmitted",
     watch: true,
   });
 
@@ -37,74 +45,64 @@ const Pool: FC = () => {
     contractName: "MetaMultiSigWallet",
   });
 
-  const historyHashes = useMemo(() => eventsHistory?.map(ev => ev.args.hash) || [], [eventsHistory]);
+  // Fetch pending transactions from contract
+  useEffect(() => {
+    const fetchPendingTransactions = async () => {
+      if (!metaMultiSigWallet || nonce === undefined) return;
 
-  useInterval(() => {
-    const getTransactions = async () => {
       try {
-        const res: { [key: string]: TransactionData } = await (
-          await fetch(`${poolServerUrl}${contractInfo?.address}_${chainId}`)
-        ).json();
+        setLoading(true);
+        const pendingTxs: PendingTransaction[] = [];
 
-        const newTransactions: TransactionData[] = [];
-        // eslint-disable-next-line no-restricted-syntax, guard-for-in
-        for (const i in res) {
-          const validSignatures = [];
-          // eslint-disable-next-line guard-for-in, no-restricted-syntax
-          for (const s in res[i].signatures) {
-            const signer = (await metaMultiSigWallet?.read.recover([
-              res[i].hash as `0x${string}`,
-              res[i].signatures[s],
-            ])) as `0x${string}`;
+        // Loop from 0 to nonce
+        for (let txId = 0n; txId < nonce; txId++) {
+          const [to, value, data, validSignatures, requiredApprovalsWhenExecuted, executed] =
+            await metaMultiSigWallet.read.getPendingTx([txId]);
 
-            const isOwner = await metaMultiSigWallet?.read.isOwner([signer as string]);
-
-            if (signer && isOwner) {
-              validSignatures.push({ signer, signature: res[i].signatures[s] });
-            }
-          }
-          const update: TransactionData = { ...res[i], validSignatures };
-          newTransactions.push(update);
+          pendingTxs.push({
+            txId,
+            to,
+            value,
+            data: data as `0x${string}`,
+            requiredApprovalsWhenExecuted,
+            validSignatures,
+            executed,
+          });
         }
-        setTransactions(newTransactions);
+
+        // Sort by txId descending (newest first)
+        pendingTxs.sort((a, b) => (a.txId > b.txId ? -1 : 1));
+        setTransactions(pendingTxs);
       } catch (e) {
-        notification.error("Error fetching transactions");
-        console.log(e);
+        notification.error("Error fetching pending transactions");
+        console.error(e);
+      } finally {
+        setLoading(false);
       }
     };
 
-    getTransactions();
-  }, 3777);
-
-  const lastTx = useMemo(
-    () =>
-      transactions
-        ?.filter(tx => historyHashes.includes(tx.hash))
-        .sort((a, b) => (BigInt(a.nonce) < BigInt(b.nonce) ? 1 : -1))[0],
-    [historyHashes, transactions],
-  );
+    fetchPendingTransactions();
+  }, [nonce, executedEvents, signatureEvents]);
 
   return (
     <div className="flex flex-col flex-1 items-center my-20 gap-8">
       <div className="flex items-center flex-col flex-grow w-full max-w-2xl">
         <div className="flex flex-col items-center bg-base-100 shadow-lg shadow-secondary border-8 border-secondary rounded-xl p-6 w-full">
-          <div className="text-xl font-bold">Pool</div>
+          <div className="text-xl font-bold">Pending Transactions</div>
 
-          <div>Nonce: {nonce !== undefined ? `#${nonce}` : "Loading..."}</div>
+          <div className="flex gap-4 mt-2">
+            <span>Nonce: #{nonce?.toString() || "..."}</span>
+            <span>Required: {signaturesRequired?.toString() || "..."}</span>
+          </div>
 
-          <div className="flex flex-col mt-8 gap-4">
-            {transactions === undefined
+          <div className="flex flex-col mt-8 gap-4 w-full">
+            {loading
               ? "Loading..."
-              : transactions.map(tx => {
-                  return (
-                    <TransactionItem
-                      key={tx.hash}
-                      tx={tx}
-                      completed={historyHashes.includes(tx.hash as `0x${string}`)}
-                      outdated={lastTx?.nonce != undefined && BigInt(tx.nonce) <= BigInt(lastTx?.nonce)}
-                    />
-                  );
-                })}
+              : transactions.length === 0
+                ? "No pending transactions"
+                : transactions.map(tx => (
+                    <TransactionItem key={tx.txId.toString()} tx={tx} signaturesRequired={signaturesRequired || 0n} />
+                  ))}
           </div>
         </div>
       </div>

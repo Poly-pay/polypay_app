@@ -1,29 +1,32 @@
 import { type FC } from "react";
-import { Address as AddressType, formatEther } from "viem";
+import { Abi, Address as AddressType, decodeFunctionData, DecodeFunctionDataReturnType, formatEther } from "viem";
 import { Address, BlockieAvatar } from "~~/components/scaffold-eth";
+import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 
 type TransactionEventItemProps = {
-  hash: `0x${string}`;
-  nonce: bigint;
-  owner: AddressType;
+  txId: bigint;
   to: AddressType;
   value: bigint;
+  data: `0x${string}`;
 };
 
-export const TransactionEventItem: FC<TransactionEventItemProps> = ({ hash, nonce, owner, to, value }) => {
+export const TransactionEventItem: FC<TransactionEventItemProps> = tx => {
+  const { data: contractInfo } = useDeployedContractInfo({ contractName: "MetaMultiSigWallet" });
+
+  const txnData =
+    contractInfo?.abi && tx.data
+      ? decodeFunctionData({ abi: contractInfo.abi as Abi, data: tx.data })
+      : ({} as DecodeFunctionDataReturnType);
+
   return (
     <div className="flex py-2 border-b border-secondary last:border-b-0 gap-4 w-full justify-between">
-      <div className=""># {String(nonce)}</div>
+      <div className=""># {tx?.txId?.toString()}</div>
+      <div className="flex gap-1">{txnData.functionName}</div>
       <div className="flex gap-1">
-        Tx <BlockieAvatar size={20} address={hash} /> {hash.slice(0, 7)}
+        To <Address address={tx?.to} />
       </div>
-      <div className="flex gap-1">
-        To <Address address={to} />
-      </div>
-      <div>{formatEther(value)} Ξ</div>
-      <div className="flex gap-1">
-        Executed by <Address address={owner} />
-      </div>
+      <div>{formatEther(tx?.value)} Ξ</div>
+      <div className="flex gap-1"></div>
     </div>
   );
 };

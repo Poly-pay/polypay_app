@@ -1,88 +1,256 @@
-import { type FC } from "react";
-import { Address, BlockieAvatar } from "../../../components/scaffold-eth";
+import { type FC, useEffect, useMemo, useState } from "react";
+import { Address } from "../../../components/scaffold-eth";
+import { PendingTransaction } from "../page";
+import { UltraPlonkBackend } from "@aztec/bb.js";
+import { Noir } from "@noir-lang/noir_js";
 import { Abi, DecodeFunctionDataReturnType, decodeFunctionData, formatEther } from "viem";
-import { useAccount, useWalletClient } from "wagmi";
-import { TransactionData } from "~~/app/create/page";
+import { useWalletClient } from "wagmi";
+import { Commitment } from "~~/components/scaffold-eth/Address/CommitmentAddress";
 import {
   useDeployedContractInfo,
   useScaffoldContract,
   useScaffoldReadContract,
   useTransactor,
 } from "~~/hooks/scaffold-eth";
-import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
-import { getPoolServerUrl } from "~~/utils/getPoolServerUrl";
+import {
+  buildMerkleTree,
+  getMerklePath,
+  getPublicKeyXY,
+  hexToByteArray,
+  poseidon2HashAutoPadding3,
+} from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
-type TransactionItemProps = { tx: TransactionData; completed: boolean; outdated: boolean };
+type TransactionItemProps = {
+  tx: PendingTransaction;
+  signaturesRequired: bigint;
+};
 
-export const TransactionItem: FC<TransactionItemProps> = ({ tx, completed, outdated }) => {
-  const { address } = useAccount();
+export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequired }) => {
+  const [signing, setSigning] = useState(false);
+  const [executing, setExecuting] = useState(false);
+  const [stateZkProof, setStateZkProof] = useState<string>("");
+
+  const [hasSigned, setHasSigned] = useState(false);
+
   const { data: walletClient } = useWalletClient();
   const transactor = useTransactor();
-  const { targetNetwork } = useTargetNetwork();
-  const poolServerUrl = getPoolServerUrl(targetNetwork.id);
 
-  const { data: signaturesRequired } = useScaffoldReadContract({
-    contractName: "MetaMultiSigWallet",
-    functionName: "signaturesRequired",
-  });
-
-  const { data: nonce } = useScaffoldReadContract({
-    contractName: "MetaMultiSigWallet",
-    functionName: "nonce",
-  });
+  const { data: contractInfo } = useDeployedContractInfo({ contractName: "MetaMultiSigWallet" });
 
   const { data: metaMultiSigWallet } = useScaffoldContract({
     contractName: "MetaMultiSigWallet",
     walletClient,
   });
 
-  const { data: contractInfo } = useDeployedContractInfo({ contractName: "MetaMultiSigWallet" });
+  const { data: merkleRoot } = useScaffoldReadContract({
+    contractName: "MetaMultiSigWallet",
+    functionName: "merkleRoot",
+  });
 
+  // Decode function data for display
   const txnData =
-    contractInfo?.abi && tx.data
+    contractInfo?.abi && tx.data && tx.data !== "0x"
       ? decodeFunctionData({ abi: contractInfo.abi as Abi, data: tx.data })
       : ({} as DecodeFunctionDataReturnType);
 
-  const hasSigned = tx.signers.indexOf(address as string) >= 0;
-  const hasEnoughSignatures = signaturesRequired ? tx.signatures.length >= Number(signaturesRequired) : false;
+  const hasEnoughSignatures = tx.validSignatures >= signaturesRequired;
+  const canExecute = hasEnoughSignatures && !tx.executed;
 
-  const getSortedSigList = async (allSigs: `0x${string}`[], newHash: `0x${string}`) => {
-    const sigList = [];
-    // eslint-disable-next-line no-restricted-syntax, guard-for-in
-    for (const s in allSigs) {
-      const recover = (await metaMultiSigWallet?.read.recover([newHash, allSigs[s]])) as `0x${string}`;
-
-      sigList.push({ signature: allSigs[s], signer: recover });
-    }
-
-    sigList.sort((a, b) => {
-      return BigInt(a.signer) > BigInt(b.signer) ? 1 : -1;
-    });
-
-    const finalSigList: `0x${string}`[] = [];
-    const finalSigners: `0x${string}`[] = [];
-    const used: Record<string, boolean> = {};
-    // eslint-disable-next-line no-restricted-syntax, guard-for-in
-    for (const s in sigList) {
-      if (!used[sigList[s].signature]) {
-        finalSigList.push(sigList[s].signature);
-        finalSigners.push(sigList[s].signer);
+  useEffect(() => {
+    const checkHasSigned = async () => {
+      if (!walletClient || !metaMultiSigWallet) {
+        return;
       }
-      used[sigList[s].signature] = true;
-    }
 
-    return [finalSigList, finalSigners];
+      try {
+        // 1. Get secret
+        const secret = localStorage.getItem("secret");
+        if (!secret) {
+          notification.error("No secret found in localStorage");
+          return;
+        }
+
+        // 2. Get txHash
+        const txHash = (await metaMultiSigWallet.read.getTransactionHash([
+          tx.txId,
+          tx.to,
+          tx.value,
+          tx.data,
+        ])) as `0x${string}`;
+
+        // 3. Compute nullifier
+        const nullifier = await poseidon2HashAutoPadding3([BigInt(secret), BigInt(txHash)]);
+
+        // 4. Check on contract
+        const used = await metaMultiSigWallet.read.usedNullifiers([nullifier]);
+        setHasSigned(used as boolean);
+      } catch (e) {
+        console.error("Error checking signature:", e);
+      }
+    };
+
+    checkHasSigned();
+  }, [walletClient, metaMultiSigWallet, tx.txId]);
+
+  // ============ Sign Transaction ============
+  const handleSign = async () => {
+    try {
+      if (!walletClient || !metaMultiSigWallet) {
+        notification.error("Wallet not connected");
+        return;
+      }
+
+      setSigning(true);
+
+      // 1. Get txHash
+      const txHash = (await metaMultiSigWallet.read.getTransactionHash([
+        tx.txId,
+        tx.to,
+        tx.value,
+        tx.data,
+      ])) as `0x${string}`;
+
+      // 2. Sign txHash
+      const signature = await walletClient.signMessage({
+        message: { raw: txHash },
+      });
+      const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
+
+      // 3. Get secret and compute values
+      const secret = localStorage.getItem("secret");
+      if (!secret) {
+        notification.error("No secret found in localStorage");
+        setSigning(false);
+        return;
+      }
+      const txHashBytes = hexToByteArray(txHash);
+      const sigBytes = hexToByteArray(signature).slice(0, 64);
+      const txHashCommitment = await poseidon2HashAutoPadding3([BigInt(txHash)]);
+      const nullifier = await poseidon2HashAutoPadding3([BigInt(secret), BigInt(txHash)]);
+      // 4. Get merkle data
+      const commitments = await metaMultiSigWallet.read.getCommitments();
+      const tree = await buildMerkleTree(commitments ?? []);
+
+      const myCommitment = localStorage.getItem("commitment");
+      if (!myCommitment) {
+        notification.error("No commitment found in localStorage");
+        setSigning(false);
+        return;
+      }
+      const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(myCommitment));
+
+      if (leafIndex === -1) {
+        notification.error("You are not a signer");
+        return;
+      }
+
+      const merklePath = getMerklePath(tree, leafIndex);
+
+      // 5. Generate ZK proof
+      const input = {
+        signature: sigBytes,
+        pub_key_x: pubKeyX,
+        pub_key_y: pubKeyY,
+        secret: secret,
+        leaf_index: leafIndex,
+        merkle_path: merklePath.map(p => p.toString()),
+        tx_hash_bytes: txHashBytes,
+        tx_hash_commitment: txHashCommitment.toString(),
+        merkle_root: merkleRoot?.toString() ?? "",
+        nullifier: nullifier.toString(),
+      };
+
+      console.log("Generating proof...");
+      setStateZkProof("Generating proof...");
+      const circuit_json = await fetch("/circuit/target/circuit.json");
+      const noir_data = await circuit_json.json();
+      const { bytecode, abi } = noir_data;
+
+      const noir = new Noir({ bytecode, abi } as any);
+      const execResult = await noir.execute(input);
+
+      const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
+      const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
+      console.log("submit to relayer");
+
+      // 6. Submit to zkVerify
+      console.log("call relayer...");
+      setStateZkProof("Submitting proof to relayer...");
+      const res = await fetch("/api/relayer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          proof: proof,
+          publicInputs: publicInputs,
+          vk: Buffer.from(await plonk.getVerificationKey()).toString("base64"),
+        }),
+      });
+      const zkVerifyData = await res.json();
+
+      if (!zkVerifyData.aggregationId) {
+        notification.error("zkVerify failed");
+        return;
+      }
+
+      // 7. Submit signature to contract
+      const zkProof = {
+        nullifier: BigInt(nullifier.toString()),
+        aggregationId: BigInt(zkVerifyData.aggregationId),
+        domainId: BigInt(zkVerifyData.chainId),
+        zkMerklePath: zkVerifyData.aggregationDetails.merkleProof as `0x${string}`[],
+        leafCount: BigInt(zkVerifyData.aggregationDetails.numberOfLeaves),
+        index: BigInt(zkVerifyData.aggregationDetails.leafIndex),
+      };
+
+      await transactor(() => metaMultiSigWallet.write.submitSignature([tx.txId, zkProof]));
+
+      notification.success("Signature submitted!");
+    } catch (e) {
+      notification.error("Error signing transaction");
+      console.error(e);
+    } finally {
+      setSigning(false);
+    }
   };
+
+  // ============ Execute Transaction ============
+  const handleExecute = async () => {
+    try {
+      if (!metaMultiSigWallet) {
+        notification.error("Contract not loaded");
+        return;
+      }
+
+      setExecuting(true);
+
+      await transactor(() => metaMultiSigWallet.write.executeTransaction([tx.txId]));
+
+      notification.success("Transaction executed!");
+    } catch (e) {
+      notification.error("Error executing transaction");
+      console.error(e);
+    } finally {
+      setExecuting(false);
+    }
+  };
+
+  const signState = useMemo(() => {
+    if (signing && stateZkProof === "") return "Signing...";
+    if (signing && stateZkProof) return stateZkProof;
+    if (hasSigned) return "Signed";
+    return "Sign";
+  }, [signing, stateZkProof, hasSigned]);
 
   return (
     <>
-      <input type="checkbox" id={`label-${tx.hash}`} className="modal-toggle" />
+      {/* Modal */}
+      <input type="checkbox" id={`label-${tx.txId}`} className="modal-toggle" />
       <div className="modal" role="dialog">
         <div className="modal-box">
           <div className="flex flex-col">
             <div className="flex gap-2">
-              <div className="font-bold">Function Signature:</div>
+              <div className="font-bold">Function:</div>
               {txnData.functionName || "transferFunds"}
             </div>
             <div className="flex flex-col gap-2 mt-6">
@@ -90,159 +258,71 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, completed, outda
                 <>
                   <h4 className="font-bold">Arguments</h4>
                   <div className="flex gap-4">
-                    Updated signer: <Address address={String(txnData.args?.[0])} />
+                    Arg 0: <Commitment commitment={String(txnData.args?.[0])} />
                   </div>
-                  <div>Updated signatures required: {String(txnData.args?.[1])}</div>
+                  <div>Arg 1: {String(txnData.args?.[1])}</div>
                 </>
               ) : (
                 <>
                   <div className="flex gap-4">
-                    Transfer to: <Address address={tx.to} />
+                    To: <Address address={tx.to} />
                   </div>
-                  <div>Amount: {formatEther(BigInt(tx.amount))} Ξ </div>
+                  <div>Amount: {formatEther(tx.value)} Ξ</div>
                 </>
               )}
             </div>
-            <div className="mt-4">
-              <div className="font-bold">Sig hash</div>{" "}
-              <div className="flex gap-1 mt-2">
-                <BlockieAvatar size={20} address={tx.hash} /> {tx.hash.slice(0, 7)}
-              </div>
-            </div>
             <div className="modal-action">
-              <label htmlFor={`label-${tx.hash}`} className="btn btn-sm">
-                Close!
+              <label htmlFor={`label-${tx.txId}`} className="btn btn-sm">
+                Close
               </label>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Transaction Row */}
       <div className="flex flex-col pb-2 border-b border-secondary last:border-b-0">
-        <div className="flex gap-4 justify-between">
-          <div className="font-bold"># {String(tx.nonce)}</div>
-          <div className="flex gap-1 font-bold">
-            <BlockieAvatar size={20} address={tx.hash} /> {tx.hash.slice(0, 7)}
-          </div>
+        <div className="flex gap-4 justify-between items-center">
+          <div className="font-bold">#{tx.txId.toString()}</div>
 
           <Address address={tx.to} />
 
-          <div>{formatEther(BigInt(tx.amount))} Ξ</div>
+          <div>{formatEther(tx.value)} Ξ</div>
 
-          {String(signaturesRequired) && (
-            <span>
-              {tx.signatures.length}/{String(tx.requiredApprovals)} {hasSigned ? "✅" : ""}
-            </span>
-          )}
+          <span>
+            {tx.validSignatures.toString()}/
+            {tx.executed ? tx.requiredApprovalsWhenExecuted.toString() : signaturesRequired.toString()}
+          </span>
 
-          {completed ? (
-            <div className="font-bold">Completed</div>
-          ) : outdated ? (
-            <div className="font-bold">Outdated</div>
-          ) : (
-            <>
-              <div title={hasSigned ? "You have already Signed this transaction" : ""}>
-                <button
-                  className="btn btn-xs btn-primary"
-                  disabled={hasSigned}
-                  title={!hasEnoughSignatures ? "Not enough signers to Execute" : ""}
-                  onClick={async () => {
-                    try {
-                      if (!walletClient) {
-                        return;
-                      }
-
-                      const newHash = (await metaMultiSigWallet?.read.getTransactionHash([
-                        nonce as bigint,
-                        tx.to,
-                        BigInt(tx.amount),
-                        tx.data,
-                      ])) as `0x${string}`;
-
-                      const signature = await walletClient.signMessage({
-                        message: { raw: newHash },
-                      });
-
-                      const signer = await metaMultiSigWallet?.read.recover([newHash, signature]);
-
-                      const isOwner = await metaMultiSigWallet?.read.isOwner([signer as string]);
-
-                      if (isOwner) {
-                        const [finalSigList, finalSigners] = await getSortedSigList(
-                          [...tx.signatures, signature],
-                          newHash,
-                        );
-
-                        await fetch(poolServerUrl, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify(
-                            {
-                              ...tx,
-                              signatures: finalSigList,
-                              signers: finalSigners,
-                            },
-                            // stringifying bigint
-                            (key, value) => (typeof value === "bigint" ? value.toString() : value),
-                          ),
-                        });
-                      } else {
-                        notification.info("Only owners can sign transactions");
-                      }
-                    } catch (e) {
-                      notification.error("Error signing transaction");
-                      console.log(e);
-                    }
-                  }}
-                >
-                  Sign
+          <div className="action-btn flex gap-2">
+            {tx.executed ? (
+              <div className="font-bold text-green-400">Executed</div>
+            ) : (
+              <>
+                <button className="btn btn-xs btn-primary" disabled={signing || hasSigned} onClick={handleSign}>
+                  {signState}
                 </button>
-              </div>
 
-              <div title={!hasEnoughSignatures ? "Not enough signers to Execute" : ""}>
                 <button
-                  className="btn btn-xs btn-primary"
-                  disabled={!hasEnoughSignatures}
-                  onClick={async () => {
-                    try {
-                      if (!contractInfo || !metaMultiSigWallet) {
-                        console.log("No contract info");
-                        return;
-                      }
-                      const newHash = (await metaMultiSigWallet.read.getTransactionHash([
-                        nonce as bigint,
-                        tx.to,
-                        BigInt(tx.amount),
-                        tx.data,
-                      ])) as `0x${string}`;
-
-                      const [finalSigList] = await getSortedSigList(tx.signatures, newHash);
-
-                      await transactor(() =>
-                        metaMultiSigWallet.write.executeTransaction([tx.to, BigInt(tx.amount), tx.data, finalSigList]),
-                      );
-                    } catch (e) {
-                      notification.error("Error executing transaction");
-                      console.log(e);
-                    }
-                  }}
+                  className="btn btn-xs btn-secondary"
+                  disabled={!canExecute || executing}
+                  onClick={handleExecute}
                 >
-                  Exec
+                  {executing ? "Executing..." : "Execute"}
                 </button>
-              </div>
-            </>
-          )}
+              </>
+            )}
 
-          <label htmlFor={`label-${tx.hash}`} className="btn btn-primary btn-xs">
-            ...
-          </label>
+            <label htmlFor={`label-${tx.txId}`} className="btn btn-primary btn-xs">
+              ...
+            </label>
+          </div>
         </div>
 
-        <div className="flex justify-between text-xs gap-4 mt-2">
-          <div>Function name: {txnData.functionName || "transferFunds"}</div>
-
+        <div className="flex justify-between items-center text-xs gap-4 mt-2">
+          <div>Function: {txnData.functionName || "transferFunds"}</div>
           <div className="flex gap-1 items-center">
-            Addressed to: <Address address={txnData.args?.[0] ? String(txnData.args?.[0]) : tx.to} size="xs" />
+            Addressed To: <Commitment commitment={txnData.args?.[0] ? String(txnData.args?.[0]) : tx.to} />
           </div>
         </div>
       </div>

@@ -1,0 +1,134 @@
+{
+  "noir_version": "1.0.0-beta.12+9a5b3695b42e391fa27c48e87b9bbb07523d664d",
+  "hash": "11547418556166105288",
+  "abi": {
+    "parameters": [
+      {
+        "name": "signature",
+        "type": {
+          "kind": "array",
+          "length": 64,
+          "type": {
+            "kind": "integer",
+            "sign": "unsigned",
+            "width": 8
+          }
+        },
+        "visibility": "private"
+      },
+      {
+        "name": "pub_key_x",
+        "type": {
+          "kind": "array",
+          "length": 32,
+          "type": {
+            "kind": "integer",
+            "sign": "unsigned",
+            "width": 8
+          }
+        },
+        "visibility": "private"
+      },
+      {
+        "name": "pub_key_y",
+        "type": {
+          "kind": "array",
+          "length": 32,
+          "type": {
+            "kind": "integer",
+            "sign": "unsigned",
+            "width": 8
+          }
+        },
+        "visibility": "private"
+      },
+      {
+        "name": "secret",
+        "type": {
+          "kind": "field"
+        },
+        "visibility": "private"
+      },
+      {
+        "name": "leaf_index",
+        "type": {
+          "kind": "field"
+        },
+        "visibility": "private"
+      },
+      {
+        "name": "merkle_path",
+        "type": {
+          "kind": "array",
+          "length": 4,
+          "type": {
+            "kind": "field"
+          }
+        },
+        "visibility": "private"
+      },
+      {
+        "name": "tx_hash_bytes",
+        "type": {
+          "kind": "array",
+          "length": 32,
+          "type": {
+            "kind": "integer",
+            "sign": "unsigned",
+            "width": 8
+          }
+        },
+        "visibility": "private"
+      },
+      {
+        "name": "tx_hash_commitment",
+        "type": {
+          "kind": "field"
+        },
+        "visibility": "public"
+      },
+      {
+        "name": "merkle_root",
+        "type": {
+          "kind": "field"
+        },
+        "visibility": "public"
+      },
+      {
+        "name": "nullifier",
+        "type": {
+          "kind": "field"
+        },
+        "visibility": "public"
+      }
+    ],
+    "return_type": null,
+    "error_types": {
+      "5695929252651659567": {
+        "error_kind": "string",
+        "string": "Invalid signature"
+      },
+      "5795655218219125583": {
+        "error_kind": "string",
+        "string": "Field failed to decompose into specified 8 limbs"
+      },
+      "5980364688934549169": {
+        "error_kind": "string",
+        "string": "tx_hash mismatch"
+      },
+      "6668324276689745315": {
+        "error_kind": "string",
+        "string": "Field failed to decompose into specified 4 limbs"
+      },
+      "12124735694667882037": {
+        "error_kind": "string",
+        "string": "Not a signer"
+      },
+      "17824934553683747113": {
+        "error_kind": "string",
+        "string": "Invalid nullifier"
+      }
+    }
+  },
+  "bytecode": "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"
+}

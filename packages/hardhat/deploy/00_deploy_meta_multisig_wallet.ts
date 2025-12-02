@@ -20,10 +20,26 @@ const deployMetaMultiSigWallet: DeployFunction = async function (hre: HardhatRun
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
+  //   const poseidon2 = await deploy("Poseidon2Yul", {
+  //   from: deployer,
+  //   log: true,
+  //   autoMine: true,
+  // });
+  // address poseidon2 on sepolia = 0x2Ca9484Ed2E7d391B92498Ca64F31a6438Ff30C0
+  // address metamultisigwallet on sepolia = 0xa9c95A08850d294017902160d3047149A03984fC
+
   await deploy("MetaMultiSigWallet", {
     from: deployer,
-    // Contract constructor arguments
-    args: [31337, ["**YOUR FRONTEND ADDRESS**"], 1],
+    args: [
+      // poseidon2.address,
+      "0x2Ca9484Ed2E7d391B92498Ca64F31a6438Ff30C0", //poseidon2 address
+      "0xEA0A0f1EfB1088F4ff0Def03741Cb2C64F89361E", // zkVerify contract address
+      "0x56ac9c928c844eb6a9929df13ecd2d4aa4b7e06a864279a1e027e1727767ef5c", //vkhash
+      // 31337, //chainId localhost
+      11155111, //chainId
+      [BigInt("18929556660797840564915493238049038928575445774436881641290216620298297649029")], //list commitments
+      1 //signatures required
+    ],
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
     // automatically mining the contract deployment transaction. There is no effect on live networks.

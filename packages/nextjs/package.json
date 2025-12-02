@@ -16,11 +16,15 @@
     "vercel:yolo": "vercel --build-env YARN_ENABLE_IMMUTABLE_INSTALLS=false --build-env ENABLE_EXPERIMENTAL_COREPACK=1 --build-env NEXT_PUBLIC_IGNORE_BUILD_ERROR=true --build-env VERCEL_TELEMETRY_DISABLED=1"
   },
   "dependencies": {
+    "@aztec/bb.js": "0.84.0",
     "@heroicons/react": "~2.1.5",
+    "@noir-lang/noir_js": "1.0.0-beta.6",
     "@rainbow-me/rainbowkit": "2.2.7",
     "@tanstack/react-query": "~5.59.15",
     "@uniswap/sdk-core": "~5.8.2",
     "@uniswap/v2-sdk": "~4.6.1",
+    "@zkpassport/poseidon2": "^0.6.2",
+    "axios": "^1.13.2",
     "blo": "~1.2.0",
     "burner-connector": "0.0.16",
     "daisyui": "5.0.9",

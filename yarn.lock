@@ -26,6 +26,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@aztec/bb.js@npm:0.84.0":
+  version: 0.84.0
+  resolution: "@aztec/bb.js@npm:0.84.0"
+  dependencies:
+    comlink: ^4.4.1
+    commander: ^12.1.0
+    debug: ^4.3.4
+    fflate: ^0.8.0
+    pako: ^2.1.0
+    tslib: ^2.4.0
+  bin:
+    bb.js: dest/node/main.js
+  checksum: 11a0fe7bd68b8099dc619062d1bc9937693d2b3502d79a5fb916df3b7a2c5ea89217225aa544cf66b61bcdce843a70b4692ed27fcacc604051891192203e2fc9
+  languageName: node
+  linkType: hard
+
 "@babel/code-frame@npm:^7.22.13, @babel/code-frame@npm:^7.27.1":
   version: 7.27.1
   resolution: "@babel/code-frame@npm:7.27.1"
@@ -2523,6 +2539,41 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@noir-lang/acvm_js@npm:1.0.0-beta.6":
+  version: 1.0.0-beta.6
+  resolution: "@noir-lang/acvm_js@npm:1.0.0-beta.6"
+  checksum: a68662608df683fb189eb56d74f594fb0d3597a6e8d2a1e73aa1209c04de581e4d70e7a9a5f96c1c8274742cde6ba15cba13c4bfd021c4c5f79a619faa87cee8
+  languageName: node
+  linkType: hard
+
+"@noir-lang/noir_js@npm:1.0.0-beta.6":
+  version: 1.0.0-beta.6
+  resolution: "@noir-lang/noir_js@npm:1.0.0-beta.6"
+  dependencies:
+    "@noir-lang/acvm_js": 1.0.0-beta.6
+    "@noir-lang/noirc_abi": 1.0.0-beta.6
+    "@noir-lang/types": 1.0.0-beta.6
+    pako: ^2.1.0
+  checksum: ecd3334fd45693b856ec95ddd622eb6a119a10b4ce6b7f560e3400683cf0dc80499ea1d03cdf83456c5a24e6204a026d845cb0019395e33e976b7c23875519a9
+  languageName: node
+  linkType: hard
+
+"@noir-lang/noirc_abi@npm:1.0.0-beta.6":
+  version: 1.0.0-beta.6
+  resolution: "@noir-lang/noirc_abi@npm:1.0.0-beta.6"
+  dependencies:
+    "@noir-lang/types": 1.0.0-beta.6
+  checksum: b9b01776ac24786923e238988ade829dda0fe4f9ee1b16895b809d11158db5bbeb997dc1cd210fcca5434591eac1495a191b66e127a951adcf0c8ff32976c73d
+  languageName: node
+  linkType: hard
+
+"@noir-lang/types@npm:1.0.0-beta.6":
+  version: 1.0.0-beta.6
+  resolution: "@noir-lang/types@npm:1.0.0-beta.6"
+  checksum: 3ab335777829722743bfe385c76c25abc2df11720d08ac0844cc1cd2bebf86a67b87e7d31892fad9aa8cdbcf2cae5d93b8665dd9d0b3178366f4700e931b1ea1
+  languageName: node
+  linkType: hard
+
 "@nolyfill/is-core-module@npm:1.0.39":
   version: 1.0.39
   resolution: "@nolyfill/is-core-module@npm:1.0.39"
@@ -3501,6 +3552,7 @@ __metadata:
     hardhat-deploy: ^1.0.4
     hardhat-deploy-ethers: ~0.4.2
     hardhat-gas-reporter: ~2.2.1
+    poseidon2-evm: ^1.0.0
     prettier: ^3.5.3
     prettier-plugin-solidity: ~1.4.1
     qrcode: ~1.5.4
@@ -3515,7 +3567,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@se-2/nextjs@workspace:packages/nextjs"
   dependencies:
+    "@aztec/bb.js": 0.84.0
     "@heroicons/react": ~2.1.5
+    "@noir-lang/noir_js": 1.0.0-beta.6
     "@rainbow-me/rainbowkit": 2.2.7
     "@tailwindcss/postcss": 4.0.15
     "@tanstack/react-query": ~5.59.15
@@ -3524,8 +3578,10 @@ __metadata:
     "@types/react": ~19.0.7
     "@uniswap/sdk-core": ~5.8.2
     "@uniswap/v2-sdk": ~4.6.1
+    "@zkpassport/poseidon2": ^0.6.2
     abitype: 1.0.6
     autoprefixer: ~10.4.20
+    axios: ^1.13.2
     bgipfs: ~0.0.12
     blo: ~1.2.0
     burner-connector: 0.0.16
@@ -5574,6 +5630,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@zkpassport/poseidon2@npm:^0.6.2":
+  version: 0.6.2
+  resolution: "@zkpassport/poseidon2@npm:0.6.2"
+  checksum: f422de6b69c863bdd6945079a34516f96d6f91d700ded18d804a508d8427f30f63668b698ed8a38e13703799215e4bfb40566b64388dcbef7a581e57427a57b9
+  languageName: node
+  linkType: hard
+
 "abbrev@npm:1":
   version: 1.1.1
   resolution: "abbrev@npm:1.1.1"
@@ -6276,7 +6339,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.7":
+"axios@npm:^1.13.2, axios@npm:^1.6.7":
   version: 1.13.2
   resolution: "axios@npm:1.13.2"
   dependencies:
@@ -6342,11 +6405,11 @@ __metadata:
   linkType: hard
 
 "baseline-browser-mapping@npm:^2.8.25":
-  version: 2.8.31
-  resolution: "baseline-browser-mapping@npm:2.8.31"
+  version: 2.8.32
+  resolution: "baseline-browser-mapping@npm:2.8.32"
   bin:
     baseline-browser-mapping: dist/cli.js
-  checksum: be21b495093f577c6602882b6c3ecf04a1fe4fcf1d1dd497b51571adcc5815999247f3587a85d194b26f4afad3f726e0fd9d2569087ff09146b044ef8044c9de
+  checksum: b26d79ca391037581575989675cc21155e3b4925745d3481bf936a1ce22f054cc9e0e67e938b692c305389b4996aecb3ad9ffaa5cda7f28f7db060c777bf4799
   languageName: node
   linkType: hard
 
@@ -7266,6 +7329,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"comlink@npm:^4.4.1":
+  version: 4.4.2
+  resolution: "comlink@npm:4.4.2"
+  checksum: 35313f26fdd78c202be21be49a7607f57e9e91963399b524676742ee0cf7db589be500d923ed0809b53f37996461186fb345bf867d93236be22bfae3cb7bd07e
+  languageName: node
+  linkType: hard
+
 "command-exists@npm:^1.2.8":
   version: 1.2.9
   resolution: "command-exists@npm:1.2.9"
@@ -7301,6 +7371,13 @@ __metadata:
   version: 10.0.1
   resolution: "commander@npm:10.0.1"
   checksum: 436901d64a818295803c1996cd856621a74f30b9f9e28a588e726b2b1670665bccd7c1a77007ebf328729f0139838a88a19265858a0fa7a8728c4656796db948
+  languageName: node
+  linkType: hard
+
+"commander@npm:^12.1.0":
+  version: 12.1.0
+  resolution: "commander@npm:12.1.0"
+  checksum: 68e9818b00fc1ed9cdab9eb16905551c2b768a317ae69a5e3c43924c2b20ac9bb65b27e1cab36aeda7b6496376d4da908996ba2c0b5d79463e0fb1e77935d514
   languageName: node
   linkType: hard
 
@@ -9487,6 +9564,13 @@ __metadata:
     picomatch:
       optional: true
   checksum: bd537daa9d3cd53887eed35efa0eab2dbb1ca408790e10e024120e7a36c6e9ae2b33710cb8381e35def01bc9c1d7eaba746f886338413e68ff6ebaee07b9a6e8
+  languageName: node
+  linkType: hard
+
+"fflate@npm:^0.8.0":
+  version: 0.8.2
+  resolution: "fflate@npm:0.8.2"
+  checksum: 29470337b85d3831826758e78f370e15cda3169c5cd4477c9b5eea2402261a74b2975bae816afabe1c15d21d98591e0d30a574f7103aa117bff60756fa3035d4
   languageName: node
   linkType: hard
 
@@ -14143,6 +14227,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pako@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "pako@npm:2.1.0"
+  checksum: 71666548644c9a4d056bcaba849ca6fd7242c6cf1af0646d3346f3079a1c7f4a66ffec6f7369ee0dc88f61926c10d6ab05da3e1fca44b83551839e89edd75a3e
+  languageName: node
+  linkType: hard
+
 "parent-module@npm:^1.0.0":
   version: 1.0.1
   resolution: "parent-module@npm:1.0.1"
@@ -14435,6 +14526,13 @@ __metadata:
   version: 2.1.11
   resolution: "pony-cause@npm:2.1.11"
   checksum: 4aaa9ddab8f8225b5cbb32f7329a71b73679074579fa91f9e9d6853d398f3c2872de979519e1525c0c91d53afc82c32fddb76e379d19157e69ef1f7064523dfa
+  languageName: node
+  linkType: hard
+
+"poseidon2-evm@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "poseidon2-evm@npm:1.0.0"
+  checksum: a882ba7468c829380e84b5d4765b2c6b232a44e87168f73fbf5335f180bfe2e93a637fe0e477ce4554ccd92974232fb1d25291b41c4aa5a77bd8e53fbbcd68f3
   languageName: node
   linkType: hard
 

@@ -4,6 +4,1513 @@
  */
 import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
-const deployedContracts = {} as const;
+const deployedContracts = {
+  31337: {
+    MetaMultiSigWallet: {
+      address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_poseidon2Address",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_zkvContract",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "_vkHash",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint256",
+              name: "_chainId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256[]",
+              name: "_initialCommitments",
+              type: "uint256[]",
+            },
+            {
+              internalType: "uint256",
+              name: "_signaturesRequired",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "balance",
+              type: "uint256",
+            },
+          ],
+          name: "Deposit",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "commitment",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "bool",
+              name: "isAdded",
+              type: "bool",
+            },
+          ],
+          name: "Owner",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "nullifier",
+              type: "uint256",
+            },
+          ],
+          name: "SignatureSubmitted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "result",
+              type: "bytes",
+            },
+          ],
+          name: "TransactionExecuted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+          ],
+          name: "TransactionProposed",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "MAX_SIGNERS",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "PROVING_SYSTEM_ID",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "VERSION_HASH",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newCommitment",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "newSigRequired",
+              type: "uint256",
+            },
+          ],
+          name: "addSigner",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "chainId",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "commitments",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+          ],
+          name: "executeTransaction",
+          outputs: [
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getCommitments",
+          outputs: [
+            {
+              internalType: "uint256[]",
+              name: "",
+              type: "uint256[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+          ],
+          name: "getPendingTx",
+          outputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              internalType: "uint256",
+              name: "validSignatures",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "requiredApprovalsWhenExecuted",
+              type: "uint256",
+            },
+            {
+              internalType: "bool",
+              name: "executed",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getSignersCount",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "_nonce",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+          ],
+          name: "getTransactionHash",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+          ],
+          name: "getTxHashFromTxid",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "merkleRoot",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "nonce",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "pendingTxs",
+          outputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              internalType: "uint256",
+              name: "requiredApprovalsWhenExecuted",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "validSignatures",
+              type: "uint256",
+            },
+            {
+              internalType: "bool",
+              name: "executed",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "poseidon2Address",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "a",
+              type: "uint256",
+            },
+          ],
+          name: "poseidon2Hash1",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "a",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "b",
+              type: "uint256",
+            },
+          ],
+          name: "poseidon2Hash2",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "nullifier",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "aggregationId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "domainId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "bytes32[]",
+                  name: "zkMerklePath",
+                  type: "bytes32[]",
+                },
+                {
+                  internalType: "uint256",
+                  name: "leafCount",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "index",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct MetaMultiSigWallet.ZkProof",
+              name: "proof",
+              type: "tuple",
+            },
+          ],
+          name: "proposeTx",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "commitment",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "newSigRequired",
+              type: "uint256",
+            },
+          ],
+          name: "removeSigner",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "signaturesRequired",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "nullifier",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "aggregationId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "domainId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "bytes32[]",
+                  name: "zkMerklePath",
+                  type: "bytes32[]",
+                },
+                {
+                  internalType: "uint256",
+                  name: "leafCount",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "index",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct MetaMultiSigWallet.ZkProof",
+              name: "proof",
+              type: "tuple",
+            },
+          ],
+          name: "submitSignature",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newSigRequired",
+              type: "uint256",
+            },
+          ],
+          name: "updateSignaturesRequired",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "usedNullifiers",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "vkHash",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "zkvContract",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          stateMutability: "payable",
+          type: "receive",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 3,
+    },
+    Poseidon2Yul: {
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      abi: [
+        {
+          stateMutability: "nonpayable",
+          type: "fallback",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 1,
+    },
+  },
+  11155111: {
+    MetaMultiSigWallet: {
+      address: "0xa9c95A08850d294017902160d3047149A03984fC",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_poseidon2Address",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_zkvContract",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "_vkHash",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint256",
+              name: "_chainId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256[]",
+              name: "_initialCommitments",
+              type: "uint256[]",
+            },
+            {
+              internalType: "uint256",
+              name: "_signaturesRequired",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "amount",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "balance",
+              type: "uint256",
+            },
+          ],
+          name: "Deposit",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "commitment",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "bool",
+              name: "isAdded",
+              type: "bool",
+            },
+          ],
+          name: "Owner",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "nullifier",
+              type: "uint256",
+            },
+          ],
+          name: "SignatureSubmitted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "result",
+              type: "bytes",
+            },
+          ],
+          name: "TransactionExecuted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+          ],
+          name: "TransactionProposed",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "MAX_SIGNERS",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "PROVING_SYSTEM_ID",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "VERSION_HASH",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newCommitment",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "newSigRequired",
+              type: "uint256",
+            },
+          ],
+          name: "addSigner",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "chainId",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "commitments",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+          ],
+          name: "executeTransaction",
+          outputs: [
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getCommitments",
+          outputs: [
+            {
+              internalType: "uint256[]",
+              name: "",
+              type: "uint256[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+          ],
+          name: "getPendingTx",
+          outputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              internalType: "uint256",
+              name: "validSignatures",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "requiredApprovalsWhenExecuted",
+              type: "uint256",
+            },
+            {
+              internalType: "bool",
+              name: "executed",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getSignersCount",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "_nonce",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+          ],
+          name: "getTransactionHash",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+          ],
+          name: "getTxHashFromTxid",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "merkleRoot",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "nonce",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "pendingTxs",
+          outputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              internalType: "uint256",
+              name: "requiredApprovalsWhenExecuted",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "validSignatures",
+              type: "uint256",
+            },
+            {
+              internalType: "bool",
+              name: "executed",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "poseidon2Address",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "a",
+              type: "uint256",
+            },
+          ],
+          name: "poseidon2Hash1",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "a",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "b",
+              type: "uint256",
+            },
+          ],
+          name: "poseidon2Hash2",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "nullifier",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "aggregationId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "domainId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "bytes32[]",
+                  name: "zkMerklePath",
+                  type: "bytes32[]",
+                },
+                {
+                  internalType: "uint256",
+                  name: "leafCount",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "index",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct MetaMultiSigWallet.ZkProof",
+              name: "proof",
+              type: "tuple",
+            },
+          ],
+          name: "proposeTx",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "commitment",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "newSigRequired",
+              type: "uint256",
+            },
+          ],
+          name: "removeSigner",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "signaturesRequired",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "txId",
+              type: "uint256",
+            },
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "nullifier",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "aggregationId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "domainId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "bytes32[]",
+                  name: "zkMerklePath",
+                  type: "bytes32[]",
+                },
+                {
+                  internalType: "uint256",
+                  name: "leafCount",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "index",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct MetaMultiSigWallet.ZkProof",
+              name: "proof",
+              type: "tuple",
+            },
+          ],
+          name: "submitSignature",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newSigRequired",
+              type: "uint256",
+            },
+          ],
+          name: "updateSignaturesRequired",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "usedNullifiers",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "vkHash",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "zkvContract",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          stateMutability: "payable",
+          type: "receive",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 9752517,
+    },
+    Poseidon2Yul: {
+      address: "0x2Ca9484Ed2E7d391B92498Ca64F31a6438Ff30C0",
+      abi: [
+        {
+          stateMutability: "nonpayable",
+          type: "fallback",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 9752255,
+    },
+  },
+} as const;
 
 export default deployedContracts satisfies GenericContractsDeclaration;

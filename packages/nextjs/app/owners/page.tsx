@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { useIsMounted, useLocalStorage } from "usehooks-ts";
 import { Abi, encodeFunctionData } from "viem";
 import { Address, AddressInput, IntegerInput } from "~~/components/scaffold-eth";
-import { useDeployedContractInfo, useScaffoldEventHistory, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { Commitment, CommitmentList } from "~~/components/scaffold-eth/Address/CommitmentAddress";
+import {
+  useDeployedContractInfo,
+  useScaffoldContract,
+  useScaffoldEventHistory,
+  useScaffoldReadContract,
+} from "~~/hooks/scaffold-eth";
 import { DEFAULT_TX_DATA, Method, OWNERS_METHODS, PredefinedTxData } from "~~/utils/methods";
 
 const Owners: FC = () => {
@@ -25,9 +31,10 @@ const Owners: FC = () => {
     functionName: "signaturesRequired",
   });
 
-  const { data: ownerEventsHistory } = useScaffoldEventHistory({
+  const { data: ownerEvents } = useScaffoldEventHistory({
     contractName: "MetaMultiSigWallet",
     eventName: "Owner",
+    watch: true,
   });
 
   useEffect(() => {
@@ -43,10 +50,10 @@ const Owners: FC = () => {
           <div className="max-w-full">Signatures required: {String(signaturesRequired)}</div>
 
           <div className="mt-6 w-full space-y-3">
-            {ownerEventsHistory?.map((event, i) => (
+            {ownerEvents?.map((event, i) => (
               <div key={i} className="flex justify-between">
-                <Address address={event.args.owner} />
-                <span>{event.args.added ? "Added 👍" : "Removed 👎"}</span>
+                <Commitment commitment={event?.args?.commitment ?? ""} />
+                <span>{event?.args?.isAdded ? "Added 👍" : "Removed 👎"}</span>
               </div>
             ))}
           </div>
