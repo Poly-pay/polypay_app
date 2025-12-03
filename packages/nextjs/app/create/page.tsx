@@ -3,22 +3,14 @@
 import { type FC, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UltraPlonkBackend } from "@aztec/bb.js";
-import { Noir, abi } from "@noir-lang/noir_js";
+import { Noir } from "@noir-lang/noir_js";
 import { useIsMounted, useLocalStorage } from "usehooks-ts";
 import { Address, parseEther } from "viem";
-import { useChainId, useWalletClient } from "wagmi";
+import { useWalletClient } from "wagmi";
 import { AddressInput, EtherInput, InputBase } from "~~/components/scaffold-eth";
 import { useDeployedContractInfo, useScaffoldContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
-import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
-import { getPoolServerUrl } from "~~/utils/getPoolServerUrl";
 import { DEFAULT_TX_DATA, METHODS, Method, PredefinedTxData } from "~~/utils/methods";
-import {
-  buildMerkleTree,
-  getMerklePath,
-  getPublicKeyXY,
-  hexToByteArray,
-  poseidon2HashAutoPadding3,
-} from "~~/utils/multisig";
+import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
 export type TransactionData = {
@@ -38,14 +30,10 @@ export type TransactionData = {
 const CreatePage: FC = () => {
   const isMounted = useIsMounted();
   const router = useRouter();
-  const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
-  const { targetNetwork } = useTargetNetwork();
 
   const [loading, setLoading] = useState(false);
   const [stateZkProof, setStateZkProof] = useState<string>("");
-
-  const poolServerUrl = getPoolServerUrl(targetNetwork.id);
 
   const [ethValue, setEthValue] = useState("");
   const { data: contractInfo } = useDeployedContractInfo({ contractName: "MetaMultiSigWallet" });
@@ -60,11 +48,6 @@ const CreatePage: FC = () => {
   const { data: nonce } = useScaffoldReadContract({
     contractName: "MetaMultiSigWallet",
     functionName: "nonce",
-  });
-
-  const { data: signaturesRequired } = useScaffoldReadContract({
-    contractName: "MetaMultiSigWallet",
-    functionName: "signaturesRequired",
   });
 
   const { data: merkleRoot } = useScaffoldReadContract({
@@ -82,11 +65,10 @@ const CreatePage: FC = () => {
   const handleCreate = async () => {
     setLoading(true);
     try {
-      if (!walletClient) {
+      if (!walletClient || !metaMultiSigWallet) {
         console.log("No wallet client!");
         return;
       }
-
       // ============ 1. Calculate txHash ============
       const currentNonce = nonce as bigint;
       const txHash = (await metaMultiSigWallet?.read.getTransactionHash([
@@ -111,8 +93,8 @@ const CreatePage: FC = () => {
       }
       const txHashBytes = hexToByteArray(txHash);
       const sigBytes = hexToByteArray(signature).slice(0, 64); // drop v byte
-      const txHashCommitment = await poseidon2HashAutoPadding3([BigInt(txHash)]);
-      const nullifier = await poseidon2HashAutoPadding3([BigInt(secret), BigInt(txHash)]);
+      const txHashCommitment = await poseidonHash2(BigInt(txHash), 1n);
+      const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
 
       // ============ 4. Get merkle data ============
       const commitments = await metaMultiSigWallet?.read.getCommitments();
@@ -129,6 +111,7 @@ const CreatePage: FC = () => {
 
       if (leafIndex === -1) {
         notification.error("You are not a signer");
+        setLoading(false);
         return;
       }
 
@@ -187,13 +170,28 @@ const CreatePage: FC = () => {
         leafCount: BigInt(zkVerifyData.aggregationDetails.numberOfLeaves),
         index: BigInt(zkVerifyData.aggregationDetails.leafIndex),
       };
+      // wait 30s to make sure proof have on others chains
+      console.log("Waiting 30s for the transaction to be processed...");
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
-      const tx = await metaMultiSigWallet?.write.proposeTx([
+      const gasEstimate = await metaMultiSigWallet?.estimateGas.proposeTx([
         txTo as `0x${string}`,
         BigInt(predefinedTxData.amount as string),
         predefinedTxData.callData as `0x${string}`,
         zkProof,
       ]);
+      console.log("Gas estimate:", gasEstimate);
+
+      console.log("Submitting proposeTx...");
+      const tx = await metaMultiSigWallet?.write.proposeTx(
+        [
+          txTo as `0x${string}`,
+          BigInt(predefinedTxData.amount as string),
+          predefinedTxData.callData as `0x${string}`,
+          zkProof,
+        ],
+        { gas: gasEstimate ? gasEstimate + 10000n : undefined },
+      );
 
       console.log("Propose tx:", tx);
       notification.success("Transaction proposed successfully!");
@@ -234,7 +232,7 @@ const CreatePage: FC = () => {
               value={nonce !== undefined ? `# ${nonce}` : "Loading..."}
               placeholder={"Loading..."}
               onChange={() => {
-                null;
+                console.log("noop");
               }}
             />
           </div>
@@ -283,7 +281,7 @@ const CreatePage: FC = () => {
               value={predefinedTxData.callData || ""}
               placeholder={"Calldata"}
               onChange={() => {
-                null;
+                console.log("noop");
               }}
               disabled
             />

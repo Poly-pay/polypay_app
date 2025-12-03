@@ -127,10 +127,7 @@ export const Commitment = ({
             {displayCommitment}
           </span>
           {showCopyButton && (
-            <button
-              onClick={handleCopy}
-              className="btn btn-ghost btn-xs p-0 min-h-0 h-auto hover:bg-transparent"
-            >
+            <button onClick={handleCopy} className="btn btn-ghost btn-xs p-0 min-h-0 h-auto hover:bg-transparent">
               {copied ? (
                 <CheckCircleIcon className={`${copyIconSizeMap[size]} text-success`} />
               ) : (
@@ -157,7 +154,12 @@ export const CommitmentList = ({ commitments, size = "base", showIndex = true }:
   return (
     <div className="flex flex-col gap-2">
       {commitments.map((commitment, index) => (
-        <Commitment key={index} commitment={commitment} label={showIndex ? `Commitment-${index + 1}` : undefined} size={size} />
+        <Commitment
+          key={index}
+          commitment={commitment}
+          label={showIndex ? `Commitment-${index + 1}` : undefined}
+          size={size}
+        />
       ))}
     </div>
   );

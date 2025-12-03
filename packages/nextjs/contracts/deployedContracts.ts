@@ -7,15 +7,10 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   31337: {
     MetaMultiSigWallet: {
-      address: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      address: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
       abi: [
         {
           inputs: [
-            {
-              internalType: "address",
-              name: "_poseidon2Address",
-              type: "address",
-            },
             {
               internalType: "address",
               name: "_zkvContract",
@@ -175,6 +170,19 @@ const deployedContracts = {
           ],
           name: "TransactionProposed",
           type: "event",
+        },
+        {
+          inputs: [],
+          name: "BN254_PRIME",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
         },
         {
           inputs: [],
@@ -478,38 +486,6 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [],
-          name: "poseidon2Address",
-          outputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "a",
-              type: "uint256",
-            },
-          ],
-          name: "poseidon2Hash1",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [
             {
               internalType: "uint256",
@@ -522,7 +498,7 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
-          name: "poseidon2Hash2",
+          name: "poseidonHash2",
           outputs: [
             {
               internalType: "uint256",
@@ -744,31 +720,15 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 3,
-    },
-    Poseidon2Yul: {
-      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-      abi: [
-        {
-          stateMutability: "nonpayable",
-          type: "fallback",
-        },
-      ],
-      inheritedFunctions: {},
-      deployedOnBlock: 1,
+      deployedOnBlock: 4,
     },
   },
   11155111: {
     MetaMultiSigWallet: {
-      address: "0xa9c95A08850d294017902160d3047149A03984fC",
+      address: "0x420983A45b30759b266CC6dBcC35ec25044f1EEC",
       abi: [
         {
           inputs: [
-            {
-              internalType: "address",
-              name: "_poseidon2Address",
-              type: "address",
-            },
             {
               internalType: "address",
               name: "_zkvContract",
@@ -928,6 +888,19 @@ const deployedContracts = {
           ],
           name: "TransactionProposed",
           type: "event",
+        },
+        {
+          inputs: [],
+          name: "BN254_PRIME",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
         },
         {
           inputs: [],
@@ -1231,38 +1204,6 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [],
-          name: "poseidon2Address",
-          outputs: [
-            {
-              internalType: "address",
-              name: "",
-              type: "address",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "a",
-              type: "uint256",
-            },
-          ],
-          name: "poseidon2Hash1",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [
             {
               internalType: "uint256",
@@ -1275,7 +1216,7 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
-          name: "poseidon2Hash2",
+          name: "poseidonHash2",
           outputs: [
             {
               internalType: "uint256",
@@ -1497,18 +1438,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 9752517,
-    },
-    Poseidon2Yul: {
-      address: "0x2Ca9484Ed2E7d391B92498Ca64F31a6438Ff30C0",
-      abi: [
-        {
-          stateMutability: "nonpayable",
-          type: "fallback",
-        },
-      ],
-      inheritedFunctions: {},
-      deployedOnBlock: 9752255,
+      deployedOnBlock: 9758740,
     },
   },
 } as const;

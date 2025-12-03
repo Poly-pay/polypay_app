@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-// import "poseidon-solidity/PoseidonT3.sol";
+import "poseidon-solidity/PoseidonT3.sol";
 
 interface IVerifyProofAggregation {
     function verifyProofAggregation(
@@ -19,6 +19,7 @@ contract MetaMultiSigWallet {
     bytes32 public constant PROVING_SYSTEM_ID = keccak256(abi.encodePacked("ultraplonk"));
     bytes32 public constant VERSION_HASH = sha256(abi.encodePacked(""));
     uint256 public constant MAX_SIGNERS = 16;
+    uint256 public constant BN254_PRIME = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     // ============ Events ============
     event Deposit(address indexed sender, uint256 amount, uint256 balance);
@@ -47,7 +48,6 @@ contract MetaMultiSigWallet {
     }
 
     // ============ State ============
-    address public immutable poseidon2Address;
     address public immutable zkvContract;
     bytes32 public immutable vkHash;
     uint256 public chainId;
@@ -64,7 +64,6 @@ contract MetaMultiSigWallet {
 
     // ============ Constructor ============
     constructor(
-        address _poseidon2Address,
         address _zkvContract,
         bytes32 _vkHash,
         uint256 _chainId,
@@ -76,7 +75,6 @@ contract MetaMultiSigWallet {
         require(_initialCommitments.length > 0, "Need at least 1 signer");
         require(_signaturesRequired <= _initialCommitments.length, "Sigs required too high");
 
-        poseidon2Address = _poseidon2Address;
         zkvContract = _zkvContract;
         vkHash = _vkHash;
         chainId = _chainId;
@@ -244,7 +242,18 @@ contract MetaMultiSigWallet {
 
     function getPendingTx(
         uint256 txId
-    ) external view returns (address to, uint256 value, bytes memory data, uint256 validSignatures, uint256 requiredApprovalsWhenExecuted, bool executed) {
+    )
+        external
+        view
+        returns (
+            address to,
+            uint256 value,
+            bytes memory data,
+            uint256 validSignatures,
+            uint256 requiredApprovalsWhenExecuted,
+            bool executed
+        )
+    {
         PendingTx storage ptx = pendingTxs[txId];
         return (ptx.to, ptx.value, ptx.data, ptx.validSignatures, ptx.requiredApprovalsWhenExecuted, ptx.executed);
     }
@@ -252,7 +261,7 @@ contract MetaMultiSigWallet {
     // ============ Internal Functions ============
     function _verifyProof(bytes32 txHash, ZkProof calldata proof) internal view returns (bool) {
         // Compute txHashCommitment = poseidon(txHash)
-        uint256 txHashCommitment = poseidon2Hash1(uint256(txHash)); 
+        uint256 txHashCommitment = poseidonHash2(uint256(txHash), 1);
 
         // Encode public inputs (must match circuit order)
         bytes memory encodedInputs = abi.encodePacked(txHashCommitment, merkleRoot, proof.nullifier);
@@ -275,16 +284,22 @@ contract MetaMultiSigWallet {
     function _rebuildMerkleRoot() internal {
         uint256[] memory leaves = new uint256[](MAX_SIGNERS);
 
-        // Copy commitments, rest are 0
+        // Copy commitments, rest are 1
+        // cause it have special case: 13931274265663340981629530085592784152229472455486083434205648960092734877068n x 0n
+        // that case will make hash output of smart contract different with js
         for (uint256 i = 0; i < commitments.length; i++) {
             leaves[i] = commitments[i];
+        }
+
+        for (uint256 i = commitments.length; i < MAX_SIGNERS; i++) {
+            leaves[i] = 1;
         }
 
         // Build merkle tree bottom-up
         uint256 n = MAX_SIGNERS;
         while (n > 1) {
             for (uint256 i = 0; i < n / 2; i++) {
-                leaves[i] = poseidon2Hash2(leaves[2 * i], leaves[2 * i + 1]);
+                leaves[i] = poseidonHash2(leaves[2 * i], leaves[2 * i + 1]);
             }
             n = n / 2;
         }
@@ -297,18 +312,9 @@ contract MetaMultiSigWallet {
         emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
-    // always return hash with 3 inputs, padding with 0s if needed
-    // cause we use Yul library with fixed 3-input hash function
-    // Yul library is more gas efficient
-    function poseidon2Hash1(uint256 a) public view returns (uint256) {
-        (bool success, bytes memory result) = poseidon2Address.staticcall(abi.encode(a, uint256(0), uint256(0)));
-        require(success, "Poseidon2 hash failed");
-        return abi.decode(result, (uint256));
-    }
-
-    function poseidon2Hash2(uint256 a, uint256 b) public view returns (uint256) {
-        (bool success, bytes memory result) = poseidon2Address.staticcall(abi.encode(a, b, uint256(0)));
-        require(success, "Poseidon2 hash failed");
-        return abi.decode(result, (uint256));
+    function poseidonHash2(uint256 a, uint256 b) public view returns (uint256) {
+        uint256 safeA = a % BN254_PRIME;
+        uint256 safeB = b % BN254_PRIME;
+        return PoseidonT3.hash([safeA, safeB]);
     }
 }

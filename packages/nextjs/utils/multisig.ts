@@ -1,36 +1,16 @@
-import { poseidon2HashAsync } from "@zkpassport/poseidon2";
-import { type Hex, type WalletClient, hashMessage, keccak256, recoverPublicKey, toBytes } from "viem";
+import { buildPoseidon } from "circomlibjs";
+import { type Hex, type WalletClient, hashMessage, keccak256, recoverPublicKey } from "viem";
 
 export const MERKLE_DEPTH = 4;
 export const MAX_SIGNERS = 16;
 const BN254_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
 // ============ Types ============
-export interface Signer {
-  secret: bigint;
-  commitment: bigint;
-  signature: Hex;
-}
-
 export interface MerkleTree {
   leaves: bigint[];
   tree: bigint[][];
   root: bigint;
 }
-
-export interface ProofInput {
-  signature: number[];
-  pub_key_x: number[];
-  pub_key_y: number[];
-  secret: string;
-  leaf_index: string;
-  merkle_path: string[];
-  tx_hash_bytes: number[];
-  tx_hash_commitment: string;
-  merkle_root: string;
-  nullifier: string;
-}
-
 // ============ Helper Functions ============
 export function hexToByteArray(hex: string): number[] {
   const cleanHex = hex.startsWith("0x") ? hex.slice(2) : hex;
@@ -61,7 +41,7 @@ export async function createSecret(walletClient: WalletClient): Promise<bigint> 
 export async function buildMerkleTree(commitments: readonly bigint[]): Promise<MerkleTree> {
   const leaves = [...commitments];
   while (leaves.length < MAX_SIGNERS) {
-    leaves.push(BigInt(0));
+    leaves.push(BigInt(1));
   }
 
   const tree: bigint[][] = [leaves];
@@ -72,7 +52,7 @@ export async function buildMerkleTree(commitments: readonly bigint[]): Promise<M
     for (let i = 0; i < currentLevel.length; i += 2) {
       const left = currentLevel[i];
       const right = currentLevel[i + 1];
-      const parent = await poseidon2HashAutoPadding3([left, right]);
+      const parent = await poseidonHash2(left, right);
       nextLevel.push(parent);
     }
     tree.push(nextLevel);
@@ -107,11 +87,11 @@ export async function computeMerkleRoot(leaf: bigint, leafIndex: bigint, merkleP
   for (let i = 0; i < merklePath.length; i++) {
     const sibling = merklePath[i];
     if (index % 2n === 0n) {
-      // Current ở bên trái
-      current = await poseidon2HashAutoPadding3([current, sibling]);
+      // Current on left
+      current = await poseidonHash2(current, sibling);
     } else {
-      // Current ở bên phải
-      current = await poseidon2HashAutoPadding3([sibling, current]);
+      // Current on right
+      current = await poseidonHash2(sibling, current);
     }
     index = index / 2n;
   }
@@ -119,17 +99,11 @@ export async function computeMerkleRoot(leaf: bigint, leafIndex: bigint, merkleP
   return current;
 }
 
-export async function poseidon2HashAutoPadding3(inputs: bigint[]): Promise<bigint> {
-  if (inputs.length > 3) {
-    throw new Error("Poseidon2 supports max 3 inputs");
-  }
-
-  const padded: bigint[] = [...inputs];
-  while (padded.length < 3) {
-    padded.push(0n);
-  }
-
-  return await poseidon2HashAsync(padded);
+export async function poseidonHash2(a: bigint, b: bigint): Promise<bigint> {
+  const poseidon = await buildPoseidon();
+  const safeInputs = [a % BN254_MODULUS, b % BN254_MODULUS];
+  const hash = poseidon(safeInputs);
+  return BigInt(poseidon.F.toString(hash));
 }
 
 export async function getPublicKeyXY(
@@ -151,5 +125,5 @@ export async function getPublicKeyXY(
 }
 
 export async function createCommitment(secret: bigint): Promise<bigint> {
-  return await poseidon2HashAutoPadding3([secret, secret]);
+  return await poseidonHash2(secret, secret);
 }

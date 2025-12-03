@@ -1,6 +1,6 @@
 import { type FC } from "react";
-import { Abi, Address as AddressType, decodeFunctionData, DecodeFunctionDataReturnType, formatEther } from "viem";
-import { Address, BlockieAvatar } from "~~/components/scaffold-eth";
+import { Abi, Address as AddressType, DecodeFunctionDataReturnType, decodeFunctionData, formatEther } from "viem";
+import { Address } from "~~/components/scaffold-eth";
 import { useDeployedContractInfo } from "~~/hooks/scaffold-eth";
 
 type TransactionEventItemProps = {

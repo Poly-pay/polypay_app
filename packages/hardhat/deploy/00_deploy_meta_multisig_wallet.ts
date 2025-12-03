@@ -1,5 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
+import { PoseidonT3, proxy } from "poseidon-solidity";
 
 /**
  * Deploys a "MetaMultiSigWallet" contract
@@ -20,30 +21,59 @@ const deployMetaMultiSigWallet: DeployFunction = async function (hre: HardhatRun
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
-  //   const poseidon2 = await deploy("Poseidon2Yul", {
-  //   from: deployer,
-  //   log: true,
-  //   autoMine: true,
-  // });
-  // address poseidon2 on sepolia = 0x2Ca9484Ed2E7d391B92498Ca64F31a6438Ff30C0
-  // address metamultisigwallet on sepolia = 0xa9c95A08850d294017902160d3047149A03984fC
+  const [signer] = await hre.ethers.getSigners();
+  const provider = hre.ethers.provider;
 
+  // Deploy proxy if not exists
+  if ((await provider.getCode(proxy.address)) === "0x") {
+    console.log("Deploying proxy...");
+
+    // Fund the keyless account
+    const fundTx = await signer.sendTransaction({
+      to: proxy.from,
+      value: proxy.gas,
+    });
+    await fundTx.wait();
+
+    // Send presigned transaction
+    await provider.broadcastTransaction(proxy.tx);
+    console.log(`Proxy deployed to: ${proxy.address}`);
+  } else {
+    console.log(`Proxy already at: ${proxy.address}`);
+  }
+
+  // Deploy PoseidonT3 if not exists
+  if ((await provider.getCode(PoseidonT3.address)) === "0x") {
+    console.log("Deploying PoseidonT3...");
+
+    const deployTx = await signer.sendTransaction({
+      to: proxy.address,
+      data: PoseidonT3.data,
+    });
+    await deployTx.wait();
+    console.log(`PoseidonT3 deployed to: ${PoseidonT3.address}`);
+  } else {
+    console.log(`PoseidonT3 already at: ${PoseidonT3.address}`);
+  }
+
+  // address metamultisigwallet on sepolia = 0x5675423C825311E336205CdBd8781E147b88cb71
   await deploy("MetaMultiSigWallet", {
     from: deployer,
     args: [
-      // poseidon2.address,
-      "0x2Ca9484Ed2E7d391B92498Ca64F31a6438Ff30C0", //poseidon2 address
       "0xEA0A0f1EfB1088F4ff0Def03741Cb2C64F89361E", // zkVerify contract address
-      "0x56ac9c928c844eb6a9929df13ecd2d4aa4b7e06a864279a1e027e1727767ef5c", //vkhash
+      "0x613a2ae411b1c1b56087e4ebaea061c348cc549b51616715eb92409871c664c5", //vkhash
       // 31337, //chainId localhost
       11155111, //chainId
-      [BigInt("18929556660797840564915493238049038928575445774436881641290216620298297649029")], //list commitments
-      1 //signatures required
+      [BigInt("7777412979265397193925220040726445950599854595059203997869095364409346949110")], //list commitments testnet
+      1, //signatures required
     ],
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
     // automatically mining the contract deployment transaction. There is no effect on live networks.
     autoMine: true,
+    libraries: {
+      PoseidonT3: PoseidonT3.address, // 0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93
+    },
   });
 
   // Get the deployed contract

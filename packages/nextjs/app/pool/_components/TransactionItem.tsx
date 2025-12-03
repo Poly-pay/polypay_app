@@ -12,13 +12,7 @@ import {
   useScaffoldReadContract,
   useTransactor,
 } from "~~/hooks/scaffold-eth";
-import {
-  buildMerkleTree,
-  getMerklePath,
-  getPublicKeyXY,
-  hexToByteArray,
-  poseidon2HashAutoPadding3,
-} from "~~/utils/multisig";
+import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
 type TransactionItemProps = {
@@ -80,7 +74,7 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
         ])) as `0x${string}`;
 
         // 3. Compute nullifier
-        const nullifier = await poseidon2HashAutoPadding3([BigInt(secret), BigInt(txHash)]);
+        const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
 
         // 4. Check on contract
         const used = await metaMultiSigWallet.read.usedNullifiers([nullifier]);
@@ -126,8 +120,8 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
       }
       const txHashBytes = hexToByteArray(txHash);
       const sigBytes = hexToByteArray(signature).slice(0, 64);
-      const txHashCommitment = await poseidon2HashAutoPadding3([BigInt(txHash)]);
-      const nullifier = await poseidon2HashAutoPadding3([BigInt(secret), BigInt(txHash)]);
+      const txHashCommitment = await poseidonHash2(BigInt(txHash), 1n);
+      const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
       // 4. Get merkle data
       const commitments = await metaMultiSigWallet.read.getCommitments();
       const tree = await buildMerkleTree(commitments ?? []);
@@ -195,15 +189,26 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
 
       // 7. Submit signature to contract
       const zkProof = {
-        nullifier: BigInt(nullifier.toString()),
+        nullifier: nullifier,
         aggregationId: BigInt(zkVerifyData.aggregationId),
-        domainId: BigInt(zkVerifyData.chainId),
+        domainId: 0n,
         zkMerklePath: zkVerifyData.aggregationDetails.merkleProof as `0x${string}`[],
         leafCount: BigInt(zkVerifyData.aggregationDetails.numberOfLeaves),
         index: BigInt(zkVerifyData.aggregationDetails.leafIndex),
       };
 
-      await transactor(() => metaMultiSigWallet.write.submitSignature([tx.txId, zkProof]));
+      // wait 30s to make sure proof have on others chains
+      console.log("Waiting 30s for the transaction to be processed...");
+      await new Promise(resolve => setTimeout(resolve, 60000));
+
+      const gasEstimate = await metaMultiSigWallet?.estimateGas.submitSignature([tx.txId, zkProof]);
+      console.log("Gas estimate:", gasEstimate);
+
+      await transactor(() =>
+        metaMultiSigWallet.write.submitSignature([tx.txId, zkProof], {
+          gas: gasEstimate ? gasEstimate + 10000n : undefined,
+        }),
+      );
 
       notification.success("Signature submitted!");
     } catch (e) {
