@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const requestResponse = await axios.post(`${API_URL}/submit-proof/${process.env.API_KEY}`, params);
+    const requestResponse = await axios.post(`${API_URL}/submit-proof/${process.env.RELAYER_ZKVERIFY_API_KEY}`, params);
     console.log(requestResponse.data);
 
     if (requestResponse.data.optimisticVerify !== "success") {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     while (true) {
       try {
         const jobStatusResponse = await axios.get(
-          `${API_URL}/job-status/${process.env.API_KEY}/${requestResponse.data.jobId}`,
+          `${API_URL}/job-status/${process.env.RELAYER_ZKVERIFY_API_KEY}/${requestResponse.data.jobId}`,
         );
         if (jobStatusResponse.data.status === "Aggregated") {
           console.log("Job aggregated successfully");
@@ -100,7 +100,7 @@ async function registerVk(vk: any, numberOfPublicInputs: number) {
   };
 
   try {
-    const res = await axios.post(`${API_URL}/register-vk/${process.env.API_KEY}`, params);
+    const res = await axios.post(`${API_URL}/register-vk/${process.env.RELAYER_ZKVERIFY_API_KEY}`, params);
     console.log(res);
     fs.writeFileSync(path.join(process.cwd(), "public", "circuit", "vkey.json"), JSON.stringify(res.data));
   } catch (error: any) {
