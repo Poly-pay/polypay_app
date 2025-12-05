@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Transaction {
+  id                 String    @id @default(cuid())
+  txId               Int       @unique
+  to                 String
+  value              String
+  callData           String?
+  signaturesRequired Int
+  status             TxStatus  @default(PENDING)
+  executedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  proofJobs ProofJob[]
+
+  @@index([status])
+}
+
+model ProofJob {
+  id            String    @id @default(cuid())
+  txId          Int
+  nullifier     String    @unique
+  jobId         String    @unique
+  status        JobStatus @default(PENDING)
+  aggregationId String?
+  domainId      Int?      @default(0)
+  merkleProof   String[]
+  leafCount     Int?
+  leafIndex     Int?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  transaction Transaction @relation(fields: [txId], references: [txId])
+
+  @@index([txId])
+  @@index([status])
+}
+
+enum TxStatus {
+  PENDING
+  READY
+  EXECUTED
+  FAILED
+}
+
+enum JobStatus {
+  PENDING
+  VERIFIED
+  AGGREGATED
+  FAILED
+}

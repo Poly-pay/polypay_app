@@ -725,7 +725,7 @@ const deployedContracts = {
   },
   11155111: {
     MetaMultiSigWallet: {
-      address: "0x420983A45b30759b266CC6dBcC35ec25044f1EEC",
+      address: "0x931f193FB8bAA1c6Cf96907CF7ff58627Ee23a71",
       abi: [
         {
           inputs: [
@@ -808,26 +808,7 @@ const deployedContracts = {
             {
               indexed: true,
               internalType: "uint256",
-              name: "txId",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "nullifier",
-              type: "uint256",
-            },
-          ],
-          name: "SignatureSubmitted",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "uint256",
-              name: "txId",
+              name: "nonce",
               type: "uint256",
             },
             {
@@ -856,37 +837,6 @@ const deployedContracts = {
             },
           ],
           name: "TransactionExecuted",
-          type: "event",
-        },
-        {
-          anonymous: false,
-          inputs: [
-            {
-              indexed: true,
-              internalType: "uint256",
-              name: "txId",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-            {
-              indexed: false,
-              internalType: "uint256",
-              name: "value",
-              type: "uint256",
-            },
-            {
-              indexed: false,
-              internalType: "bytes",
-              name: "data",
-              type: "bytes",
-            },
-          ],
-          name: "TransactionProposed",
           type: "event",
         },
         {
@@ -994,12 +944,59 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
               internalType: "uint256",
-              name: "txId",
+              name: "value",
               type: "uint256",
             },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "nullifier",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "aggregationId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "domainId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "bytes32[]",
+                  name: "zkMerklePath",
+                  type: "bytes32[]",
+                },
+                {
+                  internalType: "uint256",
+                  name: "leafCount",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "index",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct MetaMultiSigWallet.ZkProof[]",
+              name: "proofs",
+              type: "tuple[]",
+            },
           ],
-          name: "executeTransaction",
+          name: "execute",
           outputs: [
             {
               internalType: "bytes",
@@ -1018,50 +1015,6 @@ const deployedContracts = {
               internalType: "uint256[]",
               name: "",
               type: "uint256[]",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "txId",
-              type: "uint256",
-            },
-          ],
-          name: "getPendingTx",
-          outputs: [
-            {
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "value",
-              type: "uint256",
-            },
-            {
-              internalType: "bytes",
-              name: "data",
-              type: "bytes",
-            },
-            {
-              internalType: "uint256",
-              name: "validSignatures",
-              type: "uint256",
-            },
-            {
-              internalType: "uint256",
-              name: "requiredApprovalsWhenExecuted",
-              type: "uint256",
-            },
-            {
-              internalType: "bool",
-              name: "executed",
-              type: "bool",
             },
           ],
           stateMutability: "view",
@@ -1115,25 +1068,6 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "txId",
-              type: "uint256",
-            },
-          ],
-          name: "getTxHashFromTxid",
-          outputs: [
-            {
-              internalType: "bytes32",
-              name: "",
-              type: "bytes32",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [],
           name: "merkleRoot",
           outputs: [
@@ -1163,50 +1097,6 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          name: "pendingTxs",
-          outputs: [
-            {
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "value",
-              type: "uint256",
-            },
-            {
-              internalType: "bytes",
-              name: "data",
-              type: "bytes",
-            },
-            {
-              internalType: "uint256",
-              name: "requiredApprovalsWhenExecuted",
-              type: "uint256",
-            },
-            {
-              internalType: "uint256",
-              name: "validSignatures",
-              type: "uint256",
-            },
-            {
-              internalType: "bool",
-              name: "executed",
-              type: "bool",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
               name: "a",
               type: "uint256",
             },
@@ -1224,73 +1114,7 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-            {
-              internalType: "uint256",
-              name: "value",
-              type: "uint256",
-            },
-            {
-              internalType: "bytes",
-              name: "data",
-              type: "bytes",
-            },
-            {
-              components: [
-                {
-                  internalType: "uint256",
-                  name: "nullifier",
-                  type: "uint256",
-                },
-                {
-                  internalType: "uint256",
-                  name: "aggregationId",
-                  type: "uint256",
-                },
-                {
-                  internalType: "uint256",
-                  name: "domainId",
-                  type: "uint256",
-                },
-                {
-                  internalType: "bytes32[]",
-                  name: "zkMerklePath",
-                  type: "bytes32[]",
-                },
-                {
-                  internalType: "uint256",
-                  name: "leafCount",
-                  type: "uint256",
-                },
-                {
-                  internalType: "uint256",
-                  name: "index",
-                  type: "uint256",
-                },
-              ],
-              internalType: "struct MetaMultiSigWallet.ZkProof",
-              name: "proof",
-              type: "tuple",
-            },
-          ],
-          name: "proposeTx",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "txId",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "nonpayable",
+          stateMutability: "pure",
           type: "function",
         },
         {
@@ -1322,56 +1146,6 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "txId",
-              type: "uint256",
-            },
-            {
-              components: [
-                {
-                  internalType: "uint256",
-                  name: "nullifier",
-                  type: "uint256",
-                },
-                {
-                  internalType: "uint256",
-                  name: "aggregationId",
-                  type: "uint256",
-                },
-                {
-                  internalType: "uint256",
-                  name: "domainId",
-                  type: "uint256",
-                },
-                {
-                  internalType: "bytes32[]",
-                  name: "zkMerklePath",
-                  type: "bytes32[]",
-                },
-                {
-                  internalType: "uint256",
-                  name: "leafCount",
-                  type: "uint256",
-                },
-                {
-                  internalType: "uint256",
-                  name: "index",
-                  type: "uint256",
-                },
-              ],
-              internalType: "struct MetaMultiSigWallet.ZkProof",
-              name: "proof",
-              type: "tuple",
-            },
-          ],
-          name: "submitSignature",
-          outputs: [],
-          stateMutability: "nonpayable",
           type: "function",
         },
         {
@@ -1438,7 +1212,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 9758740,
+      deployedOnBlock: 9767372,
     },
   },
 } as const;

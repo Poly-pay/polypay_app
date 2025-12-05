@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: polypay-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: polypay_user
+      POSTGRES_PASSWORD: polypay_password
+      POSTGRES_DB: polypay_multisig_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - polypay-network
+
+  backend:
+    build: .
+    container_name: polypay-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://polypay_user:polypay_password@postgres:5432/polypay_multisig_db
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+    networks:
+      - polypay-network
+
+volumes:
+  postgres_data:
+
+networks:
+  polypay-network:
+    driver: bridge

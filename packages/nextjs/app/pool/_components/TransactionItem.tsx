@@ -1,11 +1,12 @@
 import { type FC, useEffect, useMemo, useState } from "react";
 import { Address } from "../../../components/scaffold-eth";
-import { PendingTransaction } from "../page";
 import { UltraPlonkBackend } from "@aztec/bb.js";
 import { Noir } from "@noir-lang/noir_js";
 import { Abi, DecodeFunctionDataReturnType, decodeFunctionData, formatEther } from "viem";
 import { useWalletClient } from "wagmi";
 import { Commitment } from "~~/components/scaffold-eth/Address/CommitmentAddress";
+import { SignTxDto, useGetProofsForExecution, useMarkExecuted, useSignTx } from "~~/hooks/api/useMultisig";
+import { Transaction } from "~~/hooks/api/useTransaction";
 import {
   useDeployedContractInfo,
   useScaffoldContract,
@@ -16,7 +17,7 @@ import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseido
 import { notification } from "~~/utils/scaffold-eth";
 
 type TransactionItemProps = {
-  tx: PendingTransaction;
+  tx: Transaction;
   signaturesRequired: bigint;
 };
 
@@ -27,8 +28,12 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
 
   const [hasSigned, setHasSigned] = useState(false);
 
+  const signTx = useSignTx();
+  const markExecuted = useMarkExecuted();
+  const { data: proofsData } = useGetProofsForExecution(tx?.txId);
+  // console.log("🚀 ~ TransactionItem ~ proofsData:", proofsData);
+
   const { data: walletClient } = useWalletClient();
-  const transactor = useTransactor();
 
   const { data: contractInfo } = useDeployedContractInfo({ contractName: "MetaMultiSigWallet" });
 
@@ -44,16 +49,17 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
 
   // Decode function data for display
   const txnData =
-    contractInfo?.abi && tx.data && tx.data !== "0x"
-      ? decodeFunctionData({ abi: contractInfo.abi as Abi, data: tx.data })
+    contractInfo?.abi && tx.callData && tx.callData !== "0x"
+      ? decodeFunctionData({ abi: contractInfo.abi as Abi, data: tx.callData as `0x${string}` })
       : ({} as DecodeFunctionDataReturnType);
 
-  const hasEnoughSignatures = tx.validSignatures >= signaturesRequired;
-  const canExecute = hasEnoughSignatures && !tx.executed;
+  const hasEnoughSignatures = tx?.signatureCount ?? 0n >= signaturesRequired;
+  const canExecute = hasEnoughSignatures && !tx.executedAt;
 
   useEffect(() => {
     const checkHasSigned = async () => {
       if (!walletClient || !metaMultiSigWallet) {
+        console.log("wallet client");
         return;
       }
 
@@ -67,25 +73,24 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
 
         // 2. Get txHash
         const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-          tx.txId,
-          tx.to,
-          tx.value,
-          tx.data,
+          BigInt(tx?.txId),
+          tx.to as `0x${string}`,
+          BigInt(tx?.value),
+          tx?.callData as `0x${string}`,
         ])) as `0x${string}`;
 
         // 3. Compute nullifier
         const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
 
         // 4. Check on contract
-        const used = await metaMultiSigWallet.read.usedNullifiers([nullifier]);
+        const used = tx.proofJobs?.some(pj => BigInt(pj.nullifier) === nullifier);
         setHasSigned(used as boolean);
       } catch (e) {
         console.error("Error checking signature:", e);
       }
     };
-
     checkHasSigned();
-  }, [walletClient, metaMultiSigWallet, tx.txId]);
+  }, [tx.txId, walletClient]);
 
   // ============ Sign Transaction ============
   const handleSign = async () => {
@@ -99,10 +104,10 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
 
       // 1. Get txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        tx.txId,
-        tx.to,
-        tx.value,
-        tx.data,
+        BigInt(tx?.txId),
+        tx.to as `0x${string}`,
+        BigInt(tx?.value),
+        tx?.callData as `0x${string}`,
       ])) as `0x${string}`;
 
       // 2. Sign txHash
@@ -166,49 +171,17 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
 
       const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
       const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
-      console.log("submit to relayer");
 
-      // 6. Submit to zkVerify
-      console.log("call relayer...");
-      setStateZkProof("Submitting proof to relayer...");
-      const res = await fetch("/api/relayer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          proof: proof,
-          publicInputs: publicInputs,
-          vk: Buffer.from(await plonk.getVerificationKey()).toString("base64"),
-        }),
-      });
-      const zkVerifyData = await res.json();
-
-      if (!zkVerifyData.aggregationId) {
-        notification.error("zkVerify failed");
-        return;
-      }
-
-      // 7. Submit signature to contract
-      const zkProof = {
-        nullifier: nullifier,
-        aggregationId: BigInt(zkVerifyData.aggregationId),
-        domainId: 0n,
-        zkMerklePath: zkVerifyData.aggregationDetails.merkleProof as `0x${string}`[],
-        leafCount: BigInt(zkVerifyData.aggregationDetails.numberOfLeaves),
-        index: BigInt(zkVerifyData.aggregationDetails.leafIndex),
+      const signData: SignTxDto = {
+        txId: Number(tx?.txId),
+        proof: Array.from(proof),
+        publicInputs,
+        nullifier: nullifier.toString(),
       };
-
-      // wait 30s to make sure proof have on others chains
-      console.log("Waiting 30s for the transaction to be processed...");
-      await new Promise(resolve => setTimeout(resolve, 60000));
-
-      const gasEstimate = await metaMultiSigWallet?.estimateGas.submitSignature([tx.txId, zkProof]);
-      console.log("Gas estimate:", gasEstimate);
-
-      await transactor(() =>
-        metaMultiSigWallet.write.submitSignature([tx.txId, zkProof], {
-          gas: gasEstimate ? gasEstimate + 10000n : undefined,
-        }),
-      );
+      // Submit propose transaction with proof to backend
+      console.log("Submitting propose transaction...");
+      setStateZkProof("Propose tx to backend...");
+      await signTx.mutateAsync(signData);
 
       notification.success("Signature submitted!");
     } catch (e) {
@@ -228,9 +201,49 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
       }
 
       setExecuting(true);
+      // const zkProof = {
+      //   nullifier: BigInt(tx?.proofJobs?.[0]?.nullifier || 0),
+      //   aggregationId: BigInt(tx?.proofJobs?.[0]?.aggregationId ?? 0),
+      //   domainId: 0n,
+      //   zkMerklePath: tx?.proofJobs?.[0]?.merkleProof as `0x${string}`[],
+      //   leafCount: BigInt(tx?.proofJobs?.[0]?.leafCount ?? 0),
+      //   index: BigInt(tx?.proofJobs?.[0]?.leafIndex ?? 0),
+      // };
+      // Format proofs for smart contract
+      const zkProofs = tx?.proofJobs?.map(p => ({
+        nullifier: BigInt(p.nullifier),
+        aggregationId: BigInt(p.aggregationId ?? 0),
+        domainId: 0n,
+        zkMerklePath: p.merkleProof as `0x${string}`[],
+        leafCount: BigInt(p.leafCount ?? 0),
+        index: BigInt(p.leafIndex ?? 0),
+      }));
+      console.log("🚀 ~ handleExecute ~ tx?.proofJobs:", tx?.proofJobs)
+      console.log("🚀 ~ handleExecute ~ zkProofs:", zkProofs);
+      console.log("🚀 ~ handleExecute ~ tx.to:", tx.to)
+      console.log("🚀 ~ handleExecute ~ BigInt(tx.value):", BigInt(tx.value))
+      console.log("🚀 ~ handleExecute ~ tx.callData:", tx.callData)
 
-      await transactor(() => metaMultiSigWallet.write.executeTransaction([tx.txId]));
+      const gasEstimate = await metaMultiSigWallet?.estimateGas.execute([
+        tx.to as `0x${string}`,
+        BigInt(tx.value),
+        tx.callData as `0x${string}`,
+        zkProofs || [],
+      ]);
+      console.log("Gas estimate:", gasEstimate);
 
+      const result = await metaMultiSigWallet.write.execute([
+        tx.to as `0x${string}`,
+        BigInt(tx.value),
+        tx.callData as `0x${string}`,
+        zkProofs || [],
+      ]);
+
+      console.log("🚀 ~ handleExecute ~ result:", result);
+      if (result) {
+        await markExecuted.mutateAsync(Number(tx?.txId));
+      }
+      console.log("Execute transaction result:", result);
       notification.success("Transaction executed!");
     } catch (e) {
       notification.error("Error executing transaction");
@@ -272,7 +285,7 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
                   <div className="flex gap-4">
                     To: <Address address={tx.to} />
                   </div>
-                  <div>Amount: {formatEther(tx.value)} Ξ</div>
+                  <div>Amount: {formatEther(BigInt(tx?.value))} Ξ</div>
                 </>
               )}
             </div>
@@ -292,15 +305,15 @@ export const TransactionItem: FC<TransactionItemProps> = ({ tx, signaturesRequir
 
           <Address address={tx.to} />
 
-          <div>{formatEther(tx.value)} Ξ</div>
+          <div>{formatEther(BigInt(tx?.value))} Ξ</div>
 
           <span>
-            {tx.validSignatures.toString()}/
-            {tx.executed ? tx.requiredApprovalsWhenExecuted.toString() : signaturesRequired.toString()}
+            {tx?.signatureCount?.toString()}/
+            {tx?.executedAt ? tx?.signaturesRequired.toString() : signaturesRequired.toString()}
           </span>
 
           <div className="action-btn flex gap-2">
-            {tx.executed ? (
+            {tx?.executedAt ? (
               <div className="font-bold text-green-400">Executed</div>
             ) : (
               <>

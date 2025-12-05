@@ -8,6 +8,7 @@ import { useIsMounted, useLocalStorage } from "usehooks-ts";
 import { Address, parseEther } from "viem";
 import { useWalletClient } from "wagmi";
 import { AddressInput, EtherInput, InputBase } from "~~/components/scaffold-eth";
+import { ProposeTxDto, useProposeTx } from "~~/hooks/api/useMultisig";
 import { useDeployedContractInfo, useScaffoldContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import { DEFAULT_TX_DATA, METHODS, Method, PredefinedTxData } from "~~/utils/methods";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
@@ -35,6 +36,8 @@ const CreatePage: FC = () => {
   const [loading, setLoading] = useState(false);
   const [stateZkProof, setStateZkProof] = useState<string>("");
 
+  const proposeTx = useProposeTx();
+
   const [ethValue, setEthValue] = useState("");
   const { data: contractInfo } = useDeployedContractInfo({ contractName: "MetaMultiSigWallet" });
 
@@ -53,6 +56,11 @@ const CreatePage: FC = () => {
   const { data: merkleRoot } = useScaffoldReadContract({
     contractName: "MetaMultiSigWallet",
     functionName: "merkleRoot",
+  });
+
+  const { data: signaturesRequired } = useScaffoldReadContract({
+    contractName: "MetaMultiSigWallet",
+    functionName: "signaturesRequired",
   });
 
   const txTo = predefinedTxData.methodName === "transferFunds" ? predefinedTxData.signer : contractInfo?.address;
@@ -144,56 +152,24 @@ const CreatePage: FC = () => {
 
       const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
       const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
-      const vk = await plonk.getVerificationKey();
+      // const vk = await plonk.getVerificationKey();
 
-      // ============ 6. Submit to zkVerify ============
-      console.log("call relayer...");
-      setStateZkProof("Submitting proof to relayer...");
-      const res = await fetch("/api/relayer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          proof: proof,
-          publicInputs: publicInputs,
-          vk: Buffer.from(vk).toString("base64"),
-        }),
-      });
-      const zkVerifyData = await res.json();
-      console.log("zkVerify response:", zkVerifyData);
-
-      // ============ 7. Call contract proposeTx ============
-      const zkProof = {
-        nullifier: nullifier,
-        aggregationId: BigInt(zkVerifyData.aggregationId),
-        domainId: 0n,
-        zkMerklePath: zkVerifyData.aggregationDetails.merkleProof as `0x${string}`[],
-        leafCount: BigInt(zkVerifyData.aggregationDetails.numberOfLeaves),
-        index: BigInt(zkVerifyData.aggregationDetails.leafIndex),
+      const proposeData: ProposeTxDto = {
+        to: txTo as `0x${string}`,
+        nullifier: nullifier.toString(),
+        value: BigInt(predefinedTxData.amount as string).toString(),
+        callData: predefinedTxData.callData as `0x${string}`,
+        signaturesRequired: Number(signaturesRequired),
+        proof: Array.from(proof),
+        publicInputs,
+        txId: Number(currentNonce),
       };
-      // wait 30s to make sure proof have on others chains
-      console.log("Waiting 30s for the transaction to be processed...");
-      await new Promise(resolve => setTimeout(resolve, 30000));
 
-      const gasEstimate = await metaMultiSigWallet?.estimateGas.proposeTx([
-        txTo as `0x${string}`,
-        BigInt(predefinedTxData.amount as string),
-        predefinedTxData.callData as `0x${string}`,
-        zkProof,
-      ]);
-      console.log("Gas estimate:", gasEstimate);
+      // Submit propose transaction with proof to backend
+      console.log("Submitting propose transaction...");
+      setStateZkProof("Propose tx to backend...");
+      await proposeTx.mutateAsync(proposeData);
 
-      console.log("Submitting proposeTx...");
-      const tx = await metaMultiSigWallet?.write.proposeTx(
-        [
-          txTo as `0x${string}`,
-          BigInt(predefinedTxData.amount as string),
-          predefinedTxData.callData as `0x${string}`,
-          zkProof,
-        ],
-        { gas: gasEstimate ? gasEstimate + 10000n : undefined },
-      );
-
-      console.log("Propose tx:", tx);
       notification.success("Transaction proposed successfully!");
 
       setPredefinedTxData(DEFAULT_TX_DATA);

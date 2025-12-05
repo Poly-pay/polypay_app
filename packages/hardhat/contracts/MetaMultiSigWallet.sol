@@ -23,9 +23,7 @@ contract MetaMultiSigWallet {
 
     // ============ Events ============
     event Deposit(address indexed sender, uint256 amount, uint256 balance);
-    event TransactionProposed(uint256 indexed txId, address to, uint256 value, bytes data);
-    event SignatureSubmitted(uint256 indexed txId, uint256 nullifier);
-    event TransactionExecuted(uint256 indexed txId, address to, uint256 value, bytes data, bytes result);
+    event TransactionExecuted(uint256 indexed nonce, address to, uint256 value, bytes data, bytes result);
     event Owner(uint256 indexed commitment, bool isAdded);
 
     // ============ Structs ============
@@ -36,15 +34,6 @@ contract MetaMultiSigWallet {
         bytes32[] zkMerklePath;
         uint256 leafCount;
         uint256 index;
-    }
-
-    struct PendingTx {
-        address to;
-        uint256 value;
-        bytes data;
-        uint256 requiredApprovalsWhenExecuted;
-        uint256 validSignatures;
-        bool executed;
     }
 
     // ============ State ============
@@ -58,8 +47,7 @@ contract MetaMultiSigWallet {
     uint256[] public commitments;
     uint256 public merkleRoot;
 
-    // Transaction management
-    mapping(uint256 => PendingTx) public pendingTxs;
+    // Nullifier tracking (prevent double-signing)
     mapping(uint256 => bool) public usedNullifiers;
 
     // ============ Constructor ============
@@ -95,77 +83,47 @@ contract MetaMultiSigWallet {
         _;
     }
 
-    // ============ Transaction Flow ============
-    function proposeTx(
+    // ============ Main Execute Function ============
+    
+    /**
+     * @notice Execute transaction with ZK proofs
+     * @param to Target address
+     * @param value ETH value
+     * @param data Call data
+     * @param proofs Array of ZK proofs (must have >= signaturesRequired)
+     */
+    function execute(
         address to,
         uint256 value,
         bytes calldata data,
-        ZkProof calldata proof
-    ) external returns (uint256 txId) {
-        // Use current nonce as txId
-        txId = nonce;
+        ZkProof[] calldata proofs
+    ) external returns (bytes memory) {
+        require(proofs.length >= signaturesRequired, "Not enough proofs");
 
-        // Create pending tx first (needed for getTxHash)
-        pendingTxs[txId] = PendingTx({
-            to: to,
-            value: value,
-            data: data,
-            requiredApprovalsWhenExecuted: signaturesRequired,
-            validSignatures: 0,
-            executed: false
-        });
+        // Calculate tx hash
+        uint256 currentNonce = nonce;
+        bytes32 txHash = keccak256(abi.encodePacked(address(this), chainId, currentNonce, to, value, data));
 
-        // Check nullifier not used
-        require(!usedNullifiers[proof.nullifier], "Nullifier already used");
+        // Verify all proofs
+        for (uint256 i = 0; i < proofs.length; i++) {
+            // Check nullifier not used
+            require(!usedNullifiers[proofs[i].nullifier], "Nullifier already used");
+            
+            // Verify proof
+            require(_verifyProof(txHash, proofs[i]), "Invalid proof");
+            
+            // Mark nullifier as used
+            usedNullifiers[proofs[i].nullifier] = true;
+        }
 
-        // Verify ZK proof
-        bytes32 txHash = getTxHashFromTxid(txId);
-        require(_verifyProof(txHash, proof), "Invalid proof");
-
-        // Update state
-        usedNullifiers[proof.nullifier] = true;
-        pendingTxs[txId].validSignatures = 1;
+        // Increment nonce
         nonce++;
 
-        emit TransactionProposed(txId, to, value, data);
-        emit SignatureSubmitted(txId, proof.nullifier);
-    }
-
-    function submitSignature(uint256 txId, ZkProof calldata proof) external {
-        PendingTx storage ptx = pendingTxs[txId];
-
-        // Checks
-        require(ptx.to != address(0), "Tx not exist");
-        require(!ptx.executed, "Tx already executed");
-        require(!usedNullifiers[proof.nullifier], "Nullifier already used");
-
-        // Verify ZK proof
-        bytes32 txHash = getTxHashFromTxid(txId);
-        require(_verifyProof(txHash, proof), "Invalid proof");
-
-        // Update state
-        usedNullifiers[proof.nullifier] = true;
-        ptx.validSignatures++;
-
-        emit SignatureSubmitted(txId, proof.nullifier);
-    }
-
-    function executeTransaction(uint256 txId) external returns (bytes memory) {
-        PendingTx storage ptx = pendingTxs[txId];
-
-        // Checks
-        require(ptx.to != address(0), "Tx not exist");
-        require(!ptx.executed, "Tx already executed");
-        require(ptx.validSignatures >= signaturesRequired, "Not enough signatures");
-
-        // Execute
-        ptx.executed = true;
-        ptx.requiredApprovalsWhenExecuted = signaturesRequired;
-
-        (bool success, bytes memory result) = ptx.to.call{ value: ptx.value }(ptx.data);
+        // Execute transaction
+        (bool success, bytes memory result) = to.call{ value: value }(data);
         require(success, "Tx failed");
 
-        emit TransactionExecuted(txId, ptx.to, ptx.value, ptx.data, result);
+        emit TransactionExecuted(currentNonce, to, value, data, result);
         return result;
     }
 
@@ -176,7 +134,6 @@ contract MetaMultiSigWallet {
         require(newSigRequired > 0, "Must be non-zero sigs required");
         require(newSigRequired <= commitments.length + 1, "Sigs required too high");
 
-        // Check duplicate
         for (uint256 i = 0; i < commitments.length; i++) {
             require(commitments[i] != newCommitment, "Commitment exists");
         }
@@ -193,7 +150,6 @@ contract MetaMultiSigWallet {
         require(newSigRequired > 0, "Must be non-zero sigs required");
         require(newSigRequired <= commitments.length - 1, "Sigs required too high");
 
-        // Find and remove
         bool found = false;
         for (uint256 i = 0; i < commitments.length; i++) {
             if (commitments[i] == commitment) {
@@ -218,11 +174,6 @@ contract MetaMultiSigWallet {
     }
 
     // ============ View Functions ============
-    function getTxHashFromTxid(uint256 txId) public view returns (bytes32) {
-        PendingTx storage ptx = pendingTxs[txId];
-        return keccak256(abi.encodePacked(address(this), chainId, txId, ptx.to, ptx.value, ptx.data));
-    }
-
     function getTransactionHash(
         uint256 _nonce,
         address to,
@@ -238,24 +189,6 @@ contract MetaMultiSigWallet {
 
     function getSignersCount() external view returns (uint256) {
         return commitments.length;
-    }
-
-    function getPendingTx(
-        uint256 txId
-    )
-        external
-        view
-        returns (
-            address to,
-            uint256 value,
-            bytes memory data,
-            uint256 validSignatures,
-            uint256 requiredApprovalsWhenExecuted,
-            bool executed
-        )
-    {
-        PendingTx storage ptx = pendingTxs[txId];
-        return (ptx.to, ptx.value, ptx.data, ptx.validSignatures, ptx.requiredApprovalsWhenExecuted, ptx.executed);
     }
 
     // ============ Internal Functions ============
@@ -284,9 +217,6 @@ contract MetaMultiSigWallet {
     function _rebuildMerkleRoot() internal {
         uint256[] memory leaves = new uint256[](MAX_SIGNERS);
 
-        // Copy commitments, rest are 1
-        // cause it have special case: 13931274265663340981629530085592784152229472455486083434205648960092734877068n x 0n
-        // that case will make hash output of smart contract different with js
         for (uint256 i = 0; i < commitments.length; i++) {
             leaves[i] = commitments[i];
         }
@@ -295,7 +225,6 @@ contract MetaMultiSigWallet {
             leaves[i] = 1;
         }
 
-        // Build merkle tree bottom-up
         uint256 n = MAX_SIGNERS;
         while (n > 1) {
             for (uint256 i = 0; i < n / 2; i++) {
@@ -312,7 +241,7 @@ contract MetaMultiSigWallet {
         emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
-    function poseidonHash2(uint256 a, uint256 b) public view returns (uint256) {
+    function poseidonHash2(uint256 a, uint256 b) public pure returns (uint256) {
         uint256 safeA = a % BN254_PRIME;
         uint256 safeB = b % BN254_PRIME;
         return PoseidonT3.hash([safeA, safeB]);

@@ -56,7 +56,7 @@ const deployMetaMultiSigWallet: DeployFunction = async function (hre: HardhatRun
     console.log(`PoseidonT3 already at: ${PoseidonT3.address}`);
   }
 
-  // address metamultisigwallet on sepolia = 0x5675423C825311E336205CdBd8781E147b88cb71
+  // address metamultisigwallet on sepolia = 0x931f193FB8bAA1c6Cf96907CF7ff58627Ee23a71
   await deploy("MetaMultiSigWallet", {
     from: deployer,
     args: [
@@ -64,8 +64,8 @@ const deployMetaMultiSigWallet: DeployFunction = async function (hre: HardhatRun
       "0x613a2ae411b1c1b56087e4ebaea061c348cc549b51616715eb92409871c664c5", //vkhash
       // 31337, //chainId localhost
       11155111, //chainId
-      [BigInt("7777412979265397193925220040726445950599854595059203997869095364409346949110")], //list commitments testnet
-      1, //signatures required
+      [BigInt("7777412979265397193925220040726445950599854595059203997869095364409346949110"), BigInt("3893960714193187677642727159938790123674441621624357680276520538080166792249")], //list commitments testnet
+      2, //signatures required
     ],
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
