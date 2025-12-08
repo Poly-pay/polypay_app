@@ -1,36 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { EditAccountModal } from "../Modals/EditAccountModal";
-import { Skeleton } from "../ui/skeleton";
-import { WalletData } from "./DashboardContainer";
-import { Settings } from "lucide-react";
+import { useWalletClient } from "wagmi";
+import { useScaffoldContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
-interface InfoCardContainerProps {
-  // walletData?: WalletData[];
-  // walletName?: string;
-  // pendingTransaction?: number;
-  // onUpdate: () => void;
-  // loading?: boolean;
-}
+interface InfoCardContainerProps {}
 
-const InfoCardContainer: React.FC<InfoCardContainerProps> = (
-  {
-    // walletData = [],
-    // walletName = "Default",
-    // pendingTransaction,
-    // onUpdate,
-    // loading,
-  },
-) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
+  const { data: walletClient } = useWalletClient();
+  const [commitments, setCommitments] = useState<string[]>([]);
 
-  // const handleSeeAllClick = () => {
-  //   if (walletData.length > 0) {
-  //     setIsModalOpen(true);
-  //   }
-  // };
+  const { data: metaMultiSigWallet } = useScaffoldContract({
+    contractName: "MetaMultiSigWallet",
+    walletClient,
+  });
+
+  const { data: signaturesRequired } = useScaffoldReadContract({
+    contractName: "MetaMultiSigWallet",
+    functionName: "signaturesRequired",
+  });
+
+  const walletAddress = metaMultiSigWallet?.address;
+
+  useEffect(() => {
+    const fetchCommitments = async () => {
+      if (!metaMultiSigWallet) return;
+      const commitments = await metaMultiSigWallet?.read.getCommitments();
+      setCommitments(commitments.map((c: bigint) => c.toString()));
+    };
+
+    fetchCommitments();
+  }, [walletAddress]);
 
   return (
     <>
@@ -44,17 +46,19 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = (
           <div className="relative z-10 p-3 flex flex-col h-full justify-between">
             <span className="flex flex-row justify-between">
               <span className="text-white">Account</span>
-              <EditAccountModal>
-                <span className="cursor-pointer">
-                  <Image
-                    src="/misc/edit-icon.svg"
-                    alt="Edit Account"
-                    width={25}
-                    height={25}
-                    style={{ filter: "brightness(0) saturate(100%) invert(100%)" }}
-                  />
-                </span>
-              </EditAccountModal>
+              {!(walletClient?.account && commitments.length > 0) ? null : (
+                <EditAccountModal threshold={Number(signaturesRequired ?? "0")} signers={commitments}>
+                  <span className="cursor-pointer">
+                    <Image
+                      src="/misc/edit-icon.svg"
+                      alt="Edit Account"
+                      width={25}
+                      height={25}
+                      style={{ filter: "brightness(0) saturate(100%) invert(100%)" }}
+                    />
+                  </span>
+                </EditAccountModal>
+              )}
             </span>
             <span className="flex flex-row gap-2 items-center">
               <Image src="/dashboard/circle-polypay-icon.svg" alt="Polypay Icon" width={30} height={30} />
@@ -89,7 +93,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = (
               <span className="text-white">Signers List</span>
             </span>
             <span className="flex flex-row gap-1 items-center">
-              <span className="text-[35px] text-white">05</span>
+              <span className="text-[35px] text-white">{commitments.length}</span>
             </span>
           </div>
         </span>

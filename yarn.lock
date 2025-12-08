@@ -4477,6 +4477,7 @@ __metadata:
     tsconfig-paths: ^4.2.0
     typescript: ^5.7.3
     typescript-eslint: ^8.20.0
+    viem: 2.31.1
   languageName: unknown
   linkType: soft
 

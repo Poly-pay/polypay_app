@@ -5,9 +5,12 @@ import { DevelopingFeatureModal } from "../Modals/DevelopingFeatureModal";
 import { ReceiveModal } from "../Modals/ReceiveModal";
 import { Balance } from "../scaffold-eth";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
+import { CheckCircleIcon, PlusCircleIcon } from "lucide-react";
 import { Address } from "viem";
 import { useDisconnect, useWalletClient } from "wagmi";
+import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
+import { createCommitment, createSecret } from "~~/utils/multisig";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
 export const ACCOUNT_SIDEBAR_OFFSET = 285; // Main sidebar width
@@ -137,6 +140,8 @@ export default function Sidebar() {
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
 
+  const [generateCommitment, setGenerateCommitment] = useState(localStorage.getItem("commitment") ? true : false);
+
   const pathname = usePathname();
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const router = useRouter();
@@ -184,7 +189,8 @@ export default function Sidebar() {
         <div className="flex flex-col gap-2 px-1">
           {/* Account */}
           <div className="flex flex-col p-3 pb-6">
-            {walletClient?.account ? (
+            {/* {walletClient?.account ? ( */}
+            {true ? (
               <span className="flex flex-col gap-1 bg-white p-3 rounded-lg">
                 <span className="flex flex-row justify-between ">
                   <span className="flex flex-col gap-2 justify-end">
@@ -207,6 +213,53 @@ export default function Sidebar() {
                         className="cursor-pointer"
                       />
                     </span>
+                    <div
+                      className="h-8 btn-sm rounded-xl! flex gap-1 px-3 py-1 cursor-pointer bg-[#FF7CEB] text-white text-[16px] "
+                      onClick={async () => {
+                        if (!walletClient || generateCommitment) return;
+
+                        const secret = await createSecret(walletClient);
+                        const commitment = await createCommitment(secret);
+                        localStorage.setItem("secret", secret.toString());
+                        localStorage.setItem("commitment", commitment.toString());
+                        setGenerateCommitment(true);
+                      }}
+                    >
+                      {generateCommitment ? (
+                        <>
+                          <CheckCircleIcon className="text-xl font-normal h-6 w-4 ml-2 sm:ml-0" aria-hidden="true" />
+                          <span className="whitespace-nowrap ">Generated</span>
+                        </>
+                      ) : (
+                        <>
+                          <PlusCircleIcon className="text-xl font-normal h-6 w-4 ml-2 sm:ml-0" aria-hidden="true" />
+                          <span className="whitespace-nowrap ">Generate commitment</span>
+                        </>
+                      )}
+                    </div>
+                    <div
+                      className="h-8 btn-sm rounded-xl! flex gap-3 px-3 py-1 cursor-pointer bg-[#FF7CEB] text-white text-[16px] "
+                      onClick={() => {
+                        if (generateCommitment) {
+                          const commitment = localStorage.getItem("commitment");
+                          if (commitment) {
+                            navigator.clipboard.writeText(commitment);
+                            notification.success("Commitment copied to clipboard");
+                          }
+                        } else {
+                          notification.error("Generate a commitment first");
+                          return;
+                        }
+                      }}
+                    >
+                      <>
+                        <DocumentDuplicateIcon
+                          className="text-xl font-normal h-6 w-4 ml-2 sm:ml-0"
+                          aria-hidden="true"
+                        />
+                        <span className="whitespace-nowrap">Copy commitment</span>
+                      </>
+                    </div>
                   </span>
                   <span className="flex flex-col gap-2">
                     <ReceiveModal address={walletClient?.account?.address as Address}>

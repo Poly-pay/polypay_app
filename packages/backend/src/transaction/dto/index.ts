@@ -1,2 +1,3 @@
 export * from './create-transaction.dto';
-export * from './transaction-response.dto';
+export * from './approve.dto';
+export * from './deny.dto';

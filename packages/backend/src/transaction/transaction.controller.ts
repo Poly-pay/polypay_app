@@ -6,92 +6,87 @@ import {
   Body,
   Param,
   Query,
-  HttpCode,
-  HttpStatus,
-  Logger,
   ParseIntPipe,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import {
-  CreateTransactionDto,
-  TransactionResponseDto,
-  TransactionsResponseDto,
-} from './dto';
-import { TxStatus } from '../generated/prisma/client';
+import { CreateTransactionDto, ApproveDto, DenyDto } from './dto';
 
 @Controller('transactions')
 export class TransactionController {
-  private readonly logger = new Logger(TransactionController.name);
-
   constructor(private readonly transactionService: TransactionService) {}
 
+  /**
+   * Create new transaction (+ auto approve)
+   * POST /api/transactions
+   */
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createDto: CreateTransactionDto): Promise<TransactionResponseDto> {
-    this.logger.log(`Creating transaction: ${createDto.txId}`);
-    const transaction = await this.transactionService.create(createDto);
-
-    return {
-      success: true,
-      data: transaction,
-      message: 'Transaction created successfully',
-    };
+  async createTransaction(@Body() dto: CreateTransactionDto) {
+    return this.transactionService.createTransaction(dto);
   }
 
+  /**
+   * Get all transactions for a wallet
+   * GET /api/transactions?walletAddress=xxx&status=PENDING
+   */
   @Get()
-  async findAll(@Query('status') status?: TxStatus): Promise<TransactionsResponseDto> {
-    this.logger.log(`Getting transactions, status: ${status || 'all'}`);
-    const transactions = await this.transactionService.findAll(status);
-
-    return {
-      success: true,
-      data: transactions,
-      count: transactions.length,
-    };
+  async getTransactions(
+    @Query('walletAddress') walletAddress: string,
+    @Query('status') status?: string,
+  ) {
+    return this.transactionService.getTransactions(walletAddress, status);
   }
 
-  @Get('pending')
-  async findPending(): Promise<TransactionsResponseDto> {
-    const transactions = await this.transactionService.findPending();
-
-    return {
-      success: true,
-      data: transactions,
-      count: transactions.length,
-    };
-  }
-
-  @Get('ready')
-  async findReady(): Promise<TransactionsResponseDto> {
-    const transactions = await this.transactionService.findReady();
-
-    return {
-      success: true,
-      data: transactions,
-      count: transactions.length,
-    };
-  }
-
+  /**
+   * Get single transaction
+   * GET /api/transactions/:txId
+   */
   @Get(':txId')
-  async findByTxId(@Param('txId', ParseIntPipe) txId: number): Promise<TransactionResponseDto> {
-    this.logger.log(`Getting transaction: ${txId}`);
-    const transaction = await this.transactionService.findByTxId(txId);
-
-    return {
-      success: true,
-      data: transaction,
-    };
+  async getTransaction(@Param('txId', ParseIntPipe) txId: number) {
+    return this.transactionService.getTransaction(txId);
   }
 
-  @Patch(':txId/executed')
-  async markExecuted(@Param('txId', ParseIntPipe) txId: number): Promise<TransactionResponseDto> {
-    this.logger.log(`Marking transaction ${txId} as executed`);
-    const transaction = await this.transactionService.markExecuted(txId);
+  /**
+   * Approve transaction
+   * POST /api/transactions/:txId/approve
+   */
+  @Post(':txId/approve')
+  async approve(
+    @Param('txId', ParseIntPipe) txId: number,
+    @Body() dto: ApproveDto,
+  ) {
+    return this.transactionService.approve(txId, dto);
+  }
 
-    return {
-      success: true,
-      data: transaction,
-      message: 'Transaction marked as executed',
-    };
+  /**
+   * Deny transaction
+   * POST /api/transactions/:txId/deny
+   */
+  @Post(':txId/deny')
+  async deny(
+    @Param('txId', ParseIntPipe) txId: number,
+    @Body() dto: DenyDto,
+  ) {
+    return this.transactionService.deny(txId, dto);
+  }
+
+  /**
+   * Get execution data (proofs for smart contract)
+   * GET /api/transactions/:txId/execute
+   */
+  @Get(':txId/execute')
+  async getExecutionData(@Param('txId', ParseIntPipe) txId: number) {
+    return this.transactionService.getExecutionData(txId);
+  }
+
+  /**
+   * Mark transaction as executed
+   * PATCH /api/transactions/:txId/executed
+   */
+  @Patch(':txId/executed')
+  async markExecuted(
+    @Param('txId', ParseIntPipe) txId: number,
+    @Body('txHash') txHash: string,
+  ) {
+    return this.transactionService.markExecuted(txId, txHash);
   }
 }

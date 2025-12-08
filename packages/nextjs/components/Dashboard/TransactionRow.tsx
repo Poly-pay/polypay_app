@@ -3,34 +3,33 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { ArrowRight, ChevronDown, ChevronRight, ExternalLink, Minus, Plus, Settings } from "lucide-react";
-
-// components/transaction/TransactionRow.tsx
-
-// components/transaction/TransactionRow.tsx
-
-// components/transaction/TransactionRow.tsx
-
-// components/transaction/TransactionRow.tsx
-
-// components/transaction/TransactionRow.tsx
-
-// components/transaction/TransactionRow.tsx
-
-// components/transaction/TransactionRow.tsx
-
-// components/transaction/TransactionRow.tsx
+import { UltraPlonkBackend } from "@aztec/bb.js";
+import { Noir } from "@noir-lang/noir_js";
+import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { useWalletClient } from "wagmi";
+import {
+  TxStatus as ApiTxStatus,
+  TxType as ApiTxType,
+  Transaction,
+  Vote,
+  useApprove,
+  useDeny,
+  useExecutionData,
+  useMarkExecuted,
+} from "~~/hooks/api/useTransaction";
+import { useScaffoldContract } from "~~/hooks/scaffold-eth";
+import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
+import { notification } from "~~/utils/scaffold-eth";
 
 // components/transaction/TransactionRow.tsx
 
 // ============ Types ============
 type TxType = "transfer" | "add_signer" | "remove_signer" | "set_threshold";
 type VoteStatus = "approved" | "denied" | "waiting";
-type TxStatus = "pending" | "executed" | "failed";
+type TxStatus = "pending" | "executing" | "executed" | "failed";
 
 interface Member {
-  address: string;
-  name: string;
+  commitment: string;
   isInitiator: boolean;
   isMe: boolean;
   voteStatus: VoteStatus;
@@ -38,19 +37,17 @@ interface Member {
 
 interface TransactionRowData {
   id: string;
+  txId: number;
   type: TxType;
   status: TxStatus;
   txHash?: string;
 
   // Transfer
   amount?: string;
-  recipientName?: string;
   recipientAddress?: string;
 
   // Add/Remove Signer
-  signerAddresses?: string[];
-  signerName?: string;
-  actionByName?: string;
+  signerCommitment?: string;
 
   // Set Threshold
   oldThreshold?: number;
@@ -62,7 +59,59 @@ interface TransactionRowData {
   threshold: number;
 
   // Current user vote
-  myVoteStatus: VoteStatus | null; // null = chưa vote
+  myVoteStatus: VoteStatus | null;
+
+  // Wallet
+  walletAddress: string;
+}
+
+// ============ Helper: Convert API Transaction to Row Data ============
+export function convertToRowData(tx: Transaction, myCommitment: string, currentThreshold: number): TransactionRowData {
+  // Map API type to UI type
+  const typeMap: Record<ApiTxType, TxType> = {
+    TRANSFER: "transfer",
+    ADD_SIGNER: "add_signer",
+    REMOVE_SIGNER: "remove_signer",
+    SET_THRESHOLD: "set_threshold",
+  };
+
+  // Map API status to UI status
+  const statusMap: Record<ApiTxStatus, TxStatus> = {
+    PENDING: "pending",
+    EXECUTING: "executing",
+    EXECUTED: "executed",
+    FAILED: "failed",
+  };
+
+  // Build members from votes
+  const members: Member[] = tx.votes.map(vote => ({
+    commitment: vote.voterCommitment,
+    isInitiator: vote.voterCommitment === tx.createdBy,
+    isMe: vote.voterCommitment === myCommitment,
+    voteStatus: vote.voteType === "APPROVE" ? "approved" : "denied",
+  }));
+
+  // Find my vote
+  const myVote = tx.votes.find(v => v.voterCommitment === myCommitment);
+  const myVoteStatus: VoteStatus | null = myVote ? (myVote.voteType === "APPROVE" ? "approved" : "denied") : null;
+
+  return {
+    id: tx.id,
+    txId: tx.txId,
+    type: typeMap[tx.type],
+    status: statusMap[tx.status],
+    txHash: tx.txHash || undefined,
+    amount: tx.value || undefined,
+    recipientAddress: tx.to || undefined,
+    signerCommitment: tx.signerCommitment || undefined,
+    oldThreshold: currentThreshold,
+    newThreshold: tx.newThreshold || undefined,
+    members,
+    votedCount: tx.votes.length,
+    threshold: tx.threshold,
+    myVoteStatus,
+    walletAddress: tx.walletAddress,
+  };
 }
 
 // ============ Vote Badge Component ============
@@ -102,11 +151,23 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
     return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Failed</span>;
   }
 
+  if (status === "executing") {
+    return <span className="px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 rounded-full">Executing...</span>;
+  }
+
   return null;
 }
 
 // ============ Action Buttons Component ============
-function ActionButtons({ onApprove, onDeny }: { onApprove: () => void; onDeny: () => void }) {
+function ActionButtons({
+  onApprove,
+  onDeny,
+  loading,
+}: {
+  onApprove: () => void;
+  onDeny: () => void;
+  loading: boolean;
+}) {
   return (
     <div className="flex items-center gap-2">
       <button
@@ -114,7 +175,8 @@ function ActionButtons({ onApprove, onDeny }: { onApprove: () => void; onDeny: (
           e.stopPropagation();
           onDeny();
         }}
-        className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+        disabled={loading}
+        className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-50"
       >
         Deny
       </button>
@@ -123,9 +185,10 @@ function ActionButtons({ onApprove, onDeny }: { onApprove: () => void; onDeny: (
           e.stopPropagation();
           onApprove();
         }}
-        className="px-6 py-2 text-sm font-medium text-white bg-[#FF7CEB] rounded-full hover:bg-[#f35ddd] transition-colors cursor-pointer"
+        disabled={loading}
+        className="px-6 py-2 text-sm font-medium text-white bg-[#FF7CEB] rounded-full hover:bg-[#f35ddd] transition-colors cursor-pointer disabled:opacity-50"
       >
-        Approve
+        {loading ? "Processing..." : "Approve"}
       </button>
     </div>
   );
@@ -154,13 +217,11 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
   if (tx.type === "add_signer") {
     return (
       <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
-        <h3 className="text-lg font-semibold mb-4">Added by {tx.actionByName}</h3>
+        <h3 className="text-lg font-semibold mb-4">Add Signer</h3>
         <div className="flex items-center gap-2 flex-wrap">
-          {tx.signerAddresses?.map((addr, i) => (
-            <span key={i} className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
-              {addr}
-            </span>
-          ))}
+          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+            {tx.signerCommitment?.slice(0, 10)}...{tx.signerCommitment?.slice(-8)}
+          </span>
         </div>
       </div>
     );
@@ -169,13 +230,11 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
   if (tx.type === "remove_signer") {
     return (
       <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
-        <h3 className="text-lg font-semibold mb-2">Removed by {tx.actionByName}</h3>
+        <h3 className="text-lg font-semibold mb-2">Remove Signer</h3>
         <div className="flex items-center gap-2">
-          {tx.signerAddresses?.map((addr, i) => (
-            <span key={i} className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
-              {addr}
-            </span>
-          ))}
+          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+            {tx.signerCommitment?.slice(0, 10)}...{tx.signerCommitment?.slice(-8)}
+          </span>
         </div>
       </div>
     );
@@ -198,7 +257,17 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 }
 
 // ============ Member List Component ============
-function MemberList({ members, votedCount, threshold }: { members: Member[]; votedCount: number; threshold: number }) {
+function MemberList({
+  members,
+  votedCount,
+  threshold,
+  totalSigners,
+}: {
+  members: Member[];
+  votedCount: number;
+  threshold: number;
+  totalSigners: number;
+}) {
   return (
     <div className="bg-white border border-t-0 rounded-b-lg">
       {/* Header */}
@@ -208,13 +277,13 @@ function MemberList({ members, votedCount, threshold }: { members: Member[]; vot
           <span>
             Voted{" "}
             <span className="font-medium">
-              {votedCount}/{members.length}
+              {votedCount}/{totalSigners}
             </span>
           </span>
           <span>
             Threshold{" "}
             <span className="font-medium">
-              {threshold}/{members.length}
+              {threshold}/{totalSigners}
             </span>
           </span>
         </div>
@@ -225,8 +294,10 @@ function MemberList({ members, votedCount, threshold }: { members: Member[]; vot
         {members.map((member, index) => (
           <div key={index} className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-800">{member.name}</span>
-              {member.isInitiator && <span className="text-sm text-blue-600">[Transaction Initiator]</span>}
+              <span className="font-medium text-gray-800 font-mono text-sm">
+                {member.commitment.slice(0, 8)}...{member.commitment.slice(-6)}
+              </span>
+              {member.isInitiator && <span className="text-sm text-blue-600">[Initiator]</span>}
               {member.isMe && <span className="text-sm text-orange-500">[me]</span>}
             </div>
             <VoteBadge status={member.voteStatus} />
@@ -236,6 +307,7 @@ function MemberList({ members, votedCount, threshold }: { members: Member[]; vot
     </div>
   );
 }
+
 // ============ Transaction Type Label ============
 function getTxTypeLabel(type: TxType): string {
   switch (type) {
@@ -261,8 +333,8 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
             <span className="font-medium">{tx.amount} ETH</span>
           </div>
           <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
-          <span key={tx.id} className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
-            {tx.recipientAddress}
+          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+            {tx.recipientAddress?.slice(0, 6)}...{tx.recipientAddress?.slice(-4)}
           </span>
         </div>
       );
@@ -270,25 +342,18 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
     case "add_signer":
       return (
         <div className="flex items-center gap-2">
-          {tx.signerAddresses?.slice(0, 2).map((addr, i) => (
-            <span key={i} className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
-              {addr}
-            </span>
-          ))}
-          {(tx.signerAddresses?.length || 0) > 2 && (
-            <span className="text-sm text-gray-500">+{(tx.signerAddresses?.length || 0) - 2} more</span>
-          )}
+          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+            {tx.signerCommitment?.slice(0, 8)}...{tx.signerCommitment?.slice(-6)}
+          </span>
         </div>
       );
 
     case "remove_signer":
       return (
         <div className="flex items-center gap-2">
-          {tx.signerAddresses?.map((addr, i) => (
-            <span key={i} className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
-              {addr}
-            </span>
-          ))}
+          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+            {tx.signerCommitment?.slice(0, 8)}...{tx.signerCommitment?.slice(-6)}
+          </span>
         </div>
       );
 
@@ -306,57 +371,299 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
 // ============ Main TransactionRow Component ============
 interface TransactionRowProps {
   tx: TransactionRowData;
-  onApprove?: (txId: string) => void;
-  onDeny?: (txId: string) => void;
+  totalSigners: number;
+  onSuccess?: () => void;
 }
 
-export function TransactionRow({ tx, onApprove, onDeny }: TransactionRowProps) {
+export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingState, setLoadingState] = useState("");
 
-  const handleApprove = () => {
-    onApprove?.(tx.id);
+  const { data: walletClient } = useWalletClient();
+  const { data: metaMultiSigWallet } = useScaffoldContract({ contractName: "MetaMultiSigWallet", walletClient });
+
+  const { mutateAsync: approve } = useApprove();
+  const { mutateAsync: deny } = useDeny();
+  const { mutateAsync: markExecuted } = useMarkExecuted();
+
+  // ============ Generate Proof ============
+  const generateProof = async () => {
+    if (!walletClient || !metaMultiSigWallet) {
+      throw new Error("Wallet not connected");
+    }
+
+    // 1. Build callData based on tx type
+    let callData: `0x${string}` = "0x";
+    let to: `0x${string}` = tx.recipientAddress as `0x${string}`;
+    let value = BigInt(tx.amount || "0");
+
+    if (tx.type !== "transfer") {
+      const { encodeFunctionData } = await import("viem");
+      to = tx.walletAddress as `0x${string}`;
+      value = 0n;
+
+      if (tx.type === "add_signer") {
+        callData = encodeFunctionData({
+          abi: [
+            {
+              name: "addSigner",
+              type: "function",
+              inputs: [
+                { name: "newCommitment", type: "uint256" },
+                { name: "newSigRequired", type: "uint256" },
+              ],
+            },
+          ],
+          functionName: "addSigner",
+          args: [BigInt(tx.signerCommitment!), BigInt(tx.newThreshold!)],
+        });
+      } else if (tx.type === "remove_signer") {
+        callData = encodeFunctionData({
+          abi: [
+            {
+              name: "removeSigner",
+              type: "function",
+              inputs: [
+                { name: "commitment", type: "uint256" },
+                { name: "newSigRequired", type: "uint256" },
+              ],
+            },
+          ],
+          functionName: "removeSigner",
+          args: [BigInt(tx.signerCommitment!), BigInt(tx.newThreshold!)],
+        });
+      } else if (tx.type === "set_threshold") {
+        callData = encodeFunctionData({
+          abi: [
+            {
+              name: "updateSignaturesRequired",
+              type: "function",
+              inputs: [{ name: "newSigRequired", type: "uint256" }],
+            },
+          ],
+          functionName: "updateSignaturesRequired",
+          args: [BigInt(tx.newThreshold!)],
+        });
+      }
+    }
+
+    // 2. Get txHash
+    const txHash = (await metaMultiSigWallet.read.getTransactionHash([
+      BigInt(tx.txId),
+      to,
+      value,
+      callData,
+    ])) as `0x${string}`;
+
+    // 3. Sign
+    setLoadingState("Signing transaction...");
+    const signature = await walletClient.signMessage({
+      message: { raw: txHash },
+    });
+    const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
+
+    // 4. Get secret
+    const secret = localStorage.getItem("secret");
+    if (!secret) throw new Error("No secret found");
+
+    const txHashBytes = hexToByteArray(txHash);
+    const sigBytes = hexToByteArray(signature).slice(0, 64);
+    const txHashCommitment = await poseidonHash2(BigInt(txHash), 1n);
+    const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
+
+    // 5. Get merkle data
+    const commitments = await metaMultiSigWallet.read.getCommitments();
+    const tree = await buildMerkleTree(commitments ?? []);
+    const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
+
+    const myCommitment = localStorage.getItem("commitment");
+    if (!myCommitment) throw new Error("No commitment found");
+
+    const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(myCommitment));
+    if (leafIndex === -1) throw new Error("You are not a signer");
+
+    const merklePath = getMerklePath(tree, leafIndex);
+
+    // 6. Generate proof
+    setLoadingState("Generating ZK proof...");
+    const circuit_json = await fetch("/circuit/target/circuit.json");
+    const noir_data = await circuit_json.json();
+    const { bytecode, abi } = noir_data;
+
+    const noir = new Noir({ bytecode, abi } as any);
+    const execResult = await noir.execute({
+      signature: sigBytes,
+      pub_key_x: pubKeyX,
+      pub_key_y: pubKeyY,
+      secret,
+      leaf_index: leafIndex,
+      merkle_path: merklePath.map(p => p.toString()),
+      tx_hash_bytes: txHashBytes,
+      tx_hash_commitment: txHashCommitment.toString(),
+      merkle_root: merkleRoot?.toString() ?? "",
+      nullifier: nullifier.toString(),
+    });
+
+    const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
+    const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
+
+    return {
+      proof: Array.from(proof),
+      publicInputs,
+      nullifier: nullifier.toString(),
+      myCommitment,
+    };
   };
 
-  const handleDeny = () => {
-    onDeny?.(tx.id);
+  // ============ Execute on Smart Contract ============
+  const executeOnChain = async () => {
+    if (!metaMultiSigWallet) return;
+
+    setLoadingState("Fetching proofs...");
+
+    // Fetch execution data from backend
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${tx.txId}/execute`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to get execution data");
+    }
+
+    const executionData = await response.json();
+
+    // Format proofs for contract
+    const zkProofs = executionData.zkProofs.map((p: any) => ({
+      nullifier: BigInt(p.nullifier),
+      aggregationId: BigInt(p.aggregationId),
+      domainId: BigInt(p.domainId),
+      zkMerklePath: p.zkMerklePath as `0x${string}`[],
+      leafCount: BigInt(p.leafCount),
+      index: BigInt(p.index),
+    }));
+
+    setLoadingState("Executing on-chain...");
+
+    // Call contract
+    const txHashResult = await metaMultiSigWallet.write.execute([
+      executionData.to as `0x${string}`,
+      BigInt(executionData.value),
+      executionData.data as `0x${string}`,
+      zkProofs,
+    ]);
+
+    // Mark as executed
+    await markExecuted({ txId: tx.txId, txHash: txHashResult });
+
+    return txHashResult;
   };
 
-  // Determine what to show on the right side
+  // ============ Handle Approve ============
+  const handleApprove = async () => {
+    setLoading(true);
+    try {
+      // 1. Generate proof
+      const { proof, publicInputs, nullifier, myCommitment } = await generateProof();
+
+      // 2. Submit to backend
+      setLoadingState("Submitting to backend...");
+      const result = await approve({
+        txId: tx.txId,
+        dto: {
+          voterCommitment: myCommitment,
+          proof,
+          publicInputs,
+          nullifier,
+        },
+      });
+
+      notification.success("Vote submitted!");
+
+      // 3. If status is EXECUTING, trigger on-chain execution
+      if (result.status === "EXECUTING") {
+        notification.info("Threshold reached! Executing transaction...");
+        const txHash = await executeOnChain();
+        notification.success(`Transaction executed! Hash: ${txHash?.slice(0, 10)}...`);
+      }
+
+      onSuccess?.();
+    } catch (error: any) {
+      console.error("Approve error:", error);
+      notification.error(error.message || "Failed to approve");
+    } finally {
+      setLoading(false);
+      setLoadingState("");
+    }
+  };
+
+  // ============ Handle Deny ============
+  const handleDeny = async () => {
+    setLoading(true);
+    try {
+      const myCommitment = localStorage.getItem("commitment");
+      if (!myCommitment) {
+        notification.error("No commitment found");
+        return;
+      }
+
+      setLoadingState("Submitting deny vote...");
+      await deny({
+        txId: tx.txId,
+        dto: {
+          voterCommitment: myCommitment,
+          totalSigners,
+        },
+      });
+
+      notification.success("Deny vote submitted!");
+      onSuccess?.();
+    } catch (error: any) {
+      console.error("Deny error:", error);
+      notification.error(error.message || "Failed to deny");
+    } finally {
+      setLoading(false);
+      setLoadingState("");
+    }
+  };
+
+  // ============ Render Right Side ============
   const renderRightSide = () => {
     if (tx.status === "executed" || tx.status === "failed") {
       return <StatusBadge status={tx.status} txHash={tx.txHash} />;
     }
 
-    // Not yet voted → show buttons
-    if (tx.myVoteStatus === null) {
-      return <ActionButtons onApprove={handleApprove} onDeny={handleDeny} />;
+    if (tx.status === "executing") {
+      return <StatusBadge status={tx.status} />;
     }
 
-    // Already voted → show vote status
+    if (tx.myVoteStatus === null) {
+      return <ActionButtons onApprove={handleApprove} onDeny={handleDeny} loading={loading} />;
+    }
+
     return <VoteBadge status={tx.myVoteStatus} />;
   };
 
   return (
     <div className="w-full mb-2">
+      {/* Loading State */}
+      {loading && loadingState && (
+        <div className="mb-1 px-4 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg">{loadingState}</div>
+      )}
+
       {/* Collapsed Row */}
       <div
         onClick={() => setExpanded(!expanded)}
         className="flex items-center justify-between p-4 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
       >
-        {/* Left: Chevron + Icon + Type + Details */}
         <div className="flex items-center gap-4">
           {expanded ? (
             <ChevronDown size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
           ) : (
             <ChevronRight size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
           )}
-
           <span className="font-medium text-[#888888] min-w-[100px]">{getTxTypeLabel(tx.type)}</span>
-
           <TxDetails tx={tx} />
         </div>
-
-        {/* Right: Actions or Status */}
         <div onClick={e => e.stopPropagation()}>{renderRightSide()}</div>
       </div>
 
@@ -364,91 +671,14 @@ export function TransactionRow({ tx, onApprove, onDeny }: TransactionRowProps) {
       {expanded && (
         <div className="mt-1 mx-2">
           <TxHeader tx={tx} />
-          <MemberList members={tx.members} votedCount={tx.votedCount} threshold={tx.threshold} />
+          <MemberList
+            members={tx.members}
+            votedCount={tx.votedCount}
+            threshold={tx.threshold}
+            totalSigners={totalSigners}
+          />
         </div>
       )}
     </div>
   );
 }
-
-// ============ Mock Data ============
-export const mockTransactions: TransactionRowData[] = [
-  {
-    id: "1",
-    type: "transfer",
-    status: "pending",
-    amount: "1,000,000,000",
-    recipientName: "Tim Cook",
-    recipientAddress: "0x1234...5678",
-    members: [
-      { address: "0x111", name: "Hyydesi", isInitiator: false, isMe: true, voteStatus: "waiting" },
-      { address: "0x222", name: "Jupeng cac", isInitiator: true, isMe: false, voteStatus: "approved" },
-      { address: "0x333", name: "Nam", isInitiator: false, isMe: false, voteStatus: "denied" },
-    ],
-    votedCount: 2,
-    threshold: 2,
-    myVoteStatus: null, // Chưa vote → show buttons
-  },
-  {
-    id: "2",
-    type: "add_signer",
-    status: "executed",
-    signerAddresses: ["0xd...s78", "0xd...s78", "0xd...s78"],
-    actionByName: "Jupeng cac",
-    txHash: "0xabc123def456",
-    members: [
-      { address: "0x111", name: "Jupeng cac", isInitiator: true, isMe: false, voteStatus: "approved" },
-      { address: "0x222", name: "Hyydesi", isInitiator: false, isMe: true, voteStatus: "approved" },
-      { address: "0x333", name: "Nam", isInitiator: false, isMe: false, voteStatus: "approved" },
-    ],
-    votedCount: 3,
-    threshold: 2,
-    myVoteStatus: "approved",
-  },
-  {
-    id: "3",
-    type: "set_threshold",
-    status: "pending",
-    oldThreshold: 3,
-    newThreshold: 5,
-    members: [
-      { address: "0x111", name: "Jupeng cac", isInitiator: true, isMe: false, voteStatus: "approved" },
-      { address: "0x222", name: "Hyydesi", isInitiator: false, isMe: true, voteStatus: "denied" },
-      { address: "0x333", name: "Nam", isInitiator: false, isMe: false, voteStatus: "waiting" },
-    ],
-    votedCount: 2,
-    threshold: 2,
-    myVoteStatus: "denied", // Đã vote deny
-  },
-  {
-    id: "4",
-    type: "remove_signer",
-    status: "failed",
-    signerAddresses: ["0xabc...def"],
-    actionByName: "Nam",
-    members: [
-      { address: "0x111", name: "Jupeng cac", isInitiator: false, isMe: false, voteStatus: "denied" },
-      { address: "0x222", name: "Hyydesi", isInitiator: false, isMe: true, voteStatus: "denied" },
-      { address: "0x333", name: "Nam", isInitiator: true, isMe: false, voteStatus: "approved" },
-    ],
-    votedCount: 3,
-    threshold: 2,
-    myVoteStatus: "denied",
-  },
-  {
-    id: "5",
-    type: "transfer",
-    status: "pending",
-    amount: "500",
-    recipientName: "Vitalik",
-    recipientAddress: "0xvitalik",
-    members: [
-      { address: "0x111", name: "Hyydesi", isInitiator: false, isMe: true, voteStatus: "waiting" },
-      { address: "0x222", name: "Jupeng cac", isInitiator: true, isMe: false, voteStatus: "approved" },
-      { address: "0x333", name: "Nam", isInitiator: false, isMe: false, voteStatus: "waiting" },
-    ],
-    votedCount: 1,
-    threshold: 2,
-    myVoteStatus: null,
-  },
-];

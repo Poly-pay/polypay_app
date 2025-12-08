@@ -15,52 +15,88 @@ datasource db {
 }
 
 model Transaction {
-  id                 String    @id @default(cuid())
-  txId               Int       @unique
-  to                 String
-  value              String
-  callData           String?
-  signaturesRequired Int
-  status             TxStatus  @default(PENDING)
-  executedAt         DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                 String      @id @default(cuid())
+  txId               Int         @unique
+  type               TxType
+  status             TxStatus    @default(PENDING)
 
-  proofJobs ProofJob[]
+  // Transfer (ETH only)
+  to                 String?
+  value              String?
+
+  // Add/Remove Signer
+  signerCommitment   String?
+
+  // Set Threshold
+  newThreshold       Int?
+
+  // Metadata
+  createdBy          String      // commitment initial
+  walletAddress      String
+  threshold          Int         // approval threshold at the time of creation
+
+  // Execution
+  txHash             String?
+  executedAt         DateTime?
+
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  votes              Vote[]
 
   @@index([status])
+  @@index([walletAddress])
 }
 
-model ProofJob {
-  id            String    @id @default(cuid())
-  txId          Int
-  nullifier     String    @unique
-  jobId         String    @unique
-  status        JobStatus @default(PENDING)
-  aggregationId String?
-  domainId      Int?      @default(0)
-  merkleProof   String[]
-  leafCount     Int?
-  leafIndex     Int?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+model Vote {
+  id               String       @id @default(cuid())
+  txId             Int
+  voterCommitment  String
+  voteType         VoteType
 
-  transaction Transaction @relation(fields: [txId], references: [txId])
+  // ZK Proof (only APPROVE)
+  nullifier        String?      @unique
+  jobId            String?      @unique
+  proofStatus      ProofStatus?
 
+  // Aggregation data
+  aggregationId    String?
+  domainId         Int?         @default(0)
+  merkleProof      String[]
+  leafCount        Int?
+  leafIndex        Int?
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  transaction      Transaction  @relation(fields: [txId], references: [txId])
+
+  @@unique([txId, voterCommitment])
   @@index([txId])
-  @@index([status])
+  @@index([proofStatus])
+}
+
+enum TxType {
+  TRANSFER
+  ADD_SIGNER
+  REMOVE_SIGNER
+  SET_THRESHOLD
 }
 
 enum TxStatus {
   PENDING
-  READY
+  EXECUTING
   EXECUTED
   FAILED
 }
 
-enum JobStatus {
+enum VoteType {
+  APPROVE
+  DENY
+}
+
+enum ProofStatus {
   PENDING
-  VERIFIED
   AGGREGATED
   FAILED
 }

@@ -4,7 +4,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
-import  { mockTransactions, TransactionRow } from "./TransactionRow";
+import  { convertToRowData, TransactionRow } from "./TransactionRow";
+import { useTransactions } from "~~/hooks/api/useTransaction";
+import { useScaffoldContract } from "~~/hooks/scaffold-eth";
 
 export interface WalletData {
   signers: string[];
@@ -26,34 +28,93 @@ function Header() {
 }
 
 export default function DashboardContainer() {
-  const [walletData, setWalletData] = useState<WalletData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [myCommitment, setMyCommitment] = useState<string>("");
+  const [currentThreshold, setCurrentThreshold] = useState<number>(0);
+  const [totalSigners, setTotalSigners] = useState<number>(0);
 
-  const handleApprove = (txId: string) => {
-    console.log("Approve:", txId);
-    // Generate ZK proof và submit
-  };
+  const { data: metaMultiSigWallet } = useScaffoldContract({
+    contractName: "MetaMultiSigWallet",
+  });
 
-  const handleDeny = (txId: string) => {
-    console.log("Deny:", txId);
+  const walletAddress = metaMultiSigWallet?.address || "";
+
+  const {
+    data: transactions,
+    isLoading,
+    refetch,
+  } = useTransactions(walletAddress);
+
+  // Load my commitment from localStorage
+  useEffect(() => {
+    const commitment = localStorage.getItem("commitment");
+    if (commitment) {
+      setMyCommitment(commitment);
+    }
+  }, []);
+
+  // Load contract data
+  useEffect(() => {
+    const loadContractData = async () => {
+      if (!metaMultiSigWallet) return;
+
+      try {
+        const threshold = await metaMultiSigWallet.read.signaturesRequired();
+        const signers = await metaMultiSigWallet.read.getSignersCount();
+
+        setCurrentThreshold(Number(threshold));
+        setTotalSigners(Number(signers));
+      } catch (error) {
+        console.error("Error loading contract data:", error);
+      }
+    };
+
+    loadContractData();
+  }, [metaMultiSigWallet]);
+
+  const handleSuccess = () => {
+    refetch();
   };
 
   const emptyTransactionComponent = (
     <span className="flex flex-col gap-3 w-full items-center justify-center mt-10 text-text-secondary">
-      <Image src="/common/empty-avatar.svg" alt="No transactions found" width={200} height={177} />
-      <span className="text-[#6D2EFF] font-bold text-[20px]">No transaction found</span>
-      <span>There is not transaction found in your account</span>
+      <Image
+        src="/common/empty-avatar.svg"
+        alt="No transactions found"
+        width={200}
+        height={177}
+      />
+      <span className="text-[#6D2EFF] font-bold text-[20px]">
+        No transaction found
+      </span>
+      <span>There is no transaction found in your account</span>
     </span>
   );
 
   return (
     <div className="flex flex-col gap-5 p-2 px-[130px] pt-7">
       <Header />
-      {/* {emptyTransactionComponent} */}
-      {/* body */}
-      {mockTransactions.map(tx => (
-        <TransactionRow key={tx.id} tx={tx} onApprove={handleApprove} onDeny={handleDeny} />
-      ))}
+
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      ) : transactions && transactions.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          {transactions.map((tx) => (
+            <TransactionRow
+              key={tx.id}
+              tx={convertToRowData(tx, myCommitment, currentThreshold)}
+              totalSigners={totalSigners}
+              onSuccess={handleSuccess}
+            />
+          ))}
+        </div>
+      ) : (
+        emptyTransactionComponent
+      )}
     </div>
   );
 }
