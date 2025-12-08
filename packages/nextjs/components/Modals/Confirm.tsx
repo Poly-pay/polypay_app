@@ -41,7 +41,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       <AlertDialogTrigger asChild disabled={disabled}>
         {children}
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent className="bg-white">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

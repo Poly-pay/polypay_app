@@ -81,63 +81,81 @@ The Noir circuit proves that:
                                                   │   (on-chain)        │
                                                   └─────────────────────┘
 
-┌─────────────────────────────────────────────────────────────────────────────┐
+─────────────────────────────────────────────────────────────────────────────┐
 │                         PROPOSE & SIGN FLOW                                 │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────┐  1. Create tx data        ┌─────────────────────┐
-│                     │     - Add signer          │                     │
-│   User (Signer)     │     - Remove signer       │   Generate:         │
-│                     │     - Transfer ETH        │   - txHash          │
-│                     │  ───────────────────────▶ │   - nullifier       │
-│                     │                           │   - txHashCommitment│
+│                     │     (to, value, type)     │                     │
+│   Proposer          │  ───────────────────────▶ │   Generate:         │
+│   (Signer)          │                           │   - txHash          │
+│                     │  2. Generate ZK Proof     │   - nullifier       │
+│                     │     in browser            │   - proof           │
 └─────────────────────┘                           └─────────────────────┘
            │
-           │ 2. Sign txHash (ECDSA) + Generate ZK Proof
+           │ 3. POST /api/transactions (tx data + proof)
            ▼
-┌─────────────────────┐                           ┌─────────────────────┐
-│   Noir Circuit      │  Proves:                  │                     │
-│   (in browser)      │  ✓ Valid ECDSA signature  │   /api/relayer      │
-│                     │  ✓ Member of signer group │   (Next.js API)     │
-│                     │  ✓ Unique nullifier       │                     │
-└─────────────────────┘                           └─────────────────────┘
-           │                                                │
-           │ 3. Send proof                                  │ 4. Submit to zkVerify
-           │────────────────────────────────────────────────▶   (RELAYER_API_KEY)
-           │                                                │
-           │                                                ▼
-           │                                      ┌─────────────────────┐
-           │                                      │   zkVerify Relayer  │
-           │                                      │   (Horizen Labs)    │
-           │                                      │                     │
-           │                                      │   5. Verify proof   │
-           │                                      │   6. Aggregate      │
-           │                                      └─────────────────────┘
-           │                                                │
-           │◀───────────────────────────────────────────────│
-           │         7. Return aggregation_detail           │
+┌────────────────────────────────────────────────────────────────────────────┐
+│                              Backend                                       │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │  4. Save transaction + first proof                                  │   │
+│  │  5. Submit proof to zkVerify → get aggregation data                 │   │
+│  │  6. Check: approveCount >= threshold?                               │   │
+│  │     - No  → status = PENDING (wait for more signatures)             │   │
+│  │     - Yes → status = EXECUTING (ready to execute)                   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────────┘
            │
-           │ 8. Build args + Call proposeTx()
+           │ If PENDING, other signers can approve:
            ▼
 ┌─────────────────────┐                           ┌─────────────────────┐
-│                     │                           │                     │
-│   User's Wallet     │  ───────────────────────▶ │   Smart Contract    │
-│   (MetaMask)        │                           │                     │
-│                     │                           │  9. Verify zkVerify │
-└─────────────────────┘                           │     attestation     │
-                                                  │ 10. Check nullifier │
-                                                  │ 11. Count signature │
+│                     │  7. Generate ZK Proof     │                     │
+│   Other Signers     │  ───────────────────────▶ │   POST /api/        │
+│                     │                           │   transactions/     │
+│                     │                           │   :txId/approve     │
+└─────────────────────┘                           └─────────────────────┘
+                                                            │
+                                                            │ 8. Save proof
+                                                            │ 9. Submit to zkVerify
+                                                            │ 10. Check threshold
+                                                            ▼
+                                                  ┌─────────────────────┐
+                                                  │   When threshold    │
+                                                  │   reached →         │
+                                                  │   status=EXECUTING  │
                                                   └─────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           EXECUTION PHASE                                   │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-┌─────────────────────┐                           ┌─────────────────────┐
-│                     │  When enough signatures   │                     │
-│   Anyone            │  ───────────────────────▶ │   Smart Contract    │
-│                     │  executeTx(txId)          │   Execute! ✅       │
+┌─────────────────────┐  1. GET /api/transactions/:txId/execute
+│                     │  ───────────────────────▶ ┌─────────────────────┐
+│   Anyone            │                           │   Backend returns:  │
+│   (usually last     │ ◀───────────────────────  │   - All aggregated  │
+│    signer)          │  2. Array of zkProofs     │     proofs          │
+│                     │     + execution params    │   - to, value, data │
 └─────────────────────┘                           └─────────────────────┘
+           │
+           │ 3. Call smart contract with all proofs
+           ▼
+┌─────────────────────┐                           ┌─────────────────────┐
+│                     │  execute(to, value,       │                     │
+│   User's Wallet     │   data, zkProofs[])       │   Smart Contract    │
+│   (MetaMask)        │  ───────────────────────▶ │                     │
+│                     │                           │  4. Loop & verify   │
+└─────────────────────┘                           │     each proof      │
+                                                  │  5. Check nullifiers│
+                                                  │  6. Execute action  │
+                                                  │  7. Emit event      │
+                                                  └─────────────────────┘
+           │
+           │ 8. PATCH /api/transactions/:txId/executed
+           ▼
+┌─────────────────────┐
+│   Backend updates   │
+│   status = EXECUTED │
+└─────────────────────┘
 ```
 
 ### Components
@@ -146,7 +164,7 @@ The Noir circuit proves that:
 - **Noir Circuit** - Proves signature validity + Merkle membership + nullifier uniqueness, all without revealing signer identity
 - **zkVerify** - Horizen Labs service for proof verification and aggregation, reduces gas costs
 - **Frontend** - Next.js app for identity creation, transaction proposal, and ZK proof generation in browser
-- **API Relayer** - `/api/relayer` endpoint that submits proofs to zkVerify and returns attestation details
+- **Backend** - NestJS API that stores transactions & proofs, submits to zkVerify, tracks approval status
 
 ### Supported Actions
 
@@ -185,17 +203,29 @@ cd polypay_multisig
 # 2. Install dependencies
 yarn install
 
-# 3. Setup environment
-# .env.example already contains working RELAYER_ZKVERIFY_API_KEY for testnet
+# 3. Frontend Setup
+# Copy environment file (contains API URL pointing to localhost:4000)
 cp packages/nextjs/.env.example packages/nextjs/.env
 
-# 4. Compile the circuit (if needed)
-cd packages/nextjs/public/circuit
-nargo compile
-cd ../../../..
+# 4. Backend Setup
+cd packages/backend
+docker compose up -d postgres
 
-# 5. Start the application
-yarn start
+# Copy environment file (pre-configured, no changes needed)
+cp .env.example .env
+
+# Run database migrations
+npx prisma migrate dev
+npx prisma generate
+
+cd ../..
+
+# 5. Run the Application
+# Start frontend (Next.js)
+yarn start:frontend
+
+# Start backend (NestJS) - in another terminal
+yarn start:backend
 ```
 
 > **Note**: A multisig wallet with signers is already deployed on Sepolia testnet.
@@ -206,13 +236,19 @@ yarn start
   - For Testnet: Visit https://relayer-testnet.horizenlabs.io/
   - For Mainnet: Visit https://relayer.horizenlabs.io/
 
-## Usage
+### Circuit Compilation (For Developers Only)
+Only needed if you modify the Noir circuit: 
+```bash
+cd packages/nextjs/public/circuit
+nargo compile
+cd ../../../..
+ ```
 
-### User Workflow
+## User Workflow
 
 1. **Generate Identity** → Sign message to derive secret, compute commitment
 2. **Register as Signer** → Share commitment with admin, admin adds to contract
 3. **Propose Transaction** → Create tx (add/remove signer or transfer), sign + generate ZK proof
-4. **Submit Proof** → API sends to zkVerify, receives attestation
-5. **Call Contract** → Submit attestation to smart contract, signature counted
-6. **Execute** → When enough signatures, anyone calls `executeTx()`
+4. **Submit to Backend** → Backend saves tx + proof, submits proof to zkVerify for aggregation
+5. **Sign (Other Signers)** → Generate ZK proof and submit to backend via /api/transactions/:txId/approve
+6. **Execute** → When threshold reached, fetch all proofs from backend, call execute() on smart contract
