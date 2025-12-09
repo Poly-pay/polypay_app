@@ -45,12 +45,12 @@ const Title: React.FC = () => {
         </div>
       </div>
       {/* Portfolio */}
-      {/* <PortfolioModal>
+      <PortfolioModal>
         <div className="flex flex-row gap-2 w-[200px] justify-center items-center bg-white rounded-lg cursor-pointer">
           <img src="/misc/coin-icon.gif" alt="portfolio" className="w-8 h-8" />
           <span className="text-text-primary font-bold">PORTFOLIO</span>
         </div>
-      </PortfolioModal> */}
+      </PortfolioModal>
     </div>
   );
 };

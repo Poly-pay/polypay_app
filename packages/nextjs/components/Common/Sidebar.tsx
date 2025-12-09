@@ -43,7 +43,6 @@ const sectionItems = [
     description: "Move assets your way – fast, private.",
     menuItems: [
       { icon: "/sidebar/send.svg", label: "transfer", link: SIDEBAR_LINKS.SEND },
-      { icon: "/sidebar/receive.svg", label: "receive", link: "#" },
       { icon: "/sidebar/swap.svg", label: "swap", link: SIDEBAR_LINKS.SWAP },
       { icon: "/sidebar/batch.svg", label: "batch", link: SIDEBAR_LINKS.BATCH },
     ],
@@ -131,13 +130,6 @@ const SectionItem = ({
         {menuItems.map(item => {
           if (["swap", "batch", "address book", "ai assistant"].includes(item.label)) {
             return <DevelopingFeatureModal key={item.label}>{itemComponent(item, true)}</DevelopingFeatureModal>;
-          }
-          if (item.label === "receive") {
-            return (
-              <ReceiveModal address={walletAddress as Address} key={item.label}>
-                {itemComponent(item, true)}
-              </ReceiveModal>
-            );
           }
           return itemComponent(item);
         })}
