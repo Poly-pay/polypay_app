@@ -221,6 +221,11 @@ yarn start:frontend
 
 # Start backend (NestJS) - in another terminal
 yarn start:backend
+
+# Now you open your localhost, connect yor wallet, then copy your commitment
+# After copy Commitment, you need go to file 00_deploy_meta_multisig_wallet.ts then paste your commitment to args
+# Then deploy your smart contract with script
+yarn deploy --network sepolia --reset
 ```
 
 > **Note**: A multisig wallet with signers is already deployed on Sepolia testnet.
