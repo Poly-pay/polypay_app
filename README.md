@@ -10,11 +10,6 @@ A privacy-preserving multi-signature wallet that uses zero-knowledge proofs to e
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Usage](#usage)
-- [Circuit Details](#circuit-details)
-- [Tech Stack](#tech-stack)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Overview
 
