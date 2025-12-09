@@ -18,7 +18,7 @@ Traditional multisig wallets expose owner addresses publicly on the blockchain. 
 
 ## Video demo
 Go below link to see: 
-https://app.screencastify.com/manage/videos/GdsEYGKAjUl8o02KKwlA
+[https://app.screencastify.com/manage/videos/GdsEYGKAjUl8o02KKwlA](https://app.screencastify.com/watch/GdsEYGKAjUl8o02KKwlA?checkOrg=18c50a97-8f7c-4641-a685-cc49f2d0c450)
 
 ## Features
 
