@@ -5,6 +5,7 @@ A privacy-preserving multi-signature wallet that uses zero-knowledge proofs to e
 ## Table of Contents
 
 - [Overview](#overview)
+- [Video demo](#overview)
 - [Features](#features)
 - [How It Works](#how-it-works)
 - [Architecture](#architecture)
@@ -14,6 +15,10 @@ A privacy-preserving multi-signature wallet that uses zero-knowledge proofs to e
 ## Overview
 
 Traditional multisig wallets expose owner addresses publicly on the blockchain. This system replaces addresses with commitments - cryptographic hashes of user secrets. When signing transactions, users generate ZK proofs to prove they are authorized signers without revealing their identity or position in the signer list.
+
+## Video demo
+Go below link to see: 
+https://app.screencastify.com/manage/videos/GdsEYGKAjUl8o02KKwlA
 
 ## Features
 
