@@ -43,7 +43,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ children, address, o
         {children}
       </div>
 
-      <DialogPortal container={document.body}>
+      <DialogPortal>
         <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999]" />
         <DialogContent className=" bg-white border-0 shadow-2xl z-[1000] bg-[url('/common/bg-qrcode.png')] bg-no-repeat bg-center bg-cover rounded-2xl w-[600px] px-0 pb-0">
           <div className="flex flex-col p-5 pb-0">

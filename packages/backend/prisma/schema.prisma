@@ -16,9 +16,10 @@ datasource db {
 
 model Transaction {
   id                 String      @id @default(cuid())
-  txId               Int         @unique
+  txId               Int         @unique @default(autoincrement())
   type               TxType
   status             TxStatus    @default(PENDING)
+  nonce              Int
 
   // Transfer (ETH only)
   to                 String?
@@ -87,6 +88,7 @@ enum TxStatus {
   PENDING
   EXECUTING
   EXECUTED
+  OUTDATED
   FAILED
 }
 

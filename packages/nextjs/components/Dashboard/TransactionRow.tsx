@@ -6,6 +6,7 @@ import Image from "next/image";
 import { UltraPlonkBackend } from "@aztec/bb.js";
 import { Noir } from "@noir-lang/noir_js";
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
 import {
   TxStatus as ApiTxStatus,
@@ -26,7 +27,7 @@ import { notification } from "~~/utils/scaffold-eth";
 // ============ Types ============
 type TxType = "transfer" | "add_signer" | "remove_signer" | "set_threshold";
 type VoteStatus = "approved" | "denied" | "waiting";
-type TxStatus = "pending" | "executing" | "executed" | "failed";
+type TxStatus = "pending" | "executing" | "executed" | "failed" | "outdated";
 
 interface Member {
   commitment: string;
@@ -39,6 +40,7 @@ interface TransactionRowData {
   id: string;
   txId: number;
   type: TxType;
+  nonce: number;
   status: TxStatus;
   txHash?: string;
 
@@ -81,6 +83,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string, currentT
     EXECUTING: "executing",
     EXECUTED: "executed",
     FAILED: "failed",
+    OUTDATED: "outdated",
   };
 
   // Build members from votes
@@ -100,6 +103,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string, currentT
     txId: tx.txId,
     type: typeMap[tx.type],
     status: statusMap[tx.status],
+    nonce: tx.nonce,
     txHash: tx.txHash || undefined,
     amount: tx.value || undefined,
     recipientAddress: tx.to || undefined,
@@ -151,8 +155,8 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
     return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Failed</span>;
   }
 
-  if (status === "executing") {
-    return <span className="px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 rounded-full">Executing...</span>;
+  if (status === "outdated") {
+    return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Outdated</span>;
   }
 
   return null;
@@ -162,12 +166,30 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
 function ActionButtons({
   onApprove,
   onDeny,
+  onExecute,
   loading,
+  txStatus,
 }: {
   onApprove: () => void;
   onDeny: () => void;
+  onExecute: () => void;
   loading: boolean;
+  txStatus?: TxStatus;
 }) {
+  if (txStatus === "executing") {
+    return (
+      <button
+        onClick={e => {
+          e.stopPropagation();
+          onExecute();
+        }}
+        disabled={loading}
+        className="px-6 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-full hover:bg-blue-200 transition-colors cursor-pointer disabled:opacity-50"
+      >
+        Execute
+      </button>
+    );
+  }
   return (
     <div className="flex items-center gap-2">
       <button
@@ -203,7 +225,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
             <Image src="/token/eth.svg" alt="ETH" width={20} height={20} />
-            <span>{tx.amount} ETH</span>
+            <span>{formatEther(BigInt(tx.amount ?? "0"))} ETH</span>
           </div>
           <ArrowRight size={20} />
           <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
@@ -330,7 +352,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Image src="/token/eth.svg" alt="ETH" width={20} height={20} />
-            <span className="font-medium">{tx.amount} ETH</span>
+            <span className="font-medium">{formatEther(BigInt(tx.amount ?? "0"))} ETH</span>
           </div>
           <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
           <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
@@ -393,6 +415,8 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
       throw new Error("Wallet not connected");
     }
 
+    const currentNonce = await metaMultiSigWallet.read.nonce();
+
     // 1. Build callData based on tx type
     let callData: `0x${string}` = "0x";
     let to: `0x${string}` = tx.recipientAddress as `0x${string}`;
@@ -450,7 +474,7 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
 
     // 2. Get txHash
     const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-      BigInt(tx.txId),
+      BigInt(currentNonce),
       to,
       value,
       callData,
@@ -531,6 +555,10 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
     }
 
     const executionData = await response.json();
+    if (!executionData) {
+      throw new Error("No execution data found");
+    }
+    console.log("🚀 ~ executeOnChain ~ executionData:", executionData);
 
     // Format proofs for contract
     const zkProofs = executionData.zkProofs.map((p: any) => ({
@@ -545,13 +573,18 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
     setLoadingState("Executing on-chain...");
 
     // Call contract
-    const txHashResult = await metaMultiSigWallet.write.execute([
+    const gasEstimate = await metaMultiSigWallet.estimateGas.execute([
       executionData.to as `0x${string}`,
       BigInt(executionData.value),
       executionData.data as `0x${string}`,
       zkProofs,
     ]);
 
+    console.log("Gas estimate for execute:", gasEstimate.toString());
+    const txHashResult = await metaMultiSigWallet.write.execute(
+      [executionData.to as `0x${string}`, BigInt(executionData.value), executionData.data as `0x${string}`, zkProofs],
+      { gas: gasEstimate ? gasEstimate + 10000n : undefined },
+    );
     // Mark as executed
     await markExecuted({ txId: tx.txId, txHash: txHashResult });
 
@@ -578,14 +611,6 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
       });
 
       notification.success("Vote submitted!");
-
-      // 3. If status is EXECUTING, trigger on-chain execution
-      if (result.status === "EXECUTING") {
-        notification.info("Threshold reached! Executing transaction...");
-        const txHash = await executeOnChain();
-        notification.success(`Transaction executed! Hash: ${txHash?.slice(0, 10)}...`);
-      }
-
       onSuccess?.();
     } catch (error: any) {
       console.error("Approve error:", error);
@@ -626,18 +651,37 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
     }
   };
 
+  const handleExecute = async () => {
+    setLoading(true);
+    try {
+      const txHash = await executeOnChain();
+      notification.success(`Transaction executed! Hash: ${txHash?.slice(0, 10)}...`);
+      onSuccess?.();
+    } catch (error: any) {
+      console.error("Execute error:", error);
+      notification.error(error.message || "Failed to execute");
+    } finally {
+      setLoading(false);
+      setLoadingState("");
+    }
+  };
+
   // ============ Render Right Side ============
   const renderRightSide = () => {
-    if (tx.status === "executed" || tx.status === "failed") {
+    if (tx.status === "executed" || tx.status === "failed" || tx.status === "outdated") {
       return <StatusBadge status={tx.status} txHash={tx.txHash} />;
     }
 
-    if (tx.status === "executing") {
-      return <StatusBadge status={tx.status} />;
-    }
-
-    if (tx.myVoteStatus === null) {
-      return <ActionButtons onApprove={handleApprove} onDeny={handleDeny} loading={loading} />;
+    if (tx.myVoteStatus === null || tx.status === "executing") {
+      return (
+        <ActionButtons
+          onApprove={handleApprove}
+          onDeny={handleDeny}
+          onExecute={handleExecute}
+          loading={loading}
+          txStatus={tx.status}
+        />
+      );
     }
 
     return <VoteBadge status={tx.myVoteStatus} />;
@@ -656,6 +700,8 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
         className="flex items-center justify-between p-4 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-4">
+          {/* Nonce right here */}
+          {<span className="font-semibold text-gray-600">#{tx.nonce}</span>}
           {expanded ? (
             <ChevronDown size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
           ) : (

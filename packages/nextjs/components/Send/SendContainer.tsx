@@ -87,7 +87,6 @@ export default function SendContainer() {
       const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
 
       // 6. Get merkle data
-      setLoadingState("Building merkle tree...");
       const commitments = await metaMultiSigWallet.read.getCommitments();
       const tree = await buildMerkleTree(commitments ?? []);
       const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
@@ -139,7 +138,7 @@ export default function SendContainer() {
       // 8. Submit to backend
       setLoadingState("Submitting to backend...");
       const result = await createTransaction({
-        txId: Number(currentNonce),
+        nonce: Number(currentNonce),
         type: "TRANSFER",
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { EditAccountModal } from "../Modals/EditAccountModal";
 import { useWalletClient } from "wagmi";
 import { useScaffoldContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { usePendingTransactions, useTransactions } from "~~/hooks/api/useTransaction";
 
 interface InfoCardContainerProps {}
 
@@ -22,7 +23,9 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
     functionName: "signaturesRequired",
   });
 
-  const walletAddress = metaMultiSigWallet?.address;
+  const walletAddress = metaMultiSigWallet?.address || "";
+
+  const { data: transactions } = usePendingTransactions(walletAddress);
 
   useEffect(() => {
     const fetchCommitments = async () => {
@@ -78,7 +81,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
               <span>Pending Transactions</span>
             </span>
             <span className="flex flex-row gap-1 items-center">
-              <span className="text-[35px]">03</span>
+              <span className="text-[35px]">{transactions?.length ?? 0}</span>
             </span>
           </div>
         </span>

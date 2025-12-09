@@ -61,7 +61,7 @@ const deployMetaMultiSigWallet: DeployFunction = async function (hre: HardhatRun
     from: deployer,
     args: [
       "0xEA0A0f1EfB1088F4ff0Def03741Cb2C64F89361E", // zkVerify contract address
-      "0x613a2ae411b1c1b56087e4ebaea061c348cc549b51616715eb92409871c664c5", //vkhash
+      "0x104717314e0c94ef15d6992292b713aa2ffc48c74e0c41f7344a611caa606dde", //vkhash
       // 31337, //chainId localhost
       11155111, //chainId
       [BigInt("7777412979265397193925220040726445950599854595059203997869095364409346949110"), BigInt("3893960714193187677642727159938790123674441621624357680276520538080166792249")], //list commitments testnet

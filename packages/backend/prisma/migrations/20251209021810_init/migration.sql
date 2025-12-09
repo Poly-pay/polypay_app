@@ -2,7 +2,7 @@
 CREATE TYPE "TxType" AS ENUM ('TRANSFER', 'ADD_SIGNER', 'REMOVE_SIGNER', 'SET_THRESHOLD');
 
 -- CreateEnum
-CREATE TYPE "TxStatus" AS ENUM ('PENDING', 'EXECUTING', 'EXECUTED', 'FAILED');
+CREATE TYPE "TxStatus" AS ENUM ('PENDING', 'EXECUTING', 'EXECUTED', 'OUTDATED', 'FAILED');
 
 -- CreateEnum
 CREATE TYPE "VoteType" AS ENUM ('APPROVE', 'DENY');
@@ -13,9 +13,10 @@ CREATE TYPE "ProofStatus" AS ENUM ('PENDING', 'AGGREGATED', 'FAILED');
 -- CreateTable
 CREATE TABLE "Transaction" (
     "id" TEXT NOT NULL,
-    "txId" INTEGER NOT NULL,
+    "txId" SERIAL NOT NULL,
     "type" "TxType" NOT NULL,
     "status" "TxStatus" NOT NULL DEFAULT 'PENDING',
+    "nonce" INTEGER NOT NULL,
     "to" TEXT,
     "value" TEXT,
     "signerCommitment" TEXT,

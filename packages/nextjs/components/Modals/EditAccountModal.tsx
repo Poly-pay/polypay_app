@@ -162,7 +162,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       // 4. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        txId: Number(currentNonce),
+        nonce: Number(currentNonce),
         type: "ADD_SIGNER",
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -239,7 +239,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       // 4. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        txId: Number(currentNonce),
+        nonce: Number(currentNonce),
         type: "REMOVE_SIGNER",
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -311,7 +311,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       // 4. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        txId: Number(currentNonce),
+        nonce: Number(currentNonce),
         type: "SET_THRESHOLD",
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),

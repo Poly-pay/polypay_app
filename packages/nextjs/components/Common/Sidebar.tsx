@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,7 +11,7 @@ import { CheckCircleIcon, PlusCircleIcon } from "lucide-react";
 import { Address } from "viem";
 import { useDisconnect, useWalletClient } from "wagmi";
 import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
-import { useTargetNetwork } from "~~/hooks/scaffold-eth";
+import { useScaffoldContract, useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { createCommitment, createSecret } from "~~/utils/multisig";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
@@ -41,6 +43,7 @@ const sectionItems = [
     description: "Move assets your way – fast, private.",
     menuItems: [
       { icon: "/sidebar/send.svg", label: "transfer", link: SIDEBAR_LINKS.SEND },
+      { icon: "/sidebar/receive.svg", label: "receive", link: "#" },
       { icon: "/sidebar/swap.svg", label: "swap", link: SIDEBAR_LINKS.SWAP },
       { icon: "/sidebar/batch.svg", label: "batch", link: SIDEBAR_LINKS.BATCH },
     ],
@@ -60,12 +63,14 @@ const sectionItems = [
 ];
 
 const SectionItem = ({
+  walletAddress,
   label,
   menuItems,
   showDivider,
   selectedItem,
   onItemClick,
 }: {
+  walletAddress?: string;
   label: string;
   menuItems: { icon: string; label: string; transactionsCount?: number; link: string }[];
   showDivider?: boolean;
@@ -127,6 +132,13 @@ const SectionItem = ({
           if (["swap", "batch", "address book", "ai assistant"].includes(item.label)) {
             return <DevelopingFeatureModal key={item.label}>{itemComponent(item, true)}</DevelopingFeatureModal>;
           }
+          if (item.label === "receive") {
+            return (
+              <ReceiveModal address={walletAddress as Address} key={item.label}>
+                {itemComponent(item, true)}
+              </ReceiveModal>
+            );
+          }
           return itemComponent(item);
         })}
       </div>
@@ -140,7 +152,13 @@ export default function Sidebar() {
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
 
-  const [generateCommitment, setGenerateCommitment] = useState(localStorage.getItem("commitment") ? true : false);
+  const { data: metaMultiSigWallet } = useScaffoldContract({
+    contractName: "MetaMultiSigWallet",
+  });
+
+  const walletAddress = metaMultiSigWallet?.address || "";
+
+  const [generateCommitment, setGenerateCommitment] = useState(false);
 
   const pathname = usePathname();
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
@@ -154,6 +172,12 @@ export default function Sidebar() {
     const path = pathname.split("/")[1];
     setSelectedItem(`/${path}`);
   }, [pathname]);
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("commitment") : null;
+
+    setGenerateCommitment(!!stored);
+  }, []);
 
   return (
     <>
@@ -175,6 +199,7 @@ export default function Sidebar() {
           <div className="flex flex-col gap-2">
             {sectionItems.map((item, index) => (
               <SectionItem
+                walletAddress={walletAddress}
                 key={item.label}
                 label={item.label}
                 menuItems={item.menuItems}
@@ -189,8 +214,7 @@ export default function Sidebar() {
         <div className="flex flex-col gap-2 px-1">
           {/* Account */}
           <div className="flex flex-col p-3 pb-6">
-            {/* {walletClient?.account ? ( */}
-            {true ? (
+            {walletClient?.account ? (
               <span className="flex flex-col gap-1 bg-white p-3 rounded-lg">
                 <span className="flex flex-row justify-between ">
                   <span className="flex flex-col gap-2 justify-end">
@@ -287,7 +311,12 @@ export default function Sidebar() {
                       height={36}
                       alt="Logout"
                       className="cursor-pointer"
-                      onClick={() => disconnect()}
+                      onClick={() => {
+                        // Clear commitment and secret on disconnect
+                        localStorage.removeItem("commitment");
+                        localStorage.removeItem("secret");
+                        disconnect();
+                      }}
                     />
                   </span>
                 </span>

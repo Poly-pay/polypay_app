@@ -17,7 +17,7 @@ export enum TxType {
 export class CreateTransactionDto {
   @IsNumber()
   @IsNotEmpty()
-  txId: number;
+  nonce: number;
 
   @IsEnum(TxType)
   @IsNotEmpty()

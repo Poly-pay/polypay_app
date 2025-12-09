@@ -84,7 +84,7 @@ contract MetaMultiSigWallet {
     }
 
     // ============ Main Execute Function ============
-    
+
     /**
      * @notice Execute transaction with ZK proofs
      * @param to Target address
@@ -108,10 +108,10 @@ contract MetaMultiSigWallet {
         for (uint256 i = 0; i < proofs.length; i++) {
             // Check nullifier not used
             require(!usedNullifiers[proofs[i].nullifier], "Nullifier already used");
-            
+
             // Verify proof
             require(_verifyProof(txHash, proofs[i]), "Invalid proof");
-            
+
             // Mark nullifier as used
             usedNullifiers[proofs[i].nullifier] = true;
         }

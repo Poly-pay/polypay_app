@@ -50,16 +50,7 @@ export class TransactionService {
     // 1. Validate based on type
     this.validateTransactionDto(dto);
 
-    // 2. Check txId not already used
-    const existingTx = await this.prisma.transaction.findUnique({
-      where: { txId: dto.txId },
-    });
-
-    if (existingTx) {
-      throw new ConflictException(`Transaction with txId ${dto.txId} already exists`);
-    }
-
-    // 3. Check nullifier unique
+    // 2. Check nullifier unique
     const existingVote = await this.prisma.vote.findUnique({
       where: { nullifier: dto.nullifier },
     });
@@ -68,7 +59,7 @@ export class TransactionService {
       throw new BadRequestException('Nullifier already used');
     }
 
-    // 4. Submit proof to zkVerify
+    // 3. Submit proof to zkVerify
     const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized({
       proof: dto.proof,
       publicInputs: dto.publicInputs,
@@ -79,11 +70,11 @@ export class TransactionService {
       throw new BadRequestException('Proof verification failed');
     }
 
-    // 5. Create transaction + first vote
+    // 4. Create transaction + first vote
     const transaction = await this.prisma.$transaction(async (prisma) => {
       const tx = await prisma.transaction.create({
         data: {
-          txId: dto.txId,
+          nonce: dto.nonce,
           type: dto.type,
           walletAddress: dto.walletAddress,
           threshold: dto.threshold,
@@ -98,7 +89,7 @@ export class TransactionService {
 
       await prisma.vote.create({
         data: {
-          txId: dto.txId,
+          txId: tx.txId,
           voterCommitment: dto.creatorCommitment,
           voteType: 'APPROVE',
           nullifier: dto.nullifier,
@@ -112,7 +103,7 @@ export class TransactionService {
 
     this.logger.log(`Created transaction txId: ${transaction.txId}`);
 
-    // 6. Check if already enough approvals (threshold = 1)
+    // 5. Check if already enough approvals (threshold = 1)
     const result = await this.checkAndTriggerExecution(transaction.txId);
 
     return {
@@ -363,13 +354,37 @@ export class TransactionService {
    * Mark transaction as executed
    */
   async markExecuted(txId: number, txHash: string) {
-    return this.prisma.transaction.update({
-      where: { txId },
-      data: {
-        status: 'EXECUTED',
-        txHash,
-        executedAt: new Date(),
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Find the transaction
+      const transaction = await tx.transaction.findUnique({
+        where: { txId },
+      });
+
+      if (!transaction) {
+        throw new NotFoundException(`Transaction ${txId} not found`);
+      }
+
+      // 2. Mark all transactions with same nonce as OUTDATED (except this one)
+      await tx.transaction.updateMany({
+        where: {
+          nonce: transaction.nonce,
+          txId: { not: txId },
+          status: { notIn: ['EXECUTED', 'OUTDATED'] },
+        },
+        data: {
+          status: 'OUTDATED',
+        },
+      });
+
+      // 3. Mark this transaction as EXECUTED
+      return tx.transaction.update({
+        where: { txId },
+        data: {
+          status: 'EXECUTED',
+          txHash,
+          executedAt: new Date(),
+        },
+      });
     });
   }
 
@@ -401,7 +416,9 @@ export class TransactionService {
 
       case TxType.SET_THRESHOLD:
         if (dto.newThreshold === undefined) {
-          throw new BadRequestException('Set threshold requires "newThreshold"');
+          throw new BadRequestException(
+            'Set threshold requires "newThreshold"',
+          );
         }
         break;
     }
@@ -519,65 +536,15 @@ export class TransactionService {
     }
   }
 
-  private async aggregateProofs(
-    txId: number,
-    maxAttempts = 30,
-    intervalMs = 2000,
-  ) {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const pendingVotes = await this.prisma.vote.findMany({
-        where: {
-          txId,
-          voteType: 'APPROVE',
-          proofStatus: 'PENDING',
-        },
-      });
+private async aggregateProofs(
+  txId: number,
+  maxAttempts = 30,
+  intervalMs = 5000,
+) {
+  let hasNewAggregation = false;
 
-      if (pendingVotes.length === 0) {
-        this.logger.log(`All proofs aggregated for txId: ${txId}`);
-        return;
-      }
-
-      this.logger.log(
-        `Attempt ${attempt + 1}/${maxAttempts}: ${pendingVotes.length} pending proofs for txId: ${txId}`,
-      );
-
-      for (const vote of pendingVotes) {
-        if (!vote.jobId) continue;
-
-        try {
-          const jobStatus = await this.zkVerifyService.getJobStatus(vote.jobId);
-
-          if (jobStatus.status === 'Aggregated') {
-            await this.prisma.vote.update({
-              where: { id: vote.id },
-              data: {
-                proofStatus: 'AGGREGATED',
-                aggregationId: jobStatus.aggregationId?.toString(),
-                merkleProof: jobStatus.aggregationDetails?.merkleProof || [],
-                leafCount: jobStatus.aggregationDetails?.numberOfLeaves,
-                leafIndex: jobStatus.aggregationDetails?.leafIndex,
-              },
-            });
-
-            this.logger.log(`Vote ${vote.id} aggregated successfully`);
-          } else if (jobStatus.status === 'Failed') {
-            await this.prisma.vote.update({
-              where: { id: vote.id },
-              data: { proofStatus: 'FAILED' },
-            });
-
-            this.logger.error(`Vote ${vote.id} proof failed`);
-          }
-        } catch (error) {
-          this.logger.error(`Error checking vote ${vote.id}:`, error);
-        }
-      }
-
-      await this.sleep(intervalMs);
-    }
-
-    const stillPending = await this.prisma.vote.count({
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const pendingVotes = await this.prisma.vote.findMany({
       where: {
         txId,
         voteType: 'APPROVE',
@@ -585,15 +552,76 @@ export class TransactionService {
       },
     });
 
-    if (stillPending > 0) {
-      this.logger.warn(
-        `Timeout: ${stillPending} proofs still pending for txId: ${txId}`,
-      );
-      throw new BadRequestException(
-        `Timeout waiting for proof aggregation. ${stillPending} proofs still pending.`,
-      );
+    if (pendingVotes.length === 0) {
+      this.logger.log(`All proofs aggregated for txId: ${txId}`);
+      break;
     }
+
+    this.logger.log(
+      `Attempt ${attempt + 1}/${maxAttempts}: ${pendingVotes.length} pending proofs for txId: ${txId}`,
+    );
+
+    for (const vote of pendingVotes) {
+      if (!vote.jobId) continue;
+
+      try {
+        const jobStatus = await this.zkVerifyService.getJobStatus(vote.jobId);
+
+        if (jobStatus.status === 'Aggregated') {
+          this.logger.log(`job data: ${JSON.stringify(jobStatus)}`);
+          await this.prisma.vote.update({
+            where: { id: vote.id },
+            data: {
+              proofStatus: 'AGGREGATED',
+              aggregationId: jobStatus.aggregationId?.toString(),
+              merkleProof: jobStatus.aggregationDetails?.merkleProof || [],
+              leafCount: jobStatus.aggregationDetails?.numberOfLeaves,
+              leafIndex: jobStatus.aggregationDetails?.leafIndex,
+            },
+          });
+
+          hasNewAggregation = true;
+          this.logger.log(`Vote ${vote.id} aggregated successfully`);
+        } else if (jobStatus.status === 'Failed') {
+          await this.prisma.vote.update({
+            where: { id: vote.id },
+            data: { proofStatus: 'FAILED' },
+          });
+
+          this.logger.error(`Vote ${vote.id} proof failed`);
+        }
+      } catch (error) {
+        this.logger.error(`Error checking vote ${vote.id}:`, error);
+      }
+    }
+
+    await this.sleep(intervalMs);
   }
+
+  // Check if all proofs are aggregated
+  const stillPending = await this.prisma.vote.count({
+    where: {
+      txId,
+      voteType: 'APPROVE',
+      proofStatus: 'PENDING',
+    },
+  });
+
+  if (stillPending > 0) {
+    this.logger.warn(
+      `Timeout: ${stillPending} proofs still pending for txId: ${txId}`,
+    );
+    throw new BadRequestException(
+      `Timeout waiting for proof aggregation. ${stillPending} proofs still pending.`,
+    );
+  }
+
+  // Wait 40s for cross-chain finalization only if we got new aggregations
+  if (hasNewAggregation) {
+    this.logger.log('Waiting 40s for cross-chain finalization...');
+    await this.sleep(40000);
+  }
+}
 
   private async getApproveCount(txId: number): Promise<number> {
     return this.prisma.vote.count({

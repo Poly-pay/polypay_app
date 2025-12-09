@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
-import  { convertToRowData, TransactionRow } from "./TransactionRow";
+import { TransactionRow, convertToRowData } from "./TransactionRow";
 import { useTransactions } from "~~/hooks/api/useTransaction";
 import { useScaffoldContract } from "~~/hooks/scaffold-eth";
 
@@ -38,11 +38,7 @@ export default function DashboardContainer() {
 
   const walletAddress = metaMultiSigWallet?.address || "";
 
-  const {
-    data: transactions,
-    isLoading,
-    refetch,
-  } = useTransactions(walletAddress);
+  const { data: transactions, isLoading, refetch } = useTransactions(walletAddress);
 
   // Load my commitment from localStorage
   useEffect(() => {
@@ -77,15 +73,8 @@ export default function DashboardContainer() {
 
   const emptyTransactionComponent = (
     <span className="flex flex-col gap-3 w-full items-center justify-center mt-10 text-text-secondary">
-      <Image
-        src="/common/empty-avatar.svg"
-        alt="No transactions found"
-        width={200}
-        height={177}
-      />
-      <span className="text-[#6D2EFF] font-bold text-[20px]">
-        No transaction found
-      </span>
+      <Image src="/common/empty-avatar.svg" alt="No transactions found" width={200} height={177} />
+      <span className="text-[#6D2EFF] font-bold text-[20px]">No transaction found</span>
       <span>There is no transaction found in your account</span>
     </span>
   );
@@ -103,7 +92,7 @@ export default function DashboardContainer() {
         </div>
       ) : transactions && transactions.length > 0 ? (
         <div className="flex flex-col gap-2">
-          {transactions.map((tx) => (
+          {transactions.map(tx => (
             <TransactionRow
               key={tx.id}
               tx={convertToRowData(tx, myCommitment, currentThreshold)}

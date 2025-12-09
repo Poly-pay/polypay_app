@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 // ============ Types ============
 
 export type TxType = "TRANSFER" | "ADD_SIGNER" | "REMOVE_SIGNER" | "SET_THRESHOLD";
-export type TxStatus = "PENDING" | "EXECUTING" | "EXECUTED" | "FAILED";
+export type TxStatus = "PENDING" | "EXECUTING" | "EXECUTED" | "FAILED" | "OUTDATED";
 export type VoteType = "APPROVE" | "DENY";
 export type ProofStatus = "PENDING" | "AGGREGATED" | "FAILED";
 
@@ -30,6 +30,7 @@ export interface Transaction {
   txId: number;
   type: TxType;
   status: TxStatus;
+  nonce: number;
   to: string | null;
   value: string | null;
   signerCommitment: string | null;
@@ -44,7 +45,7 @@ export interface Transaction {
 }
 
 export interface CreateTransactionDto {
-  txId: number;
+  nonce: number;
   type: TxType;
   walletAddress: string;
   threshold: number;
@@ -97,7 +98,7 @@ export interface ExecutionData {
 const createTransactionAPI = async (
   dto: CreateTransactionDto,
 ): Promise<{
-  txId: number;
+  nonce: number;
   type: TxType;
   status: TxStatus;
   jobId: string;
