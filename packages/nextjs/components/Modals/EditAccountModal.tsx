@@ -356,12 +356,12 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
                 <span className="text-lg font-semibold text-black">EDIT YOUR WALLET</span>
                 <span
                   className="text-sm cursor-pointer"
-                  onClick={() => copyToClipboard(walletClient?.account?.address ?? "")}
+                  onClick={() => copyToClipboard(metaMultiSigWallet?.address ?? "")}
                 >
                   <span className="text-black">Ethereum </span>
                   <span className="text-primary">
-                    [{walletClient?.account?.address?.slice(0, 6)}...
-                    {walletClient?.account?.address?.slice(-4)}]
+                    [{metaMultiSigWallet?.address?.slice(0, 6)}...
+                    {metaMultiSigWallet?.address?.slice(-4)}]
                   </span>
                 </span>
               </span>
@@ -412,29 +412,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
                       <ConfirmDialog
                         title="Remove Signer"
                         description="Are you sure you want to remove this signer?"
-                        // description={
-                        //   <div className="space-y-4">
-                        //     <p>Are you sure you want to remove this signer?</p>
-                        //     <p className="font-mono text-xs bg-gray-100 p-2 rounded break-all">
-                        //       {signer}
-                        //     </p>
-                        //     <div>
-                        //       <label className="text-sm font-medium">
-                        //         New Threshold (max: {signers.length - 1})
-                        //       </label>
-                        //       <Input
-                        //         type="number"
-                        //         min="1"
-                        //         max={signers.length - 1}
-                        //         value={newThresholdForRemove}
-                        //         onChange={(e) =>
-                        //           setNewThresholdForRemove(Number(e.target.value))
-                        //         }
-                        //         className="mt-1"
-                        //       />
-                        //     </div>
-                        //   </div>
-                        // }
                         onConfirm={() => handleRemoveSigner(signer)}
                       >
                         <Button
