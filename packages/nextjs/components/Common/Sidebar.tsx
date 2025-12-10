@@ -4,15 +4,15 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { DevelopingFeatureModal } from "../Modals/DevelopingFeatureModal";
+import { GenerateCommitmentModal } from "../Modals/GenerateCommitmentModal";
 import { ReceiveModal } from "../Modals/ReceiveModal";
 import { Balance } from "../scaffold-eth";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
-import { CheckCircleIcon, PlusCircleIcon } from "lucide-react";
+import { Copy } from "lucide-react";
 import { Address } from "viem";
 import { useDisconnect, useWalletClient } from "wagmi";
-import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
+import ShinyText from "~~/components/effects/ShinyText";
 import { useScaffoldContract, useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { createCommitment, createSecret } from "~~/utils/multisig";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
 export const ACCOUNT_SIDEBAR_OFFSET = 285; // Main sidebar width
@@ -151,6 +151,7 @@ export default function Sidebar() {
   const walletAddress = metaMultiSigWallet?.address || "";
 
   const [generateCommitment, setGenerateCommitment] = useState(false);
+  const [commitment, setCommitment] = useState<string | null>(null);
 
   const pathname = usePathname();
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
@@ -169,6 +170,7 @@ export default function Sidebar() {
     const stored = typeof window !== "undefined" ? localStorage.getItem("commitment") : null;
 
     setGenerateCommitment(!!stored);
+    setCommitment(stored);
   }, []);
 
   return (
@@ -207,76 +209,71 @@ export default function Sidebar() {
           {/* Account */}
           <div className="flex flex-col p-3 pb-6">
             {walletClient?.account ? (
-              <span className="flex flex-col gap-1 bg-white p-3 rounded-lg">
-                <span className="flex flex-row justify-between ">
-                  <span className="flex flex-col gap-2 justify-end">
-                    <Image src="/sidebar/avatar.svg" width={40} height={40} alt="Avatar" />
-                    <Balance address={walletClient?.account?.address as Address} className="min-h-0 h-auto" />
-                    <span className="flex flex-row gap-2">
-                      <span className="text-[14px]">
-                        {walletClient?.account?.address?.slice(0, 6)}...{walletClient?.account?.address?.slice(-4)}
-                      </span>
-                      <Image
-                        onClick={e => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(walletClient?.account?.address || "");
-                          notification.success("Address copied to clipboard");
-                        }}
-                        width={14}
-                        height={14}
-                        src="/misc/copy-icon.svg"
-                        alt="copy"
-                        className="cursor-pointer"
-                      />
-                    </span>
-                    <div
-                      className="h-8 btn-sm rounded-xl! flex gap-1 px-3 py-1 cursor-pointer bg-[#FF7CEB] text-white text-[16px] "
-                      onClick={async () => {
-                        if (!walletClient || generateCommitment) return;
-
-                        const secret = await createSecret(walletClient);
-                        const commitment = await createCommitment(secret);
-                        localStorage.setItem("secret", secret.toString());
-                        localStorage.setItem("commitment", commitment.toString());
-                        setGenerateCommitment(true);
-                      }}
-                    >
-                      {generateCommitment ? (
-                        <>
-                          <CheckCircleIcon className="text-xl font-normal h-6 w-4 ml-2 sm:ml-0" aria-hidden="true" />
-                          <span className="whitespace-nowrap ">Generated</span>
-                        </>
-                      ) : (
-                        <>
-                          <PlusCircleIcon className="text-xl font-normal h-6 w-4 ml-2 sm:ml-0" aria-hidden="true" />
-                          <span className="whitespace-nowrap ">Generate commitment</span>
-                        </>
-                      )}
-                    </div>
-                    <div
-                      className="h-8 btn-sm rounded-xl! flex gap-3 px-3 py-1 cursor-pointer bg-[#FF7CEB] text-white text-[16px] "
-                      onClick={() => {
-                        if (generateCommitment) {
-                          const commitment = localStorage.getItem("commitment");
-                          if (commitment) {
-                            navigator.clipboard.writeText(commitment);
-                            notification.success("Commitment copied to clipboard");
-                          }
-                        } else {
-                          notification.error("Generate a commitment first");
-                          return;
-                        }
-                      }}
-                    >
-                      <>
-                        <DocumentDuplicateIcon
-                          className="text-xl font-normal h-6 w-4 ml-2 sm:ml-0"
-                          aria-hidden="true"
+              <span className="flex flex-col gap-1 bg-white px-1 py-2 rounded-lg">
+                <span className="flex flex-row justify-between">
+                  {/* Left side */}
+                  <span className="w-[200px] h-full flex flex-col justify-between">
+                    <span className="flex flex-row bg-[#F6F3FF] rounded-lg p-1 gap-2">
+                      <Image src="/sidebar/avatar.svg" width={70} height={70} alt="Avatar" />
+                      <span className="flex flex-col w-full justify-between">
+                        <Balance
+                          address={walletClient?.account?.address as Address}
+                          className="min-h-0 h-auto text-[14px]"
                         />
-                        <span className="whitespace-nowrap">Copy commitment</span>
-                      </>
-                    </div>
+                        <span className="flex flex-row items-center gap-2">
+                          <Image src="/sidebar/fox.svg" width={14} height={14} alt="Fox" />
+                          <span className="text-[12px]">
+                            {walletClient?.account?.address?.slice(0, 6)}...{walletClient?.account?.address?.slice(-4)}
+                          </span>
+                          <Copy
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(walletClient?.account?.address || "");
+                              notification.success("Address copied to clipboard");
+                            }}
+                            width={12}
+                            height={12}
+                            className="cursor-pointer"
+                          />
+                        </span>
+                      </span>
+                    </span>
+                    <span>
+                      <span>Commitment</span>
+                      <span
+                        className={`block bg-[#1E1E1E] p-2 text-white font-semibold text-center text-[14px] rounded-[8px] 
+                        ${!generateCommitment && "cursor-pointer hover:bg-gray-800"}`}
+                      >
+                        {commitment ? (
+                          <span className="flex flex-row justify-between items-center">
+                            <span className="flex flex-row gap-2">
+                              <Image src={`/logo/polypay-icon.svg`} width={10} height={10} alt="Polypay Icon" />
+                              <ShinyText
+                                text={`${commitment?.slice(0, 6)}...${commitment?.slice(-4)}`}
+                                disabled={false}
+                                speed={3}
+                              />
+                            </span>
+                            <Copy
+                              onClick={e => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(commitment || "");
+                                notification.success("Commitment copied to clipboard");
+                              }}
+                              width={14}
+                              height={14}
+                              className="cursor-pointer"
+                            />
+                          </span>
+                        ) : (
+                          <GenerateCommitmentModal>
+                            <span>Generate your commitment</span>
+                          </GenerateCommitmentModal>
+                        )}
+                      </span>
+                    </span>
                   </span>
+                  {/* Right side */}
                   <span className="flex flex-col gap-2">
                     <ReceiveModal address={walletClient?.account?.address as Address}>
                       <Image

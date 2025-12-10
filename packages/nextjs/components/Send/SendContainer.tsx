@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { useWalletClient } from "wagmi";
-import { parseEther } from "viem";
-import { Noir } from "@noir-lang/noir_js";
 import { UltraPlonkBackend } from "@aztec/bb.js";
-import { useScaffoldContract } from "~~/hooks/scaffold-eth";
-import { notification } from "~~/utils/scaffold-eth";
+import { Noir } from "@noir-lang/noir_js";
+import { parseEther } from "viem";
+import { useWalletClient } from "wagmi";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
+import { useScaffoldContract } from "~~/hooks/scaffold-eth";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
+import { notification } from "~~/utils/scaffold-eth";
 
 export default function SendContainer() {
   const [amount, setAmount] = useState("");
@@ -19,7 +19,7 @@ export default function SendContainer() {
   const { data: walletClient } = useWalletClient();
   const { data: metaMultiSigWallet } = useScaffoldContract({
     contractName: "MetaMultiSigWallet",
-    walletClient
+    walletClient,
   });
   const { mutateAsync: createTransaction } = useCreateTransaction();
 
@@ -98,9 +98,7 @@ export default function SendContainer() {
         return;
       }
 
-      const leafIndex = (commitments ?? []).findIndex(
-        (c) => BigInt(c) === BigInt(myCommitment)
-      );
+      const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(myCommitment));
 
       if (leafIndex === -1) {
         notification.error("You are not a signer of this wallet");
@@ -118,7 +116,7 @@ export default function SendContainer() {
         pub_key_y: pubKeyY,
         secret: secret,
         leaf_index: leafIndex,
-        merkle_path: merklePath.map((p) => p.toString()),
+        merkle_path: merklePath.map(p => p.toString()),
         tx_hash_bytes: txHashBytes,
         tx_hash_commitment: txHashCommitment.toString(),
         merkle_root: merkleRoot?.toString() ?? "",
@@ -150,12 +148,7 @@ export default function SendContainer() {
         nullifier: nullifier.toString(),
       });
 
-      // 9. Check if auto-execute needed
-      if (result.status === "EXECUTING") {
-        setLoadingState("Threshold reached! Executing on-chain...");
-        await executeOnChain(result.txId);
-        notification.success("Transaction executed successfully!");
-      } else {
+      if (result) {
         notification.success("Transfer transaction created! Waiting for approvals.");
       }
 
@@ -175,9 +168,7 @@ export default function SendContainer() {
     if (!metaMultiSigWallet) return;
 
     // Fetch execution data from backend
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${txId}/execute`
-    );
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${txId}/execute`);
 
     if (!response.ok) {
       const error = await response.json();
@@ -205,14 +196,11 @@ export default function SendContainer() {
     ]);
 
     // Mark as executed in backend
-    await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${txId}/executed`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ txHash }),
-      }
-    );
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${txId}/executed`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ txHash }),
+    });
 
     return txHash;
   };
@@ -231,23 +219,17 @@ export default function SendContainer() {
       <div className="flex flex-col gap-[20px] items-center justify-center flex-1 px-4">
         {/* Title section */}
         <div className="flex flex-col items-center justify-center pt-8">
-          <div className="text-[#545454] text-6xl text-center font-bold uppercase w-full">
-            transfering
-          </div>
+          <div className="text-[#545454] text-6xl text-center font-bold uppercase w-full">transfering</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
             <div className="text-[#545454] text-6xl text-center font-bold uppercase">t</div>
             <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-[#545454] text-6xl text-center font-bold uppercase">
-              friends
-            </div>
+            <div className="text-[#545454] text-6xl text-center font-bold uppercase">friends</div>
           </div>
         </div>
 
         {/* Loading state */}
         {isLoading && loadingState && (
-          <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm">
-            {loadingState}
-          </div>
+          <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm">{loadingState}</div>
         )}
 
         {/* Token selector and amount */}
@@ -262,7 +244,7 @@ export default function SendContainer() {
             type="text"
             value={amount}
             placeholder="0.00"
-            onChange={(e) => {
+            onChange={e => {
               // Only allow numbers and decimal point
               const value = e.target.value;
               if (value === "" || /^\d*\.?\d*$/.test(value)) {
@@ -283,9 +265,7 @@ export default function SendContainer() {
               <div className="absolute left-0 top-1/2 w-full h-0.5 border-t border-dashed border-gray-300 transform -translate-y-1/2" />
             </div>
             <div className="absolute bg-[#fff] rounded-[32.842px] w-8 h-8 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-[1px] border-dashed border-[#FF7CEB] shadow-[0_0_20px_rgba(255,124,235,0.5)]">
-              <div className="text-text-secondary text-[14px] text-center text-[#676767]">
-                To
-              </div>
+              <div className="text-text-secondary text-[14px] text-center text-[#676767]">To</div>
             </div>
           </div>
         </div>
@@ -298,7 +278,7 @@ export default function SendContainer() {
                 type="text"
                 placeholder="Enter recipient address (0x...)"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={e => setAddress(e.target.value)}
                 className="text-text-secondary text-[16px] outline-none placeholder:text-text-secondary flex-1 w-full"
                 disabled={isLoading}
               />
@@ -321,8 +301,8 @@ export default function SendContainer() {
 
         {/* Info text */}
         <p className="text-sm text-gray-500 text-center max-w-md">
-          This will create a transfer proposal that requires {" "}
-          <span className="font-medium">threshold</span> approvals from signers.
+          This will create a transfer proposal that requires <span className="font-medium">threshold</span> approvals
+          from signers.
         </p>
       </div>
     </div>
