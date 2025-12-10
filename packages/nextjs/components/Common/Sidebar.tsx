@@ -13,6 +13,7 @@ import { Address } from "viem";
 import { useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
 import { useScaffoldContract, useTargetNetwork } from "~~/hooks/scaffold-eth";
+import { useIdentityStore } from "~~/services/store";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
 export const ACCOUNT_SIDEBAR_OFFSET = 285; // Main sidebar width
@@ -150,28 +151,14 @@ export default function Sidebar() {
 
   const walletAddress = metaMultiSigWallet?.address || "";
 
-  const [generateCommitment, setGenerateCommitment] = useState(false);
-  const [commitment, setCommitment] = useState<string | null>(null);
+  const { commitment, clearIdentity } = useIdentityStore();
 
-  const pathname = usePathname();
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const router = useRouter();
 
   const handleItemClick = (itemLabel: string) => {
     setSelectedItem(itemLabel);
   };
-
-  useEffect(() => {
-    const path = pathname.split("/")[1];
-    setSelectedItem(`/${path}`);
-  }, [pathname]);
-
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("commitment") : null;
-
-    setGenerateCommitment(!!stored);
-    setCommitment(stored);
-  }, []);
 
   return (
     <>
@@ -242,7 +229,7 @@ export default function Sidebar() {
                       <span>Commitment</span>
                       <span
                         className={`block bg-[#1E1E1E] p-2 text-white font-semibold text-center text-[14px] rounded-[8px] 
-                        ${!generateCommitment && "cursor-pointer hover:bg-gray-800"}`}
+                        ${!commitment && "cursor-pointer hover:bg-gray-800"}`}
                       >
                         {commitment ? (
                           <span className="flex flex-row justify-between items-center">
@@ -302,8 +289,7 @@ export default function Sidebar() {
                       className="cursor-pointer"
                       onClick={() => {
                         // Clear commitment and secret on disconnect
-                        localStorage.removeItem("commitment");
-                        localStorage.removeItem("secret");
+                        clearIdentity();
                         disconnect();
                       }}
                     />

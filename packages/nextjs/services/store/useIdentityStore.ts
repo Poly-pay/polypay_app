@@ -2,17 +2,19 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface IdentityState {
+  secret: string | null;
   commitment: string | null;
-  setCommitment: (commitment: string) => void;
-  clearCommitment: () => void;
+  setIdentity: (secret: string, commitment: string) => void;
+  clearIdentity: () => void;
 }
 
 export const useIdentityStore = create<IdentityState>()(
   persist(
     (set) => ({
+      secret: null,
       commitment: null,
-      setCommitment: (commitment: string) => set({ commitment }),
-      clearCommitment: () => set({ commitment: null }),
+      setIdentity: (secret: string, commitment: string) => set({ secret, commitment }),
+      clearIdentity: () => set({ secret: null, commitment: null }),
     }),
     {
       name: "identity-storage",

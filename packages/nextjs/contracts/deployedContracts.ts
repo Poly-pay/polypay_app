@@ -725,7 +725,7 @@ const deployedContracts = {
   },
   11155111: {
     MetaMultiSigWallet: {
-      address: "0x931f193FB8bAA1c6Cf96907CF7ff58627Ee23a71",
+      address: "0xEC712b105608B25FA3421487F2B6838C3893FC8C",
       abi: [
         {
           inputs: [
@@ -1212,7 +1212,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 9767372,
+      deployedOnBlock: 9809731,
     },
   },
 } as const;

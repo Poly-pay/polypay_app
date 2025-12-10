@@ -20,7 +20,6 @@ export interface ZkVerifyResult {
 }
 
 const submitProofAPI = async (data: SubmitProofDto): Promise<ZkVerifyResult> => {
-  console.log("🚀 ~ submitProofAPI ~ API_BASE_URL:", API_BASE_URL)
   const response = await fetch(`${API_BASE_URL}/api/zkverify/submit-proof`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
 import WalletName from "./WalletName";
+import { useDeployWallet } from "~~/hooks/api/useDeployWallet";
+import { useIdentityStore } from "~~/services/store/useIdentityStore";
+import { notification } from "~~/utils/scaffold-eth";
 
 export interface WalletFormData {
   name: string;
@@ -13,17 +16,23 @@ export interface WalletFormData {
 }
 
 export default function NewWalletContainer() {
+  const { deploy, isLoading: deployLoading, error: deployError } = useDeployWallet();
+  const { commitment } = useIdentityStore();
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [createdWalletAddress, setCreatedWalletAddress] = useState<string>("");
 
   const [formData, setFormData] = useState<WalletFormData>({
     name: "",
-    signers: [""], // Start with one empty signer
+    signers: [commitment || ""], // Start with one empty signer
     threshold: 1,
   });
 
   const handleNextStep = () => {
+    if (!commitment) {
+      notification.error("You need to have an identity commitment to create a wallet.");
+      return;
+    }
     setCurrentStep(prev => prev + 1);
   };
 
@@ -44,32 +53,40 @@ export default function NewWalletContainer() {
   };
 
   const handleCreateWallet = async () => {
-    try {
-      setLoading(true);
+    if (!commitment) {
+      notification.error("You need to have an identity commitment to create a wallet.");
+      return;
+    }
 
-      // Filter out empty signers
+    try {
       const validSigners = formData.signers.filter(s => s.trim() !== "");
 
-      // TODO: Call smart contract to create wallet
-      console.log("Creating wallet with:", {
+      const walletAddress = await deploy({
         name: formData.name,
-        signers: validSigners,
+        commitments: validSigners,
         threshold: formData.threshold,
+        creatorCommitment: commitment,
       });
 
-      // Simulate wallet creation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Set created wallet address (replace with actual address from contract)
-      setCreatedWalletAddress("0xF1E2D3C4B5A6978800112233445566778899AABB");
-
+      setCreatedWalletAddress(walletAddress);
       setCurrentStep(3);
     } catch (err: any) {
+      notification.error("Failed to create wallet: " + (err?.message || err.toString()));
       console.error("Failed to create wallet:", err);
-    } finally {
-      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (commitment) {
+      setFormData(prev => {
+        // If the current commitment is not in the signers list, add it at the beginning
+        if (!prev.signers.includes(commitment)) {
+          return { ...prev, signers: [commitment, ...prev.signers] };
+        }
+        return prev;
+      });
+    }
+  }, [commitment]);
 
   // Validation
   const validSigners = formData.signers.filter(s => s.trim() !== "");
@@ -129,7 +146,7 @@ export default function NewWalletContainer() {
         signers={validSigners}
         threshold={formData.threshold}
         onCreateWallet={handleCreateWallet}
-        loading={loading}
+        loading={deployLoading}
         isFormValid={currentStep === 1 ? isStep1Valid : isStep2Valid}
       />
     </div>

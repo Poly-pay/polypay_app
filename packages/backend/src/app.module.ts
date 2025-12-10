@@ -3,13 +3,17 @@ import { ConfigModule } from '@/config/config.module';
 import { DatabaseModule } from '@/database/database.module';
 import { ZkVerifyModule } from './zkverify/zkverify.module';
 import { TransactionModule } from './transaction/transaction.module';
+import { AccountModule } from './account/account.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
     ConfigModule,
     DatabaseModule,
     ZkVerifyModule,
-    TransactionModule
+    TransactionModule,
+    AccountModule,
+    WalletModule,
   ],
 })
 export class AppModule {}
