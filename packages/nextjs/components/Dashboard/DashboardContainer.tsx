@@ -5,8 +5,9 @@ import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
 import { TransactionRow, convertToRowData } from "./TransactionRow";
+import { useMetaMultiSigWallet } from "~~/hooks/api";
 import { useTransactions } from "~~/hooks/api/useTransaction";
-import { useScaffoldContract } from "~~/hooks/scaffold-eth";
+import { useIdentityStore } from "~~/services/store";
 
 export interface WalletData {
   signers: string[];
@@ -28,25 +29,16 @@ function Header() {
 }
 
 export default function DashboardContainer() {
-  const [myCommitment, setMyCommitment] = useState<string>("");
+  const { commitment } = useIdentityStore();
+
   const [currentThreshold, setCurrentThreshold] = useState<number>(0);
   const [totalSigners, setTotalSigners] = useState<number>(0);
 
-  const { data: metaMultiSigWallet } = useScaffoldContract({
-    contractName: "MetaMultiSigWallet",
-  });
+  const metaMultiSigWallet = useMetaMultiSigWallet();
 
   const walletAddress = metaMultiSigWallet?.address || "";
 
   const { data: transactions, isLoading, refetch } = useTransactions(walletAddress);
-
-  // Load my commitment from localStorage
-  useEffect(() => {
-    const commitment = localStorage.getItem("commitment");
-    if (commitment) {
-      setMyCommitment(commitment);
-    }
-  }, []);
 
   // Load contract data
   useEffect(() => {
@@ -54,8 +46,8 @@ export default function DashboardContainer() {
       if (!metaMultiSigWallet) return;
 
       try {
-        const threshold = await metaMultiSigWallet.read.signaturesRequired();
-        const signers = await metaMultiSigWallet.read.getSignersCount();
+        const threshold = await metaMultiSigWallet?.read?.signaturesRequired();
+        const signers = await metaMultiSigWallet?.read?.getSignersCount();
 
         setCurrentThreshold(Number(threshold));
         setTotalSigners(Number(signers));
@@ -66,6 +58,7 @@ export default function DashboardContainer() {
 
     loadContractData();
   }, [metaMultiSigWallet]);
+  
 
   const handleSuccess = () => {
     refetch();
@@ -92,10 +85,10 @@ export default function DashboardContainer() {
         </div>
       ) : transactions && transactions.length > 0 ? (
         <div className="flex flex-col gap-2">
-          {transactions.map(tx => (
+          {transactions.map((tx: any) => (
             <TransactionRow
               key={tx.id}
-              tx={convertToRowData(tx, myCommitment, currentThreshold)}
+              tx={convertToRowData(tx, commitment ?? "", currentThreshold)}
               totalSigners={totalSigners}
               onSuccess={handleSuccess}
             />

@@ -9,18 +9,15 @@ import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui
 import { ReceiveModal } from "./ReceiveModal";
 import { Eye, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
-import { useScaffoldContract } from "~~/hooks/scaffold-eth";
+import { useMetaMultiSigWallet } from "~~/hooks/api";
 
 interface PortfolioModalProps {
   children: React.ReactNode;
 }
 
 export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
-  const { data: metaMultiSigWallet } = useScaffoldContract({
-    contractName: "MetaMultiSigWallet",
-  });
+  const metaMultiSigWallet = useMetaMultiSigWallet();
 
-  const walletAddress = metaMultiSigWallet?.address || "";
   const router = useRouter();
   const [showBalance, setShowBalance] = React.useState(true);
 
@@ -57,7 +54,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
                   {showBalance ? (
                     <span className="flex flex-row items-center text-[#1E1E1E]">
                       <Image src="/token/eth.svg" alt="ETH" width={24} height={24} className="inline-block mr-2 mb-1" />
-                      <Balance address={walletAddress as Address} className="min-h-0 h-auto text-black" />
+                      <Balance address={metaMultiSigWallet?.address as Address} className="min-h-0 h-auto text-black" />
                     </span>
                   ) : (
                     <span>*****</span>
@@ -77,7 +74,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
                     Transfer
                   </Button>
                 </SheetClose>
-                <ReceiveModal address={walletAddress as Address}>
+                <ReceiveModal address={metaMultiSigWallet?.address as Address}>
                   <Button
                     size="sm"
                     className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm flex items-center gap-1 cursor-pointer h-[38px] w-[108px]"

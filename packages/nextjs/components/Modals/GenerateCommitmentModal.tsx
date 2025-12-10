@@ -2,26 +2,67 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { X } from "lucide-react";
 import { useWalletClient } from "wagmi";
 import DecryptedText from "~~/components/effects/DecryptedText";
-import { useIdentityStore } from "~~/services/store";
+import { useCreateAccount } from "~~/hooks/api";
+import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { createCommitment, createSecret } from "~~/utils/multisig";
+import { notification } from "~~/utils/scaffold-eth";
 
 interface GenerateCommitmentModalProps {
   children: React.ReactNode;
 }
 
 export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = ({ children }) => {
+  const router = useRouter();
+  const { setCurrentWallet } = useWalletStore();
   const { data: walletClient } = useWalletClient();
   const { setIdentity } = useIdentityStore();
+  const { mutateAsync: createAccount } = useCreateAccount();
   const [identity, setLocalIdentity] = useState<{ secret: string; commitment: string } | null>(null);
 
-  const handleOpenChange = (isOpen: boolean) => {
+  const handleOpenChange = async (isOpen: boolean) => {
     if (!isOpen && identity?.secret && identity?.commitment) {
       setIdentity(identity.secret, identity.commitment);
+
+      // Check wallets of account
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/${identity.commitment}/wallets`);
+        const wallets = await response.json();
+
+        // Route based on wallets
+        if (wallets && wallets.length > 0) {
+          setCurrentWallet(wallets[0]);
+          router.push("/dashboard");
+        } else {
+          router.push("/create-wallet");
+        }
+      } catch (err) {
+        console.error("Failed to check wallets:", err);
+        router.push("/create-wallet");
+      }
+    }
+  };
+
+  const handleGenerateCommitment = async () => {
+    if (!walletClient) return;
+
+    const secret = await createSecret(walletClient);
+    const cm = await createCommitment(secret);
+    setLocalIdentity({ secret: secret.toString(), commitment: cm.toString() });
+
+    // create account on backend
+    try {
+      await createAccount({ commitment: cm.toString() });
+    } catch (err: any) {
+      // Ignore nếu account đã tồn tại (409 Conflict)
+      if (!err.message?.includes("already exists")) {
+        console.error("Failed to create account:", err);
+      }
     }
   };
 
@@ -65,7 +106,13 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
               </span>
             </div>
             {identity?.commitment && (
-              <span className="p-2 bg-[#FF7CEB1A] border-[1px] border-primary rounded-2xl text-[#FF0ADA] font-repetition text-[17px]">
+              <span
+                className="p-2 bg-[#FF7CEB1A] border-[1px] border-primary rounded-2xl text-[#FF0ADA] font-repetition text-[17px] cursor-pointer"
+                onClick={() => {
+                  navigator.clipboard.writeText(identity.commitment || "");
+                  notification.success("Commitment copied to clipboard");
+                }}
+              >
                 <DecryptedText
                   text={`${identity.commitment.slice(0, 15)}...${identity.commitment.slice(-4)}`}
                   animateOn="view"
@@ -86,13 +133,7 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
             ) : (
               <Button
                 className="w-full bg-[#FF7CEB] text-white rounded-lg py-3 cursor-pointer"
-                onClick={async () => {
-                  if (!walletClient) return;
-
-                  const secret = await createSecret(walletClient);
-                  const cm = await createCommitment(secret);
-                  setLocalIdentity({ secret: secret.toString(), commitment: cm.toString() });
-                }}
+                onClick={handleGenerateCommitment}
               >
                 Generate Commitment
               </Button>

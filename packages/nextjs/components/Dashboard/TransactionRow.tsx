@@ -1,4 +1,3 @@
-// components/transaction/TransactionRow.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -8,17 +7,16 @@ import { Noir } from "@noir-lang/noir_js";
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
+import { useMetaMultiSigWallet } from "~~/hooks/api";
 import {
   TxStatus as ApiTxStatus,
   TxType as ApiTxType,
   Transaction,
-  Vote,
   useApprove,
   useDeny,
-  useExecutionData,
   useMarkExecuted,
 } from "~~/hooks/api/useTransaction";
-import { useScaffoldContract } from "~~/hooks/scaffold-eth";
+import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -398,12 +396,13 @@ interface TransactionRowProps {
 }
 
 export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowProps) {
+  const { commitment, secret } = useIdentityStore();
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
 
   const { data: walletClient } = useWalletClient();
-  const { data: metaMultiSigWallet } = useScaffoldContract({ contractName: "MetaMultiSigWallet", walletClient });
+  const metaMultiSigWallet = useMetaMultiSigWallet();
 
   const { mutateAsync: approve } = useApprove();
   const { mutateAsync: deny } = useDeny();
@@ -488,7 +487,6 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
     const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
 
     // 4. Get secret
-    const secret = localStorage.getItem("secret");
     if (!secret) throw new Error("No secret found");
 
     const txHashBytes = hexToByteArray(txHash);
@@ -501,10 +499,9 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
     const tree = await buildMerkleTree(commitments ?? []);
     const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
 
-    const myCommitment = localStorage.getItem("commitment");
-    if (!myCommitment) throw new Error("No commitment found");
+    if (!commitment) throw new Error("No commitment found");
 
-    const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(myCommitment));
+    const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(commitment));
     if (leafIndex === -1) throw new Error("You are not a signer");
 
     const merklePath = getMerklePath(tree, leafIndex);
@@ -536,7 +533,7 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
       proof: Array.from(proof),
       publicInputs,
       nullifier: nullifier.toString(),
-      myCommitment,
+      commitment,
     };
   };
 
@@ -593,17 +590,22 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
 
   // ============ Handle Approve ============
   const handleApprove = async () => {
+    if (!commitment) {
+      notification.error("No commitment found");
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Generate proof
-      const { proof, publicInputs, nullifier, myCommitment } = await generateProof();
+      const { proof, publicInputs, nullifier, commitment } = await generateProof();
 
       // 2. Submit to backend
       setLoadingState("Submitting to backend...");
       const result = await approve({
         txId: tx.txId,
         dto: {
-          voterCommitment: myCommitment,
+          voterCommitment: commitment,
           proof,
           publicInputs,
           nullifier,
@@ -625,8 +627,7 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
   const handleDeny = async () => {
     setLoading(true);
     try {
-      const myCommitment = localStorage.getItem("commitment");
-      if (!myCommitment) {
+      if (!commitment) {
         notification.error("No commitment found");
         return;
       }
@@ -635,7 +636,7 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
       await deny({
         txId: tx.txId,
         dto: {
-          voterCommitment: myCommitment,
+          voterCommitment: commitment,
           totalSigners,
         },
       });

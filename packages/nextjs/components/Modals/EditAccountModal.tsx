@@ -10,10 +10,11 @@ import { Noir } from "@noir-lang/noir_js";
 import { Copy, Trash2, X } from "lucide-react";
 import { encodeFunctionData } from "viem";
 import { useWalletClient } from "wagmi";
+import { useMetaMultiSigWallet } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
-import { useScaffoldContract } from "~~/hooks/scaffold-eth";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
+import { useIdentityStore } from "~~/services/store";
 
 interface EditAccountModalProps {
   children: React.ReactNode;
@@ -21,11 +22,9 @@ interface EditAccountModalProps {
   threshold: number;
 }
 
-export const EditAccountModal: React.FC<EditAccountModalProps> = ({
-  children,
-  signers = [],
-  threshold = 0,
-}) => {
+export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, signers = [], threshold = 0 }) => {
+  const { commitment: myCommitment, secret } = useIdentityStore();
+
   const [isOpen, setIsOpen] = useState(false);
   const [editThreshold, setEditThreshold] = useState(threshold);
   const [newSignerCommitment, setNewSignerCommitment] = useState("");
@@ -33,9 +32,9 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
   const [loadingState, setLoadingState] = useState("");
 
   const { data: walletClient } = useWalletClient();
-  const { data: metaMultiSigWallet } = useScaffoldContract({ contractName: "MetaMultiSigWallet" });
+  const metaMultiSigWallet = useMetaMultiSigWallet();
   const { mutateAsync: createTransaction } = useCreateTransaction();
-  
+
   const newThresholdForAdd = threshold;
   const newThresholdForRemove = threshold;
 
@@ -52,7 +51,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
     const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
 
     // 2. Get secret
-    const secret = localStorage.getItem("secret");
     if (!secret) {
       throw new Error("No secret found in localStorage");
     }
@@ -68,7 +66,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
     const tree = await buildMerkleTree(commitments ?? []);
     const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
 
-    const myCommitment = localStorage.getItem("commitment");
     if (!myCommitment) {
       throw new Error("No commitment found in localStorage");
     }
@@ -367,7 +364,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
               </span>
             </div>
             <Button
-              variant="ghost"
               size="sm"
               onClick={() => setIsOpen(false)}
               className="h-8 w-8 p-0 bg-white hover:bg-white/50 text-black cursor-pointer"
@@ -399,10 +395,9 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
                     <span className="font-mono text-sm text-gray-900 w-[400px] truncate">{signer}</span>
                     <div className="flex items-center gap-2">
                       <Button
-                        variant="ghost"
                         size="sm"
                         onClick={() => copyToClipboard(signer)}
-                        className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 cursor-pointer"
+                        className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 bg-gray-200 hover:bg-gray-300 cursor-pointer"
                         disabled={loading}
                       >
                         <Copy className="h-4 w-4" />
@@ -415,9 +410,8 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
                         onConfirm={() => handleRemoveSigner(signer)}
                       >
                         <Button
-                          variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 cursor-pointer"
+                          className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 bg-gray-200 hover:bg-gray-300 cursor-pointer"
                           disabled={loading || signers.length <= 1}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -437,19 +431,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
                   className="font-mono text-sm"
                   disabled={loading}
                 />
-                {/* <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="1"
-                    max={signers.length + 1}
-                    value={newThresholdForAdd}
-                    onChange={e => setNewThresholdForAdd(Number(e.target.value))}
-                    className="w-32"
-                    placeholder="Threshold"
-                    disabled={loading}
-                  />
-                  <span className="text-sm text-gray-500">/ {signers.length + 1} signers</span>
-                </div> */}
                 <Button
                   variant="secondary"
                   size="sm"

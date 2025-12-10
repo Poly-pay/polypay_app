@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { EditAccountModal } from "../Modals/EditAccountModal";
 import { useWalletClient } from "wagmi";
-import { useScaffoldContract, useScaffoldReadContract } from "~~/hooks/scaffold-eth";
-import { usePendingTransactions, useTransactions } from "~~/hooks/api/useTransaction";
+import { usePendingTransactions } from "~~/hooks/api/useTransaction";
+import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks/api";
 
 interface InfoCardContainerProps {}
 
@@ -13,15 +13,8 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   const { data: walletClient } = useWalletClient();
   const [commitments, setCommitments] = useState<string[]>([]);
 
-  const { data: metaMultiSigWallet } = useScaffoldContract({
-    contractName: "MetaMultiSigWallet",
-    walletClient,
-  });
-
-  const { data: signaturesRequired } = useScaffoldReadContract({
-    contractName: "MetaMultiSigWallet",
-    functionName: "signaturesRequired",
-  });
+  const metaMultiSigWallet = useMetaMultiSigWallet();
+  const { data: signaturesRequired } = useWalletThreshold();
 
   const walletAddress = metaMultiSigWallet?.address || "";
 
@@ -30,12 +23,12 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   useEffect(() => {
     const fetchCommitments = async () => {
       if (!metaMultiSigWallet) return;
-      const commitments = await metaMultiSigWallet?.read.getCommitments();
+      const commitments = await metaMultiSigWallet?.read?.getCommitments();
       setCommitments(commitments.map((c: bigint) => c.toString()));
     };
 
     fetchCommitments();
-  }, [walletAddress]);
+  }, [walletAddress, metaMultiSigWallet]);
 
   return (
     <>

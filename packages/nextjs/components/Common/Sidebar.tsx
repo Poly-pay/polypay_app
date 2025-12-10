@@ -12,7 +12,7 @@ import { Copy } from "lucide-react";
 import { Address } from "viem";
 import { useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
-import { useScaffoldContract, useTargetNetwork } from "~~/hooks/scaffold-eth";
+import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useIdentityStore } from "~~/services/store";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
@@ -63,7 +63,6 @@ const sectionItems = [
 ];
 
 const SectionItem = ({
-  walletAddress,
   label,
   menuItems,
   showDivider,
@@ -145,12 +144,6 @@ export default function Sidebar() {
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
 
-  const { data: metaMultiSigWallet } = useScaffoldContract({
-    contractName: "MetaMultiSigWallet",
-  });
-
-  const walletAddress = metaMultiSigWallet?.address || "";
-
   const { commitment, clearIdentity } = useIdentityStore();
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
@@ -180,7 +173,6 @@ export default function Sidebar() {
           <div className="flex flex-col gap-2">
             {sectionItems.map((item, index) => (
               <SectionItem
-                walletAddress={walletAddress}
                 key={item.label}
                 label={item.label}
                 menuItems={item.menuItems}

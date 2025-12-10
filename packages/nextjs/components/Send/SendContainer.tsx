@@ -5,22 +5,22 @@ import { UltraPlonkBackend } from "@aztec/bb.js";
 import { Noir } from "@noir-lang/noir_js";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
+import { useMetaMultiSigWallet } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
-import { useScaffoldContract } from "~~/hooks/scaffold-eth";
+import { useIdentityStore } from "~~/services/store";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function SendContainer() {
+  const { commitment: myCommitment, secret } = useIdentityStore();
+
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
 
   const { data: walletClient } = useWalletClient();
-  const { data: metaMultiSigWallet } = useScaffoldContract({
-    contractName: "MetaMultiSigWallet",
-    walletClient,
-  });
+  const metaMultiSigWallet = useMetaMultiSigWallet();
   const { mutateAsync: createTransaction } = useCreateTransaction();
 
   const handleTransfer = async () => {
@@ -73,7 +73,6 @@ export default function SendContainer() {
       const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
 
       // 4. Get secret from localStorage
-      const secret = localStorage.getItem("secret");
       if (!secret) {
         notification.error("No secret found. Please create identity first.");
         setIsLoading(false);
@@ -91,7 +90,6 @@ export default function SendContainer() {
       const tree = await buildMerkleTree(commitments ?? []);
       const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
 
-      const myCommitment = localStorage.getItem("commitment");
       if (!myCommitment) {
         notification.error("No commitment found. Please create identity first.");
         setIsLoading(false);
