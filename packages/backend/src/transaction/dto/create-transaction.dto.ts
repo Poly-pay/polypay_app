@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsArray,
   IsEnum,
+  Min,
 } from 'class-validator';
 
 export enum TxType {
@@ -12,6 +13,7 @@ export enum TxType {
   ADD_SIGNER = 'ADD_SIGNER',
   REMOVE_SIGNER = 'REMOVE_SIGNER',
   SET_THRESHOLD = 'SET_THRESHOLD',
+  BATCH = 'BATCH',
 }
 
 export class CreateTransactionDto {
@@ -28,6 +30,7 @@ export class CreateTransactionDto {
   walletAddress: string;
 
   @IsNumber()
+  @Min(1)
   threshold: number; // current threshold of wallet
 
   // Transfer
@@ -49,7 +52,13 @@ export class CreateTransactionDto {
   @IsNumber()
   newThreshold?: number;
 
-  // Creator's proof (auto approve)
+  // Batch - array of batch item IDs
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  batchItemIds?: string[];
+
+  // Creator's proof
   @IsString()
   @IsNotEmpty()
   creatorCommitment: string;

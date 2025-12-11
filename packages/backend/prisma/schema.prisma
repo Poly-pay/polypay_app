@@ -21,6 +21,7 @@ model Account {
   updatedAt   DateTime @updatedAt
 
   wallets     AccountWallet[]
+  batchItems  BatchItem[]
 }
 
 model Wallet {
@@ -69,6 +70,9 @@ model Transaction {
   // Set Threshold
   newThreshold       Int?
 
+  // Batch data (JSON string of recipients + amounts)
+  batchData          String?
+
   // Metadata
   createdBy          String      // commitment initial
   threshold          Int         // approval threshold at the time of creation
@@ -115,11 +119,25 @@ model Vote {
   @@index([proofStatus])
 }
 
+model BatchItem {
+  id          String   @id @default(cuid())
+  accountId   String
+  recipient   String
+  amount      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  @@index([accountId])
+}
+
 enum TxType {
   TRANSFER
   ADD_SIGNER
   REMOVE_SIGNER
   SET_THRESHOLD
+  BATCH
 }
 
 enum TxStatus {
