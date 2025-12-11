@@ -4,16 +4,29 @@ export interface ZkVerifySubmitResponse {
 }
 
 export interface ZkVerifyJobStatusResponse {
-  status: string;
   jobId: string;
-  aggregationId?: string;
+  status: string;
+  proofType: string;
+  chainId: number;
+  createdAt: string;
+  updatedAt: string;
+  proofOptions: Record<string, any>;
+  txHash?: string;
+  txExplorerUrl?: string;
+  blockHash?: string;
+  blockExplorerUrl?: string;
+  aggregationId?: number;
+  statement?: string;
   aggregationDetails?: {
-    merkleProof: string[];
-    numberOfLeaves: number;
+    receipt: string;
+    receiptBlockHash: string;
+    root: string;
+    leaf: string;
     leafIndex: number;
+    numberOfLeaves: number;
+    merkleProof: string[];
   };
 }
-
 export class SubmitProofResponseDto {
   success: boolean;
   data: ZkVerifyJobStatusResponse;

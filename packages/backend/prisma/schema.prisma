@@ -72,6 +72,7 @@ model Transaction {
   // Metadata
   createdBy          String      // commitment initial
   threshold          Int         // approval threshold at the time of creation
+  totalSigners       Int         // total signers at the time of creation
 
   // Execution
   txHash             String?
@@ -93,7 +94,7 @@ model Vote {
   voteType         VoteType
 
   // ZK Proof (only APPROVE)
-  nullifier        String?      @unique
+  nullifier        String?      // This unique on-chain, but on our backend, it can be duplicate across tx (because txs can have same nonce)
   jobId            String?      @unique
   proofStatus      ProofStatus?
 

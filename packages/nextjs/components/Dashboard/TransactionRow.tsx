@@ -66,7 +66,7 @@ interface TransactionRowData {
 }
 
 // ============ Helper: Convert API Transaction to Row Data ============
-export function convertToRowData(tx: Transaction, myCommitment: string, currentThreshold: number): TransactionRowData {
+export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
   // Map API type to UI type
   const typeMap: Record<ApiTxType, TxType> = {
     TRANSFER: "transfer",
@@ -106,7 +106,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string, currentT
     amount: tx.value || undefined,
     recipientAddress: tx.to || undefined,
     signerCommitment: tx.signerCommitment || undefined,
-    oldThreshold: currentThreshold,
+    oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
     members,
     votedCount: tx.votes.length,

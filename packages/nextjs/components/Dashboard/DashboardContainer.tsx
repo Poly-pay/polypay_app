@@ -31,7 +31,6 @@ function Header() {
 export default function DashboardContainer() {
   const { commitment } = useIdentityStore();
 
-  const [currentThreshold, setCurrentThreshold] = useState<number>(0);
   const [totalSigners, setTotalSigners] = useState<number>(0);
 
   const metaMultiSigWallet = useMetaMultiSigWallet();
@@ -46,10 +45,8 @@ export default function DashboardContainer() {
       if (!metaMultiSigWallet) return;
 
       try {
-        const threshold = await metaMultiSigWallet?.read?.signaturesRequired();
         const signers = await metaMultiSigWallet?.read?.getSignersCount();
 
-        setCurrentThreshold(Number(threshold));
         setTotalSigners(Number(signers));
       } catch (error) {
         console.error("Error loading contract data:", error);
@@ -88,7 +85,7 @@ export default function DashboardContainer() {
           {transactions.map((tx: any) => (
             <TransactionRow
               key={tx.id}
-              tx={convertToRowData(tx, commitment ?? "", currentThreshold)}
+              tx={convertToRowData(tx, commitment ?? "")}
               totalSigners={totalSigners}
               onSuccess={handleSuccess}
             />

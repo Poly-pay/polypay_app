@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "./Common/Sidebar";
 import Title from "./Common/Title";
+import { InitializeApp } from "./InitializeApp";
 import { RainbowKitProvider, darkTheme, lightTheme } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
@@ -22,21 +23,23 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
-      <div className="h-screen">
-        {/* Sidebar fixed */}
-        <aside className="fixed top-0 left-0 h-screen w-[300px] z-50 p-2">
-          <Sidebar />
-        </aside>
+      <InitializeApp>
+        <div className="h-screen">
+          {/* Sidebar fixed */}
+          <aside className="fixed top-0 left-0 h-screen w-[300px] z-50 p-2">
+            <Sidebar />
+          </aside>
 
-        {/* Main content */}
-        <main className="ml-[300px] p-2 h-screen">
-          <div className="flex flex-col gap-2 w-full h-full">
-            <Title />
-            <div className="flex flex-col w-full flex-1 rounded-lg bg-white overflow-auto">{children}</div>
-          </div>
-        </main>
-      </div>
-      <Toaster />
+          {/* Main content */}
+          <main className="ml-[300px] p-2 h-screen">
+            <div className="flex flex-col gap-2 w-full h-full">
+              <Title />
+              <div className="flex flex-col w-full flex-1 rounded-lg bg-white overflow-auto">{children}</div>
+            </div>
+          </main>
+        </div>
+        <Toaster />
+      </InitializeApp>
     </>
   );
 };
