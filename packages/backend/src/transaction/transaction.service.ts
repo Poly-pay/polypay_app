@@ -52,9 +52,12 @@ export class TransactionService {
     // 1. Validate based on type
     this.validateTransactionDto(dto);
 
-    // 2. Check wallet exists
+    // 2. Check wallet exists and get total signers count
     const wallet = await this.prisma.wallet.findUnique({
       where: { address: dto.walletAddress },
+      include: {
+        accounts: true,
+      },
     });
 
     if (!wallet) {
@@ -62,6 +65,8 @@ export class TransactionService {
         `Wallet ${dto.walletAddress} not found. Please create wallet first.`,
       );
     }
+
+    const totalSigners = wallet.accounts.length;
 
     // 3. Submit proof to zkVerify
     const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized({
@@ -82,6 +87,7 @@ export class TransactionService {
           type: dto.type,
           walletAddress: dto.walletAddress,
           threshold: dto.threshold,
+          totalSigners: totalSigners,
           to: dto.to,
           value: dto.value,
           signerCommitment: dto.signerCommitment,
