@@ -17,7 +17,8 @@ A privacy-preserving multi-signature wallet that uses zero-knowledge proofs to e
 Traditional multisig wallets expose owner addresses publicly on the blockchain. This system replaces addresses with commitments - cryptographic hashes of user secrets. When signing transactions, users generate ZK proofs to prove they are authorized signers without revealing their identity or position in the signer list.
 
 ## Video demo
-Go below link to see: 
+
+Go below link to see:
 [Click here](https://app.screencastify.com/watch/GdsEYGKAjUl8o02KKwlA?checkOrg=18c50a97-8f7c-4641-a685-cc49f2d0c450)
 
 ## Features
@@ -32,6 +33,7 @@ Go below link to see:
 ### What The Circuit Proves
 
 The Noir circuit proves that:
+
 1. The prover knows a valid ECDSA signature for tx_hash
 2. The prover is a member of the authorized signers group (merkle tree)
 3. The prover has not signed this transaction before (nullifier)
@@ -39,6 +41,7 @@ The Noir circuit proves that:
 ### Circuit Inputs
 
 **Private Inputs (hidden):**
+
 - `signature` - ECDSA signature (r, s) without recovery byte
 - `pub_key_x`, `pub_key_y` - Public key coordinates (recovered from signature)
 - `secret` - Signer's secret (derived from signing "noir-identity" message)
@@ -47,6 +50,7 @@ The Noir circuit proves that:
 - `tx_hash_bytes` - Transaction hash to be signed
 
 **Public Inputs (visible):**
+
 - `tx_hash_commitment` - Poseidon hash of tx_hash (for public verification)
 - `merkle_root` - Root of authorized signers tree
 - `nullifier` - Unique identifier to prevent double-signing
@@ -197,8 +201,8 @@ noirup -v 1.0.0-beta.12
 
 ```bash
 # 1. Clone the repository
-git clone git@github.com:Poly-pay/polypay_multisig.git
-cd polypay_multisig
+git clone git@github.com:Poly-pay/polypay_app.git
+cd polypay_app
 
 # 2. Install dependencies
 yarn install
@@ -211,7 +215,7 @@ cp packages/nextjs/.env.example packages/nextjs/.env
 cd packages/backend
 docker compose up -d postgres
 
-# Copy environment file (pre-configured, no changes needed)
+# Copy environment file (fill your own wallet relayer private key and zkverify relayer api key)
 cp .env.example .env
 
 # Run database migrations
@@ -238,11 +242,13 @@ yarn deploy --network sepolia --reset
 ### Environment Variables
 
 - **RELAYER_ZKVERIFY_API_KEY** - API key for zkVerify relayer (Currently using testnet)
-  - For Testnet: Visit https://relayer-testnet.horizenlabs.io/
-  - For Mainnet: Visit https://relayer.horizenlabs.io/
+  - For Testnet: Visit <https://relayer-testnet.horizenlabs.io/>
+  - For Mainnet: Visit <https://relayer.horizenlabs.io/>
 
 ### Circuit Compilation (For Developers Only)
-Only needed if you modify the Noir circuit: 
+
+Only needed if you modify the Noir circuit:
+
 ```bash
 cd packages/nextjs/public/circuit
 nargo compile
