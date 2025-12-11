@@ -35,8 +35,8 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { mutateAsync: createTransaction } = useCreateTransaction();
 
-  const newThresholdForAdd = threshold;
-  const newThresholdForRemove = threshold;
+  const newThresholdForAdd = editThreshold;
+  const newThresholdForRemove = editThreshold;
 
   // ============ Generate Proof Helper ============
   const generateProof = async (txHash: `0x${string}`) => {
@@ -192,8 +192,13 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       return;
     }
 
+    let newThreshold = newThresholdForRemove;
+    if (newThreshold > signers.length - 1) {
+      newThreshold = signers.length - 1;
+    }
+
     // Validate threshold
-    if (newThresholdForRemove < 1 || newThresholdForRemove > signers.length - 1) {
+    if (newThreshold < 1 || newThreshold > signers.length - 1) {
       notification.error("Invalid threshold value for removal");
       return;
     }
@@ -218,7 +223,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
           },
         ],
         functionName: "removeSigner",
-        args: [BigInt(signerCommitment), BigInt(newThresholdForRemove)],
+        args: [BigInt(signerCommitment), BigInt(newThreshold)],
       });
 
       // 2. Get txHash
@@ -241,7 +246,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         signerCommitment: signerCommitment,
-        newThreshold: newThresholdForRemove,
+        newThreshold: newThreshold,
         creatorCommitment: myCommitment,
         proof,
         publicInputs,

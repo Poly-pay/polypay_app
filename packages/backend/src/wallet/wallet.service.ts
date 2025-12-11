@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '@/database/prisma.service';
 import { AccountService } from '@/account/account.service';
 import { CreateWalletDto } from './dto/create-wallet.dto';
+import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 
 @Injectable()
 export class WalletService {
@@ -16,6 +17,7 @@ export class WalletService {
   constructor(
     private prisma: PrismaService,
     private accountService: AccountService,
+    private relayerService: RelayerService,
   ) {}
 
   /**
@@ -34,14 +36,13 @@ export class WalletService {
       );
     }
 
-    // 3. Check wallet doesn't exist
-    const existing = await this.prisma.wallet.findUnique({
-      where: { address: dto.address },
-    });
+    // 3. Deploy contract via relayer
+    const { address, txHash } = await this.relayerService.deployWallet(
+      dto.commitments,
+      dto.threshold,
+    );
 
-    if (existing) {
-      throw new ConflictException('Wallet already exists');
-    }
+    this.logger.log(`Wallet deployed at ${address}, txHash: ${txHash}`);
 
     // 4. Create wallet + accounts in transaction
     const wallet = await this.prisma.$transaction(async (prisma) => {
@@ -59,7 +60,7 @@ export class WalletService {
       // Create wallet
       const wallet = await prisma.wallet.create({
         data: {
-          address: dto.address,
+          address,
           name: dto.name,
           threshold: dto.threshold,
         },
@@ -81,10 +82,9 @@ export class WalletService {
       return wallet;
     });
 
-    this.logger.log(`Created wallet: ${wallet.address}`);
+    this.logger.log(`Created wallet in DB: ${wallet.address}`);
 
-    // Return wallet with signers
-    return this.findByAddress(dto.address);
+    return this.findByAddress(address);
   }
 
   /**

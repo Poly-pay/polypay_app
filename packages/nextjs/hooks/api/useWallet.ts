@@ -20,7 +20,6 @@ export interface Wallet {
 }
 
 export interface CreateWalletDto {
-  address: string;
   name: string;
   threshold: number;
   commitments: string[];

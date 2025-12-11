@@ -3,10 +3,6 @@ import { IsString, IsNotEmpty, IsNumber, IsArray, Min } from 'class-validator';
 export class CreateWalletDto {
   @IsString()
   @IsNotEmpty()
-  address: string;
-
-  @IsString()
-  @IsNotEmpty()
   name: string;
 
   @IsNumber()

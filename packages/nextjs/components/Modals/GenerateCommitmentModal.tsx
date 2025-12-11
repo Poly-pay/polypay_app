@@ -19,7 +19,7 @@ interface GenerateCommitmentModalProps {
 
 export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = ({ children }) => {
   const router = useRouter();
-  const { setCurrentWallet } = useWalletStore();
+  const { setCurrentWallet, clearCurrentWallet } = useWalletStore();
   const { data: walletClient } = useWalletClient();
   const { setIdentity } = useIdentityStore();
   const { mutateAsync: createAccount } = useCreateAccount();
@@ -39,7 +39,8 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
           setCurrentWallet(wallets[0]);
           router.push("/dashboard");
         } else {
-          router.push("/create-wallet");
+          clearCurrentWallet();
+          router.push("/dashboard/new-wallet");
         }
       } catch (err) {
         console.error("Failed to check wallets:", err);

@@ -5,9 +5,10 @@ import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
 import WalletName from "./WalletName";
-import { useDeployWallet } from "~~/hooks/api/useDeployWallet";
+import { useCreateWallet } from "~~/hooks/api";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
+import { useWalletStore } from "~~/services/store";
 
 export interface WalletFormData {
   name: string;
@@ -16,8 +17,10 @@ export interface WalletFormData {
 }
 
 export default function NewWalletContainer() {
-  const { deploy, isLoading: deployLoading, error: deployError } = useDeployWallet();
   const { commitment } = useIdentityStore();
+  const { setCurrentWallet } = useWalletStore();
+
+  const { mutateAsync: createWallet, isPending: isCreating } = useCreateWallet();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [createdWalletAddress, setCreatedWalletAddress] = useState<string>("");
@@ -61,14 +64,15 @@ export default function NewWalletContainer() {
     try {
       const validSigners = formData.signers.filter(s => s.trim() !== "");
 
-      const walletAddress = await deploy({
+      const wallet = await createWallet({
         name: formData.name,
         commitments: validSigners,
         threshold: formData.threshold,
         creatorCommitment: commitment,
       });
 
-      setCreatedWalletAddress(walletAddress);
+      setCurrentWallet(wallet);
+      setCreatedWalletAddress(wallet.address);
       setCurrentStep(3);
     } catch (err: any) {
       notification.error("Failed to create wallet: " + (err?.message || err.toString()));
@@ -146,7 +150,7 @@ export default function NewWalletContainer() {
         signers={validSigners}
         threshold={formData.threshold}
         onCreateWallet={handleCreateWallet}
-        loading={deployLoading}
+        loading={isCreating}
         isFormValid={currentStep === 1 ? isStep1Valid : isStep2Valid}
       />
     </div>

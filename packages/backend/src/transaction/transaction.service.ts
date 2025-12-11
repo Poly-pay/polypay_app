@@ -9,6 +9,7 @@ import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
 import { CreateTransactionDto, ApproveDto, DenyDto, TxType } from './dto';
 import { encodeFunctionData } from 'viem';
+import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 
 const WALLET_ABI = [
   {
@@ -41,6 +42,7 @@ export class TransactionService {
   constructor(
     private prisma: PrismaService,
     private zkVerifyService: ZkVerifyService,
+    private relayerService: RelayerService,
   ) {}
 
   /**
@@ -353,6 +355,7 @@ export class TransactionService {
 
     return {
       txId,
+      walletAddress: transaction.walletAddress,
       to,
       value,
       data,
@@ -360,7 +363,6 @@ export class TransactionService {
       threshold: transaction.threshold,
     };
   }
-
   /**
    * Mark transaction as executed
    */
@@ -381,7 +383,7 @@ export class TransactionService {
           nonce: transaction.nonce,
           walletAddress: transaction.walletAddress,
           txId: { not: txId },
-          status: { notIn: ['EXECUTED', 'OUTDATED'] },
+          status: { notIn: ['EXECUTED', 'OUTDATED', 'FAILED'] },
         },
         data: {
           status: 'OUTDATED',
@@ -389,7 +391,10 @@ export class TransactionService {
       });
 
       // 3. Handle ADD_SIGNER: create Account + AccountWallet link
-      if (transaction.type === TxType.ADD_SIGNER && transaction.signerCommitment) {
+      if (
+        transaction.type === TxType.ADD_SIGNER &&
+        transaction.signerCommitment
+      ) {
         const wallet = await tx.wallet.findUnique({
           where: { address: transaction.walletAddress },
         });
@@ -461,6 +466,28 @@ export class TransactionService {
         },
       });
     });
+  }
+
+  /**
+   * Execute transaction on-chain via relayer
+   */
+  async executeOnChain(txId: number) {
+    // 1. Get execution data
+    const executionData = await this.getExecutionData(txId);
+
+    // 2. Execute via relayer
+    const { txHash } = await this.relayerService.executeTransaction(
+      executionData.walletAddress,
+      executionData.to,
+      executionData.value,
+      executionData.data,
+      executionData.zkProofs,
+    );
+
+    // 3. Mark as executed
+    await this.markExecuted(txId, txHash);
+
+    return { txId, txHash, status: 'EXECUTED' };
   }
 
   // ============ Private Methods ============

@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 const Home: NextPage = () => {
   useEffect(() => {
-    redirect('/dashboard');
+    redirect('/dashboard/new-wallet');
   }, [])
 
   return (

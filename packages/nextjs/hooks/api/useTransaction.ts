@@ -213,6 +213,26 @@ const markExecutedAPI = async (txId: number, txHash: string): Promise<Transactio
   return response.json();
 };
 
+const executeOnChainAPI = async (
+  txId: number,
+): Promise<{
+  txId: number;
+  txHash: string;
+  status: TxStatus;
+}> => {
+  const response = await fetch(`${API_BASE_URL}/api/transactions/${txId}/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to execute transaction");
+  }
+
+  return response.json();
+};
+
 // ============ Query Keys ============
 
 export const transactionKeys = {
@@ -315,6 +335,21 @@ export const useMarkExecuted = () => {
 
   return useMutation({
     mutationFn: ({ txId, txHash }: { txId: number; txHash: string }) => markExecutedAPI(txId, txHash),
+    onSuccess: data => {
+      queryClient.invalidateQueries({ queryKey: transactionKeys.all });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
+    },
+  });
+};
+
+/**
+ * Execute transaction on-chain via relayer
+ */
+export const useExecuteOnChain = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (txId: number) => executeOnChainAPI(txId),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });

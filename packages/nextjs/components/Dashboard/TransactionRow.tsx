@@ -14,7 +14,7 @@ import {
   Transaction,
   useApprove,
   useDeny,
-  useMarkExecuted,
+  useExecuteOnChain,
 } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
@@ -406,7 +406,8 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
 
   const { mutateAsync: approve } = useApprove();
   const { mutateAsync: deny } = useDeny();
-  const { mutateAsync: markExecuted } = useMarkExecuted();
+  const { mutateAsync: executeOnChain, isPending: isExecuting } = useExecuteOnChain();
+
 
   // ============ Generate Proof ============
   const generateProof = async () => {
@@ -538,55 +539,55 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
   };
 
   // ============ Execute on Smart Contract ============
-  const executeOnChain = async () => {
-    if (!metaMultiSigWallet) return;
+  // const executeOnChain = async () => {
+  //   if (!metaMultiSigWallet) return;
 
-    setLoadingState("Fetching proofs...");
+  //   setLoadingState("Fetching proofs...");
 
-    // Fetch execution data from backend
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${tx.txId}/execute`);
+  //   // Fetch execution data from backend
+  //   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${tx.txId}/execute`);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to get execution data");
-    }
+  //   if (!response.ok) {
+  //     const error = await response.json();
+  //     throw new Error(error.message || "Failed to get execution data");
+  //   }
 
-    const executionData = await response.json();
-    if (!executionData) {
-      throw new Error("No execution data found");
-    }
-    console.log("🚀 ~ executeOnChain ~ executionData:", executionData);
+  //   const executionData = await response.json();
+  //   if (!executionData) {
+  //     throw new Error("No execution data found");
+  //   }
+  //   console.log("🚀 ~ executeOnChain ~ executionData:", executionData);
 
-    // Format proofs for contract
-    const zkProofs = executionData.zkProofs.map((p: any) => ({
-      nullifier: BigInt(p.nullifier),
-      aggregationId: BigInt(p.aggregationId),
-      domainId: BigInt(p.domainId),
-      zkMerklePath: p.zkMerklePath as `0x${string}`[],
-      leafCount: BigInt(p.leafCount),
-      index: BigInt(p.index),
-    }));
+  //   // Format proofs for contract
+  //   const zkProofs = executionData.zkProofs.map((p: any) => ({
+  //     nullifier: BigInt(p.nullifier),
+  //     aggregationId: BigInt(p.aggregationId),
+  //     domainId: BigInt(p.domainId),
+  //     zkMerklePath: p.zkMerklePath as `0x${string}`[],
+  //     leafCount: BigInt(p.leafCount),
+  //     index: BigInt(p.index),
+  //   }));
 
-    setLoadingState("Executing on-chain...");
+  //   setLoadingState("Executing on-chain...");
 
-    // Call contract
-    const gasEstimate = await metaMultiSigWallet.estimateGas.execute([
-      executionData.to as `0x${string}`,
-      BigInt(executionData.value),
-      executionData.data as `0x${string}`,
-      zkProofs,
-    ]);
+  //   // Call contract
+  //   const gasEstimate = await metaMultiSigWallet.estimateGas.execute([
+  //     executionData.to as `0x${string}`,
+  //     BigInt(executionData.value),
+  //     executionData.data as `0x${string}`,
+  //     zkProofs,
+  //   ]);
 
-    console.log("Gas estimate for execute:", gasEstimate.toString());
-    const txHashResult = await metaMultiSigWallet.write.execute(
-      [executionData.to as `0x${string}`, BigInt(executionData.value), executionData.data as `0x${string}`, zkProofs],
-      { gas: gasEstimate ? gasEstimate + 10000n : undefined },
-    );
-    // Mark as executed
-    await markExecuted({ txId: tx.txId, txHash: txHashResult });
+  //   console.log("Gas estimate for execute:", gasEstimate.toString());
+  //   const txHashResult = await metaMultiSigWallet.write.execute(
+  //     [executionData.to as `0x${string}`, BigInt(executionData.value), executionData.data as `0x${string}`, zkProofs],
+  //     { gas: gasEstimate ? gasEstimate + 10000n : undefined },
+  //   );
+  //   // Mark as executed
+  //   await markExecuted({ txId: tx.txId, txHash: txHashResult });
 
-    return txHashResult;
-  };
+  //   return txHashResult;
+  // };
 
   // ============ Handle Approve ============
   const handleApprove = async () => {
@@ -652,11 +653,14 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
     }
   };
 
-  const handleExecute = async () => {
+  const handleExecute = async (txId: number) => {
     setLoading(true);
     try {
-      const txHash = await executeOnChain();
-      notification.success(`Transaction executed! Hash: ${txHash?.slice(0, 10)}...`);
+    setLoadingState("Executing on-chain...");
+    
+    const result = await executeOnChain(txId);
+    
+    console.log("Transaction executed:", result.txHash);
       onSuccess?.();
     } catch (error: any) {
       console.error("Execute error:", error);
@@ -678,7 +682,7 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
         <ActionButtons
           onApprove={handleApprove}
           onDeny={handleDeny}
-          onExecute={handleExecute}
+          onExecute={() => handleExecute(tx.txId)}
           loading={loading}
           txStatus={tx.status}
         />

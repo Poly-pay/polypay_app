@@ -62,10 +62,7 @@ export class TransactionController {
    * POST /api/transactions/:txId/deny
    */
   @Post(':txId/deny')
-  async deny(
-    @Param('txId', ParseIntPipe) txId: number,
-    @Body() dto: DenyDto,
-  ) {
+  async deny(@Param('txId', ParseIntPipe) txId: number, @Body() dto: DenyDto) {
     return this.transactionService.deny(txId, dto);
   }
 
@@ -88,5 +85,10 @@ export class TransactionController {
     @Body('txHash') txHash: string,
   ) {
     return this.transactionService.markExecuted(txId, txHash);
+  }
+
+  @Post(':txId/execute')
+  async executeOnChain(@Param('txId', ParseIntPipe) txId: number) {
+    return this.transactionService.executeOnChain(txId);
   }
 }
