@@ -24,7 +24,9 @@
       "@/database/*": ["src/database/*"],
       "@/icp/*": ["src/icp/*"],
       "@/wallet/*": ["src/wallet/*"],
-      "@/common/*": ["src/common/*"]
+      "@/common/*": ["src/common/*"],
+      "@polypay/shared": ["../shared/src"],
+      "@polypay/shared/*": ["../shared/src/*"]
     }
   }
 }

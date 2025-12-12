@@ -19,6 +19,7 @@
     "@aztec/bb.js": "0.84.0",
     "@heroicons/react": "~2.1.5",
     "@noir-lang/noir_js": "1.0.0-beta.6",
+    "@polypay/shared": "1.0.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.7",

@@ -15,7 +15,9 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "~~/*": ["./*"]
+      "~~/*": ["./*"],
+      "@polypay/shared": ["../shared/src"],
+      "@polypay/shared/*": ["../shared/src/*"]
     },
     "plugins": [
       {

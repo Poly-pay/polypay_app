@@ -1,5 +1,5 @@
 {
-  "name": "se-2",
+  "name": "polypay-app",
   "version": "0.0.1",
   "private": true,
   "workspaces": {
@@ -45,6 +45,7 @@
     "precommit": "lint-staged",
     "start:frontend": "yarn workspace @polypay/frontend dev",
     "start:backend": "yarn workspace @polypay/backend start",
+    "typecheck:shared": "yarn workspace @polypay/shared typecheck",
     "test": "yarn hardhat:test",
     "vercel": "yarn workspace @se-2/nextjs vercel",
     "vercel:login": "yarn workspace @se-2/nextjs vercel:login",
