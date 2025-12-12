@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
 
 @Controller('accounts')
 export class AccountController {
@@ -31,5 +32,13 @@ export class AccountController {
   @Get(':commitment/wallets')
   async getWallets(@Param('commitment') commitment: string) {
     return this.accountService.getWallets(commitment);
+  }
+
+  @Patch(':commitment')
+  update(
+    @Param('commitment') commitment: string,
+    @Body() dto: UpdateAccountDto,
+  ) {
+    return this.accountService.update(commitment, dto);
   }
 }

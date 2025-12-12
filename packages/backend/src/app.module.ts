@@ -7,6 +7,7 @@ import { AccountModule } from './account/account.module';
 import { WalletModule } from './wallet/wallet.module';
 import { RelayerModule } from './relayer-wallet/relayer-wallet.module';
 import { BatchItemModule } from './batch-item/batch-item.module';
+import { AddressBookModule } from './address-book/address-book.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { BatchItemModule } from './batch-item/batch-item.module';
     AccountModule,
     WalletModule,
     RelayerModule,
-    BatchItemModule
+    BatchItemModule,
+    AddressBookModule,
   ],
 })
 export class AppModule {}
