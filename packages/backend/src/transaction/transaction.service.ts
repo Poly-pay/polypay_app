@@ -85,11 +85,20 @@ export class TransactionService {
       const batchItems = await this.batchItemService.findByIds(
         dto.batchItemIds,
       );
+
       if (batchItems.length !== dto.batchItemIds.length) {
         throw new BadRequestException('Some batch items not found');
       }
+
+      // Sort batchItems
+      const sortedBatchItems = dto.batchItemIds.map((id) => {
+        const item = batchItems.find((b) => b.id === id);
+        if (!item) throw new BadRequestException(`Batch item ${id} not found`);
+        return item;
+      });
+
       batchData = JSON.stringify(
-        batchItems.map((item) => ({
+        sortedBatchItems.map((item) => ({
           recipient: item.recipient,
           amount: item.amount,
         })),
@@ -511,19 +520,52 @@ export class TransactionService {
     // 1. Get execution data
     const executionData = await this.getExecutionData(txId);
 
-    // 2. Execute via relayer
-    const { txHash } = await this.relayerService.executeTransaction(
-      executionData.walletAddress,
-      executionData.to,
-      executionData.value,
-      executionData.data,
-      executionData.zkProofs,
-    );
+    try {
+      // 2. Execute via relayer (includes balance check + receipt verification)
+      const { txHash } = await this.relayerService.executeTransaction(
+        executionData.walletAddress,
+        executionData.to,
+        executionData.value,
+        executionData.data,
+        executionData.zkProofs,
+      );
 
-    // 3. Mark as executed
-    await this.markExecuted(txId, txHash);
+      // 3. Mark as executed only on success
+      await this.markExecuted(txId, txHash);
 
-    return { txId, txHash, status: 'EXECUTED' };
+      return { txId, txHash, status: 'EXECUTED' };
+    } catch (error) {
+      this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
+
+      // Parse error message for user-friendly response
+      if (error.message?.includes('Insufficient wallet balance')) {
+        // Extract amounts from error message
+        const match = error.message.match(
+          /Required: (\d+) wei, Available: (\d+) wei/,
+        );
+        if (match) {
+          const required = BigInt(match[1]);
+          const available = BigInt(match[2]);
+          // Convert to ETH for readability
+          const requiredEth = Number(required) / 1e18;
+          const availableEth = Number(available) / 1e18;
+          throw new BadRequestException(
+            `Insufficient wallet balance. Required: ${requiredEth.toFixed(6)} ETH, Available: ${availableEth.toFixed(6)} ETH`,
+          );
+        }
+      }
+
+      if (error.message?.includes('Transaction reverted')) {
+        throw new BadRequestException(
+          'Transaction reverted on-chain. Please check contract conditions.',
+        );
+      }
+
+      // Generic error
+      throw new BadRequestException(
+        error.message || 'Failed to execute transaction',
+      );
+    }
   }
 
   // ============ Private Methods ============

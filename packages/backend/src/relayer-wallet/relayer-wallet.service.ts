@@ -3,7 +3,7 @@ import {
   createWalletClient,
   createPublicClient,
   http,
-  getContract,
+  decodeFunctionData,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { sepolia } from 'viem/chains';
@@ -105,7 +105,60 @@ export class RelayerService {
       index: number;
     }[],
   ): Promise<{ txHash: string }> {
-    // Format proofs for contract
+    // 1. Check wallet balance
+    const balance = await this.publicClient.getBalance({
+      address: walletAddress as `0x${string}`,
+    });
+
+    // Calculate required balance
+    let requiredBalance = BigInt(value);
+
+    // If data contains batchTransfer, parse and calculate total
+    if (data && data !== '0x') {
+      try {
+        const decoded = decodeFunctionData({
+          abi: [
+            {
+              name: 'batchTransfer',
+              type: 'function',
+              inputs: [
+                { name: 'recipients', type: 'address[]' },
+                { name: 'amounts', type: 'uint256[]' },
+              ],
+              outputs: [],
+            },
+          ],
+          data: data as `0x${string}`,
+        });
+
+        if (decoded.functionName === 'batchTransfer') {
+          const amounts = decoded.args[1] as bigint[];
+          const batchTotal = amounts.reduce((sum, amount) => sum + amount, 0n);
+          requiredBalance = requiredBalance + batchTotal;
+          this.logger.log(
+            `Batch transfer detected. Total amount: ${batchTotal}`,
+          );
+        }
+      } catch (e) {
+        // Not a batchTransfer call, ignore
+        this.logger.debug(
+          'Data is not batchTransfer, skipping batch balance check',
+        );
+      }
+    }
+
+    // Check balance
+    if (requiredBalance > 0n && balance < requiredBalance) {
+      throw new Error(
+        `Insufficient wallet balance. Required: ${requiredBalance.toString()} wei, Available: ${balance.toString()} wei`,
+      );
+    }
+
+    this.logger.log(
+      `Wallet balance check passed. Balance: ${balance}, Required: ${requiredBalance}`,
+    );
+
+    // 2. Format proofs for contract
     const formattedProofs = zkProofs.map((proof) => ({
       nullifier: BigInt(proof.nullifier),
       aggregationId: BigInt(proof.aggregationId),
@@ -122,7 +175,7 @@ export class RelayerService {
       formattedProofs,
     ] as const;
 
-    // Estimate gas
+    // 3. Estimate gas
     const gasEstimate = await this.publicClient.estimateContractGas({
       address: walletAddress as `0x${string}`,
       abi: METAMULTISIG_ABI,
@@ -133,7 +186,7 @@ export class RelayerService {
 
     this.logger.log(`Gas estimate for execute: ${gasEstimate}`);
 
-    // Execute
+    // 4. Execute
     const txHash = await this.walletClient.writeContract({
       address: walletAddress as `0x${string}`,
       abi: METAMULTISIG_ABI,
@@ -146,8 +199,18 @@ export class RelayerService {
 
     this.logger.log(`Execute tx sent: ${txHash}`);
 
-    // Wait for receipt
-    await this.publicClient.waitForTransactionReceipt({ hash: txHash });
+    // 5. Wait for receipt and verify status
+    const receipt = await this.publicClient.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    if (receipt.status === 'reverted') {
+      throw new Error(`Transaction reverted on-chain. TxHash: ${txHash}`);
+    }
+
+    this.logger.log(
+      `Transaction confirmed. Status: ${receipt.status}, Block: ${receipt.blockNumber}`,
+    );
 
     return { txHash };
   }

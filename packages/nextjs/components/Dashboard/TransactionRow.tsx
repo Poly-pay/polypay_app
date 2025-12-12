@@ -20,10 +20,8 @@ import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
-// components/transaction/TransactionRow.tsx
-
 // ============ Types ============
-type TxType = "transfer" | "add_signer" | "remove_signer" | "set_threshold";
+type TxType = "transfer" | "add_signer" | "remove_signer" | "set_threshold" | "batch";
 type VoteStatus = "approved" | "denied" | "waiting";
 type TxStatus = "pending" | "executing" | "executed" | "failed" | "outdated";
 
@@ -32,6 +30,11 @@ interface Member {
   isInitiator: boolean;
   isMe: boolean;
   voteStatus: VoteStatus;
+}
+
+interface BatchTransfer {
+  recipient: string;
+  amount: string;
 }
 
 interface TransactionRowData {
@@ -53,6 +56,9 @@ interface TransactionRowData {
   oldThreshold?: number;
   newThreshold?: number;
 
+  // Batch
+  batchData?: BatchTransfer[];
+
   totalSigners: number;
 
   // Voting
@@ -67,6 +73,17 @@ interface TransactionRowData {
   walletAddress: string;
 }
 
+// ============ Helper: Format address ============
+function formatAddress(address: string): string {
+  if (!address) return "";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+// ============ Helper: Calculate batch total ============
+function calculateBatchTotal(batchData: BatchTransfer[]): bigint {
+  return batchData.reduce((sum, item) => sum + BigInt(item.amount), 0n);
+}
+
 // ============ Helper: Convert API Transaction to Row Data ============
 export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
   // Map API type to UI type
@@ -75,6 +92,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     ADD_SIGNER: "add_signer",
     REMOVE_SIGNER: "remove_signer",
     SET_THRESHOLD: "set_threshold",
+    BATCH: "batch",
   };
 
   // Map API status to UI status
@@ -98,6 +116,16 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   const myVote = tx.votes.find(v => v.voterCommitment === myCommitment);
   const myVoteStatus: VoteStatus | null = myVote ? (myVote.voteType === "APPROVE" ? "approved" : "denied") : null;
 
+  // Parse batchData if exists
+  let batchData: BatchTransfer[] | undefined;
+  if (tx.batchData) {
+    try {
+      batchData = typeof tx.batchData === "string" ? JSON.parse(tx.batchData) : tx.batchData;
+    } catch {
+      batchData = undefined;
+    }
+  }
+
   return {
     id: tx.id,
     txId: tx.txId,
@@ -110,6 +138,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     signerCommitment: tx.signerCommitment || undefined,
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
+    batchData,
     totalSigners: tx.totalSigners,
     members,
     votedCount: tx.votes.length,
@@ -276,6 +305,39 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
     );
   }
 
+  if (tx.type === "batch" && tx.batchData) {
+    const totalAmount = calculateBatchTotal(tx.batchData);
+    return (
+      <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold">Batch Transfer</h3>
+          <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-sm">
+            <span>{tx.batchData.length} transfers</span>
+            <span>•</span>
+            <Image src="/token/eth.svg" alt="ETH" width={16} height={16} />
+            <span>{formatEther(totalAmount)} ETH total</span>
+          </div>
+        </div>
+        {/* Batch transfers list */}
+        <div className="space-y-2 max-h-[200px] overflow-y-auto">
+          {tx.batchData.map((transfer, index) => (
+            <div key={index} className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg">
+              <span className="text-white/60 text-sm w-6">#{index + 1}</span>
+              <div className="flex items-center gap-2">
+                <Image src="/token/eth.svg" alt="ETH" width={16} height={16} />
+                <span className="font-medium">{formatEther(BigInt(transfer.amount))} ETH</span>
+              </div>
+              <ArrowRight size={16} className="text-white/60" />
+              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                {formatAddress(transfer.recipient)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return null;
 }
 
@@ -342,6 +404,8 @@ function getTxTypeLabel(type: TxType): string {
       return "Remove Signer";
     case "set_threshold":
       return "Threshold";
+    case "batch":
+      return "Batch";
   }
 }
 
@@ -357,7 +421,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
           </div>
           <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
           <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
-            {tx.recipientAddress?.slice(0, 6)}...{tx.recipientAddress?.slice(-4)}
+            {formatAddress(tx.recipientAddress ?? "")}
           </span>
         </div>
       );
@@ -388,6 +452,23 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
           <span className="font-semibold text-gray-800">{tx.newThreshold}</span>
         </div>
       );
+
+    case "batch":
+      if (!tx.batchData || tx.batchData.length === 0) {
+        return <span className="text-gray-500">No transfers</span>;
+      }
+      const totalAmount = calculateBatchTotal(tx.batchData);
+      return (
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-3 py-1 rounded-3xl">
+            {tx.batchData.length} transfer{tx.batchData.length > 1 ? "s" : ""}
+          </span>
+          <div className="flex items-center gap-2">
+            <Image src="/token/eth.svg" alt="ETH" width={20} height={20} />
+            <span className="font-medium">{formatEther(totalAmount)} ETH</span>
+          </div>
+        </div>
+      );
   }
 }
 
@@ -409,7 +490,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   const { mutateAsync: approve } = useApprove();
   const { mutateAsync: deny } = useDeny();
   const { mutateAsync: executeOnChain, isPending: isExecuting } = useExecuteOnChain();
-
 
   // ============ Generate Proof ============
   const generateProof = async () => {
@@ -470,6 +550,24 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
           ],
           functionName: "updateSignaturesRequired",
           args: [BigInt(tx.newThreshold!)],
+        });
+      } else if (tx.type === "batch" && tx.batchData) {
+        // Encode batchTransfer call
+        const recipients = tx.batchData.map(item => item.recipient as `0x${string}`);
+        const amounts = tx.batchData.map(item => BigInt(item.amount));
+        callData = encodeFunctionData({
+          abi: [
+            {
+              name: "batchTransfer",
+              type: "function",
+              inputs: [
+                { name: "recipients", type: "address[]" },
+                { name: "amounts", type: "uint256[]" },
+              ],
+            },
+          ],
+          functionName: "batchTransfer",
+          args: [recipients, amounts],
         });
       }
     }
@@ -550,17 +648,17 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     setLoading(true);
     try {
       // 1. Generate proof
-      const { proof, publicInputs, nullifier, commitment } = await generateProof();
+      const proofData = await generateProof();
 
       // 2. Submit to backend
       setLoadingState("Submitting to backend...");
       const result = await approve({
         txId: tx.txId,
         dto: {
-          voterCommitment: commitment,
-          proof,
-          publicInputs,
-          nullifier,
+          voterCommitment: proofData.commitment,
+          proof: proofData.proof,
+          publicInputs: proofData.publicInputs,
+          nullifier: proofData.nullifier,
         },
       });
 
@@ -604,14 +702,16 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     }
   };
 
+  // ============ Handle Execute ============
   const handleExecute = async (txId: number) => {
     setLoading(true);
     try {
-    setLoadingState("Executing on-chain...");
-    
-    const result = await executeOnChain(txId);
-    
-    console.log("Transaction executed:", result.txHash);
+      setLoadingState("Executing on-chain...");
+
+      const result = await executeOnChain(txId);
+
+      console.log("Transaction executed:", result.txHash);
+      notification.success("Transaction executed successfully!");
       onSuccess?.();
     } catch (error: any) {
       console.error("Execute error:", error);
@@ -656,8 +756,8 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
         className="flex items-center justify-between p-4 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-4">
-          {/* Nonce right here */}
-          {<span className="font-semibold text-gray-600">#{tx.nonce}</span>}
+          {/* Nonce */}
+          <span className="font-semibold text-gray-600">#{tx.nonce}</span>
           {expanded ? (
             <ChevronDown size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
           ) : (
