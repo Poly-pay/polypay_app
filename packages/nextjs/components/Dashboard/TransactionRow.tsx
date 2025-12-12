@@ -53,6 +53,8 @@ interface TransactionRowData {
   oldThreshold?: number;
   newThreshold?: number;
 
+  totalSigners: number;
+
   // Voting
   members: Member[];
   votedCount: number;
@@ -108,6 +110,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     signerCommitment: tx.signerCommitment || undefined,
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
+    totalSigners: tx.totalSigners,
     members,
     votedCount: tx.votes.length,
     threshold: tx.threshold,
@@ -391,11 +394,10 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
 // ============ Main TransactionRow Component ============
 interface TransactionRowProps {
   tx: TransactionRowData;
-  totalSigners: number;
   onSuccess?: () => void;
 }
 
-export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowProps) {
+export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   const { commitment, secret } = useIdentityStore();
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -538,57 +540,6 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
     };
   };
 
-  // ============ Execute on Smart Contract ============
-  // const executeOnChain = async () => {
-  //   if (!metaMultiSigWallet) return;
-
-  //   setLoadingState("Fetching proofs...");
-
-  //   // Fetch execution data from backend
-  //   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${tx.txId}/execute`);
-
-  //   if (!response.ok) {
-  //     const error = await response.json();
-  //     throw new Error(error.message || "Failed to get execution data");
-  //   }
-
-  //   const executionData = await response.json();
-  //   if (!executionData) {
-  //     throw new Error("No execution data found");
-  //   }
-  //   console.log("🚀 ~ executeOnChain ~ executionData:", executionData);
-
-  //   // Format proofs for contract
-  //   const zkProofs = executionData.zkProofs.map((p: any) => ({
-  //     nullifier: BigInt(p.nullifier),
-  //     aggregationId: BigInt(p.aggregationId),
-  //     domainId: BigInt(p.domainId),
-  //     zkMerklePath: p.zkMerklePath as `0x${string}`[],
-  //     leafCount: BigInt(p.leafCount),
-  //     index: BigInt(p.index),
-  //   }));
-
-  //   setLoadingState("Executing on-chain...");
-
-  //   // Call contract
-  //   const gasEstimate = await metaMultiSigWallet.estimateGas.execute([
-  //     executionData.to as `0x${string}`,
-  //     BigInt(executionData.value),
-  //     executionData.data as `0x${string}`,
-  //     zkProofs,
-  //   ]);
-
-  //   console.log("Gas estimate for execute:", gasEstimate.toString());
-  //   const txHashResult = await metaMultiSigWallet.write.execute(
-  //     [executionData.to as `0x${string}`, BigInt(executionData.value), executionData.data as `0x${string}`, zkProofs],
-  //     { gas: gasEstimate ? gasEstimate + 10000n : undefined },
-  //   );
-  //   // Mark as executed
-  //   await markExecuted({ txId: tx.txId, txHash: txHashResult });
-
-  //   return txHashResult;
-  // };
-
   // ============ Handle Approve ============
   const handleApprove = async () => {
     if (!commitment) {
@@ -638,7 +589,7 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
         txId: tx.txId,
         dto: {
           voterCommitment: commitment,
-          totalSigners,
+          totalSigners: tx.totalSigners,
         },
       });
 
@@ -726,7 +677,7 @@ export function TransactionRow({ tx, totalSigners, onSuccess }: TransactionRowPr
             members={tx.members}
             votedCount={tx.votedCount}
             threshold={tx.threshold}
-            totalSigners={totalSigners}
+            totalSigners={tx.totalSigners}
           />
         </div>
       )}

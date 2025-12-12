@@ -32,6 +32,9 @@ export class CreateTransactionDto {
   @IsNumber()
   @Min(1)
   threshold: number; // current threshold of wallet
+  
+  @IsNumber()
+  totalSigners: number; // current total signers of wallet
 
   // Transfer
   @IsOptional()

@@ -56,6 +56,8 @@ export interface CreateTransactionDto {
   signerCommitment?: string;
   // Set Threshold / Add / Remove
   newThreshold?: number;
+  // For BATCH
+  batchItemIds?: string[];
   // Creator's proof (auto approve)
   creatorCommitment: string;
   proof: number[];

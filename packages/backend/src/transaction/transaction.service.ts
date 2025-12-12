@@ -62,9 +62,12 @@ export class TransactionService {
     // 1. Validate based on type
     this.validateTransactionDto(dto);
 
-    // 2. Check wallet exists
+    // 2. Check wallet exists and get total signers count
     const wallet = await this.prisma.wallet.findUnique({
       where: { address: dto.walletAddress },
+      include: {
+        accounts: true,
+      },
     });
 
     if (!wallet) {
@@ -72,6 +75,8 @@ export class TransactionService {
         `Wallet ${dto.walletAddress} not found. Please create wallet first.`,
       );
     }
+
+    const totalSigners = wallet.accounts.length;
 
     // Create batch data
     let batchData: string | null = null;
@@ -117,6 +122,7 @@ export class TransactionService {
           createdBy: dto.creatorCommitment,
           status: 'PENDING',
           batchData,
+          totalSigners,
         },
       });
 

@@ -31,31 +31,11 @@ function Header() {
 export default function DashboardContainer() {
   const { commitment } = useIdentityStore();
 
-  const [totalSigners, setTotalSigners] = useState<number>(0);
-
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
   const walletAddress = metaMultiSigWallet?.address || "";
 
   const { data: transactions, isLoading, refetch } = useTransactions(walletAddress);
-
-  // Load contract data
-  useEffect(() => {
-    const loadContractData = async () => {
-      if (!metaMultiSigWallet) return;
-
-      try {
-        const signers = await metaMultiSigWallet?.read?.getSignersCount();
-
-        setTotalSigners(Number(signers));
-      } catch (error) {
-        console.error("Error loading contract data:", error);
-      }
-    };
-
-    loadContractData();
-  }, [metaMultiSigWallet]);
-  
 
   const handleSuccess = () => {
     refetch();
@@ -86,7 +66,6 @@ export default function DashboardContainer() {
             <TransactionRow
               key={tx.id}
               tx={convertToRowData(tx, commitment ?? "")}
-              totalSigners={totalSigners}
               onSuccess={handleSuccess}
             />
           ))}
