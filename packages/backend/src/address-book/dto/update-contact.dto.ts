@@ -1,17 +1,13 @@
-import { IsNotEmpty, IsString, MaxLength, Matches } from 'class-validator';
+import { IsOptional, IsString, MaxLength, Matches } from 'class-validator';
 
-export class CreateContactDto {
-  @IsNotEmpty()
-  @IsString()
-  groupId: string;
-
-  @IsNotEmpty()
+export class UpdateContactDto {
+  @IsOptional()
   @IsString()
   @MaxLength(50)
-  name: string;
+  name?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @Matches(/^0x[a-fA-F0-9]{40}$/, { message: 'Invalid Ethereum address' })
-  address: string;
+  address?: string;
 }
