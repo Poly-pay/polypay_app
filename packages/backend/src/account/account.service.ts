@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
 
 @Injectable()
 export class AccountService {
@@ -19,7 +20,7 @@ export class AccountService {
   async create(dto: CreateAccountDto) {
     // Check if account already exists
     const existing = await this.prisma.account.findUnique({
-      where: { commitment: dto.commitment },
+      where: { commitment: dto.commitment, name: dto.name },
     });
 
     if (existing) {
@@ -83,6 +84,23 @@ export class AccountService {
       where: { commitment },
       create: { commitment },
       update: {},
+    });
+  }
+
+  async update(commitment: string, dto: UpdateAccountDto) {
+    const account = await this.prisma.account.findUnique({
+      where: { commitment },
+    });
+
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
+
+    return this.prisma.account.update({
+      where: { commitment },
+      data: {
+        name: dto.name,
+      },
     });
   }
 }
