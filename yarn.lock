@@ -4547,6 +4547,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@polypay/shared@workspace:packages/shared"
   dependencies:
+    class-transformer: ^0.5.1
+    class-validator: ^0.14.2
     typescript: ^5.0.0
   languageName: unknown
   linkType: soft
