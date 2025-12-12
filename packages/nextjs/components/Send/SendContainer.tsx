@@ -5,7 +5,7 @@ import { UltraPlonkBackend } from "@aztec/bb.js";
 import { Noir } from "@noir-lang/noir_js";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
-import { useMetaMultiSigWallet } from "~~/hooks/api";
+import { useCreateBatchItem, useMetaMultiSigWallet } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
@@ -22,6 +22,8 @@ export default function SendContainer() {
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { mutateAsync: createTransaction } = useCreateTransaction();
+  const { mutateAsync: createBatchItem, isPending: isAddingToBatch } = useCreateBatchItem();
+  const { commitment } = useIdentityStore();
 
   const handleTransfer = async () => {
     // Validate inputs
@@ -138,6 +140,7 @@ export default function SendContainer() {
         type: "TRANSFER",
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
+        totalSigners: commitments?.length || 0,
         to: address,
         value: valueInWei.toString(),
         creatorCommitment: myCommitment,
@@ -162,45 +165,58 @@ export default function SendContainer() {
     }
   };
 
-  const executeOnChain = async (txId: number) => {
-    if (!metaMultiSigWallet) return;
-
-    // Fetch execution data from backend
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${txId}/execute`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to get execution data");
+  const handleAddToBatch = async () => {
+    // Validate inputs
+    if (!amount || !address) {
+      notification.error("Please enter amount and address");
+      return;
     }
 
-    const executionData = await response.json();
+    // Validate address format
+    if (!address.startsWith("0x") || address.length !== 42) {
+      notification.error("Invalid address format");
+      return;
+    }
 
-    // Format proofs for contract
-    const zkProofs = executionData.zkProofs.map((p: any) => ({
-      nullifier: BigInt(p.nullifier),
-      aggregationId: BigInt(p.aggregationId),
-      domainId: BigInt(p.domainId),
-      zkMerklePath: p.zkMerklePath as `0x${string}`[],
-      leafCount: BigInt(p.leafCount),
-      index: BigInt(p.index),
-    }));
+    // Validate amount
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      notification.error("Invalid amount");
+      return;
+    }
 
-    // Call contract
-    const txHash = await metaMultiSigWallet.write.execute([
-      executionData.to as `0x${string}`,
-      BigInt(executionData.value),
-      executionData.data as `0x${string}`,
-      zkProofs,
-    ]);
+    // Validate commitment
+    if (!commitment) {
+      notification.error("No commitment found. Please create identity first.");
+      return;
+    }
 
-    // Mark as executed in backend
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transactions/${txId}/executed`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ txHash }),
-    });
+    try {
+      // Convert amount to wei string for storage
+      const valueInWei = parseEther(amount).toString();
 
-    return txHash;
+      await createBatchItem({
+        commitment,
+        recipient: address,
+        amount: valueInWei,
+      });
+
+      notification.success(
+        <div className="flex flex-col gap-1">
+          <span>Added to batch!</span>
+          <a href="/batch" className="text-primary underline text-sm">
+            View your batch →
+          </a>
+        </div>,
+      );
+
+      // Reset form
+      setAmount("");
+      setAddress("");
+    } catch (error: any) {
+      console.error("Add to batch error:", error);
+      notification.error(error.message || "Failed to add to batch");
+    }
   };
 
   return (
@@ -286,6 +302,15 @@ export default function SendContainer() {
 
         {/* Action buttons */}
         <div className="flex gap-2 items-center justify-center w-full max-w-xs">
+          <button
+            onClick={handleAddToBatch}
+            disabled={isLoading || !amount || !address}
+            className="bg-[#FF7CEB] flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-[#f35ddd] transition-colors"
+          >
+            <span className="font-semibold text-[16px] text-center text-white tracking-[-0.16px]">
+              {isLoading ? "Processing..." : "Add to batch"}
+            </span>
+          </button>
           <button
             onClick={handleTransfer}
             disabled={isLoading || !amount || !address}

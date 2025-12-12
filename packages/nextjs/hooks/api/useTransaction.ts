@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // ============ Types ============
 
-export type TxType = "TRANSFER" | "ADD_SIGNER" | "REMOVE_SIGNER" | "SET_THRESHOLD";
+export type TxType = "TRANSFER" | "ADD_SIGNER" | "REMOVE_SIGNER" | "SET_THRESHOLD" | "BATCH";
 export type TxStatus = "PENDING" | "EXECUTING" | "EXECUTED" | "FAILED" | "OUTDATED";
 export type VoteType = "APPROVE" | "DENY";
 export type ProofStatus = "PENDING" | "AGGREGATED" | "FAILED";
@@ -38,10 +38,12 @@ export interface Transaction {
   createdBy: string;
   walletAddress: string;
   threshold: number;
+  totalSigners: number;
   txHash: string | null;
   executedAt: string | null;
   createdAt: string;
   votes: Vote[];
+  batchData: any;
 }
 
 export interface CreateTransactionDto {
@@ -49,6 +51,7 @@ export interface CreateTransactionDto {
   type: TxType;
   walletAddress: string;
   threshold: number;
+  totalSigners: number;
   // Transfer
   to?: string;
   value?: string;
@@ -56,6 +59,8 @@ export interface CreateTransactionDto {
   signerCommitment?: string;
   // Set Threshold / Add / Remove
   newThreshold?: number;
+  // For BATCH
+  batchItemIds?: string[];
   // Creator's proof (auto approve)
   creatorCommitment: string;
   proof: number[];

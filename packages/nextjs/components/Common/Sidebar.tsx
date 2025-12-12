@@ -128,7 +128,7 @@ const SectionItem = ({
       </div>
       <div className="flex flex-col gap-0.5">
         {menuItems.map(item => {
-          if (["swap", "batch", "address book", "ai assistant"].includes(item.label)) {
+          if (["swap", "address book", "ai assistant"].includes(item.label)) {
             return <DevelopingFeatureModal key={item.label}>{itemComponent(item, true)}</DevelopingFeatureModal>;
           }
           return itemComponent(item);

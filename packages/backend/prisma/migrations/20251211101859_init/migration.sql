@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "TxType" AS ENUM ('TRANSFER', 'ADD_SIGNER', 'REMOVE_SIGNER', 'SET_THRESHOLD');
+CREATE TYPE "TxType" AS ENUM ('TRANSFER', 'ADD_SIGNER', 'REMOVE_SIGNER', 'SET_THRESHOLD', 'BATCH');
 
 -- CreateEnum
 CREATE TYPE "TxStatus" AS ENUM ('PENDING', 'EXECUTING', 'EXECUTED', 'OUTDATED', 'FAILED');
@@ -55,8 +55,10 @@ CREATE TABLE "Transaction" (
     "walletAddress" TEXT NOT NULL,
     "signerCommitment" TEXT,
     "newThreshold" INTEGER,
+    "batchData" TEXT,
     "createdBy" TEXT NOT NULL,
     "threshold" INTEGER NOT NULL,
+    "totalSigners" INTEGER NOT NULL,
     "txHash" TEXT,
     "executedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -85,6 +87,18 @@ CREATE TABLE "Vote" (
     CONSTRAINT "Vote_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "BatchItem" (
+    "id" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
+    "recipient" TEXT NOT NULL,
+    "amount" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "BatchItem_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Account_commitment_key" ON "Account"("commitment");
 
@@ -104,9 +118,6 @@ CREATE INDEX "Transaction_status_idx" ON "Transaction"("status");
 CREATE INDEX "Transaction_walletAddress_idx" ON "Transaction"("walletAddress");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Vote_nullifier_key" ON "Vote"("nullifier");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Vote_jobId_key" ON "Vote"("jobId");
 
 -- CreateIndex
@@ -117,6 +128,9 @@ CREATE INDEX "Vote_proofStatus_idx" ON "Vote"("proofStatus");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Vote_txId_voterCommitment_key" ON "Vote"("txId", "voterCommitment");
+
+-- CreateIndex
+CREATE INDEX "BatchItem_accountId_idx" ON "BatchItem"("accountId");
 
 -- AddForeignKey
 ALTER TABLE "AccountWallet" ADD CONSTRAINT "AccountWallet_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -129,3 +143,6 @@ ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_walletAddress_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "Vote" ADD CONSTRAINT "Vote_txId_fkey" FOREIGN KEY ("txId") REFERENCES "Transaction"("txId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BatchItem" ADD CONSTRAINT "BatchItem_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE CASCADE ON UPDATE CASCADE;

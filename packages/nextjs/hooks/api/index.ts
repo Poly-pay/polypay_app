@@ -5,3 +5,4 @@ export * from "./useZkVerify";
 export * from "./useMetaMultiSigWallet";
 export * from "./useEnforceSepolia";
 export * from "./useInitializeApp";
+export * from "./useBatchItem";

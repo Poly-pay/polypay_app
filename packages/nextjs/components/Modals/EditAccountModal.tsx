@@ -12,9 +12,9 @@ import { encodeFunctionData } from "viem";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
+import { useIdentityStore } from "~~/services/store";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
-import { useIdentityStore } from "~~/services/store";
 
 interface EditAccountModalProps {
   children: React.ReactNode;
@@ -163,6 +163,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
         type: "ADD_SIGNER",
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
+        totalSigners: signers.length,
         signerCommitment: newSignerCommitment.trim(),
         newThreshold: newThresholdForAdd,
         creatorCommitment: myCommitment,
@@ -245,6 +246,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
         type: "REMOVE_SIGNER",
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
+        totalSigners: signers.length,
         signerCommitment: signerCommitment,
         newThreshold: newThreshold,
         creatorCommitment: myCommitment,
@@ -317,6 +319,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
         type: "SET_THRESHOLD",
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
+        totalSigners: signers.length,
         newThreshold: editThreshold,
         creatorCommitment: myCommitment,
         proof,
