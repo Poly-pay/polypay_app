@@ -9,7 +9,7 @@
     "target": "ES2020",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+    "baseUrl": ".",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -25,8 +25,8 @@
       "@/icp/*": ["src/icp/*"],
       "@/wallet/*": ["src/wallet/*"],
       "@/common/*": ["src/common/*"],
-      "@polypay/shared": ["../shared/src"],
-      "@polypay/shared/*": ["../shared/src/*"]
+      "@polypay/shared": ["../shared/dist"],
+      "@polypay/shared/*": ["../shared/dist/*"]
     }
   }
 }

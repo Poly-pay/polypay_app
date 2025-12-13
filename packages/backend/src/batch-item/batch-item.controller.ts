@@ -9,7 +9,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { BatchItemService } from './batch-item.service';
-import { CreateBatchItemDto, UpdateBatchItemDto } from './dto';
+import { CreateBatchItemDto, UpdateBatchItemDto } from '@polypay/shared';
 
 @Controller('batch-items')
 export class BatchItemController {

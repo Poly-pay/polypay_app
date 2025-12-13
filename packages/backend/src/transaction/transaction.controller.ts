@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import { CreateTransactionDto, ApproveDto, DenyDto } from './dto';
+import { CreateTransactionDto, ApproveTransactionDto, DenyTransactionDto } from '@polypay/shared';
 
 @Controller('transactions')
 export class TransactionController {
@@ -52,7 +52,7 @@ export class TransactionController {
   @Post(':txId/approve')
   async approve(
     @Param('txId', ParseIntPipe) txId: number,
-    @Body() dto: ApproveDto,
+    @Body() dto: ApproveTransactionDto,
   ) {
     return this.transactionService.approve(txId, dto);
   }
@@ -62,7 +62,7 @@ export class TransactionController {
    * POST /api/transactions/:txId/deny
    */
   @Post(':txId/deny')
-  async deny(@Param('txId', ParseIntPipe) txId: number, @Body() dto: DenyDto) {
+  async deny(@Param('txId', ParseIntPipe) txId: number, @Body() dto: DenyTransactionDto) {
     return this.transactionService.deny(txId, dto);
   }
 

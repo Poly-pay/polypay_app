@@ -1,11 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import {
-  CreateAddressGroupDto,
-  UpdateAddressGroupDto,
-  CreateContactDto,
-  UpdateContactDto,
-} from './dto';
 import { PrismaService } from '@/database/prisma.service';
+import { CreateAddressGroupDto, CreateContactDto, UpdateAddressGroupDto, UpdateContactDto } from '@polypay/shared';
 
 @Injectable()
 export class AddressBookService {

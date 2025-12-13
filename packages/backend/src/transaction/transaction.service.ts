@@ -7,7 +7,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
-import { CreateTransactionDto, ApproveDto, DenyDto, TxType } from './dto';
+import {
+  CreateTransactionDto,
+  ApproveTransactionDto,
+  DenyTransactionDto,
+  TxType,
+} from '@polypay/shared';
 import { encodeFunctionData } from 'viem';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -172,7 +177,7 @@ export class TransactionService {
   /**
    * Approve transaction
    */
-  async approve(txId: number, dto: ApproveDto) {
+  async approve(txId: number, dto: ApproveTransactionDto) {
     // 1. Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -257,7 +262,7 @@ export class TransactionService {
   /**
    * Deny transaction
    */
-  async deny(txId: number, dto: DenyDto) {
+  async deny(txId: number, dto: DenyTransactionDto) {
     // 1. Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
