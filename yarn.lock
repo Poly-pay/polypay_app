@@ -4550,6 +4550,7 @@ __metadata:
     class-transformer: ^0.5.1
     class-validator: ^0.14.2
     typescript: ^5.0.0
+    viem: 2.31.1
   languageName: unknown
   linkType: soft
 

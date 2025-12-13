@@ -2,20 +2,13 @@
 
 import React, { useState } from "react";
 import TransactionSummary from "./TransactionSummary";
-import { UltraPlonkBackend } from "@aztec/bb.js";
-import { Noir } from "@noir-lang/noir_js";
+import { BatchItem, TxType, encodeBatchTransfer } from "@polypay/shared";
 import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
-import {
-  useBatchItems,
-  useCreateTransaction,
-  useDeleteBatchItem,
-  useMetaMultiSigWallet,
-} from "~~/hooks/api";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
-import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
+import { useBatchItems, useCreateTransaction, useDeleteBatchItem, useMetaMultiSigWallet } from "~~/hooks/api";
+import { useGenerateProof } from "~~/hooks/useGenerateProof";
+import { useIdentityStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
-import { BatchItem, TxType } from "@polypay/shared";
 
 // ==================== Custom Checkbox ====================
 function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -197,8 +190,8 @@ export default function BatchContainer() {
   const { data: walletClient } = useWalletClient();
   const { secret, commitment: myCommitment } = useIdentityStore();
   const { data: batchItems = [], isLoading } = useBatchItems(myCommitment);
-  const { currentWallet } = useWalletStore();
   const metaMultiSigWallet = useMetaMultiSigWallet();
+
   const { mutateAsync: createTransaction } = useCreateTransaction();
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -208,6 +201,10 @@ export default function BatchContainer() {
 
   // State cho loading message
   const [loadingState, setLoadingState] = useState("");
+
+  const { generateProof } = useGenerateProof({
+    onLoadingStateChange: setLoadingState,
+  });
 
   // Select all handler
   const handleSelectAll = () => {
@@ -277,37 +274,22 @@ export default function BatchContainer() {
     setIsProposing(true);
 
     try {
-      // 1. Get selected batch items
+      // Get selected batch items
       const selectedBatchItems = batchItems.filter(item => selectedItems.has(item.id));
       const selectedIds = selectedBatchItems.map(item => item.id);
 
-      // 2. Get current nonce and threshold
+      // Get current nonce and threshold
       setLoadingState("Preparing batch transaction...");
       const currentNonce = await metaMultiSigWallet.read.nonce();
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
       const commitments = await metaMultiSigWallet.read.getCommitments();
 
-      // 3. Encode batchTransfer call data
+      // Encode batchTransfer call data
       const recipients = selectedBatchItems.map(item => item.recipient as `0x${string}`);
-      const amounts = selectedBatchItems.map(item => BigInt(item.amount));
+      const amounts: bigint[] = selectedBatchItems.map(item => BigInt(item.amount));
 
       // Encode function call: batchTransfer(address[], uint256[])
-      const { encodeFunctionData } = await import("viem");
-      const batchTransferData = encodeFunctionData({
-        abi: [
-          {
-            name: "batchTransfer",
-            type: "function",
-            inputs: [
-              { name: "recipients", type: "address[]" },
-              { name: "amounts", type: "uint256[]" },
-            ],
-            outputs: [],
-          },
-        ],
-        functionName: "batchTransfer",
-        args: [recipients, amounts],
-      });
+      const batchTransferData = encodeBatchTransfer(recipients, amounts);
 
       // 4. Calculate txHash (to = wallet itself, value = totalValue, data = batchTransfer call)
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
@@ -317,58 +299,9 @@ export default function BatchContainer() {
         batchTransferData,
       ])) as `0x${string}`;
 
-      // 5. Sign txHash
-      setLoadingState("Please sign the transaction...");
-      const signature = await walletClient.signMessage({
-        message: { raw: txHash },
-      });
-      const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
+      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // 6. Calculate values for ZK proof
-      const txHashBytes = hexToByteArray(txHash);
-      const sigBytes = hexToByteArray(signature).slice(0, 64);
-      const txHashCommitment = await poseidonHash2(BigInt(txHash), 1n);
-      const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
-
-      // 7. Get merkle data
-      const tree = await buildMerkleTree(commitments ?? []);
-      const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
-
-      const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(myCommitment));
-      if (leafIndex === -1) {
-        notification.error("You are not a signer of this wallet");
-        setIsProposing(false);
-        return;
-      }
-
-      const merklePath = getMerklePath(tree, leafIndex);
-
-      // 8. Generate ZK proof
-      setLoadingState("Generating ZK proof...");
-      const input = {
-        signature: sigBytes,
-        pub_key_x: pubKeyX,
-        pub_key_y: pubKeyY,
-        secret: secret,
-        leaf_index: leafIndex,
-        merkle_path: merklePath.map(p => p.toString()),
-        tx_hash_bytes: txHashBytes,
-        tx_hash_commitment: txHashCommitment.toString(),
-        merkle_root: merkleRoot?.toString() ?? "",
-        nullifier: nullifier.toString(),
-      };
-
-      const circuit_json = await fetch("/circuit/target/circuit.json");
-      const noir_data = await circuit_json.json();
-      const { bytecode, abi } = noir_data;
-
-      const noir = new Noir({ bytecode, abi } as any);
-      const execResult = await noir.execute(input);
-
-      const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
-      const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
-
-      // 9. Submit to backend
+      // Submit to backend
       setLoadingState("Submitting to backend...");
       const result = await createTransaction({
         nonce: Number(currentNonce),
@@ -378,7 +311,7 @@ export default function BatchContainer() {
         totalSigners: commitments?.length || 0,
         // For BATCH: to = wallet, value = 0
         to: metaMultiSigWallet.address,
-        value: '0',
+        value: "0",
         creatorCommitment: myCommitment,
         proof: Array.from(proof),
         publicInputs,

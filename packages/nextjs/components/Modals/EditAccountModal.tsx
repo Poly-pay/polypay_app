@@ -5,17 +5,13 @@ import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { ConfirmDialog } from "./Confirm";
-import { UltraPlonkBackend } from "@aztec/bb.js";
-import { Noir } from "@noir-lang/noir_js";
+import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
 import { Copy, Trash2, X } from "lucide-react";
-import { encodeFunctionData } from "viem";
-import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
+import { useGenerateProof } from "~~/hooks/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
-import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
-import { TxType } from "@polypay/shared";
 
 interface EditAccountModalProps {
   children: React.ReactNode;
@@ -24,94 +20,20 @@ interface EditAccountModalProps {
 }
 
 export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, signers = [], threshold = 0 }) => {
-  const { commitment: myCommitment, secret } = useIdentityStore();
-
   const [isOpen, setIsOpen] = useState(false);
   const [editThreshold, setEditThreshold] = useState(threshold);
   const [newSignerCommitment, setNewSignerCommitment] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
 
-  const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
+  const { generateProof } = useGenerateProof({
+    onLoadingStateChange: setLoadingState,
+  });
   const { mutateAsync: createTransaction } = useCreateTransaction();
 
   const newThresholdForAdd = editThreshold;
   const newThresholdForRemove = editThreshold;
-
-  // ============ Generate Proof Helper ============
-  const generateProof = async (txHash: `0x${string}`) => {
-    if (!walletClient || !metaMultiSigWallet) {
-      throw new Error("Wallet not connected");
-    }
-
-    // 1. Sign txHash
-    const signature = await walletClient.signMessage({
-      message: { raw: txHash },
-    });
-    const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
-
-    // 2. Get secret
-    if (!secret) {
-      throw new Error("No secret found in localStorage");
-    }
-
-    // 3. Calculate values
-    const txHashBytes = hexToByteArray(txHash);
-    const sigBytes = hexToByteArray(signature).slice(0, 64);
-    const txHashCommitment = await poseidonHash2(BigInt(txHash), 1n);
-    const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
-
-    // 4. Get merkle data
-    const commitments = await metaMultiSigWallet.read.getCommitments();
-    const tree = await buildMerkleTree(commitments ?? []);
-    const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
-
-    if (!myCommitment) {
-      throw new Error("No commitment found in localStorage");
-    }
-
-    const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(myCommitment));
-
-    if (leafIndex === -1) {
-      throw new Error("You are not a signer");
-    }
-
-    const merklePath = getMerklePath(tree, leafIndex);
-
-    // 5. Generate ZK proof
-    const input = {
-      signature: sigBytes,
-      pub_key_x: pubKeyX,
-      pub_key_y: pubKeyY,
-      secret: secret,
-      leaf_index: leafIndex,
-      merkle_path: merklePath.map(p => p.toString()),
-      tx_hash_bytes: txHashBytes,
-      tx_hash_commitment: txHashCommitment.toString(),
-      merkle_root: merkleRoot?.toString() ?? "",
-      nullifier: nullifier.toString(),
-    };
-
-    setLoadingState("Loading circuit...");
-    const circuit_json = await fetch("/circuit/target/circuit.json");
-    const noir_data = await circuit_json.json();
-    const { bytecode, abi } = noir_data;
-
-    setLoadingState("Generating proof...");
-    const noir = new Noir({ bytecode, abi } as any);
-    const execResult = await noir.execute(input);
-
-    const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
-    const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
-
-    return {
-      proof: Array.from(proof),
-      publicInputs,
-      nullifier: nullifier.toString(),
-      myCommitment,
-    };
-  };
 
   // ============ Add Signer ============
   const handleAddSigner = async () => {
@@ -130,20 +52,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
       // Build callData for addSigner
-      const callData = encodeFunctionData({
-        abi: [
-          {
-            name: "addSigner",
-            type: "function",
-            inputs: [
-              { name: "newCommitment", type: "uint256" },
-              { name: "newSigRequired", type: "uint256" },
-            ],
-          },
-        ],
-        functionName: "addSigner",
-        args: [BigInt(newSignerCommitment), BigInt(newThresholdForAdd)],
-      });
+      const callData = encodeAddSigner(newSignerCommitment, newThresholdForAdd);
 
       // 2. Get txHash from contract
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
@@ -154,8 +63,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       ])) as `0x${string}`;
 
       // 3. Generate proof
-      setLoadingState("Signing transaction...");
-      const { proof, publicInputs, nullifier, myCommitment } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
       // 4. Submit to backend
       setLoadingState("Submitting to backend...");
@@ -212,21 +120,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
       // Build callData for removeSigner
-      const { encodeFunctionData } = await import("viem");
-      const callData = encodeFunctionData({
-        abi: [
-          {
-            name: "removeSigner",
-            type: "function",
-            inputs: [
-              { name: "commitment", type: "uint256" },
-              { name: "newSigRequired", type: "uint256" },
-            ],
-          },
-        ],
-        functionName: "removeSigner",
-        args: [BigInt(signerCommitment), BigInt(newThreshold)],
-      });
+      const callData = encodeRemoveSigner(signerCommitment, newThreshold);
 
       // 2. Get txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
@@ -237,8 +131,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       ])) as `0x${string}`;
 
       // 3. Generate proof
-      setLoadingState("Signing transaction...");
-      const { proof, publicInputs, nullifier, myCommitment } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
       // 4. Submit to backend
       setLoadingState("Submitting to backend...");
@@ -288,18 +181,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
       // Build callData for updateSignaturesRequired
-      const { encodeFunctionData } = await import("viem");
-      const callData = encodeFunctionData({
-        abi: [
-          {
-            name: "updateSignaturesRequired",
-            type: "function",
-            inputs: [{ name: "newSigRequired", type: "uint256" }],
-          },
-        ],
-        functionName: "updateSignaturesRequired",
-        args: [BigInt(editThreshold)],
-      });
+      const callData = encodeUpdateThreshold(editThreshold);
 
       // 2. Get txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
@@ -310,8 +192,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       ])) as `0x${string}`;
 
       // 3. Generate proof
-      setLoadingState("Signing transaction...");
-      const { proof, publicInputs, nullifier, myCommitment } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
       // 4. Submit to backend
       setLoadingState("Submitting to backend...");

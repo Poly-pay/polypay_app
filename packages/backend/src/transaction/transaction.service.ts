@@ -12,6 +12,10 @@ import {
   ApproveTransactionDto,
   DenyTransactionDto,
   TxType,
+  encodeAddSigner,
+  encodeRemoveSigner,
+  encodeUpdateThreshold,
+  encodeBatchTransfer,
 } from '@polypay/shared';
 import { encodeFunctionData } from 'viem';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
@@ -632,39 +636,27 @@ export class TransactionService {
         return {
           to: transaction.walletAddress,
           value: '0',
-          data: encodeFunctionData({
-            abi: WALLET_ABI,
-            functionName: 'addSigner',
-            args: [
-              BigInt(transaction.signerCommitment),
-              BigInt(transaction.newThreshold),
-            ],
-          }),
+          data: encodeAddSigner(
+            transaction.signerCommitment,
+            transaction.newThreshold,
+          ),
         };
 
       case 'REMOVE_SIGNER':
         return {
           to: transaction.walletAddress,
           value: '0',
-          data: encodeFunctionData({
-            abi: WALLET_ABI,
-            functionName: 'removeSigner',
-            args: [
-              BigInt(transaction.signerCommitment),
-              BigInt(transaction.newThreshold),
-            ],
-          }),
+          data: encodeRemoveSigner(
+            transaction.signerCommitment,
+            transaction.newThreshold,
+          ),
         };
 
       case 'SET_THRESHOLD':
         return {
           to: transaction.walletAddress,
           value: '0',
-          data: encodeFunctionData({
-            abi: WALLET_ABI,
-            functionName: 'updateSignaturesRequired',
-            args: [BigInt(transaction.newThreshold)],
-          }),
+          data: encodeUpdateThreshold(transaction.newThreshold),
         };
 
       case 'BATCH':
@@ -676,11 +668,7 @@ export class TransactionService {
         return {
           to: transaction.walletAddress,
           value: '0',
-          data: encodeFunctionData({
-            abi: WALLET_ABI,
-            functionName: 'batchTransfer',
-            args: [recipients, amounts],
-          }),
+          data: encodeBatchTransfer(recipients, amounts),
         };
 
       default:
