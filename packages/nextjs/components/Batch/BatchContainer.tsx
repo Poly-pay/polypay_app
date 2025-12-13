@@ -7,7 +7,6 @@ import { Noir } from "@noir-lang/noir_js";
 import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
 import {
-  BatchItem,
   useBatchItems,
   useCreateTransaction,
   useDeleteBatchItem,
@@ -16,6 +15,7 @@ import {
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
+import { BatchItem, TxType } from "@polypay/shared";
 
 // ==================== Custom Checkbox ====================
 function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -372,7 +372,7 @@ export default function BatchContainer() {
       setLoadingState("Submitting to backend...");
       const result = await createTransaction({
         nonce: Number(currentNonce),
-        type: "BATCH",
+        type: TxType.BATCH,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: commitments?.length || 0,

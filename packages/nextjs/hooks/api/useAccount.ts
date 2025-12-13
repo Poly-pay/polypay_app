@@ -1,15 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-// ============ Types ============
-
-export interface Account {
-  id: string;
-  commitment: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Account, CreateAccountDto } from "@polypay/shared";
 
 export interface AccountWallet {
   id: string;
@@ -18,10 +8,6 @@ export interface AccountWallet {
   threshold: number;
   createdAt: string;
   isCreator: boolean;
-}
-
-export interface CreateAccountDto {
-  commitment: string;
 }
 
 // ============ API Functions ============

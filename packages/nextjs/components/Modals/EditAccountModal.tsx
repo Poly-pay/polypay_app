@@ -15,6 +15,7 @@ import { useCreateTransaction } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
+import { TxType } from "@polypay/shared";
 
 interface EditAccountModalProps {
   children: React.ReactNode;
@@ -160,7 +161,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       setLoadingState("Submitting to backend...");
       await createTransaction({
         nonce: Number(currentNonce),
-        type: "ADD_SIGNER",
+        type: TxType.ADD_SIGNER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: signers.length,
@@ -243,7 +244,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       setLoadingState("Submitting to backend...");
       await createTransaction({
         nonce: Number(currentNonce),
-        type: "REMOVE_SIGNER",
+        type: TxType.REMOVE_SIGNER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: signers.length,
@@ -316,7 +317,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
       setLoadingState("Submitting to backend...");
       await createTransaction({
         nonce: Number(currentNonce),
-        type: "SET_THRESHOLD",
+        type: TxType.SET_THRESHOLD,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: signers.length,

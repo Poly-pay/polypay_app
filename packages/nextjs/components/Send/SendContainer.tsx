@@ -10,6 +10,7 @@ import { useCreateTransaction } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
+import { TxType } from "@polypay/shared";
 
 export default function SendContainer() {
   const { commitment: myCommitment, secret } = useIdentityStore();
@@ -137,7 +138,7 @@ export default function SendContainer() {
       setLoadingState("Submitting to backend...");
       const result = await createTransaction({
         nonce: Number(currentNonce),
-        type: "TRANSFER",
+        type: TxType.TRANSFER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: commitments?.length || 0,

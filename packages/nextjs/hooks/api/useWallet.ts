@@ -1,30 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { accountKeys } from "./useAccount";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-// ============ Types ============
-
-export interface WalletSigner {
-  commitment: string;
-  isCreator: boolean;
-}
-
-export interface Wallet {
-  id: string;
-  address: string;
-  name: string;
-  threshold: number;
-  createdAt: string;
-  signers: WalletSigner[];
-}
-
-export interface CreateWalletDto {
-  name: string;
-  threshold: number;
-  commitments: string[];
-  creatorCommitment: string;
-}
+import { CreateWalletDto, Wallet } from "@polypay/shared";
 
 // ============ API Functions ============
 

@@ -16,8 +16,8 @@
     "incremental": true,
     "paths": {
       "~~/*": ["./*"],
-      "@polypay/shared": ["../shared/src"],
-      "@polypay/shared/*": ["../shared/src/*"]
+      "@polypay/shared": ["../shared/dist"],
+      "@polypay/shared/*": ["../shared/dist/*"]
     },
     "plugins": [
       {

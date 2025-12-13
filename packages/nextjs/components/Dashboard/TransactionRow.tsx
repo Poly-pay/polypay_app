@@ -4,18 +4,12 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { UltraPlonkBackend } from "@aztec/bb.js";
 import { Noir } from "@noir-lang/noir_js";
+import { TxStatus as ApiTxStatus, TxType as ApiTxType, Transaction } from "@polypay/shared";
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks/api";
-import {
-  TxStatus as ApiTxStatus,
-  TxType as ApiTxType,
-  Transaction,
-  useApprove,
-  useDeny,
-  useExecuteOnChain,
-} from "~~/hooks/api/useTransaction";
+import { useApprove, useDeny, useExecuteOnChain } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
@@ -328,9 +322,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
                 <span className="font-medium">{formatEther(BigInt(transfer.amount))} ETH</span>
               </div>
               <ArrowRight size={16} className="text-white/60" />
-              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                {formatAddress(transfer.recipient)}
-              </span>
+              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">{formatAddress(transfer.recipient)}</span>
             </div>
           ))}
         </div>

@@ -1,102 +1,5 @@
+import { ApproveTransactionDto, CreateTransactionDto, DenyTransactionDto, Transaction, TxStatus, TxType, VoteType } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-// ============ Types ============
-
-export type TxType = "TRANSFER" | "ADD_SIGNER" | "REMOVE_SIGNER" | "SET_THRESHOLD" | "BATCH";
-export type TxStatus = "PENDING" | "EXECUTING" | "EXECUTED" | "FAILED" | "OUTDATED";
-export type VoteType = "APPROVE" | "DENY";
-export type ProofStatus = "PENDING" | "AGGREGATED" | "FAILED";
-
-export interface Vote {
-  id: string;
-  txId: number;
-  voterCommitment: string;
-  voteType: VoteType;
-  nullifier: string | null;
-  jobId: string | null;
-  proofStatus: ProofStatus | null;
-  aggregationId: string | null;
-  domainId: number | null;
-  merkleProof: string[];
-  leafCount: number | null;
-  leafIndex: number | null;
-  createdAt: string;
-}
-
-export interface Transaction {
-  id: string;
-  txId: number;
-  type: TxType;
-  status: TxStatus;
-  nonce: number;
-  to: string | null;
-  value: string | null;
-  signerCommitment: string | null;
-  newThreshold: number | null;
-  createdBy: string;
-  walletAddress: string;
-  threshold: number;
-  totalSigners: number;
-  txHash: string | null;
-  executedAt: string | null;
-  createdAt: string;
-  votes: Vote[];
-  batchData: any;
-}
-
-export interface CreateTransactionDto {
-  nonce: number;
-  type: TxType;
-  walletAddress: string;
-  threshold: number;
-  totalSigners: number;
-  // Transfer
-  to?: string;
-  value?: string;
-  // Add/Remove Signer
-  signerCommitment?: string;
-  // Set Threshold / Add / Remove
-  newThreshold?: number;
-  // For BATCH
-  batchItemIds?: string[];
-  // Creator's proof (auto approve)
-  creatorCommitment: string;
-  proof: number[];
-  publicInputs: string[];
-  nullifier: string;
-  vk?: string;
-}
-
-export interface ApproveDto {
-  voterCommitment: string;
-  proof: number[];
-  publicInputs: string[];
-  nullifier: string;
-  vk?: string;
-}
-
-export interface DenyDto {
-  voterCommitment: string;
-  totalSigners: number;
-}
-
-export interface ExecutionData {
-  txId: number;
-  to: string;
-  value: string;
-  data: string;
-  zkProofs: {
-    nullifier: string;
-    aggregationId: string;
-    domainId: number;
-    zkMerklePath: string[];
-    leafCount: number;
-    index: number;
-  }[];
-  threshold: number;
-}
 
 // ============ API Functions ============
 
@@ -147,7 +50,7 @@ const getTransactionAPI = async (txId: number): Promise<Transaction> => {
 
 const approveAPI = async (
   txId: number,
-  dto: ApproveDto,
+  dto: ApproveTransactionDto,
 ): Promise<{
   txId: number;
   voteType: VoteType;
@@ -172,7 +75,7 @@ const approveAPI = async (
 
 const denyAPI = async (
   txId: number,
-  dto: DenyDto,
+  dto: DenyTransactionDto,
 ): Promise<{
   txId: number;
   voteType: VoteType;
@@ -188,17 +91,6 @@ const denyAPI = async (
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || "Failed to deny transaction");
-  }
-
-  return response.json();
-};
-
-const getExecutionDataAPI = async (txId: number): Promise<ExecutionData> => {
-  const response = await fetch(`${API_BASE_URL}/api/transactions/${txId}/execute`);
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to get execution data");
   }
 
   return response.json();
@@ -298,7 +190,7 @@ export const useApprove = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ txId, dto }: { txId: number; dto: ApproveDto }) => approveAPI(txId, dto),
+    mutationFn: ({ txId, dto }: { txId: number; dto: ApproveTransactionDto }) => approveAPI(txId, dto),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
@@ -313,7 +205,7 @@ export const useDeny = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ txId, dto }: { txId: number; dto: DenyDto }) => denyAPI(txId, dto),
+    mutationFn: ({ txId, dto }: { txId: number; dto: DenyTransactionDto }) => denyAPI(txId, dto),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
@@ -321,16 +213,6 @@ export const useDeny = () => {
   });
 };
 
-/**
- * Get execution data (proofs for smart contract)
- */
-export const useExecutionData = (txId: number, enabled = false) => {
-  return useQuery({
-    queryKey: transactionKeys.execution(txId),
-    queryFn: () => getExecutionDataAPI(txId),
-    enabled: enabled && txId > 0,
-  });
-};
 
 /**
  * Mark transaction as executed
@@ -368,12 +250,12 @@ export const useExecuteOnChain = () => {
  * Get pending transactions for a wallet
  */
 export const usePendingTransactions = (walletAddress: string) => {
-  return useTransactions(walletAddress, "PENDING");
+  return useTransactions(walletAddress, TxStatus.PENDING);
 };
 
 /**
  * Get executing transactions for a wallet
  */
 export const useExecutingTransactions = (walletAddress: string) => {
-  return useTransactions(walletAddress, "EXECUTING");
+  return useTransactions(walletAddress, TxStatus.EXECUTING);
 };
