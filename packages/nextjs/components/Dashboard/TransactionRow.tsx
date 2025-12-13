@@ -14,11 +14,11 @@ import {
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
-import { useMetaMultiSigWallet } from "~~/hooks/api";
 import { useApprove, useDeny, useExecuteOnChain } from "~~/hooks/api/useTransaction";
-import { useGenerateProof } from "~~/hooks/useGenerateProof";
+import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
+import { useMetaMultiSigWallet } from "~~/hooks";
 
 // ============ Types ============
 type TxType = "transfer" | "add_signer" | "remove_signer" | "set_threshold" | "batch";

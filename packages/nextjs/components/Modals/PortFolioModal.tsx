@@ -9,7 +9,7 @@ import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui
 import { ReceiveModal } from "./ReceiveModal";
 import { Eye, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
-import { useMetaMultiSigWallet } from "~~/hooks/api";
+import { useMetaMultiSigWallet } from "~~/hooks";
 
 interface PortfolioModalProps {
   children: React.ReactNode;

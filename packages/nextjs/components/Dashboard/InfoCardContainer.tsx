@@ -5,7 +5,7 @@ import Image from "next/image";
 import { EditAccountModal } from "../Modals/EditAccountModal";
 import { useWalletClient } from "wagmi";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
-import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks/api";
+import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks";
 
 interface InfoCardContainerProps {}
 

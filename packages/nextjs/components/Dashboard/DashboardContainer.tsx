@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
 import { TransactionRow, convertToRowData } from "./TransactionRow";
-import { useMetaMultiSigWallet } from "~~/hooks/api";
+import { useMetaMultiSigWallet } from "~~/hooks";
 import { useTransactions } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store";
 

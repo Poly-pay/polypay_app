@@ -7,11 +7,10 @@ import { Input } from "../ui/input";
 import { ConfirmDialog } from "./Confirm";
 import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
 import { Copy, Trash2, X } from "lucide-react";
-import { useMetaMultiSigWallet } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
-import { useGenerateProof } from "~~/hooks/useGenerateProof";
-import { useIdentityStore } from "~~/services/store";
+import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { notification } from "~~/utils/scaffold-eth";
+import { useMetaMultiSigWallet } from "~~/hooks";
 
 interface EditAccountModalProps {
   children: React.ReactNode;

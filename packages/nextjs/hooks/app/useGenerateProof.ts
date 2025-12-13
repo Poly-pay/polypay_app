@@ -3,7 +3,6 @@ import { Noir } from "@noir-lang/noir_js";
 import { UltraPlonkBackend } from "@aztec/bb.js";
 import { type Hex } from "viem";
 import { useWalletClient } from "wagmi";
-import { useMetaMultiSigWallet } from "~~/hooks/api";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import {
   buildMerkleTree,
@@ -12,6 +11,7 @@ import {
   hexToByteArray,
   poseidonHash2,
 } from "~~/utils/multisig";
+import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
 
 export interface GenerateProofResult {
   proof: number[];
