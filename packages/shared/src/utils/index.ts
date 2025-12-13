@@ -1,1 +1,1 @@
-export * from './encodeData';
+export * from "./encodeData";

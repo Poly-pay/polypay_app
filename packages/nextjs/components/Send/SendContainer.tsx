@@ -4,12 +4,12 @@ import React, { useState } from "react";
 import { TxType } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
+import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
-import { useMetaMultiSigWallet } from "~~/hooks";
 
 export default function SendContainer() {
   const [amount, setAmount] = useState("");

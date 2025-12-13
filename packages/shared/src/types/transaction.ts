@@ -1,5 +1,5 @@
-import { TxType, TxStatus } from '../enums';
-import { Vote } from './vote';
+import { TxType, TxStatus } from "../enums";
+import { Vote } from "./vote";
 
 export interface Transaction {
   id: string;

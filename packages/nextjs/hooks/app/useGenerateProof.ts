@@ -1,17 +1,11 @@
 import { useCallback } from "react";
-import { Noir } from "@noir-lang/noir_js";
+import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
 import { UltraPlonkBackend } from "@aztec/bb.js";
+import { Noir } from "@noir-lang/noir_js";
 import { type Hex } from "viem";
 import { useWalletClient } from "wagmi";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
-import {
-  buildMerkleTree,
-  getMerklePath,
-  getPublicKeyXY,
-  hexToByteArray,
-  poseidonHash2,
-} from "~~/utils/multisig";
-import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
+import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 
 export interface GenerateProofResult {
   proof: number[];
@@ -35,7 +29,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
     (state: string) => {
       onLoadingStateChange?.(state);
     },
-    [onLoadingStateChange]
+    [onLoadingStateChange],
   );
 
   const generateProof = useCallback(
@@ -76,9 +70,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       const tree = await buildMerkleTree(commitments ?? []);
       const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
 
-      const leafIndex = (commitments ?? []).findIndex(
-        (c) => BigInt(c) === BigInt(commitment)
-      );
+      const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(commitment));
 
       if (leafIndex === -1) {
         throw new Error("You are not a signer of this wallet");
@@ -100,7 +92,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
         pub_key_y: pubKeyY,
         secret: secret,
         leaf_index: leafIndex,
-        merkle_path: merklePath.map((p) => p.toString()),
+        merkle_path: merklePath.map(p => p.toString()),
         tx_hash_bytes: txHashBytes,
         tx_hash_commitment: txHashCommitment.toString(),
         merkle_root: merkleRoot?.toString() ?? "",
@@ -124,7 +116,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
         commitment,
       };
     },
-    [walletClient, metaMultiSigWallet, secret, commitment, setLoadingState]
+    [walletClient, metaMultiSigWallet, secret, commitment, setLoadingState],
   );
 
   return {

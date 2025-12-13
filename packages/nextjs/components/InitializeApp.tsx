@@ -2,7 +2,6 @@
 
 import { useInitializeApp } from "~~/hooks";
 
-
 interface InitializeAppProps {
   children: React.ReactNode;
 }

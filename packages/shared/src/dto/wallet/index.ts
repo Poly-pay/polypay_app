@@ -1,1 +1,1 @@
-export { CreateWalletDto } from './create-wallet.dto';
+export { CreateWalletDto } from "./create-wallet.dto";

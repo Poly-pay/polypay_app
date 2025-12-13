@@ -1,4 +1,10 @@
-import { IsArray, IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 
 /**
  * DTO for signing an existing transaction

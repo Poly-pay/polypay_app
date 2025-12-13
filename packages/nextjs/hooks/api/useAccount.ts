@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Account, CreateAccountDto } from "@polypay/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface AccountWallet {
   id: string;
@@ -65,7 +65,7 @@ export const useCreateAccount = () => {
 
   return useMutation({
     mutationFn: createAccountAPI,
-    onSuccess: (data) => {
+    onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: accountKeys.all });
       queryClient.setQueryData(accountKeys.byCommitment(data.commitment), data);
     },

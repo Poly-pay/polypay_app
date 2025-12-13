@@ -5,11 +5,11 @@ import TransactionSummary from "./TransactionSummary";
 import { BatchItem, TxType, encodeBatchTransfer } from "@polypay/shared";
 import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
+import { useMetaMultiSigWallet } from "~~/hooks";
 import { useBatchItems, useCreateTransaction, useDeleteBatchItem } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
-import { useMetaMultiSigWallet } from "~~/hooks";
 
 // ==================== Custom Checkbox ====================
 function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {

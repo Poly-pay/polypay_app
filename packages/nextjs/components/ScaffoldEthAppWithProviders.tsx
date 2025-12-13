@@ -11,10 +11,10 @@ import { useTheme } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
-import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
-import { useMobileDetection } from "~~/hooks/app/useMobileDetection";
-import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 import { useEnforceSepolia } from "~~/hooks";
+import { useMobileDetection } from "~~/hooks/app/useMobileDetection";
+import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
+import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   useInitializeNativeCurrencyPrice();

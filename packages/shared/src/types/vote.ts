@@ -1,4 +1,4 @@
-import { VoteType, ProofStatus } from '../enums';
+import { VoteType, ProofStatus } from "../enums";
 
 export interface Vote {
   id: string;

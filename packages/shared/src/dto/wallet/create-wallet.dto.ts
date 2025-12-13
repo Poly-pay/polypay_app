@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsString, Min } from "class-validator";
 
 export class CreateWalletDto {
   @IsNotEmpty()

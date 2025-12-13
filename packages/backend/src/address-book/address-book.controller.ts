@@ -9,8 +9,12 @@ import {
   Query,
 } from '@nestjs/common';
 import { AddressBookService } from './address-book.service';
-import { CreateAddressGroupDto, CreateContactDto, UpdateAddressGroupDto, UpdateContactDto } from '@polypay/shared';
-
+import {
+  CreateAddressGroupDto,
+  CreateContactDto,
+  UpdateAddressGroupDto,
+  UpdateContactDto,
+} from '@polypay/shared';
 
 @Controller('api/address-book')
 export class AddressBookController {

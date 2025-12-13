@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, Matches, MaxLength } from "class-validator";
 
 export class CreateContactDto {
   @IsNotEmpty()
@@ -12,6 +12,6 @@ export class CreateContactDto {
 
   @IsNotEmpty()
   @IsString()
-  @Matches(/^0x[a-fA-F0-9]{40}$/, { message: 'Invalid Ethereum address' })
+  @Matches(/^0x[a-fA-F0-9]{40}$/, { message: "Invalid Ethereum address" })
   address: string;
 }

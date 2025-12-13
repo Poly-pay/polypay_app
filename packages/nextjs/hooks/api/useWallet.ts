@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { accountKeys } from "./useAccount";
 import { CreateWalletDto, Wallet } from "@polypay/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ============ API Functions ============
 
@@ -62,7 +62,7 @@ export const useCreateWallet = () => {
       queryClient.setQueryData(walletKeys.byAddress(data.address), data);
 
       // Invalidate account wallets for all signers
-      variables.commitments.forEach((commitment) => {
+      variables.commitments.forEach(commitment => {
         queryClient.invalidateQueries({ queryKey: accountKeys.wallets(commitment) });
       });
     },

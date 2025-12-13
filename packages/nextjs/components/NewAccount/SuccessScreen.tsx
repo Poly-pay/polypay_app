@@ -24,7 +24,6 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
     router.push(`/dashboard`);
   };
 
-
   return (
     <div
       className={`overflow-hidden relative w-full h-full flex flex-col rounded-lg bg-background ${className} border border-divider`}
@@ -84,9 +83,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
                 <span className="font-semibold text-[16px] text-center text-white">See your wallet</span>
               </button>
               <ReceiveModal address={walletAddress}>
-                <button
-                  className="flex-1 bg-primary flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
-                >
+                <button className="flex-1 bg-primary flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer">
                   <span className="font-semibold text-[16px] text-center text-white">Fund your wallet</span>
                 </button>
               </ReceiveModal>

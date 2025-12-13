@@ -1,4 +1,4 @@
 export enum VoteType {
-  APPROVE = 'APPROVE',
-  DENY = 'DENY',
+  APPROVE = "APPROVE",
+  DENY = "DENY",
 }

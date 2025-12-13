@@ -10,13 +10,13 @@ interface WalletState {
 
 export const useWalletStore = create<WalletState>()(
   persist(
-    (set) => ({
+    set => ({
       currentWallet: null,
       setCurrentWallet: (wallet: Wallet) => set({ currentWallet: wallet }),
       clearCurrentWallet: () => set({ currentWallet: null }),
     }),
     {
       name: "wallet-storage",
-    }
-  )
+    },
+  ),
 );

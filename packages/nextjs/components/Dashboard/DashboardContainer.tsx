@@ -63,11 +63,7 @@ export default function DashboardContainer() {
       ) : transactions && transactions.length > 0 ? (
         <div className="flex flex-col gap-2">
           {transactions.map((tx: any) => (
-            <TransactionRow
-              key={tx.id}
-              tx={convertToRowData(tx, commitment ?? "")}
-              onSuccess={handleSuccess}
-            />
+            <TransactionRow key={tx.id} tx={convertToRowData(tx, commitment ?? "")} onSuccess={handleSuccess} />
           ))}
         </div>
       ) : (

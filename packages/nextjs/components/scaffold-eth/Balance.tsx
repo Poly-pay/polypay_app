@@ -40,10 +40,10 @@ export const Balance = ({ address, className = "", usdMode }: BalanceProps) => {
 
   return (
     <>
-    <div className="font-bold text-[16px]">
-      <span>{formattedBalance.toFixed(4)}</span>
-      <span className="text-[0.8em] font-bold ml-1">{targetNetwork.nativeCurrency.symbol}</span>
-    </div>
+      <div className="font-bold text-[16px]">
+        <span>{formattedBalance.toFixed(4)}</span>
+        <span className="text-[0.8em] font-bold ml-1">{targetNetwork.nativeCurrency.symbol}</span>
+      </div>
     </>
   );
 };

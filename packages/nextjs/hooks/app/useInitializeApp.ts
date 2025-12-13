@@ -20,15 +20,12 @@ export const useInitializeApp = () => {
 
       try {
         // Fetch wallets from backend
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/accounts/${commitment}/wallets`
-        );
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/${commitment}/wallets`);
         const wallets = await response.json();
 
         if (wallets && wallets.length > 0) {
           // Check if currentWallet is still valid
-          const isCurrentWalletValid = currentWallet && 
-            wallets.some((w: any) => w.address === currentWallet.address);
+          const isCurrentWalletValid = currentWallet && wallets.some((w: any) => w.address === currentWallet.address);
 
           if (!isCurrentWalletValid) {
             // Set first wallet as current

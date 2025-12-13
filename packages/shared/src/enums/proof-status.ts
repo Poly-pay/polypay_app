@@ -1,5 +1,5 @@
 export enum ProofStatus {
-  PENDING = 'PENDING',
-  AGGREGATED = 'AGGREGATED',
-  FAILED = 'FAILED',
+  PENDING = "PENDING",
+  AGGREGATED = "AGGREGATED",
+  FAILED = "FAILED",
 }

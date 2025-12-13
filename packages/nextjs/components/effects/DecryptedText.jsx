@@ -1,21 +1,21 @@
-import { useEffect, useState, useRef } from 'react';
-import { motion } from 'motion/react';
+import { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 
 const styles = {
   wrapper: {
-    display: 'inline-block',
-    whiteSpace: 'pre-wrap'
+    display: "inline-block",
+    whiteSpace: "pre-wrap",
   },
   srOnly: {
-    position: 'absolute',
-    width: '1px',
-    height: '1px',
+    position: "absolute",
+    width: "1px",
+    height: "1px",
     padding: 0,
-    margin: '-1px',
-    overflow: 'hidden',
-    clip: 'rect(0,0,0,0)',
-    border: 0
-  }
+    margin: "-1px",
+    overflow: "hidden",
+    clip: "rect(0,0,0,0)",
+    border: 0,
+  },
 };
 
 export default function DecryptedText({
@@ -23,13 +23,13 @@ export default function DecryptedText({
   speed = 50,
   maxIterations = 10,
   sequential = false,
-  revealDirection = 'start',
+  revealDirection = "start",
   useOriginalCharsOnly = false,
-  characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()_+',
-  className = '',
-  parentClassName = '',
-  encryptedClassName = '',
-  animateOn = 'hover',
+  characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()_+",
+  className = "",
+  parentClassName = "",
+  encryptedClassName = "",
+  animateOn = "hover",
   ...props
 }) {
   const [displayText, setDisplayText] = useState(text);
@@ -46,11 +46,11 @@ export default function DecryptedText({
     const getNextIndex = revealedSet => {
       const textLength = text.length;
       switch (revealDirection) {
-        case 'start':
+        case "start":
           return revealedSet.size;
-        case 'end':
+        case "end":
           return textLength - 1 - revealedSet.size;
-        case 'center': {
+        case "center": {
           const middle = Math.floor(textLength / 2);
           const offset = Math.floor(revealedSet.size / 2);
           const nextIndex = revealedSet.size % 2 === 0 ? middle + offset : middle - offset - 1;
@@ -70,16 +70,16 @@ export default function DecryptedText({
     };
 
     const availableChars = useOriginalCharsOnly
-      ? Array.from(new Set(text.split(''))).filter(char => char !== ' ')
-      : characters.split('');
+      ? Array.from(new Set(text.split(""))).filter(char => char !== " ")
+      : characters.split("");
 
     const shuffleText = (originalText, currentRevealed) => {
       if (useOriginalCharsOnly) {
-        const positions = originalText.split('').map((char, i) => ({
+        const positions = originalText.split("").map((char, i) => ({
           char,
-          isSpace: char === ' ',
+          isSpace: char === " ",
           index: i,
-          isRevealed: currentRevealed.has(i)
+          isRevealed: currentRevealed.has(i),
         }));
 
         const nonSpaceChars = positions.filter(p => !p.isSpace && !p.isRevealed).map(p => p.char);
@@ -92,20 +92,20 @@ export default function DecryptedText({
         let charIndex = 0;
         return positions
           .map(p => {
-            if (p.isSpace) return ' ';
+            if (p.isSpace) return " ";
             if (p.isRevealed) return originalText[p.index];
             return nonSpaceChars[charIndex++];
           })
-          .join('');
+          .join("");
       } else {
         return originalText
-          .split('')
+          .split("")
           .map((char, i) => {
-            if (char === ' ') return ' ';
+            if (char === " ") return " ";
             if (currentRevealed.has(i)) return originalText[i];
             return availableChars[Math.floor(Math.random() * availableChars.length)];
           })
-          .join('');
+          .join("");
       }
     };
 
@@ -149,7 +149,7 @@ export default function DecryptedText({
   }, [isHovering, text, speed, maxIterations, sequential, revealDirection, characters, useOriginalCharsOnly]);
 
   useEffect(() => {
-    if (animateOn !== 'view' && animateOn !== 'both') return;
+    if (animateOn !== "view" && animateOn !== "both") return;
 
     const observerCallback = entries => {
       entries.forEach(entry => {
@@ -162,8 +162,8 @@ export default function DecryptedText({
 
     const observerOptions = {
       root: null,
-      rootMargin: '0px',
-      threshold: 0.1
+      rootMargin: "0px",
+      threshold: 0.1,
     };
 
     const observer = new IntersectionObserver(observerCallback, observerOptions);
@@ -180,10 +180,10 @@ export default function DecryptedText({
   }, [animateOn, hasAnimated]);
 
   const hoverProps =
-    animateOn === 'hover' || animateOn === 'both'
+    animateOn === "hover" || animateOn === "both"
       ? {
           onMouseEnter: () => setIsHovering(true),
-          onMouseLeave: () => setIsHovering(false)
+          onMouseLeave: () => setIsHovering(false),
         }
       : {};
 
@@ -192,7 +192,7 @@ export default function DecryptedText({
       <span style={styles.srOnly}>{displayText}</span>
 
       <span aria-hidden="true">
-        {displayText.split('').map((char, index) => {
+        {displayText.split("").map((char, index) => {
           const isRevealedOrDone = revealedIndices.has(index) || !isScrambling || !isHovering;
 
           return (

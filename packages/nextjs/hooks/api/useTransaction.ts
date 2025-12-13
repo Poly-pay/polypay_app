@@ -1,4 +1,12 @@
-import { ApproveTransactionDto, CreateTransactionDto, DenyTransactionDto, Transaction, TxStatus, TxType, VoteType } from "@polypay/shared";
+import {
+  ApproveTransactionDto,
+  CreateTransactionDto,
+  DenyTransactionDto,
+  Transaction,
+  TxStatus,
+  TxType,
+  VoteType,
+} from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ============ API Functions ============
@@ -212,7 +220,6 @@ export const useDeny = () => {
     },
   });
 };
-
 
 /**
  * Mark transaction as executed

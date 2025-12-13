@@ -6,9 +6,9 @@ import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
 import WalletName from "./WalletName";
 import { useCreateWallet } from "~~/hooks/api";
+import { useWalletStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
-import { useWalletStore } from "~~/services/store";
 
 export interface WalletFormData {
   name: string;

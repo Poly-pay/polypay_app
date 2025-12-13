@@ -7,7 +7,7 @@ export class SubmitProofDto {
   @IsArray()
   @IsNotEmpty()
   proof: number[];
-  
+
   @IsArray()
   @IsString({ each: true })
   publicInputs: string[];
