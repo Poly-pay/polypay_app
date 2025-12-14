@@ -131,12 +131,14 @@ model Vote {
 model BatchItem {
   id          String   @id @default(cuid())
   accountId   String
+  contactId   String?
   recipient   String
   amount      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
   
   @@index([accountId])
 }
@@ -166,6 +168,7 @@ model Contact {
   wallet       Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
   groups       ContactGroup[]
   transactions Transaction[]
+  batchItems   BatchItem[] 
 
   @@unique([walletId, name])
   @@unique([walletId, address])

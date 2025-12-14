@@ -35,6 +35,8 @@ interface Member {
 interface BatchTransfer {
   recipient: string;
   amount: string;
+  contactId?: string;
+  contactName?: string;
 }
 
 interface TransactionRowData {
@@ -58,6 +60,12 @@ interface TransactionRowData {
 
   // Batch
   batchData?: BatchTransfer[];
+
+  contact?: {
+    id: string;
+    name: string;
+    address: string;
+  };
 
   totalSigners: number;
 
@@ -145,7 +153,26 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     threshold: tx.threshold,
     myVoteStatus,
     walletAddress: tx.walletAddress,
+    contact: tx.contact
+      ? {
+          id: tx.contact.id,
+          name: tx.contact.name,
+          address: tx.contact.address,
+        }
+      : undefined,
   };
+}
+
+function AddressWithContact({ address, contactName }: { address: string; contactName?: string }) {
+  if (contactName) {
+    return (
+      <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+        <span className="font-medium">{contactName}</span>
+        <span className="text-gray-500 ml-1">({formatAddress(address)})</span>
+      </span>
+    );
+  }
+  return <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">{formatAddress(address)}</span>;
 }
 
 // ============ Vote Badge Component ============
@@ -259,7 +286,14 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
           </div>
           <ArrowRight size={20} />
           <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-            <span>{tx.recipientAddress}</span>
+            {tx.contact?.name ? (
+              <>
+                <span className="font-medium">{tx.contact.name}</span>
+                <span className="text-white/70">({formatAddress(tx.recipientAddress ?? "")})</span>
+              </>
+            ) : (
+              <span>{tx.recipientAddress}</span>
+            )}
           </div>
         </div>
       </div>
@@ -328,7 +362,17 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
                 <span className="font-medium">{formatEther(BigInt(transfer.amount))} ETH</span>
               </div>
               <ArrowRight size={16} className="text-white/60" />
-              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">{formatAddress(transfer.recipient)}</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                {" "}
+                {transfer.contactName ? (
+                  <>
+                    <span className="font-medium">{transfer.contactName}</span>
+                    <span className="text-white/70 ml-1">({formatAddress(transfer.recipient)})</span>
+                  </>
+                ) : (
+                  formatAddress(transfer.recipient)
+                )}
+              </span>
             </div>
           ))}
         </div>
@@ -418,9 +462,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
             <span className="font-medium">{formatEther(BigInt(tx.amount ?? "0"))} ETH</span>
           </div>
           <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
-          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
-            {formatAddress(tx.recipientAddress ?? "")}
-          </span>
+          <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} />
         </div>
       );
 

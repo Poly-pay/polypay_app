@@ -36,7 +36,7 @@ const sectionItems = [
     menuItems: [
       { icon: "/sidebar/dashboard.svg", label: "dashboard", link: SIDEBAR_LINKS.DASHBOARD },
       { icon: "/sidebar/address-book.svg", label: "address book", link: SIDEBAR_LINKS.ADDRESS_BOOK },
-      { icon: "/sidebar/ai-assistant.svg", label: "ai assistant", link: SIDEBAR_LINKS.AI_ASSISTANT },
+      // { icon: "/sidebar/ai-assistant.svg", label: "ai assistant", link: SIDEBAR_LINKS.AI_ASSISTANT },
     ],
   },
   {
@@ -44,7 +44,7 @@ const sectionItems = [
     description: "Move assets your way – fast, private.",
     menuItems: [
       { icon: "/sidebar/send.svg", label: "transfer", link: SIDEBAR_LINKS.SEND },
-      { icon: "/sidebar/swap.svg", label: "swap", link: SIDEBAR_LINKS.SWAP },
+      // { icon: "/sidebar/swap.svg", label: "swap", link: SIDEBAR_LINKS.SWAP },
       { icon: "/sidebar/batch.svg", label: "batch", link: SIDEBAR_LINKS.BATCH },
     ],
   },

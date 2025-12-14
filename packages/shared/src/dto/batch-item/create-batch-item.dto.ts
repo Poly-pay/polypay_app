@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Matches } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, Matches } from "class-validator";
 
 export class CreateBatchItemDto {
   @IsNotEmpty()
@@ -13,4 +13,8 @@ export class CreateBatchItemDto {
   @IsNotEmpty()
   @IsString()
   amount: string;
+
+  @IsString()
+  @IsOptional()
+  contactId?: string;
 }

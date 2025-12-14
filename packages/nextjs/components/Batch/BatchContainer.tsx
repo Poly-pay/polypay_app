@@ -164,7 +164,18 @@ function BatchTransactions({
 
               {/* Recipient */}
               <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-[#363636]"}`}>
-                To: [{formatRecipient(item.recipient)}]
+                To: [{" "}
+                {item.contact?.name ? (
+                  <>
+                    <span className="font-medium">{item.contact.name}</span>
+                    <span className={isActive ? "text-white/70 ml-1" : "text-gray-500 ml-1"}>
+                      ({formatRecipient(item.recipient)})
+                    </span>
+                  </>
+                ) : (
+                  formatRecipient(item.recipient)
+                )}
+                ]
               </div>
 
               {/* Remove Button */}
@@ -376,6 +387,7 @@ export default function BatchContainer() {
               id: item.id,
               amount: formatAmount(item.amount),
               recipient: formatRecipient(item.recipient),
+              contactName: item.contact?.name,
             }))}
             onConfirm={handleProposeBatch}
             isLoading={isProposing}

@@ -7,6 +7,7 @@ interface TransactionSummaryProps {
     id: string;
     amount: string;
     recipient: string;
+    contactName?: string;
   }[];
   onConfirm?: () => void;
   className?: string;
@@ -49,7 +50,18 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
             </div>
 
             {/* Recipient */}
-            <div className="text-[#363636] text-[16px]">To: [{transaction.recipient}]</div>
+            <div className="text-[#363636] text-[16px]">
+              To: [{" "}
+              {transaction.contactName ? (
+                <>
+                  <span className="font-medium">{transaction.contactName}</span>
+                  <span className="text-gray-500 ml-1">({transaction.recipient})</span>
+                </>
+              ) : (
+                transaction.recipient
+              )}
+              ]
+            </div>
           </div>
         ))}
       </div>

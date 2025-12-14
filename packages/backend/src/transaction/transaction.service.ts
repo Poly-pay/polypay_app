@@ -110,6 +110,8 @@ export class TransactionService {
         sortedBatchItems.map((item) => ({
           recipient: item.recipient,
           amount: item.amount,
+          contactId: item.contactId || undefined,
+          contactName: item.contact?.name || undefined,
         })),
       );
     }
@@ -335,7 +337,7 @@ export class TransactionService {
         votes: {
           orderBy: { createdAt: 'asc' },
         },
-        contact: true
+        contact: true,
       },
     });
 
@@ -361,7 +363,7 @@ export class TransactionService {
         votes: {
           orderBy: { createdAt: 'asc' },
         },
-        contact: true
+        contact: true,
       },
       orderBy: { createdAt: 'desc' },
     });

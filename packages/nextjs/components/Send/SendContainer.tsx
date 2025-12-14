@@ -4,18 +4,22 @@ import React, { useState } from "react";
 import { TxType } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
+import { ContactPicker } from "~~/components/address-book/ContactPicker";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
-import { useIdentityStore } from "~~/services/store";
+import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function SendContainer() {
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
+
+  const { currentWallet: selectedWallet } = useWalletStore();
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
@@ -81,6 +85,7 @@ export default function SendContainer() {
         totalSigners: commitments?.length || 0,
         to: address,
         value: valueInWei.toString(),
+        contactId: selectedContactId || undefined,
         creatorCommitment: myCommitment,
         proof: Array.from(proof),
         publicInputs,
@@ -94,6 +99,7 @@ export default function SendContainer() {
       // Reset form
       setAmount("");
       setAddress("");
+      setSelectedContactId(null);
     } catch (error: any) {
       console.error("Transfer error:", error);
       notification.error(error.message || "Failed to create transfer");
@@ -137,6 +143,7 @@ export default function SendContainer() {
         commitment,
         recipient: address,
         amount: valueInWei,
+        contactId: selectedContactId || undefined,
       });
 
       notification.success(
@@ -151,10 +158,17 @@ export default function SendContainer() {
       // Reset form
       setAmount("");
       setAddress("");
+      setSelectedContactId(null);
     } catch (error: any) {
       console.error("Add to batch error:", error);
       notification.error(error.message || "Failed to add to batch");
     }
+  };
+
+  const handleContactSelect = (selectedAddress: string, name: string, contactId: string) => {
+    setAddress(selectedAddress);
+    setSelectedContactId(contactId);
+    notification.info(`Selected: ${name}`);
   };
 
   return (
@@ -232,6 +246,11 @@ export default function SendContainer() {
                 value={address}
                 onChange={e => setAddress(e.target.value)}
                 className="text-text-secondary text-[16px] outline-none placeholder:text-text-secondary flex-1 w-full"
+                disabled={isLoading}
+              />
+              <ContactPicker
+                walletId={selectedWallet?.id || null}
+                onSelect={handleContactSelect}
                 disabled={isLoading}
               />
             </div>
