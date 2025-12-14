@@ -65,7 +65,6 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
 
       // 3. Get merkle data
-      setLoadingState("Building merkle tree...");
       const commitments = await metaMultiSigWallet.read.getCommitments();
       const tree = await buildMerkleTree(commitments ?? []);
       const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
@@ -79,13 +78,11 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       const merklePath = getMerklePath(tree, leafIndex);
 
       // 4. Load circuit
-      setLoadingState("Loading circuit...");
       const circuit_json = await fetch("/circuit/target/circuit.json");
       const noir_data = await circuit_json.json();
       const { bytecode, abi } = noir_data;
 
       // 5. Execute Noir circuit
-      setLoadingState("Executing circuit...");
       const input = {
         signature: sigBytes,
         pub_key_x: pubKeyX,

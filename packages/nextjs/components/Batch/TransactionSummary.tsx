@@ -25,7 +25,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
     <div className={`bg-white relative rounded-lg h-full overflow-hidden border border-primary ${className}`}>
       {/* Header Section */}
       <div className="flex flex-col gap-3 items-start justify-start p-3 w-full">
-        <img src="/misc/shopping-bag.svg" alt="Batch transactions" className="w-20 h-20" />
+        {/* <img src="/misc/shopping-bag.svg" alt="Batch transactions" className="w-20 h-20" /> */}
         <div className="flex flex-col gap-[3px] items-start justify-start w-full">
           <div className="font-semibold text-[#363636] text-2xl tracking-[-0.72px] uppercase w-full">
             Transactions summary
@@ -45,7 +45,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
 
             {/* Arrow */}
             <div className="relative w-16">
-              <img src="/arrow/thin-long-arrow-right.svg" alt="arrow" className="w-full h-full" />
+              {/* <img src="/arrow/thin-long-arrow-right.svg" alt="arrow" className="w-full h-full" /> */}
             </div>
 
             {/* Recipient */}

@@ -154,12 +154,12 @@ function BatchTransactions({
 
               {/* Arrow */}
               <div className="flex items-center justify-center w-16">
-                <img
+                {/* <img
                   src="/arrow/thin-long-arrow-right.svg"
                   alt="arrow"
                   className="w-full h-full"
                   style={isActive ? { filter: "invert(1) brightness(1000%)" } : {}}
-                />
+                /> */}
               </div>
 
               {/* Recipient */}

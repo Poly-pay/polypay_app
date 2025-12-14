@@ -1,6 +1,7 @@
 import { accountKeys } from "./useAccount";
 import { CreateWalletDto, Wallet } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { API_BASE_URL } from "~~/constants";
 
 // ============ API Functions ============
 

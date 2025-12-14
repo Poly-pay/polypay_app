@@ -1,5 +1,6 @@
 import { Account, CreateAccountDto } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { API_BASE_URL } from "~~/constants";
 
 export interface AccountWallet {
   id: string;
