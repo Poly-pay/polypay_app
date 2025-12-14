@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
 import { AccountService } from './account.service';
-import { CreateAccountDto } from './dto/create-account.dto';
-import { UpdateAccountDto } from './dto/update-account.dto';
+import { CreateAccountDto, UpdateAccountDto } from '@polypay/shared';
 
 @Controller('accounts')
 export class AccountController {

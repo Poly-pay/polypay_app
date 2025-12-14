@@ -11,10 +11,10 @@ import {
 import { AddressBookService } from './address-book.service';
 import {
   CreateAddressGroupDto,
-  UpdateAddressGroupDto,
   CreateContactDto,
+  UpdateAddressGroupDto,
   UpdateContactDto,
-} from './dto';
+} from '@polypay/shared';
 
 @Controller('api/address-book')
 export class AddressBookController {

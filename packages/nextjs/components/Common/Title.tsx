@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import React from "react";
+import { usePathname } from "next/navigation";
 import { PortfolioModal } from "../Modals/PortFolioModal";
 
 const Title: React.FC = () => {

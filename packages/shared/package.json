@@ -1,0 +1,21 @@
+{
+  "name": "@polypay/shared",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "viem": "2.31.1"
+  },
+  "devDependencies": {
+    "prettier": "~3.5.3",
+    "typescript": "^5.0.0"
+  }
+}

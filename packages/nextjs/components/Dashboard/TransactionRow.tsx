@@ -2,22 +2,22 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { UltraPlonkBackend } from "@aztec/bb.js";
-import { Noir } from "@noir-lang/noir_js";
-import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
-import { formatEther } from "viem";
-import { useWalletClient } from "wagmi";
-import { useMetaMultiSigWallet } from "~~/hooks/api";
 import {
   TxStatus as ApiTxStatus,
   TxType as ApiTxType,
   Transaction,
-  useApprove,
-  useDeny,
-  useExecuteOnChain,
-} from "~~/hooks/api/useTransaction";
+  encodeAddSigner,
+  encodeBatchTransfer,
+  encodeRemoveSigner,
+  encodeUpdateThreshold,
+} from "@polypay/shared";
+import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { formatEther } from "viem";
+import { useWalletClient } from "wagmi";
+import { useMetaMultiSigWallet } from "~~/hooks";
+import { useApprove, useDeny, useExecuteOnChain } from "~~/hooks/api/useTransaction";
+import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
-import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
 // ============ Types ============
@@ -328,9 +328,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
                 <span className="font-medium">{formatEther(BigInt(transfer.amount))} ETH</span>
               </div>
               <ArrowRight size={16} className="text-white/60" />
-              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                {formatAddress(transfer.recipient)}
-              </span>
+              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">{formatAddress(transfer.recipient)}</span>
             </div>
           ))}
         </div>
@@ -479,7 +477,7 @@ interface TransactionRowProps {
 }
 
 export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
-  const { commitment, secret } = useIdentityStore();
+  const { commitment } = useIdentityStore();
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
@@ -490,11 +488,19 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   const { mutateAsync: approve } = useApprove();
   const { mutateAsync: deny } = useDeny();
   const { mutateAsync: executeOnChain, isPending: isExecuting } = useExecuteOnChain();
+  const { generateProof } = useGenerateProof({
+    onLoadingStateChange: setLoadingState,
+  });
 
-  // ============ Generate Proof ============
-  const generateProof = async () => {
+  // ============ Handle Approve ============
+  const handleApprove = async () => {
     if (!walletClient || !metaMultiSigWallet) {
       throw new Error("Wallet not connected");
+    }
+
+    if (!commitment) {
+      notification.error("No commitment found");
+      return;
     }
 
     const currentNonce = await metaMultiSigWallet.read.nonce();
@@ -505,70 +511,20 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     let value = BigInt(tx.amount || "0");
 
     if (tx.type !== "transfer") {
-      const { encodeFunctionData } = await import("viem");
       to = tx.walletAddress as `0x${string}`;
       value = 0n;
 
       if (tx.type === "add_signer") {
-        callData = encodeFunctionData({
-          abi: [
-            {
-              name: "addSigner",
-              type: "function",
-              inputs: [
-                { name: "newCommitment", type: "uint256" },
-                { name: "newSigRequired", type: "uint256" },
-              ],
-            },
-          ],
-          functionName: "addSigner",
-          args: [BigInt(tx.signerCommitment!), BigInt(tx.newThreshold!)],
-        });
+        callData = encodeAddSigner(tx.signerCommitment!, tx.newThreshold!);
       } else if (tx.type === "remove_signer") {
-        callData = encodeFunctionData({
-          abi: [
-            {
-              name: "removeSigner",
-              type: "function",
-              inputs: [
-                { name: "commitment", type: "uint256" },
-                { name: "newSigRequired", type: "uint256" },
-              ],
-            },
-          ],
-          functionName: "removeSigner",
-          args: [BigInt(tx.signerCommitment!), BigInt(tx.newThreshold!)],
-        });
+        callData = encodeRemoveSigner(tx.signerCommitment!, tx.newThreshold!);
       } else if (tx.type === "set_threshold") {
-        callData = encodeFunctionData({
-          abi: [
-            {
-              name: "updateSignaturesRequired",
-              type: "function",
-              inputs: [{ name: "newSigRequired", type: "uint256" }],
-            },
-          ],
-          functionName: "updateSignaturesRequired",
-          args: [BigInt(tx.newThreshold!)],
-        });
+        callData = encodeUpdateThreshold(tx.newThreshold!);
       } else if (tx.type === "batch" && tx.batchData) {
         // Encode batchTransfer call
         const recipients = tx.batchData.map(item => item.recipient as `0x${string}`);
         const amounts = tx.batchData.map(item => BigInt(item.amount));
-        callData = encodeFunctionData({
-          abi: [
-            {
-              name: "batchTransfer",
-              type: "function",
-              inputs: [
-                { name: "recipients", type: "address[]" },
-                { name: "amounts", type: "uint256[]" },
-              ],
-            },
-          ],
-          functionName: "batchTransfer",
-          args: [recipients, amounts],
-        });
+        callData = encodeBatchTransfer(recipients, amounts);
       }
     }
 
@@ -580,75 +536,10 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       callData,
     ])) as `0x${string}`;
 
-    // 3. Sign
-    setLoadingState("Signing transaction...");
-    const signature = await walletClient.signMessage({
-      message: { raw: txHash },
-    });
-    const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
-
-    // 4. Get secret
-    if (!secret) throw new Error("No secret found");
-
-    const txHashBytes = hexToByteArray(txHash);
-    const sigBytes = hexToByteArray(signature).slice(0, 64);
-    const txHashCommitment = await poseidonHash2(BigInt(txHash), 1n);
-    const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
-
-    // 5. Get merkle data
-    const commitments = await metaMultiSigWallet.read.getCommitments();
-    const tree = await buildMerkleTree(commitments ?? []);
-    const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
-
-    if (!commitment) throw new Error("No commitment found");
-
-    const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(commitment));
-    if (leafIndex === -1) throw new Error("You are not a signer");
-
-    const merklePath = getMerklePath(tree, leafIndex);
-
-    // 6. Generate proof
-    setLoadingState("Generating ZK proof...");
-    const circuit_json = await fetch("/circuit/target/circuit.json");
-    const noir_data = await circuit_json.json();
-    const { bytecode, abi } = noir_data;
-
-    const noir = new Noir({ bytecode, abi } as any);
-    const execResult = await noir.execute({
-      signature: sigBytes,
-      pub_key_x: pubKeyX,
-      pub_key_y: pubKeyY,
-      secret,
-      leaf_index: leafIndex,
-      merkle_path: merklePath.map(p => p.toString()),
-      tx_hash_bytes: txHashBytes,
-      tx_hash_commitment: txHashCommitment.toString(),
-      merkle_root: merkleRoot?.toString() ?? "",
-      nullifier: nullifier.toString(),
-    });
-
-    const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
-    const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
-
-    return {
-      proof: Array.from(proof),
-      publicInputs,
-      nullifier: nullifier.toString(),
-      commitment,
-    };
-  };
-
-  // ============ Handle Approve ============
-  const handleApprove = async () => {
-    if (!commitment) {
-      notification.error("No commitment found");
-      return;
-    }
-
     setLoading(true);
     try {
       // 1. Generate proof
-      const proofData = await generateProof();
+      const proofData = await generateProof(txHash);
 
       // 2. Submit to backend
       setLoadingState("Submitting to backend...");

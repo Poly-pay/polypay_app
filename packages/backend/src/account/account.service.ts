@@ -5,8 +5,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { CreateAccountDto } from './dto/create-account.dto';
-import { UpdateAccountDto } from './dto/update-account.dto';
+import { CreateAccountDto } from '@polypay/shared';
+import { UpdateAccountDto } from '@polypay/shared';
 
 @Injectable()
 export class AccountService {

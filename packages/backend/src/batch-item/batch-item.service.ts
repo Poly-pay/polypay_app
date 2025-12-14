@@ -1,10 +1,6 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { CreateBatchItemDto, UpdateBatchItemDto } from './dto';
+import { CreateBatchItemDto, UpdateBatchItemDto } from '@polypay/shared';
 
 @Injectable()
 export class BatchItemService {

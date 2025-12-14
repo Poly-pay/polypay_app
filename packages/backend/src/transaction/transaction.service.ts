@@ -7,7 +7,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
-import { CreateTransactionDto, ApproveDto, DenyDto, TxType } from './dto';
+import {
+  CreateTransactionDto,
+  ApproveTransactionDto,
+  DenyTransactionDto,
+  TxType,
+  encodeAddSigner,
+  encodeRemoveSigner,
+  encodeUpdateThreshold,
+  encodeBatchTransfer,
+} from '@polypay/shared';
 import { encodeFunctionData } from 'viem';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -172,7 +181,7 @@ export class TransactionService {
   /**
    * Approve transaction
    */
-  async approve(txId: number, dto: ApproveDto) {
+  async approve(txId: number, dto: ApproveTransactionDto) {
     // 1. Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -257,7 +266,7 @@ export class TransactionService {
   /**
    * Deny transaction
    */
-  async deny(txId: number, dto: DenyDto) {
+  async deny(txId: number, dto: DenyTransactionDto) {
     // 1. Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -627,39 +636,27 @@ export class TransactionService {
         return {
           to: transaction.walletAddress,
           value: '0',
-          data: encodeFunctionData({
-            abi: WALLET_ABI,
-            functionName: 'addSigner',
-            args: [
-              BigInt(transaction.signerCommitment),
-              BigInt(transaction.newThreshold),
-            ],
-          }),
+          data: encodeAddSigner(
+            transaction.signerCommitment,
+            transaction.newThreshold,
+          ),
         };
 
       case 'REMOVE_SIGNER':
         return {
           to: transaction.walletAddress,
           value: '0',
-          data: encodeFunctionData({
-            abi: WALLET_ABI,
-            functionName: 'removeSigner',
-            args: [
-              BigInt(transaction.signerCommitment),
-              BigInt(transaction.newThreshold),
-            ],
-          }),
+          data: encodeRemoveSigner(
+            transaction.signerCommitment,
+            transaction.newThreshold,
+          ),
         };
 
       case 'SET_THRESHOLD':
         return {
           to: transaction.walletAddress,
           value: '0',
-          data: encodeFunctionData({
-            abi: WALLET_ABI,
-            functionName: 'updateSignaturesRequired',
-            args: [BigInt(transaction.newThreshold)],
-          }),
+          data: encodeUpdateThreshold(transaction.newThreshold),
         };
 
       case 'BATCH':
@@ -671,11 +668,7 @@ export class TransactionService {
         return {
           to: transaction.walletAddress,
           value: '0',
-          data: encodeFunctionData({
-            abi: WALLET_ABI,
-            functionName: 'batchTransfer',
-            args: [recipients, amounts],
-          }),
+          data: encodeBatchTransfer(recipients, amounts),
         };
 
       default:

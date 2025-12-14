@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { CreateWalletDto } from './dto/create-wallet.dto';
+import { CreateWalletDto } from '@polypay/shared';
 
 @Controller('wallets')
 export class WalletController {

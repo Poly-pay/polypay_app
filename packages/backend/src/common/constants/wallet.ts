@@ -1,2 +1,1 @@
-export const WALLET_RESPONSE_MESSAGE = {
-};
+export const WALLET_RESPONSE_MESSAGE = {};

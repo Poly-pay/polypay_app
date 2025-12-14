@@ -1,10 +1,10 @@
 import { Barlow } from "next/font/google";
-import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithProviders";
+import localFont from "next/font/local";
 import "@rainbow-me/rainbowkit/styles.css";
+import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithProviders";
 import { ThemeProvider } from "~~/components/ThemeProvider";
 import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
-import localFont from "next/font/local";
 
 const barlow = Barlow({
   subsets: ["latin"],
@@ -17,7 +17,6 @@ const repetitionScroll = localFont({
   variable: "--font-repetition",
   display: "swap",
 });
-
 
 export const metadata = getMetadata({
   title: "Polypay Wallet",

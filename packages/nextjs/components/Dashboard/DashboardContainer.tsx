@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
 import { TransactionRow, convertToRowData } from "./TransactionRow";
-import { useMetaMultiSigWallet } from "~~/hooks/api";
+import { useMetaMultiSigWallet } from "~~/hooks";
 import { useTransactions } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store";
 
@@ -63,11 +63,7 @@ export default function DashboardContainer() {
       ) : transactions && transactions.length > 0 ? (
         <div className="flex flex-col gap-2">
           {transactions.map((tx: any) => (
-            <TransactionRow
-              key={tx.id}
-              tx={convertToRowData(tx, commitment ?? "")}
-              onSuccess={handleSuccess}
-            />
+            <TransactionRow key={tx.id} tx={convertToRowData(tx, commitment ?? "")} onSuccess={handleSuccess} />
           ))}
         </div>
       ) : (

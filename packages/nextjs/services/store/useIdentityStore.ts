@@ -10,7 +10,7 @@ interface IdentityState {
 
 export const useIdentityStore = create<IdentityState>()(
   persist(
-    (set) => ({
+    set => ({
       secret: null,
       commitment: null,
       setIdentity: (secret: string, commitment: string) => set({ secret, commitment }),
@@ -18,6 +18,6 @@ export const useIdentityStore = create<IdentityState>()(
     }),
     {
       name: "identity-storage",
-    }
-  )
+    },
+  ),
 );

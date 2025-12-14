@@ -1,33 +1,11 @@
+import { BatchItem, CreateBatchItemDto, UpdateBatchItemDto } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-// ==================== Types ====================
-
-export interface BatchItem {
-  id: string;
-  accountId: string;
-  recipient: string;
-  amount: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateBatchItemDto {
-  commitment: string;
-  recipient: string;
-  amount: string;
-}
-
-export interface UpdateBatchItemDto {
-  recipient?: string;
-  amount?: string;
-}
+import { API_BASE_URL } from "~~/constants";
 
 // ==================== API Functions ====================
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 const createBatchItemAPI = async (data: CreateBatchItemDto): Promise<BatchItem> => {
-  const response = await fetch(`${API_URL}/api/batch-items`, {
+  const response = await fetch(`${API_BASE_URL}/api/batch-items`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -40,7 +18,7 @@ const createBatchItemAPI = async (data: CreateBatchItemDto): Promise<BatchItem> 
 };
 
 const getBatchItemsAPI = async (commitment: string): Promise<BatchItem[]> => {
-  const response = await fetch(`${API_URL}/api/batch-items?commitment=${commitment}`);
+  const response = await fetch(`${API_BASE_URL}/api/batch-items?commitment=${commitment}`);
   if (!response.ok) {
     throw new Error("Failed to fetch batch items");
   }
@@ -48,7 +26,7 @@ const getBatchItemsAPI = async (commitment: string): Promise<BatchItem[]> => {
 };
 
 const getBatchItemAPI = async (id: string): Promise<BatchItem> => {
-  const response = await fetch(`${API_URL}/api/batch-items/${id}`);
+  const response = await fetch(`${API_BASE_URL}/api/batch-items/${id}`);
   if (!response.ok) {
     throw new Error("Failed to fetch batch item");
   }
@@ -56,7 +34,7 @@ const getBatchItemAPI = async (id: string): Promise<BatchItem> => {
 };
 
 const updateBatchItemAPI = async (id: string, data: UpdateBatchItemDto): Promise<BatchItem> => {
-  const response = await fetch(`${API_URL}/api/batch-items/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/api/batch-items/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -69,7 +47,7 @@ const updateBatchItemAPI = async (id: string, data: UpdateBatchItemDto): Promise
 };
 
 const deleteBatchItemAPI = async (id: string): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/batch-items/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/api/batch-items/${id}`, {
     method: "DELETE",
   });
   if (!response.ok) {
@@ -78,7 +56,7 @@ const deleteBatchItemAPI = async (id: string): Promise<void> => {
 };
 
 const clearBatchItemsAPI = async (commitment: string): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/batch-items?commitment=${commitment}`, {
+  const response = await fetch(`${API_BASE_URL}/api/batch-items?commitment=${commitment}`, {
     method: "DELETE",
   });
   if (!response.ok) {

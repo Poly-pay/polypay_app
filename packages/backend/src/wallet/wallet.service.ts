@@ -2,12 +2,11 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  ConflictException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { AccountService } from '@/account/account.service';
-import { CreateWalletDto } from './dto/create-wallet.dto';
+import { CreateWalletDto } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 
 @Injectable()

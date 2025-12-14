@@ -1,18 +1,15 @@
 "use client";
 
-import type { NextPage } from "next";
-import { redirect } from "next/navigation";
 import { useEffect } from "react";
+import { redirect } from "next/navigation";
+import type { NextPage } from "next";
 
 const Home: NextPage = () => {
   useEffect(() => {
-    redirect('/dashboard/new-wallet');
-  }, [])
+    redirect("/dashboard/new-wallet");
+  }, []);
 
-  return (
-    <>
-    </>
-  );
+  return <></>;
 };
 
 export default Home;

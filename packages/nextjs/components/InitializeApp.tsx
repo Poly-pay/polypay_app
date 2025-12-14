@@ -1,8 +1,6 @@
 "use client";
 
-import { useInitializeApp } from "~~/hooks/api";
-
-
+import { useInitializeApp } from "~~/hooks";
 
 interface InitializeAppProps {
   children: React.ReactNode;

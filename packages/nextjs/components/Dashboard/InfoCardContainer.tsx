@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { EditAccountModal } from "../Modals/EditAccountModal";
 import { useWalletClient } from "wagmi";
+import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
-import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks/api";
 
 interface InfoCardContainerProps {}
 

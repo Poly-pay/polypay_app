@@ -1,19 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { UltraPlonkBackend } from "@aztec/bb.js";
-import { Noir } from "@noir-lang/noir_js";
+import { TxType } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
-import { useCreateBatchItem, useMetaMultiSigWallet } from "~~/hooks/api";
+import { useMetaMultiSigWallet } from "~~/hooks";
+import { useCreateBatchItem } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
+import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
-import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function SendContainer() {
-  const { commitment: myCommitment, secret } = useIdentityStore();
-
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +22,9 @@ export default function SendContainer() {
   const { mutateAsync: createTransaction } = useCreateTransaction();
   const { mutateAsync: createBatchItem, isPending: isAddingToBatch } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
+  const { generateProof } = useGenerateProof({
+    onLoadingStateChange: setLoadingState,
+  });
 
   const handleTransfer = async () => {
     // Validate inputs
@@ -58,6 +59,7 @@ export default function SendContainer() {
       const currentNonce = await metaMultiSigWallet.read.nonce();
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
       const valueInWei = parseEther(amount);
+      const commitments = await metaMultiSigWallet.read.getCommitments();
 
       // 2. Calculate txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
@@ -67,77 +69,13 @@ export default function SendContainer() {
         "0x" as `0x${string}`,
       ])) as `0x${string}`;
 
-      // 3. Sign txHash
-      setLoadingState("Please sign the transaction...");
-      const signature = await walletClient.signMessage({
-        message: { raw: txHash },
-      });
-      const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
-
-      // 4. Get secret from localStorage
-      if (!secret) {
-        notification.error("No secret found. Please create identity first.");
-        setIsLoading(false);
-        return;
-      }
-
-      // 5. Calculate values
-      const txHashBytes = hexToByteArray(txHash);
-      const sigBytes = hexToByteArray(signature).slice(0, 64);
-      const txHashCommitment = await poseidonHash2(BigInt(txHash), 1n);
-      const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
-
-      // 6. Get merkle data
-      const commitments = await metaMultiSigWallet.read.getCommitments();
-      const tree = await buildMerkleTree(commitments ?? []);
-      const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
-
-      if (!myCommitment) {
-        notification.error("No commitment found. Please create identity first.");
-        setIsLoading(false);
-        return;
-      }
-
-      const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(myCommitment));
-
-      if (leafIndex === -1) {
-        notification.error("You are not a signer of this wallet");
-        setIsLoading(false);
-        return;
-      }
-
-      const merklePath = getMerklePath(tree, leafIndex);
-
-      // 7. Generate ZK proof
-      setLoadingState("Generating ZK proof...");
-      const input = {
-        signature: sigBytes,
-        pub_key_x: pubKeyX,
-        pub_key_y: pubKeyY,
-        secret: secret,
-        leaf_index: leafIndex,
-        merkle_path: merklePath.map(p => p.toString()),
-        tx_hash_bytes: txHashBytes,
-        tx_hash_commitment: txHashCommitment.toString(),
-        merkle_root: merkleRoot?.toString() ?? "",
-        nullifier: nullifier.toString(),
-      };
-
-      const circuit_json = await fetch("/circuit/target/circuit.json");
-      const noir_data = await circuit_json.json();
-      const { bytecode, abi } = noir_data;
-
-      const noir = new Noir({ bytecode, abi } as any);
-      const execResult = await noir.execute(input);
-
-      const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
-      const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
+      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
       // 8. Submit to backend
       setLoadingState("Submitting to backend...");
       const result = await createTransaction({
         nonce: Number(currentNonce),
-        type: "TRANSFER",
+        type: TxType.TRANSFER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: commitments?.length || 0,
