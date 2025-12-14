@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from "class-validator";
+import { IsArray, IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class CreateAddressGroupDto {
   @IsNotEmpty()
@@ -9,4 +9,9 @@ export class CreateAddressGroupDto {
   @IsString()
   @MaxLength(50)
   name: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  contactIds?: string[];
 }

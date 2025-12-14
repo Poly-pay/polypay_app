@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Matches, MaxLength } from "class-validator";
+import { ArrayMinSize, IsArray, IsOptional, IsString, Matches, MaxLength } from "class-validator";
 
 export class UpdateContactDto {
   @IsOptional()
@@ -10,4 +10,10 @@ export class UpdateContactDto {
   @IsString()
   @Matches(/^0x[a-fA-F0-9]{40}$/, { message: "Invalid Ethereum address" })
   address?: string;
+
+  @IsArray()
+  @ArrayMinSize(1, { message: "Contact must belong to at least one group" })
+  @IsString({ each: true })
+  @IsOptional()
+  groupIds?: string[];
 }

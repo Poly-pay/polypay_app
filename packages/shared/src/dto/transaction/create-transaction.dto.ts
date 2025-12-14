@@ -46,6 +46,11 @@ export class CreateTransactionDto {
   @IsString()
   value?: string;
 
+  // Link to contact (optional)
+  @IsOptional()
+  @IsString()
+  contactId?: string;
+
   // ADD_SIGNER / REMOVE_SIGNER
   @IsOptional()
   @IsString()

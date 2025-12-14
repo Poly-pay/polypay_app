@@ -23,6 +23,10 @@ export class BatchItemService {
         accountId: account.id,
         recipient: dto.recipient,
         amount: dto.amount,
+        contactId: dto.contactId,
+      },
+      include: {
+        contact: true,
       },
     });
 
@@ -36,7 +40,12 @@ export class BatchItemService {
   async findByCommitment(commitment: string) {
     const account = await this.prisma.account.findUnique({
       where: { commitment },
-      include: { batchItems: { orderBy: { createdAt: 'desc' } } },
+      include: {
+        batchItems: {
+          include: { contact: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
 
     return account?.batchItems || [];
@@ -102,6 +111,7 @@ export class BatchItemService {
   async findByIds(ids: string[]) {
     return this.prisma.batchItem.findMany({
       where: { id: { in: ids } },
+      include: { contact: true },
     });
   }
 }

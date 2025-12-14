@@ -1,26 +1,27 @@
 import {
-  Body,
   Controller,
-  Delete,
   Get,
-  Param,
-  Patch,
   Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { AddressBookService } from './address-book.service';
 import {
   CreateAddressGroupDto,
-  CreateContactDto,
   UpdateAddressGroupDto,
+  CreateContactDto,
   UpdateContactDto,
 } from '@polypay/shared';
 
-@Controller('api/address-book')
+@Controller('address-book')
 export class AddressBookController {
   constructor(private readonly addressBookService: AddressBookService) {}
 
-  // ==================== Address Group ====================
+  // ============ GROUPS ============
 
   @Post('groups')
   createGroup(@Body() dto: CreateAddressGroupDto) {
@@ -28,13 +29,16 @@ export class AddressBookController {
   }
 
   @Get('groups')
-  findGroupsByWallet(@Query('walletId') walletId: string) {
-    return this.addressBookService.findGroupsByWallet(walletId);
+  getGroups(@Query('walletId') walletId: string) {
+    if (!walletId) {
+      throw new BadRequestException('walletId is required');
+    }
+    return this.addressBookService.getGroups(walletId);
   }
 
   @Get('groups/:id')
-  findGroupById(@Param('id') id: string) {
-    return this.addressBookService.findGroupById(id);
+  getGroup(@Param('id') id: string) {
+    return this.addressBookService.getGroup(id);
   }
 
   @Patch('groups/:id')
@@ -47,7 +51,7 @@ export class AddressBookController {
     return this.addressBookService.deleteGroup(id);
   }
 
-  // ==================== Contact ====================
+  // ============ CONTACTS ============
 
   @Post('contacts')
   createContact(@Body() dto: CreateContactDto) {
@@ -55,13 +59,19 @@ export class AddressBookController {
   }
 
   @Get('contacts')
-  findContactsByGroup(@Query('groupId') groupId: string) {
-    return this.addressBookService.findContactsByGroup(groupId);
+  getContacts(
+    @Query('walletId') walletId: string,
+    @Query('groupId') groupId?: string,
+  ) {
+    if (!walletId) {
+      throw new BadRequestException('walletId is required');
+    }
+    return this.addressBookService.getContacts(walletId, groupId);
   }
 
   @Get('contacts/:id')
-  findContactById(@Param('id') id: string) {
-    return this.addressBookService.findContactById(id);
+  getContact(@Param('id') id: string) {
+    return this.addressBookService.getContact(id);
   }
 
   @Patch('contacts/:id')

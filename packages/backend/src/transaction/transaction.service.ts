@@ -110,6 +110,8 @@ export class TransactionService {
         sortedBatchItems.map((item) => ({
           recipient: item.recipient,
           amount: item.amount,
+          contactId: item.contactId || undefined,
+          contactName: item.contact?.name || undefined,
         })),
       );
     }
@@ -135,6 +137,7 @@ export class TransactionService {
           threshold: dto.threshold,
           to: dto.to,
           value: dto.value,
+          contactId: dto.contactId,
           signerCommitment: dto.signerCommitment,
           newThreshold: dto.newThreshold,
           createdBy: dto.creatorCommitment,
@@ -334,6 +337,7 @@ export class TransactionService {
         votes: {
           orderBy: { createdAt: 'asc' },
         },
+        contact: true,
       },
     });
 
@@ -359,6 +363,7 @@ export class TransactionService {
         votes: {
           orderBy: { createdAt: 'asc' },
         },
+        contact: true,
       },
       orderBy: { createdAt: 'desc' },
     });
