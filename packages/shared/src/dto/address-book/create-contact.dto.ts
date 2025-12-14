@@ -1,9 +1,16 @@
-import { IsNotEmpty, IsString, Matches, MaxLength } from "class-validator";
+import {
+  ArrayMinSize,
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+} from "class-validator";
 
 export class CreateContactDto {
-  @IsNotEmpty()
   @IsString()
-  groupId: string;
+  @IsNotEmpty()
+  walletId: string;
 
   @IsNotEmpty()
   @IsString()
@@ -14,4 +21,9 @@ export class CreateContactDto {
   @IsString()
   @Matches(/^0x[a-fA-F0-9]{40}$/, { message: "Invalid Ethereum address" })
   address: string;
+
+  @IsArray()
+  @ArrayMinSize(1, { message: "Contact must belong to at least one group" })
+  @IsString({ each: true })
+  groupIds: string[];
 }

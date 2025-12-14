@@ -135,6 +135,7 @@ export class TransactionService {
           threshold: dto.threshold,
           to: dto.to,
           value: dto.value,
+          contactId: dto.contactId,
           signerCommitment: dto.signerCommitment,
           newThreshold: dto.newThreshold,
           createdBy: dto.creatorCommitment,
@@ -334,6 +335,7 @@ export class TransactionService {
         votes: {
           orderBy: { createdAt: 'asc' },
         },
+        contact: true
       },
     });
 
@@ -359,6 +361,7 @@ export class TransactionService {
         votes: {
           orderBy: { createdAt: 'asc' },
         },
+        contact: true
       },
       orderBy: { createdAt: 'desc' },
     });

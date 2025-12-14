@@ -1,4 +1,5 @@
 import { TxType, TxStatus } from "../enums";
+import { Contact } from "./address-book";
 import { Vote } from "./vote";
 
 export interface Transaction {
@@ -9,6 +10,8 @@ export interface Transaction {
   nonce: number;
   to?: string;
   value?: string;
+  contactId?: string;
+  contact?: Contact;
   walletAddress: string;
   signerCommitment?: string;
   newThreshold?: number;

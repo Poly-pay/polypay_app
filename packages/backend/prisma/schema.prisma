@@ -36,6 +36,7 @@ model Wallet {
   accounts      AccountWallet[]
   transactions  Transaction[]
   addressGroups AddressGroup[]
+  contacts      Contact[]
 }
 
 model AccountWallet {
@@ -66,6 +67,11 @@ model Transaction {
   walletAddress      String
   wallet             Wallet   @relation(fields: [walletAddress], references: [address])
 
+  // Link to contact for display name (optional)
+  contactId          String?
+  contact            Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+
   // Add/Remove Signer
   signerCommitment   String?
 
@@ -91,6 +97,7 @@ model Transaction {
 
   @@index([status])
   @@index([walletAddress])
+  @@index([contactId])
 }
 
 model Vote {
@@ -142,24 +149,39 @@ model AddressGroup {
   updatedAt   DateTime @updatedAt
 
   wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  contacts    Contact[]
+  contacts    ContactGroup[]
 
-  @@index([walletId])
+  @@unique([walletId, name])
+  @@map("address_groups")
 }
 
 model Contact {
-  id          String   @id @default(cuid())
-  groupId     String
-  name        String
-  address     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  walletId  String
+  name      String
+  address   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  group       AddressGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  wallet       Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  groups       ContactGroup[]
+  transactions Transaction[]
 
-  @@index([groupId])
+  @@unique([walletId, name])
+  @@unique([walletId, address])
+  @@map("contacts")
 }
 
+model ContactGroup {
+  contactId String
+  groupId   String
+
+  contact Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  group   AddressGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, groupId])
+  @@map("contact_groups")
+}
 
 enum TxType {
   TRANSFER
