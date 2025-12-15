@@ -78,13 +78,16 @@ const SectionItem = ({
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   const itemComponent = (item: any, notRoute = false) => {
     return (
       <div
         key={item.label}
         className={`group flex flex-row items-center gap-3 px-2 py-2 rounded-[12px] cursor-pointer justify-between capitalize ${
-          selectedItem === item.link ? "bg-white text-black font-semibold" : "hover:bg-white hover:text-black"
+          selectedItem === item.link || pathname === item.link
+            ? "bg-white text-black font-semibold"
+            : "hover:bg-white hover:text-black"
         }`}
         onClick={() => {
           if (notRoute) return;
@@ -101,7 +104,7 @@ const SectionItem = ({
               className="scale-125"
               style={{
                 filter:
-                  selectedItem === item.link || hoveredItem === item.link
+                  selectedItem === item.link || hoveredItem === item.link || pathname === item.link
                     ? "brightness(0) saturate(100%) invert(62%) sepia(85%) saturate(1295%) hue-rotate(288deg) brightness(101%) contrast(104%)"
                     : "none",
               }}
@@ -109,7 +112,7 @@ const SectionItem = ({
           </div>
           <span
             className={`${
-              selectedItem === item.link
+              selectedItem === item.link || pathname === item.link
                 ? "font-semibold text-black"
                 : "font-normal text-text-primary group-hover:font-semibold group-hover:text-black font-barlow"
             }`}
