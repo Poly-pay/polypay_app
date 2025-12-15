@@ -23,8 +23,11 @@ RUN yarn workspace @polypay/shared build
 # Copy backend source
 COPY packages/backend ./packages/backend
 
-# Generate Prisma client and build backend
-RUN yarn workspace @polypay/backend prisma generate
+# Generate Prisma client (dummy DATABASE_URL for generate only)
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
+    yarn workspace @polypay/backend prisma generate
+
+# Build backend
 RUN yarn workspace @polypay/backend build
 
 # Set working directory
