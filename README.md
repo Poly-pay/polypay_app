@@ -5,18 +5,22 @@ A privacy-preserving multi-signature wallet that uses zero-knowledge proofs to e
 ## Table of Contents
 
 - [Overview](#overview)
-- [Video demo](#overview)
+- [Video Demo](#video-demo)
 - [Features](#features)
 - [How It Works](#how-it-works)
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Environment Variables](#environment-variables)
+- [Circuit Compilation](#circuit-compilation)
+- [User Workflow](#user-workflow)
 
 ## Overview
 
 Traditional multisig wallets expose owner addresses publicly on the blockchain. This system replaces addresses with commitments - cryptographic hashes of user secrets. When signing transactions, users generate ZK proofs to prove they are authorized signers without revealing their identity or position in the signer list.
 
-## Video demo
+## Video Demo
 
 Go below link to see:
 [Click here](https://app.screencastify.com/watch/GdsEYGKAjUl8o02KKwlA?checkOrg=18c50a97-8f7c-4641-a685-cc49f2d0c450)
@@ -26,7 +30,10 @@ Go below link to see:
 - **Anonymous Signing**: No public exposure of signer addresses
 - **Zero-Knowledge Proofs**: Prove authorization without revealing identity
 - **zkVerify Integration**: Cost-effective proof verification and aggregation
-- **Multiple Actions**: Add/remove signers and transfer ETH
+- **Multiple Actions**: Add/remove signers, transfer ETH, and batch transfers
+- **Batch Transfer**: Send ETH to multiple recipients in a single transaction
+- **Address Book**: Save and manage contacts per wallet
+- **Contact Groups**: Organize contacts into groups for easy management
 
 ## How It Works
 
@@ -43,7 +50,7 @@ The Noir circuit proves that:
 **Private Inputs (hidden):**
 
 - `signature` - ECDSA signature (r, s) without recovery byte
-- `pub_key_x`, `pub_key_y` - Public key coordinates (recovered from signature)
+- `pub_key_x, pub_key_y` - Public key coordinates (recovered from signature)
 - `secret` - Signer's secret (derived from signing "noir-identity" message)
 - `leaf_index` - Position of signer's commitment in merkle tree
 - `merkle_path` - Sibling hashes for merkle proof
@@ -58,7 +65,6 @@ The Noir circuit proves that:
 ## Architecture
 
 ### High Level Flow
-
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           SETUP PHASE (One-time)                            │
@@ -73,19 +79,24 @@ The Noir circuit proves that:
            │ 3. Share commitment (off-chain, like sharing address)
            ▼
 ┌─────────────────────┐                           ┌─────────────────────┐
-│                     │  4. Add commitment        │                     │
-│   Admin/Owner       │  ───────────────────────▶ │   Smart Contract    │
-│                     │                           │ (MetaMultiSigWallet)│
+│                     │  4. POST /api/wallets     │                     │
+│   User (Creator)    │  ───────────────────────▶ │   Backend           │
+│                     │     (commitments[],       │   (Relayer Wallet)  │
+│                     │      threshold)           │                     │
 └─────────────────────┘                           └─────────────────────┘
                                                             │
-                                                            │ 5. Build Merkle Tree
+                                                            │ 5. Deploy contract
+                                                            │    with commitments
                                                             ▼
                                                   ┌─────────────────────┐
-                                                  │   Merkle Root       │
-                                                  │   (on-chain)        │
+                                                  │   Smart Contract    │
+                                                  │ (MetaMultiSigWallet)│
+                                                  │                     │
+                                                  │ 6. Build Merkle Tree│
+                                                  │    Store Merkle Root│
                                                   └─────────────────────┘
 
-─────────────────────────────────────────────────────────────────────────────┐
+┌─────────────────────────────────────────────────────────────────────────────┐
 │                         PROPOSE & SIGN FLOW                                 │
 └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -133,33 +144,37 @@ The Noir circuit proves that:
 │                           EXECUTION PHASE                                   │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-┌─────────────────────┐  1. GET /api/transactions/:txId/execute
+┌─────────────────────┐  1. POST /api/transactions/:txId/execute
 │                     │  ───────────────────────▶ ┌─────────────────────┐
-│   Anyone            │                           │   Backend returns:  │
-│   (usually last     │ ◀───────────────────────  │   - All aggregated  │
-│    signer)          │  2. Array of zkProofs     │     proofs          │
-│                     │     + execution params    │   - to, value, data │
-└─────────────────────┘                           └─────────────────────┘
-           │
-           │ 3. Call smart contract with all proofs
-           ▼
-┌─────────────────────┐                           ┌─────────────────────┐
-│                     │  execute(to, value,       │                     │
-│   User's Wallet     │   data, zkProofs[])       │   Smart Contract    │
-│   (MetaMask)        │  ───────────────────────▶ │                     │
-│                     │                           │  4. Loop & verify   │
-└─────────────────────┘                           │     each proof      │
-                                                  │  5. Check nullifiers│
-                                                  │  6. Execute action  │
-                                                  │  7. Emit event      │
+│   Anyone            │                           │                     │
+│   (trigger only)    │                           │   Backend           │
+│                     │                           │   (Relayer Wallet)  │
+└─────────────────────┘                           │                     │
+                                                  │  2. Prepare proofs  │
+                                                  │  3. Check balance   │
                                                   └─────────────────────┘
-           │
-           │ 8. PATCH /api/transactions/:txId/executed
-           ▼
-┌─────────────────────┐
-│   Backend updates   │
-│   status = EXECUTED │
-└─────────────────────┘
+                                                            │
+                                                            │ 4. execute(to, value,
+                                                            │    data, zkProofs[])
+                                                            ▼
+                                                  ┌─────────────────────┐
+                                                  │                     │
+                                                  │   Smart Contract    │
+                                                  │                     │
+                                                  │  5. Loop & verify   │
+                                                  │     each proof      │
+                                                  │  6. Check nullifiers│
+                                                  │  7. Execute action  │
+                                                  │  8. Emit event      │
+                                                  └─────────────────────┘
+                                                            │
+                                                            │ 9. Return tx result
+                                                            ▼
+                                                  ┌─────────────────────┐
+                                                  │   Backend updates   │
+                                                  │   status = EXECUTED │
+                                                  │   txHash = result   │
+                                                  └─────────────────────┘
 ```
 
 ### Components
@@ -175,14 +190,16 @@ The Noir circuit proves that:
 - **Add Signer** - Add new commitment to the authorized signers list
 - **Remove Signer** - Remove commitment from signers list  
 - **Transfer ETH** - Send ETH from multisig wallet to recipient
+- **Batch Transfer** - Send ETH to multiple recipients in one transaction 
 
 All actions require `signaturesRequired` anonymous signatures before execution.
 
 ## Prerequisites
 
-- **Node.js** (v18 or higher)
-- **Yarn** package manager
-- **Noir toolchain** (version 1.0.0-beta.12 specifically)
+- Node.js (v18 or higher)
+- Yarn package manager
+- Docker & Docker Compose (for Docker setup)
+- Noir toolchain v1.0.0-beta.12 (for circuit compilation only)
 
 ### Installing Noir
 
@@ -193,30 +210,58 @@ noirup -v 1.0.0-beta.12
 
 > ⚠️ **Important**: You must use version 1.0.0-beta.12 specifically. Newer versions may not be compatible with the current circuit implementation.
 
-## Installation
-
-### Quick Start (Testnet)
+## Quick Start
 
 > **Note**: Must run on testnet - zkVerify verification does not work on localhost.
+
+### Option 1: Docker (Recommended)
 
 ```bash
 # 1. Clone the repository
 git clone git@github.com:Poly-pay/polypay_app.git
 cd polypay_app
 
+# 2. Setup environment
+cp docker/.env.example docker/.env
+# Edit docker/.env and fill in:
+# - POSTGRES_PASSWORD
+# - RELAYER_ZKVERIFY_API_KEY
+# - RELAYER_WALLET_KEY
+
+# 3. Run with Docker Compose
+cd docker
+docker compose up -d
+
+# 4. Access the application
+# Frontend: http://localhost:3000
+# Backend: http://localhost:4000
+```
+
+### Option 2: Manual Setup
+
+```bash
+# 1. Clone the repository
+git clone clone git@github.com:Poly-pay/polypay_app.git
+cd polypay_app
+
 # 2. Install dependencies
 yarn install
 
-# 3. Frontend Setup
-# Copy environment file (contains API URL pointing to localhost:4000)
+# 3. Build application
+yarn build
+
+# 4. Frontend Setup
 cp packages/nextjs/.env.example packages/nextjs/.env
 
-# 4. Backend Setup
+# 5. Backend Setup
 cd packages/backend
+
+# Start PostgreSQL with Docker
 docker compose up -d postgres
 
-# Copy environment file (fill your own wallet relayer private key and zkverify relayer api key)
+# Setup environment
 cp .env.example .env
+# Edit .env and fill in your keys
 
 # Run database migrations
 npx prisma migrate dev
@@ -224,42 +269,57 @@ npx prisma generate
 
 cd ../..
 
-# 5. Run the Application
-# Start frontend (Next.js)
-yarn start:frontend
-
-# Start backend (NestJS) - in another terminal
+# 6. Run the Application
+# Terminal 1: Start backend
 yarn start:backend
 
-# Now you open your localhost, connect yor wallet, then copy your commitment
-# After copy Commitment, you need go to file 00_deploy_meta_multisig_wallet.ts then paste your commitment to args
-# Then deploy your smart contract with script
-yarn deploy --network sepolia --reset
+# Terminal 2: Start frontend
+yarn start:frontend
 ```
 
-> **Note**: A multisig wallet with signers is already deployed on Sepolia testnet.
+## Project Structure
+```
+├── packages/
+│   ├── shared/          # Shared types, DTOs, and utilities
+│   ├── backend/         # NestJS API server
+│   ├── nextjs/          # Next.js frontend
+├── docker/
+│   ├── backend.Dockerfile
+│   ├── frontend.Dockerfile
+│   └── docker-compose.yml
+└── README.md
+```
 
-### Environment Variables
+## Environment Variables
+### Backend (.env)
 
-- **RELAYER_ZKVERIFY_API_KEY** - API key for zkVerify relayer (Currently using testnet)
-  - For Testnet: Visit <https://relayer-testnet.horizenlabs.io/>
-  - For Mainnet: Visit <https://relayer.horizenlabs.io/>
+- **POSTGRES_PASSWORD** - PostgreSQL database password
+- **DATABASE_URL** - PostgreSQL connection string
+- **RELAYER_ZKVERIFY_API_KEY** - API key for zkVerify relayer
+- **RELAYER_WALLET_KEY** - Private key for relayer wallet
 
-### Circuit Compilation (For Developers Only)
+### Frontend (.env)
 
+- **NEXT_PUBLIC_API_URL** - Backend API URL
+
+### Getting zkVerify API Key
+
+- **Testnet**: Visit https://relayer-testnet.horizenlabs.io/
+- **Mainnet**: Visit https://relayer.horizenlabs.io/
+
+## Circuit Compilation
 Only needed if you modify the Noir circuit:
 
 ```bash
 cd packages/nextjs/public/circuit
 nargo compile
-cd ../../../..
- ```
+```
 
 ## User Workflow
 
 1. **Generate Identity** → Sign message to derive secret, compute commitment
-2. **Register as Signer** → Share commitment with admin, admin adds to contract
-3. **Propose Transaction** → Create tx (add/remove signer or transfer), sign + generate ZK proof
+2. **Register as Signer** → Share commitment with admin, admin adds to wallet
+3. **Propose Transaction** → Create tx (transfer, batch, add/remove signer), sign + generate ZK proof
 4. **Submit to Backend** → Backend saves tx + proof, submits proof to zkVerify for aggregation
 5. **Sign (Other Signers)** → Generate ZK proof and submit to backend via /api/transactions/:txId/approve
-6. **Execute** → When threshold reached, fetch all proofs from backend, call execute() on smart contract
+6. **Execute** → When threshold reached, call execute() and backend will fetch all proof then call smart contract
