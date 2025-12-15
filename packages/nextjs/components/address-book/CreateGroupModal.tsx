@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Contact } from "@polypay/shared";
-import { X, Check } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { useCreateGroup } from "~~/hooks";
 
 interface CreateGroupModalProps {
@@ -10,6 +10,29 @@ interface CreateGroupModalProps {
   contacts: Contact[];
 }
 
+// Avatar colors for contacts
+const avatarColors = [
+  "from-purple-500 to-pink-500",
+  "from-blue-500 to-cyan-500",
+  "from-green-500 to-teal-500",
+  "from-orange-500 to-red-500",
+  "from-indigo-500 to-purple-500",
+];
+
+function getAvatarColor(index: number): string {
+  return avatarColors[index % avatarColors.length];
+}
+
+function formatAddress(address: string): string {
+  if (!address) return "";
+  return `[${address.slice(0, 4)}...${address.slice(-4)}]`;
+}
+
+function getContactGroups(contact: Contact): string {
+  if (!contact.groups || contact.groups.length === 0) return "";
+  return contact.groups.map(g => g.group?.name).filter(Boolean).join(", ");
+}
+
 export function CreateGroupModal({
   isOpen,
   onClose,
@@ -17,13 +40,26 @@ export function CreateGroupModal({
   contacts,
 }: CreateGroupModalProps) {
   const [name, setName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   const createGroup = useCreateGroup();
 
+  // Filter contacts by search term
+  const filteredContacts = useMemo(() => {
+    if (!searchTerm.trim()) return contacts;
+    const term = searchTerm.toLowerCase();
+    return contacts.filter(
+      contact =>
+        contact.name.toLowerCase().includes(term) ||
+        contact.address.toLowerCase().includes(term)
+    );
+  }, [contacts, searchTerm]);
+
   const resetForm = () => {
     setName("");
+    setSearchTerm("");
     setSelectedContactIds([]);
     setError("");
   };
@@ -65,98 +101,162 @@ export function CreateGroupModal({
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-bold text-lg">New Group</h3>
-          <button className="btn btn-ghost btn-sm" onClick={handleClose}>
-            <X size={20} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={handleClose}
+      />
+
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full border-2 border-white" />
+            </div>
+            <h3 className="font-bold text-lg tracking-wide uppercase text-gray-800">
+              New Group
+            </h3>
+          </div>
+          <button
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            onClick={handleClose}
+          >
+            <X size={20} className="text-gray-500" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            {/* Name */}
+          <div className="p-5 space-y-5">
+            {/* Group Name */}
             <div>
-              <label className="label">
-                <span className="label-text">Group Name</span>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Group name
               </label>
               <input
                 type="text"
-                className="input input-bordered w-full"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
                 placeholder="Enter group name"
                 value={name}
                 onChange={e => setName(e.target.value)}
               />
             </div>
 
-            {/* Contacts (optional) */}
+            {/* Choose Contact */}
             {contacts.length > 0 && (
               <div>
-                <label className="label">
-                  <span className="label-text">Add Contacts (optional)</span>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Choose contact
                 </label>
-                <div className="max-h-48 overflow-y-auto space-y-2">
-                  {contacts.map(contact => (
-                    <div
-                      key={contact.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                        selectedContactIds.includes(contact.id)
-                          ? "bg-primary/10 border border-primary"
-                          : "bg-base-300 hover:bg-base-content/10"
-                      }`}
-                      onClick={() => toggleContact(contact.id)}
-                    >
+
+                {/* Search Input */}
+                <div className="relative mb-3">
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                    placeholder="Enter contact name"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                {/* Contact List */}
+                <div className="max-h-64 overflow-y-auto">
+                  {filteredContacts.map((contact, index) => {
+                    const isSelected = selectedContactIds.includes(contact.id);
+                    const groupNames = getContactGroups(contact);
+
+                    return (
                       <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          selectedContactIds.includes(contact.id)
-                            ? "bg-primary border-primary"
-                            : "border-base-content/30"
-                        }`}
+                        key={contact.id}
+                        className="flex items-center gap-1 p-1 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
+                        onClick={() => toggleContact(contact.id)}
                       >
-                        {selectedContactIds.includes(contact.id) && (
-                          <Check size={14} className="text-primary-content" />
-                        )}
+                        {/* Checkbox */}
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? "bg-[#FF7CEB] border-[#FF7CEB]"
+                              : "border-gray-300"
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="w-2 h-2 rounded-full bg-white" />
+                          )}
+                        </div>
+
+                        {/* Avatar */}
+                        <div
+                          className={`w-10 h-10 rounded-full bg-gradient-to-br ${getAvatarColor(index)} flex items-center justify-center flex-shrink-0`}
+                        >
+                          <span className="text-white font-semibold text-sm">
+                            {contact.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+
+                        {/* Contact Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-800 truncate">
+                            {contact.name}
+                          </p>
+                          {groupNames && (
+                            <p className="text-sm text-gray-500 truncate">
+                              {groupNames}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Address */}
+                        <span className="text-sm text-[#FF7CEB] font-medium flex-shrink-0">
+                          {formatAddress(contact.address)}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{contact.name}</p>
-                        <p className="text-sm text-base-content/50 truncate">
-                          {contact.address.slice(0, 10)}...{contact.address.slice(-8)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+
+                  {filteredContacts.length === 0 && (
+                    <p className="text-center text-gray-400 py-4">
+                      No contacts found
+                    </p>
+                  )}
                 </div>
               </div>
             )}
 
             {/* Error */}
             {error && (
-              <div className="alert alert-error">
-                <span>{error}</span>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                <span className="text-red-600 text-sm">{error}</span>
               </div>
             )}
           </div>
 
-          <div className="modal-action">
-            <button type="button" className="btn btn-ghost" onClick={handleClose}>
+          {/* Footer Buttons */}
+          <div className="flex gap-3 p-5 border-t border-gray-100">
+            <button
+              type="button"
+              className="flex-1 px-6 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
+              onClick={handleClose}
+            >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="flex-[2] px-6 py-3 bg-[#FF7CEB] text-white font-medium rounded-xl hover:bg-[#f35ddd] transition-colors disabled:opacity-50"
               disabled={createGroup.isPending}
             >
               {createGroup.isPending ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : (
-                "Create"
+                "Create group"
               )}
             </button>
           </div>
         </form>
       </div>
-      <div className="modal-backdrop" onClick={handleClose} />
     </div>
   );
 }

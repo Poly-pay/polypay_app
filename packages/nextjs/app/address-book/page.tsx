@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { AddressGroup, Contact } from "@polypay/shared";
-import { GroupList } from "~~/components/address-book/GroupList";
-import { useContacts, useGroups } from "~~/hooks";
-import { useWalletStore } from "~~/services/store";
+import { Contact, AddressGroup } from "@polypay/shared";
 import { ContactList } from "~~/components/address-book/ContactList";
 import { ContactDetail } from "~~/components/address-book/ContactDetail";
 import { CreateGroupModal } from "~~/components/address-book/CreateGroupModal";
 import { CreateContactModal } from "~~/components/address-book/CreateContactModal";
 import { DeleteConfirmModal } from "~~/components/address-book/DeleteConfirmModal";
+import { Search } from "lucide-react";
+import { useWalletStore } from "~~/services/store";
+import { useContacts, useGroups } from "~~/hooks";
 
 export default function AddressBookPage() {
   const { currentWallet: selectedWallet } = useWalletStore();
@@ -18,6 +18,7 @@ export default function AddressBookPage() {
   // State
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -28,7 +29,16 @@ export default function AddressBookPage() {
 
   // Queries
   const { data: groups = [], isLoading: isLoadingGroups } = useGroups(walletId);
-  const { data: contacts = [], isLoading: isLoadingContacts } = useContacts(walletId, selectedGroupId || undefined);
+  const { data: contacts = [], isLoading: isLoadingContacts } = useContacts(
+    walletId,
+    selectedGroupId || undefined
+  );
+
+  // Filter contacts by search
+  const filteredContacts = contacts.filter(contact =>
+    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.address.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Handlers
   const handleSelectGroup = (groupId: string | null) => {
@@ -40,10 +50,6 @@ export default function AddressBookPage() {
     setSelectedContact(contact);
   };
 
-  const handleDeleteGroup = (group: AddressGroup) => {
-    setDeleteTarget({ type: "group", id: group.id, name: group.name });
-  };
-
   const handleDeleteContact = (contact: Contact) => {
     setDeleteTarget({ type: "contact", id: contact.id, name: contact.name });
   };
@@ -52,67 +58,113 @@ export default function AddressBookPage() {
     if (deleteTarget?.type === "contact" && selectedContact?.id === deleteTarget.id) {
       setSelectedContact(null);
     }
-    if (deleteTarget?.type === "group" && selectedGroupId === deleteTarget.id) {
-      setSelectedGroupId(null);
-    }
     setDeleteTarget(null);
   };
 
   if (!walletId) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <p className="text-base-content/60">Please select a wallet first</p>
+        <p className="text-gray-500">Please select a wallet first</p>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-6">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Address Book</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-800">Address Book</h1>
+          
+          {/* Search */}
+          <div className="relative">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Enter name"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 w-48"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
         <div className="flex gap-2">
-          <button className="btn btn-outline btn-sm" onClick={() => setIsCreateGroupOpen(true)}>
-            + New Group
+          <button
+            className="px-4 py-2 border border-gray-200 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            onClick={() => setIsCreateGroupOpen(true)}
+          >
+            New group
           </button>
-          <button className="btn btn-primary btn-sm" onClick={() => setIsCreateContactOpen(true)}>
-            + New Contact
+          <button
+            className="px-4 py-2 bg-[#FF7CEB] text-white rounded-lg font-medium hover:bg-[#f35ddd] transition-colors"
+            onClick={() => setIsCreateContactOpen(true)}
+          >
+            New contact
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-6 min-h-[600px]">
-        {/* Sidebar - Groups */}
-        <div className="col-span-3">
-          <GroupList
-            groups={groups}
-            isLoading={isLoadingGroups}
-            selectedGroupId={selectedGroupId}
-            onSelectGroup={handleSelectGroup}
-            onDeleteGroup={handleDeleteGroup}
-          />
-        </div>
+      {/* Group Filter Tabs */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        <button
+          onClick={() => handleSelectGroup(null)}
+          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+            selectedGroupId === null
+              ? "bg-gray-900 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          All
+        </button>
+        {groups.map(group => (
+          <button
+            key={group.id}
+            onClick={() => handleSelectGroup(group.id)}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedGroupId === group.id
+                ? "bg-gray-900 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {group.name}
+          </button>
+        ))}
+      </div>
 
-        {/* Main - Contacts */}
-        <div className="col-span-5">
+      {/* Main Content */}
+      <div className="flex gap-6">
+        {/* Contact List */}
+        <div className="flex-1">
           <ContactList
-            contacts={contacts}
+            contacts={filteredContacts}
             isLoading={isLoadingContacts}
             selectedContactId={selectedContact?.id || null}
             onSelectContact={handleSelectContact}
-            selectedGroupName={selectedGroupId ? groups.find(g => g.id === selectedGroupId)?.name : null}
           />
         </div>
 
-        {/* Detail Panel */}
-        <div className="col-span-4">
-          <ContactDetail
-            contact={selectedContact}
-            groups={groups}
-            walletId={walletId}
-            onDelete={handleDeleteContact}
-            onUpdate={() => setSelectedContact(null)}
-          />
-        </div>
+        {/* Contact Detail Panel */}
+        {selectedContact && (
+          <div className="w-96">
+            <ContactDetail
+              contact={selectedContact}
+              groups={groups}
+              walletId={walletId}
+              onDelete={handleDeleteContact}
+              onUpdate={() => setSelectedContact(null)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Modals */}

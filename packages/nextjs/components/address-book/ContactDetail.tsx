@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { AddressGroup, Contact, UpdateContactDto } from "@polypay/shared";
-import { Check, Copy, Edit2, Trash2, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Contact, AddressGroup, UpdateContactDto } from "@polypay/shared";
+import { Copy, Check, Trash2 } from "lucide-react";
 import { useUpdateContact } from "~~/hooks";
 
 interface ContactDetailProps {
@@ -11,12 +11,18 @@ interface ContactDetailProps {
   onUpdate: () => void;
 }
 
-export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate }: ContactDetailProps) {
-  const [isEditing, setIsEditing] = useState(false);
+export function ContactDetail({
+  contact,
+  groups,
+  walletId,
+  onDelete,
+  onUpdate,
+}: ContactDetailProps) {
   const [editName, setEditName] = useState("");
   const [editAddress, setEditAddress] = useState("");
   const [editGroupIds, setEditGroupIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const updateContact = useUpdateContact(walletId);
 
@@ -24,10 +30,24 @@ export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate }:
     if (contact) {
       setEditName(contact.name);
       setEditAddress(contact.address);
-      setEditGroupIds(contact.groups?.map(g => g.group?.id ?? "") || []);
-      setIsEditing(false);
+      setEditGroupIds(contact.groups?.map(g => g?.group?.id || "") || []);
+      setHasChanges(false);
     }
   }, [contact]);
+
+  // Check for changes
+  useEffect(() => {
+    if (!contact) return;
+    
+    const nameChanged = editName !== contact.name;
+    const addressChanged = editAddress !== contact.address;
+    const currentGroupIds = contact.groups?.map(g => g?.group?.id || "") || [];
+    const groupsChanged =
+      editGroupIds.length !== currentGroupIds.length ||
+      editGroupIds.some(id => !currentGroupIds.includes(id));
+    
+    setHasChanges(nameChanged || addressChanged || groupsChanged);
+  }, [editName, editAddress, editGroupIds, contact]);
 
   const handleCopy = () => {
     if (contact) {
@@ -44,148 +64,133 @@ export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate }:
     if (editName !== contact.name) dto.name = editName;
     if (editAddress !== contact.address) dto.address = editAddress;
 
-    const currentGroupIds = contact.groups?.map(g => g.group?.id) || [];
+    const currentGroupIds = contact.groups?.map(g => g?.group?.id ||  "") || [];
     const groupsChanged =
-      editGroupIds.length !== currentGroupIds.length || editGroupIds.some(id => !currentGroupIds.includes(id));
+      editGroupIds.length !== currentGroupIds.length ||
+      editGroupIds.some(id => !currentGroupIds.includes(id));
     if (groupsChanged) dto.groupIds = editGroupIds;
 
     if (Object.keys(dto).length > 0) {
       await updateContact.mutateAsync({ id: contact.id, dto });
       onUpdate();
     }
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    if (contact) {
-      setEditName(contact.name);
-      setEditAddress(contact.address);
-      setEditGroupIds(contact.groups?.map(g => g.group?.id ?? "") || []);
-    }
-    setIsEditing(false);
   };
 
   const toggleGroup = (groupId: string) => {
-    setEditGroupIds(prev => (prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]));
+    setEditGroupIds(prev =>
+      prev.includes(groupId)
+        ? prev.filter(id => id !== groupId)
+        : [...prev, groupId]
+    );
   };
 
   if (!contact) {
-    return (
-      <div className="bg-base-200 rounded-lg p-6 h-full flex items-center justify-center">
-        <p className="text-base-content/40">Select a contact to view details</p>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="bg-base-200 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-semibold text-sm text-base-content/60 uppercase">Contact Details</h2>
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
-              <button className="btn btn-ghost btn-sm" onClick={handleCancel}>
-                <X size={16} />
-              </button>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={handleSave}
-                disabled={updateContact.isPending || editGroupIds.length === 0}
-              >
-                {updateContact.isPending ? (
-                  <span className="loading loading-spinner loading-xs" />
-                ) : (
-                  <Check size={16} />
-                )}
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsEditing(true)}>
-                <Edit2 size={16} />
-              </button>
-              <button className="btn btn-ghost btn-sm text-error" onClick={() => onDelete(contact)}>
-                <Trash2 size={16} />
-              </button>
-            </>
-          )}
-        </div>
+    <div className="bg-[#EDEDED] rounded-2xl border border-gray-100 overflow-hidden">
+      {/* Header */}
+      <div className="p-5 border-b border-gray-100">
+        <h2 className="font-bold text-sm tracking-wide uppercase text-gray-500">
+          Edit Contact
+        </h2>
+        <p className="text-xs text-gray-400 mt-1">
+          Update names, category for each wallet address in your list
+        </p>
       </div>
 
-      <div className="space-y-6">
-        {/* Name */}
-        <div>
-          <label className="text-sm text-base-content/60 block mb-2">Name</label>
-          {isEditing ? (
+      {/* Content */}
+      <div className="p-5 space-y-5">
+        {/* Name & Address */}
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={editName}
+            onChange={e => setEditName(e.target.value)}
+            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+            placeholder="Name"
+          />
+          <div className="flex-[2] relative">
             <input
               type="text"
-              className="input input-bordered w-full"
-              value={editName}
-              onChange={e => setEditName(e.target.value)}
-            />
-          ) : (
-            <p className="text-lg font-medium">{contact.name}</p>
-          )}
-        </div>
-
-        {/* Address */}
-        <div>
-          <label className="text-sm text-base-content/60 block mb-2">Address</label>
-          {isEditing ? (
-            <input
-              type="text"
-              className="input input-bordered w-full font-mono text-sm"
               value={editAddress}
               onChange={e => setEditAddress(e.target.value)}
+              className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-mono text-sm"
+              placeholder="0x..."
             />
-          ) : (
-            <div className="flex items-center gap-2">
-              <p className="font-mono text-sm break-all flex-1">{contact.address}</p>
-              <button className="btn btn-ghost btn-sm" onClick={handleCopy}>
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-              </button>
-            </div>
-          )}
+            <button
+              onClick={handleCopy}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              {copied ? (
+                <Check size={16} className="text-green-500" />
+              ) : (
+                <Copy size={16} className="text-gray-400" />
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Groups */}
         <div>
-          <label className="text-sm text-base-content/60 block mb-2">Groups</label>
-          {isEditing ? (
-            <div className="flex flex-wrap gap-2">
-              {groups.map(group => (
+          <label className="block text-sm font-medium text-gray-500 mb-2">
+            From
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {groups.map(group => {
+              const isSelected = editGroupIds.includes(group.id);
+              return (
                 <button
                   key={group.id}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                    editGroupIds.includes(group.id)
-                      ? "bg-primary text-primary-content"
-                      : "bg-base-300 hover:bg-base-content/20"
-                  }`}
+                  type="button"
                   onClick={() => toggleGroup(group.id)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    isSelected
+                      ? "bg-purple-100 text-purple-700 border border-purple-200"
+                      : "bg-gray-100 text-gray-600 border border-transparent hover:bg-gray-200"
+                  }`}
                 >
                   {group.name}
                 </button>
-              ))}
-              {editGroupIds.length === 0 && (
-                <p className="text-error text-sm">Contact must belong to at least one group</p>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {contact.groups?.map(({ group }) => (
-                <span key={group?.id} className="px-3 py-1.5 bg-base-300 rounded-full text-sm">
-                  {group?.name}
-                </span>
-              ))}
-            </div>
+              );
+            })}
+            <button
+              type="button"
+              className="px-3 py-1.5 rounded-full text-sm font-medium text-gray-400 border border-dashed border-gray-300 hover:border-gray-400 hover:text-gray-500 transition-colors"
+              onClick={() => {/* TODO: Add new group */}}
+            >
+              + Add new
+            </button>
+          </div>
+          {editGroupIds.length === 0 && (
+            <p className="text-red-500 text-xs mt-2">
+              Contact must belong to at least one group
+            </p>
           )}
         </div>
+      </div>
 
-        {/* Created At */}
-        <div>
-          <label className="text-sm text-base-content/60 block mb-2">Created</label>
-          <p className="text-sm">{new Date(contact.createdAt).toLocaleDateString()}</p>
-        </div>
+      {/* Footer Buttons */}
+      <div className="flex gap-3 p-5 border-t border-gray-100">
+        <button
+          onClick={() => onDelete(contact)}
+          className="flex-1 px-4 py-3 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+        >
+          <Trash2 size={16} />
+          Delete contact
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={updateContact.isPending || !hasChanges || editGroupIds.length === 0}
+          className="flex-1 px-4 py-3 bg-[#FF7CEB] text-white font-medium rounded-xl hover:bg-[#f35ddd] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {updateContact.isPending ? (
+            <span className="loading loading-spinner loading-sm" />
+          ) : (
+            "Save changes"
+          )}
+        </button>
       </div>
     </div>
   );
