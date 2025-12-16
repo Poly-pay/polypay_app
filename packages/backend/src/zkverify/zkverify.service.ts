@@ -16,6 +16,7 @@ import {
   SignTxDto,
 } from './dto';
 import { PrismaService } from '@/database/prisma.service';
+import { horizenTestnet } from '@polypay/shared';
 
 @Injectable()
 export class ZkVerifyService {
@@ -86,7 +87,7 @@ export class ZkVerifyService {
     const params = {
       proofType: 'ultraplonk',
       vkRegistered: true,
-      chainId: 11155111,
+      chainId: horizenTestnet.id,
       proofOptions: {
         numberOfPublicInputs,
       },
