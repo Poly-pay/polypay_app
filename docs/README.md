@@ -2,18 +2,29 @@
 
 ### What is PolyPay?
 
-PolyPay is a privacy-preserving multi-signature wallet that uses zero-knowledge proofs for anonymous transaction signing.
+PolyPay is a privacy-preserving payroll platform built on Horizen. It enables organizations, DAOs, and global teams to run payroll privately while staying on their preferred blockchain.
 
 ### The Problem
 
-Traditional multisig wallets expose all signer addresses publicly on the blockchain. Anyone can see:
+Current on-chain payment solutions expose sensitive information publicly:
 
-* Who the owners are
-* How many signatures are required
-* Which addresses approved each transaction
+* Employee salaries are visible to everyone
+* Payment recipients can be tracked
+* Multisig approvers are publicly identified
 
-This creates privacy and security risks for organizations and individuals.
+This lack of privacy prevents businesses from adopting crypto payroll.
 
 ### Our Solution
 
-PolyPay replaces public addresses with **commitments** - cryptographic hashes of user secrets. When signing transactions, users generate ZK proofs to prove they are authorized signers **without revealing their identity**.
+PolyPay combines **Horizen's privacy layer** with **cross-chain settlement** to provide:
+
+* **Private Payments**: Salary amounts and recipients stay confidential
+* **Private Multisig**: Team approvals without exposing signer identities
+* **Flexible Payment Logic**: Escrow, milestone-based, and recurring transfers
+
+### Who Is It For?
+
+* Crypto-native startups and SMBs
+* DAOs managing contributor payments
+* Traditional businesses entering crypto
+* Teams using Safe or Squads who want privacy upgrades
