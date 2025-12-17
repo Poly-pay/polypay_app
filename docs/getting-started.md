@@ -2,14 +2,16 @@
 
 ### Prerequisites
 
-* Node.js v18+
-* Yarn package manager
-* Docker (recommended)
+- Node.js v18+
+- Yarn package manager
+- Docker (recommended)
 
-### Quick Start with Docker
+## Quick Start
+
+### Option 1: Docker (Recommended)
 
 ```bash
-# Clone repository
+# 1. Clone the repository
 git clone git@github.com:Poly-pay/polypay_app.git
 cd polypay_app
 
@@ -27,6 +29,46 @@ docker compose up -d
 # 4. Access the application
 # Frontend: http://localhost:3000
 # Backend: http://localhost:4000
+```
+
+### Option 2: Manual Setup
+
+```bash
+# 1. Clone the repository
+git clone clone git@github.com:Poly-pay/polypay_app.git
+cd polypay_app
+
+# 2. Install dependencies
+yarn install
+
+# 3. Build application
+yarn build
+
+# 4. Frontend Setup
+cp packages/nextjs/.env.example packages/nextjs/.env
+
+# 5. Backend Setup
+cd packages/backend
+
+# Start PostgreSQL with Docker
+docker compose up -d postgres
+
+# Setup environment
+cp .env.example .env
+# Edit .env and fill in your keys
+
+# Run database migrations
+npx prisma migrate dev
+npx prisma generate
+
+cd ../..
+
+# 6. Run the Application
+# Terminal 1: Start backend
+yarn start:backend
+
+# Terminal 2: Start frontend
+yarn start:frontend
 ```
 
 ### Environment Variables
