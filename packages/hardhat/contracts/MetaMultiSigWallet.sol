@@ -174,6 +174,22 @@ contract MetaMultiSigWallet {
     }
 
     /**
+     * @notice Execute multiple transfers in one transaction
+     * @param recipients Array of recipient addresses
+     * @param amounts Array of amounts to send
+     */
+    function batchTransfer(address[] calldata recipients, uint256[] calldata amounts) public onlySelf {
+        require(recipients.length == amounts.length, "Length mismatch");
+        require(recipients.length > 0, "Empty batch");
+
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(recipients[i] != address(0), "Invalid recipient");
+            (bool success, ) = recipients[i].call{ value: amounts[i] }("");
+            require(success, "Transfer failed");
+        }
+    }
+
+    /**
      * @notice Execute multiple transfers with mixed token types
      * @param recipients Array of recipient addresses
      * @param amounts Array of amounts to send

@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import TransactionSummary from "./TransactionSummary";
-import { BatchItem, TxType, encodeBatchTransfer } from "@polypay/shared";
+import { BatchItem, TxType, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
 import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
+import { NATIVE_ETH, formatTokenAmount, getTokenByAddress } from "~~/constants/token";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useBatchItems, useCreateTransaction, useDeleteBatchItem } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
+import { formatAmount } from "~~/utils/format";
 
 // ==================== Custom Checkbox ====================
 function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -55,16 +58,6 @@ function Header({ transactionCount }: { transactionCount: number }) {
 }
 
 // ==================== Format Utils ====================
-function formatAmount(amount: string): string {
-  // Convert wei to ETH if needed, or just format the number
-  try {
-    const num = formatEther(BigInt(amount));
-    return `${num.toLocaleString()} ETH`;
-  } catch {
-    return amount;
-  }
-}
-
 function formatRecipient(address: string): string {
   if (!address) return "";
   if (address.length <= 12) return address;
@@ -147,9 +140,17 @@ function BatchTransactions({
                 Transfer
               </div>
 
-              {/* Amount */}
-              <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-[#363636]"}`}>
-                {formatAmount(item.amount)}
+              {/* Amount with Token */}
+              <div
+                className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-[#363636]"}`}
+              >
+                <Image
+                  src={getTokenByAddress(item.tokenAddress).icon}
+                  alt={getTokenByAddress(item.tokenAddress).symbol}
+                  width={20}
+                  height={20}
+                />
+                {formatAmount(item.amount, item.tokenAddress)}
               </div>
 
               {/* Arrow */}
@@ -296,12 +297,18 @@ export default function BatchContainer() {
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
       const commitments = await metaMultiSigWallet.read.getCommitments();
 
-      // Encode batchTransfer call data
+      // Encode batch transfer call data
       const recipients = selectedBatchItems.map(item => item.recipient as `0x${string}`);
       const amounts: bigint[] = selectedBatchItems.map(item => BigInt(item.amount));
+      const tokenAddresses = selectedBatchItems.map(item => item.tokenAddress || NATIVE_ETH.address);
 
-      // Encode function call: batchTransfer(address[], uint256[])
-      const batchTransferData = encodeBatchTransfer(recipients, amounts);
+      // Check if any ERC20 token in batch
+      const hasERC20 = tokenAddresses.some(addr => addr !== NATIVE_ETH.address);
+
+      // Encode function call based on token types
+      const batchTransferData = hasERC20
+        ? encodeBatchTransferMulti(recipients, amounts, tokenAddresses)
+        : encodeBatchTransfer(recipients, amounts);
 
       // 4. Calculate txHash (to = wallet itself, value = totalValue, data = batchTransfer call)
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
@@ -385,9 +392,11 @@ export default function BatchContainer() {
             className="w-[400px]"
             transactions={selectedBatchItems.map(item => ({
               id: item.id,
-              amount: formatAmount(item.amount),
+              amount: formatAmount(item.amount, item.tokenAddress),
               recipient: formatRecipient(item.recipient),
               contactName: item.contact?.name,
+              tokenIcon: getTokenByAddress(item.tokenAddress).icon,
+              tokenSymbol: getTokenByAddress(item.tokenAddress).symbol,
             }))}
             onConfirm={handleProposeBatch}
             isLoading={isProposing}

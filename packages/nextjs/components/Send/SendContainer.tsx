@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { TxType } from "@polypay/shared";
+import Image from "next/image";
+import { encodeERC20Transfer, TxType } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
 import { ContactPicker } from "~~/components/address-book/ContactPicker";
+import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
@@ -18,6 +20,9 @@ export default function SendContainer() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
+
+  const [selectedToken, setSelectedToken] = useState<Token>(NATIVE_ETH);
+  const [showTokenDropdown, setShowTokenDropdown] = useState(false);
 
   const { currentWallet: selectedWallet } = useWalletStore();
 
@@ -62,17 +67,32 @@ export default function SendContainer() {
       setLoadingState("Preparing transaction...");
       const currentNonce = await metaMultiSigWallet.read.nonce();
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const valueInWei = parseEther(amount);
+      const valueInSmallestUnit = isNativeETH
+        ? parseEther(amount).toString()
+        : parseTokenAmount(amount, selectedToken.decimals);
       const commitments = await metaMultiSigWallet.read.getCommitments();
 
-      // 2. Calculate txHash
-      const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        currentNonce,
-        address as `0x${string}`,
-        valueInWei,
-        "0x" as `0x${string}`,
-      ])) as `0x${string}`;
+      // 2. Calculate txHash (different for ETH vs ERC20)
+      let txHash: `0x${string}`;
 
+      if (isNativeETH) {
+        // ETH: to = recipient, value = amount, data = 0x
+        txHash = (await metaMultiSigWallet.read.getTransactionHash([
+          currentNonce,
+          address as `0x${string}`,
+          BigInt(valueInSmallestUnit),
+          "0x" as `0x${string}`,
+        ])) as `0x${string}`;
+      } else {
+        // ERC20: to = tokenAddress, value = 0, data = transfer(recipient, amount)
+        const encodedData = encodeERC20Transfer(address, BigInt(valueInSmallestUnit));
+        txHash = (await metaMultiSigWallet.read.getTransactionHash([
+          currentNonce,
+          selectedToken.address as `0x${string}`,
+          0n,
+          encodedData as `0x${string}`,
+        ])) as `0x${string}`;
+      }
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
       // 8. Submit to backend
@@ -84,7 +104,8 @@ export default function SendContainer() {
         threshold: Number(currentThreshold),
         totalSigners: commitments?.length || 0,
         to: address,
-        value: valueInWei.toString(),
+        value: valueInSmallestUnit,
+        tokenAddress: isNativeETH ? undefined : selectedToken.address,
         contactId: selectedContactId || undefined,
         creatorCommitment: myCommitment,
         proof: Array.from(proof),
@@ -136,13 +157,15 @@ export default function SendContainer() {
     }
 
     try {
-      // Convert amount to wei string for storage
-      const valueInWei = parseEther(amount).toString();
+      const valueInSmallestUnit = isNativeETH
+        ? parseEther(amount).toString()
+        : parseTokenAmount(amount, selectedToken.decimals);
 
       await createBatchItem({
         commitment,
         recipient: address,
-        amount: valueInWei,
+        amount: valueInSmallestUnit,
+        tokenAddress: isNativeETH ? undefined : selectedToken.address,
         contactId: selectedContactId || undefined,
       });
 
@@ -170,6 +193,8 @@ export default function SendContainer() {
     setSelectedContactId(contactId);
     notification.info(`Selected: ${name}`);
   };
+
+  const isNativeETH = selectedToken.address === NATIVE_ETH.address;
 
   return (
     <div className="overflow-hidden relative w-full h-full flex flex-col rounded-lg">
@@ -201,8 +226,35 @@ export default function SendContainer() {
         {/* Token selector and amount */}
         <div className="flex gap-1 items-center justify-center w-full max-w-md">
           {/* Token selector */}
-          <div className="bg-white flex gap-1 items-center justify-start pl-1.5 pr-0.5 py-0.5 rounded-full border border-[#e0e0e0] cursor-pointer">
-            <img src="/token/eth.svg" alt="Ethereum" className="w-9 h-9" />
+          <div className="relative">
+            <div
+              onClick={() => setShowTokenDropdown(!showTokenDropdown)}
+              className="bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-0.5 rounded-full border border-[#e0e0e0] cursor-pointer hover:border-[#FF7CEB] transition-colors"
+            >
+              <Image src={selectedToken.icon} alt={selectedToken.symbol} width={36} height={36} />
+              <span className="text-sm font-medium text-gray-700">{selectedToken.symbol}</span>
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            {showTokenDropdown && (
+              <div className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-[#e0e0e0] shadow-lg z-10 min-w-[140px]">
+                {SUPPORTED_TOKENS.map(token => (
+                  <div
+                    key={token.address}
+                    onClick={() => {
+                      setSelectedToken(token);
+                      setShowTokenDropdown(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    <Image src={token.icon} alt={token.symbol} width={24} height={24} />
+                    <span className="text-sm font-medium text-gray-700">{token.symbol}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Amount input */}
@@ -220,7 +272,7 @@ export default function SendContainer() {
             className="text-text-primary text-[44px] uppercase outline-none w-[150px]"
             disabled={isLoading}
           />
-          <span className="text-[#545454] text-2xl font-medium">ETH</span>
+          <span className="text-[#545454] text-2xl font-medium">{selectedToken.symbol}</span>
         </div>
 
         {/* Visual divider */}

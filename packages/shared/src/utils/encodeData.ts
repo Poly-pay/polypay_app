@@ -120,7 +120,7 @@ export function encodeBatchTransferMulti(
         ],
       },
     ],
-    functionName: "batchTransfer",
+    functionName: "batchTransferMulti",
     args: [
       recipients as `0x${string}`[],
       amounts,
