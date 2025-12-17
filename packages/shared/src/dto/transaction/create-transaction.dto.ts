@@ -46,6 +46,10 @@ export class CreateTransactionDto {
   @IsString()
   value?: string;
 
+  @IsOptional()
+  @IsString()
+  tokenAddress?: string;
+
   // Link to contact (optional)
   @IsOptional()
   @IsString()

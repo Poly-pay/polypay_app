@@ -105,16 +105,48 @@ export class RelayerService {
       index: number;
     }[],
   ): Promise<{ txHash: string }> {
-    // 1. Check wallet balance
+    // 1. Check wallet ETH balance
     const balance = await this.publicClient.getBalance({
       address: walletAddress as `0x${string}`,
     });
 
-    // Calculate required balance
+    // Calculate required ETH balance
     let requiredBalance = BigInt(value);
 
-    // If data contains batchTransfer, parse and calculate total
-    if (data && data !== '0x') {
+    // Track ERC20 requirements: { tokenAddress: amount }
+    const erc20Requirements: Record<string, bigint> = {};
+
+    if (value === '0' && data && data !== '0x') {
+      // Try decode single ERC20 transfer
+      try {
+        const decoded = decodeFunctionData({
+          abi: [
+            {
+              name: 'transfer',
+              type: 'function',
+              inputs: [
+                { name: 'to', type: 'address' },
+                { name: 'amount', type: 'uint256' },
+              ],
+            },
+          ],
+          data: data as `0x${string}`,
+        });
+
+        if (decoded.functionName === 'transfer') {
+          const tokenAddress = to.toLowerCase();
+          const amount = decoded.args[1] as bigint;
+          erc20Requirements[tokenAddress] =
+            (erc20Requirements[tokenAddress] || 0n) + amount;
+          this.logger.log(
+            `ERC20 transfer detected. Token: ${tokenAddress}, Amount: ${amount}`,
+          );
+        }
+      } catch (e) {
+        // Not an ERC20 transfer, continue
+      }
+
+      // Try decode batchTransfer (ETH only)
       try {
         const decoded = decodeFunctionData({
           abi: [
@@ -135,28 +167,96 @@ export class RelayerService {
           const amounts = decoded.args[1] as bigint[];
           const batchTotal = amounts.reduce((sum, amount) => sum + amount, 0n);
           requiredBalance = requiredBalance + batchTotal;
+          this.logger.log(`Batch transfer detected. ETH total: ${batchTotal}`);
+        }
+      } catch (e) {
+        // Not a batchTransfer call, continue
+      }
+
+      // Try decode batchTransferMulti (mixed ETH + ERC20)
+      try {
+        const decoded = decodeFunctionData({
+          abi: [
+            {
+              name: 'batchTransferMulti',
+              type: 'function',
+              inputs: [
+                { name: 'recipients', type: 'address[]' },
+                { name: 'amounts', type: 'uint256[]' },
+                { name: 'tokenAddresses', type: 'address[]' },
+              ],
+              outputs: [],
+            },
+          ],
+          data: data as `0x${string}`,
+        });
+
+        if (decoded.functionName === 'batchTransferMulti') {
+          const amounts = decoded.args[1] as bigint[];
+          const tokenAddresses = decoded.args[2] as string[];
+          const zeroAddress = '0x0000000000000000000000000000000000000000';
+
+          for (let i = 0; i < amounts.length; i++) {
+            const tokenAddr = tokenAddresses[i].toLowerCase();
+            if (tokenAddr === zeroAddress) {
+              // Native ETH
+              requiredBalance = requiredBalance + amounts[i];
+            } else {
+              // ERC20
+              erc20Requirements[tokenAddr] =
+                (erc20Requirements[tokenAddr] || 0n) + amounts[i];
+            }
+          }
+
           this.logger.log(
-            `Batch transfer detected. Total amount: ${batchTotal}`,
+            `BatchTransferMulti detected. ETH required: ${requiredBalance}, ERC20 tokens: ${Object.keys(erc20Requirements).length}`,
           );
         }
       } catch (e) {
-        // Not a batchTransfer call, ignore
-        this.logger.debug(
-          'Data is not batchTransfer, skipping batch balance check',
-        );
+        // Not a batchTransferMulti call, continue
       }
     }
 
-    // Check balance
+    // Check ETH balance
     if (requiredBalance > 0n && balance < requiredBalance) {
       throw new Error(
-        `Insufficient wallet balance. Required: ${requiredBalance.toString()} wei, Available: ${balance.toString()} wei`,
+        `Insufficient wallet ETH balance. Required: ${requiredBalance.toString()} wei, Available: ${balance.toString()} wei`,
       );
     }
 
     this.logger.log(
-      `Wallet balance check passed. Balance: ${balance}, Required: ${requiredBalance}`,
+      `ETH balance check passed. Balance: ${balance}, Required: ${requiredBalance}`,
     );
+
+    // Check ERC20 balances
+    for (const [tokenAddress, requiredAmount] of Object.entries(
+      erc20Requirements,
+    )) {
+      const tokenBalance = await this.publicClient.readContract({
+        address: tokenAddress as `0x${string}`,
+        abi: [
+          {
+            name: 'balanceOf',
+            type: 'function',
+            inputs: [{ name: 'account', type: 'address' }],
+            outputs: [{ name: '', type: 'uint256' }],
+            stateMutability: 'view',
+          },
+        ],
+        functionName: 'balanceOf',
+        args: [walletAddress as `0x${string}`],
+      });
+
+      if (tokenBalance < requiredAmount) {
+        throw new Error(
+          `Insufficient ERC20 balance. Token: ${tokenAddress}, Required: ${requiredAmount.toString()}, Available: ${tokenBalance.toString()}`,
+        );
+      }
+
+      this.logger.log(
+        `ERC20 balance check passed. Token: ${tokenAddress}, Balance: ${tokenBalance}, Required: ${requiredAmount}`,
+      );
+    }
 
     // 2. Format proofs for contract
     const formattedProofs = zkProofs.map((proof) => ({

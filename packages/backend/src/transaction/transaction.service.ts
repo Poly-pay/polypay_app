@@ -3,7 +3,6 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
@@ -15,43 +14,13 @@ import {
   encodeAddSigner,
   encodeRemoveSigner,
   encodeUpdateThreshold,
+  encodeBatchTransferMulti,
+  encodeERC20Transfer,
   encodeBatchTransfer,
 } from '@polypay/shared';
-import { encodeFunctionData } from 'viem';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
-
-const WALLET_ABI = [
-  {
-    name: 'addSigner',
-    type: 'function',
-    inputs: [
-      { name: 'newCommitment', type: 'uint256' },
-      { name: 'newSigRequired', type: 'uint256' },
-    ],
-  },
-  {
-    name: 'removeSigner',
-    type: 'function',
-    inputs: [
-      { name: 'commitment', type: 'uint256' },
-      { name: 'newSigRequired', type: 'uint256' },
-    ],
-  },
-  {
-    name: 'updateSignaturesRequired',
-    type: 'function',
-    inputs: [{ name: 'newSigRequired', type: 'uint256' }],
-  },
-  {
-    name: 'batchTransfer',
-    type: 'function',
-    inputs: [
-      { name: 'recipients', type: 'address[]' },
-      { name: 'amounts', type: 'uint256[]' },
-    ],
-  },
-] as const;
+import { Transaction } from '@/generated/prisma/client';
 
 @Injectable()
 export class TransactionService {
@@ -110,6 +79,7 @@ export class TransactionService {
         sortedBatchItems.map((item) => ({
           recipient: item.recipient,
           amount: item.amount,
+          tokenAddress: item.tokenAddress || null,
           contactId: item.contactId || undefined,
           contactName: item.contact?.name || undefined,
         })),
@@ -137,6 +107,7 @@ export class TransactionService {
           threshold: dto.threshold,
           to: dto.to,
           value: dto.value,
+          tokenAddress: dto.tokenAddress,
           contactId: dto.contactId,
           signerCommitment: dto.signerCommitment,
           newThreshold: dto.newThreshold,
@@ -624,13 +595,25 @@ export class TransactionService {
     }
   }
 
-  private buildExecuteParams(transaction: any): {
+  private buildExecuteParams(transaction: Transaction): {
     to: string;
     value: string;
     data: string;
   } {
     switch (transaction.type) {
       case 'TRANSFER':
+        // ERC20 transfer
+        if (transaction?.tokenAddress) {
+          return {
+            to: transaction.tokenAddress, // Token contract address
+            value: '0',
+            data: encodeERC20Transfer(
+              transaction.to,
+              BigInt(transaction.value),
+            ),
+          };
+        }
+        // Native ETH transfer
         return {
           to: transaction.to,
           value: transaction.value,
@@ -665,11 +648,30 @@ export class TransactionService {
         };
 
       case 'BATCH':
-        // Batch data is stored in transaction.batchData (JSON)
         const batchData = JSON.parse(transaction.batchData || '[]');
         const recipients = batchData.map((item: any) => item.recipient);
         const amounts = batchData.map((item: any) => BigInt(item.amount));
+        const tokenAddresses = batchData.map(
+          (item: any) =>
+            item.tokenAddress || '0x0000000000000000000000000000000000000000',
+        );
 
+        // Check if any ERC20 token in batch
+        const hasERC20 = tokenAddresses.some(
+          (addr: string) =>
+            addr !== '0x0000000000000000000000000000000000000000',
+        );
+
+        if (hasERC20) {
+          // Use batchTransferMulti for mixed transfers
+          return {
+            to: transaction.walletAddress,
+            value: '0',
+            data: encodeBatchTransferMulti(recipients, amounts, tokenAddresses),
+          };
+        }
+
+        // Use original batchTransfer for ETH-only
         return {
           to: transaction.walletAddress,
           value: '0',

@@ -3,6 +3,7 @@ export interface BatchItem {
   accountId: string;
   recipient: string;
   amount: string;
+  tokenAddress?: string;
   contactId?: string;
   contact?: {
     id: string;
