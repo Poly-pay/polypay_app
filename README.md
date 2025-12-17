@@ -1,19 +1,47 @@
-# Introduction
+# PolyPay
 
-### What is PolyPay?
+A privacy-preserving payroll platform built on Horizen. PolyPay enables organizations, DAOs, and global teams to run payroll privately while staying on their preferred blockchain.
 
-PolyPay is a privacy-preserving multi-signature wallet that uses zero-knowledge proofs for anonymous transaction signing.
+<!-- ## Demo -->
 
-### The Problem
+<!-- 🎬 **Video Demo**: [Click here](https://app.screencastify.com/watch/GdsEYGKAjUl8o02KKwlA?checkOrg=18c50a97-8f7c-4641-a685-cc49f2d0c450) -->
 
-Traditional multisig wallets expose all signer addresses publicly on the blockchain. Anyone can see:
+<!-- 🌐 **Live Demo**: [https://polypay.app](https://polypay.app) -->
 
-* Who the owners are
-* How many signatures are required
-* Which addresses approved each transaction
+## Features
 
-This creates privacy and security risks for organizations and individuals.
+- **Private Payments**: Salary amounts and recipients stay confidential
+- **Private Multisig**: Team approvals without exposing signer identities
+- **Flexible Payment Logic**: Escrow, milestone-based, and recurring transfers
 
-### Our Solution
+## Quick Start
 
-PolyPay replaces public addresses with **commitments** - cryptographic hashes of user secrets. When signing transactions, users generate ZK proofs to prove they are authorized signers **without revealing their identity**.
+```bash
+# 1. Clone the repository
+git clone git@github.com:Poly-pay/polypay_app.git
+cd polypay_app
+
+# 2. Setup environment
+cp docker/.env.example docker/.env
+# Edit docker/.env and fill in:
+# - POSTGRES_PASSWORD
+# - RELAYER_ZKVERIFY_API_KEY
+# - RELAYER_WALLET_KEY
+
+# 3. Run with Docker Compose
+cd docker
+docker compose up -d
+
+# 4. Access the application
+# Frontend: http://localhost:3000
+# Backend: http://localhost:4000
+```
+
+## Documentation
+
+For full documentation, visit: **[PolyPay Docs](https://q3labs.gitbook.io/polypay)**
+
+- [Getting Started](https://q3labs.gitbook.io/polypay/getting-started)
+- [Privacy Architecture](https://q3labs.gitbook.io/polypay/privacy-architecture)
+- [Zero-Knowledge Implementation](https://q3labs.gitbook.io/polypay/zero-knowledge-implementation)
+- [System Architecture](https://q3labs.gitbook.io/polypay/architecture)
