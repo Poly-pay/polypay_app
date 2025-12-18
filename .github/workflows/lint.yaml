@@ -30,8 +30,11 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Generate Prisma Client
+        run: DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" yarn workspace @polypay/backend prisma generate
+
       - name: Format check
         run: yarn format
-
+        
       - name: Build all packages
         run: yarn build
