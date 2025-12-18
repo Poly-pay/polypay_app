@@ -1,23 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AddressGroup,
   Contact,
   CreateAddressGroupDto,
-  UpdateAddressGroupDto,
   CreateContactDto,
+  UpdateAddressGroupDto,
   UpdateContactDto,
-} from '@polypay/shared';
-import { API_BASE_URL } from '~~/constants';
+} from "@polypay/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { API_BASE_URL } from "~~/constants";
 
 // ==================== Query Keys ====================
 
 export const addressBookKeys = {
-  all: ['addressBook'] as const,
-  groups: (walletId: string) => [...addressBookKeys.all, 'groups', walletId] as const,
-  group: (id: string) => [...addressBookKeys.all, 'group', id] as const,
-  contacts: (walletId: string, groupId?: string) =>
-    [...addressBookKeys.all, 'contacts', walletId, groupId] as const,
-  contact: (id: string) => [...addressBookKeys.all, 'contact', id] as const,
+  all: ["addressBook"] as const,
+  groups: (walletId: string) => [...addressBookKeys.all, "groups", walletId] as const,
+  group: (id: string) => [...addressBookKeys.all, "group", id] as const,
+  contacts: (walletId: string, groupId?: string) => [...addressBookKeys.all, "contacts", walletId, groupId] as const,
+  contact: (id: string) => [...addressBookKeys.all, "contact", id] as const,
 };
 
 // ==================== API Functions ====================
@@ -25,96 +24,96 @@ export const addressBookKeys = {
 // Groups
 const getGroupsAPI = async (walletId: string): Promise<AddressGroup[]> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/groups?walletId=${walletId}`);
-  if (!response.ok) throw new Error('Failed to fetch groups');
+  if (!response.ok) throw new Error("Failed to fetch groups");
   return response.json();
 };
 
 const getGroupAPI = async (id: string): Promise<AddressGroup> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/groups/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch group');
+  if (!response.ok) throw new Error("Failed to fetch group");
   return response.json();
 };
 
 const createGroupAPI = async (dto: CreateAddressGroupDto): Promise<AddressGroup> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/groups`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(dto),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to create group');
+    throw new Error(error.message || "Failed to create group");
   }
   return response.json();
 };
 
 const updateGroupAPI = async (id: string, dto: UpdateAddressGroupDto): Promise<AddressGroup> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/groups/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(dto),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to update group');
+    throw new Error(error.message || "Failed to update group");
   }
   return response.json();
 };
 
 const deleteGroupAPI = async (id: string): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/groups/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
-  if (!response.ok) throw new Error('Failed to delete group');
+  if (!response.ok) throw new Error("Failed to delete group");
 };
 
 // Contacts
 const getContactsAPI = async (walletId: string, groupId?: string): Promise<Contact[]> => {
   const params = new URLSearchParams({ walletId });
-  if (groupId) params.append('groupId', groupId);
+  if (groupId) params.append("groupId", groupId);
 
   const response = await fetch(`${API_BASE_URL}/api/address-book/contacts?${params}`);
-  if (!response.ok) throw new Error('Failed to fetch contacts');
+  if (!response.ok) throw new Error("Failed to fetch contacts");
   return response.json();
 };
 
 const getContactAPI = async (id: string): Promise<Contact> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/contacts/${id}`);
-  if (!response.ok) throw new Error('Failed to fetch contact');
+  if (!response.ok) throw new Error("Failed to fetch contact");
   return response.json();
 };
 
 const createContactAPI = async (dto: CreateContactDto): Promise<Contact> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/contacts`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(dto),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to create contact');
+    throw new Error(error.message || "Failed to create contact");
   }
   return response.json();
 };
 
 const updateContactAPI = async (id: string, dto: UpdateContactDto): Promise<Contact> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/contacts/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(dto),
   });
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to update contact');
+    throw new Error(error.message || "Failed to update contact");
   }
   return response.json();
 };
 
 const deleteContactAPI = async (id: string): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/api/address-book/contacts/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
-  if (!response.ok) throw new Error('Failed to delete contact');
+  if (!response.ok) throw new Error("Failed to delete contact");
 };
 
 // ==================== Hooks ====================
@@ -122,7 +121,7 @@ const deleteContactAPI = async (id: string): Promise<void> => {
 // Groups
 export const useGroups = (walletId: string | null) => {
   return useQuery({
-    queryKey: addressBookKeys.groups(walletId || ''),
+    queryKey: addressBookKeys.groups(walletId || ""),
     queryFn: () => getGroupsAPI(walletId!),
     enabled: !!walletId,
   });
@@ -130,7 +129,7 @@ export const useGroups = (walletId: string | null) => {
 
 export const useGroup = (id: string | null) => {
   return useQuery({
-    queryKey: addressBookKeys.group(id || ''),
+    queryKey: addressBookKeys.group(id || ""),
     queryFn: () => getGroupAPI(id!),
     enabled: !!id,
   });
@@ -151,9 +150,8 @@ export const useCreateGroup = () => {
 export const useUpdateGroup = (walletId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: string; dto: UpdateAddressGroupDto }) =>
-      updateGroupAPI(id, dto),
-    onSuccess: (data) => {
+    mutationFn: ({ id, dto }: { id: string; dto: UpdateAddressGroupDto }) => updateGroupAPI(id, dto),
+    onSuccess: data => {
       queryClient.invalidateQueries({
         queryKey: addressBookKeys.groups(walletId),
       });
@@ -183,7 +181,7 @@ export const useDeleteGroup = (walletId: string) => {
 // Contacts
 export const useContacts = (walletId: string | null, groupId?: string) => {
   return useQuery({
-    queryKey: addressBookKeys.contacts(walletId || '', groupId),
+    queryKey: addressBookKeys.contacts(walletId || "", groupId),
     queryFn: () => getContactsAPI(walletId!, groupId),
     enabled: !!walletId,
   });
@@ -191,7 +189,7 @@ export const useContacts = (walletId: string | null, groupId?: string) => {
 
 export const useContact = (id: string | null) => {
   return useQuery({
-    queryKey: addressBookKeys.contact(id || ''),
+    queryKey: addressBookKeys.contact(id || ""),
     queryFn: () => getContactAPI(id!),
     enabled: !!id,
   });
@@ -216,9 +214,8 @@ export const useCreateContact = () => {
 export const useUpdateContact = (walletId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: string; dto: UpdateContactDto }) =>
-      updateContactAPI(id, dto),
-    onSuccess: (data) => {
+    mutationFn: ({ id, dto }: { id: string; dto: UpdateContactDto }) => updateContactAPI(id, dto),
+    onSuccess: data => {
       queryClient.invalidateQueries({
         queryKey: addressBookKeys.contacts(walletId),
       });

@@ -26,12 +26,7 @@ function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export function ContactList({
-  contacts,
-  isLoading,
-  selectedContactId,
-  onSelectContact,
-}: ContactListProps) {
+export function ContactList({ contacts, isLoading, selectedContactId, onSelectContact }: ContactListProps) {
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -76,19 +71,13 @@ export function ContactList({
             <div
               className={`w-10 h-10 rounded-full bg-gradient-to-br ${getAvatarColor(index)} flex items-center justify-center flex-shrink-0`}
             >
-              <span className="text-white font-semibold text-sm">
-                {contact.name.charAt(0).toUpperCase()}
-              </span>
+              <span className="text-white font-semibold text-sm">{contact.name.charAt(0).toUpperCase()}</span>
             </div>
 
             {/* Contact Info */}
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-gray-800 truncate">
-                {contact.name}
-              </p>
-              <p className="text-sm text-gray-400 truncate">
-                {formatAddress(contact.address)}
-              </p>
+              <p className="font-semibold text-gray-800 truncate">{contact.name}</p>
+              <p className="text-sm text-gray-400 truncate">{formatAddress(contact.address)}</p>
             </div>
 
             {/* Group Tags */}
@@ -111,9 +100,7 @@ export function ContactList({
             )}
 
             {/* Selected Indicator */}
-            {isSelected && (
-              <div className="w-2 h-2 rounded-full bg-[#FF7CEB] flex-shrink-0" />
-            )}
+            {isSelected && <div className="w-2 h-2 rounded-full bg-[#FF7CEB] flex-shrink-0" />}
           </div>
         );
       })}

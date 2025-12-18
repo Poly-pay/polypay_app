@@ -42,6 +42,6 @@ export const getMetadata = ({
       },
       description: description,
       images: [imageUrl],
-    }
+    },
   };
 };

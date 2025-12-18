@@ -189,6 +189,38 @@ contract MetaMultiSigWallet {
         }
     }
 
+    /**
+     * @notice Execute multiple transfers with mixed token types
+     * @param recipients Array of recipient addresses
+     * @param amounts Array of amounts to send
+     * @param tokenAddresses Array of token addresses (address(0) = native ETH)
+     */
+    function batchTransferMulti(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        address[] calldata tokenAddresses
+    ) public onlySelf {
+        require(recipients.length == amounts.length, "Length mismatch");
+        require(recipients.length == tokenAddresses.length, "Length mismatch");
+        require(recipients.length > 0, "Empty batch");
+
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(recipients[i] != address(0), "Invalid recipient");
+
+            if (tokenAddresses[i] == address(0)) {
+                // Native ETH transfer
+                (bool success, ) = recipients[i].call{ value: amounts[i] }("");
+                require(success, "ETH transfer failed");
+            } else {
+                // ERC20 transfer
+                (bool success, bytes memory data) = tokenAddresses[i].call(
+                    abi.encodeWithSignature("transfer(address,uint256)", recipients[i], amounts[i])
+                );
+                require(success && (data.length == 0 || abi.decode(data, (bool))), "ERC20 transfer failed");
+            }
+        }
+    }
+
     // ============ View Functions ============
     function getTransactionHash(
         uint256 _nonce,

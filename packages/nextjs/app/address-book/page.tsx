@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Contact, AddressGroup } from "@polypay/shared";
-import { ContactList } from "~~/components/address-book/ContactList";
-import { ContactDetail } from "~~/components/address-book/ContactDetail";
-import { CreateGroupModal } from "~~/components/address-book/CreateGroupModal";
-import { CreateContactModal } from "~~/components/address-book/CreateContactModal";
-import { DeleteConfirmModal } from "~~/components/address-book/DeleteConfirmModal";
+import { AddressGroup, Contact } from "@polypay/shared";
 import { Search } from "lucide-react";
-import { useWalletStore } from "~~/services/store";
+import { ContactDetail } from "~~/components/address-book/ContactDetail";
+import { ContactList } from "~~/components/address-book/ContactList";
+import { CreateContactModal } from "~~/components/address-book/CreateContactModal";
+import { CreateGroupModal } from "~~/components/address-book/CreateGroupModal";
+import { DeleteConfirmModal } from "~~/components/address-book/DeleteConfirmModal";
 import { useContacts, useGroups } from "~~/hooks";
+import { useWalletStore } from "~~/services/store";
 
 export default function AddressBookPage() {
   const { currentWallet: selectedWallet } = useWalletStore();
@@ -29,15 +29,13 @@ export default function AddressBookPage() {
 
   // Queries
   const { data: groups = [], isLoading: isLoadingGroups } = useGroups(walletId);
-  const { data: contacts = [], isLoading: isLoadingContacts } = useContacts(
-    walletId,
-    selectedGroupId || undefined
-  );
+  const { data: contacts = [], isLoading: isLoadingContacts } = useContacts(walletId, selectedGroupId || undefined);
 
   // Filter contacts by search
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.address.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredContacts = contacts.filter(
+    contact =>
+      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.address.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Handlers
@@ -75,7 +73,7 @@ export default function AddressBookPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-gray-800">Address Book</h1>
-          
+
           {/* Search */}
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -119,9 +117,7 @@ export default function AddressBookPage() {
         <button
           onClick={() => handleSelectGroup(null)}
           className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-            selectedGroupId === null
-              ? "bg-gray-900 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            selectedGroupId === null ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
           All
@@ -131,9 +127,7 @@ export default function AddressBookPage() {
             key={group.id}
             onClick={() => handleSelectGroup(group.id)}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              selectedGroupId === group.id
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              selectedGroupId === group.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             {group.name}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 interface TransactionSummaryProps {
   transactions: {
@@ -8,6 +9,8 @@ interface TransactionSummaryProps {
     amount: string;
     recipient: string;
     contactName?: string;
+    tokenIcon?: string;
+    tokenSymbol?: string;
   }[];
   onConfirm?: () => void;
   className?: string;
@@ -41,8 +44,13 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
       <div className="flex flex-col gap-0.5 max-h-[400px] items-center justify-start px-3 py-0 w-full overflow-y-auto">
         {transactions.map(transaction => (
           <div key={transaction.id} className="bg-[#f7f7f7] flex gap-3 items-center justify-start p-3 w-full rounded">
-            {/* Amount */}
-            <div className="grow text-[#363636] text-[16px]">{transaction.amount}</div>
+            {/* Amount with Token Icon */}
+            <div className="grow flex items-center gap-1 text-[#363636] text-[16px]">
+              {transaction.tokenIcon && (
+                <Image src={transaction.tokenIcon} alt={transaction.tokenSymbol || "token"} width={20} height={20} />
+              )}
+              {transaction.amount}
+            </div>
 
             {/* Arrow */}
             <div className="relative w-16">

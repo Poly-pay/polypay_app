@@ -23,6 +23,7 @@ export class BatchItemService {
         accountId: account.id,
         recipient: dto.recipient,
         amount: dto.amount,
+        tokenAddress: dto.tokenAddress,
         contactId: dto.contactId,
       },
       include: {

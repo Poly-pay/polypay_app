@@ -8,16 +8,19 @@ import {
   Transaction,
   encodeAddSigner,
   encodeBatchTransfer,
+  encodeBatchTransferMulti,
+  encodeERC20Transfer,
   encodeRemoveSigner,
   encodeUpdateThreshold,
 } from "@polypay/shared";
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
-import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
+import { NATIVE_ETH, getTokenByAddress } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useApprove, useDeny, useExecuteOnChain } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
+import { formatAddress, formatAmount } from "~~/utils/format";
 import { notification } from "~~/utils/scaffold-eth";
 
 // ============ Types ============
@@ -37,6 +40,7 @@ interface BatchTransfer {
   amount: string;
   contactId?: string;
   contactName?: string;
+  tokenAddress?: string;
 }
 
 interface TransactionRowData {
@@ -50,6 +54,7 @@ interface TransactionRowData {
   // Transfer
   amount?: string;
   recipientAddress?: string;
+  tokenAddress?: string;
 
   // Add/Remove Signer
   signerCommitment?: string;
@@ -79,12 +84,6 @@ interface TransactionRowData {
 
   // Wallet
   walletAddress: string;
-}
-
-// ============ Helper: Format address ============
-function formatAddress(address: string): string {
-  if (!address) return "";
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 // ============ Helper: Calculate batch total ============
@@ -143,6 +142,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     txHash: tx.txHash || undefined,
     amount: tx.value || undefined,
     recipientAddress: tx.to || undefined,
+    tokenAddress: tx.tokenAddress || undefined,
     signerCommitment: tx.signerCommitment || undefined,
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
@@ -281,8 +281,13 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
         <h3 className="text-lg font-semibold mb-2">Transfer</h3>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-            <Image src="/token/eth.svg" alt="ETH" width={20} height={20} />
-            <span>{formatEther(BigInt(tx.amount ?? "0"))} ETH</span>
+            <Image
+              src={getTokenByAddress(tx.tokenAddress).icon}
+              alt={getTokenByAddress(tx.tokenAddress).symbol}
+              width={20}
+              height={20}
+            />
+            <span>{formatAmount(tx.amount ?? "0", tx.tokenAddress)}</span>
           </div>
           <ArrowRight size={20} />
           <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
@@ -347,9 +352,6 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
           <h3 className="text-lg font-semibold">Batch Transfer</h3>
           <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-sm">
             <span>{tx.batchData.length} transfers</span>
-            <span>•</span>
-            <Image src="/token/eth.svg" alt="ETH" width={16} height={16} />
-            <span>{formatEther(totalAmount)} ETH total</span>
           </div>
         </div>
         {/* Batch transfers list */}
@@ -358,8 +360,13 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
             <div key={index} className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg">
               <span className="text-white/60 text-sm w-6">#{index + 1}</span>
               <div className="flex items-center gap-2">
-                <Image src="/token/eth.svg" alt="ETH" width={16} height={16} />
-                <span className="font-medium">{formatEther(BigInt(transfer.amount))} ETH</span>
+                <Image
+                  src={getTokenByAddress(transfer.tokenAddress).icon}
+                  alt={getTokenByAddress(transfer.tokenAddress).symbol}
+                  width={16}
+                  height={16}
+                />
+                <span className="font-medium">{formatAmount(transfer.amount, transfer.tokenAddress)}</span>
               </div>
               <ArrowRight size={16} className="text-white/60" />
               <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
@@ -458,8 +465,13 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
       return (
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Image src="/token/eth.svg" alt="ETH" width={20} height={20} />
-            <span className="font-medium">{formatEther(BigInt(tx.amount ?? "0"))} ETH</span>
+            <Image
+              src={getTokenByAddress(tx.tokenAddress).icon}
+              alt={getTokenByAddress(tx.tokenAddress).symbol}
+              width={20}
+              height={20}
+            />
+            <span className="font-medium">{formatAmount(tx.amount ?? "0", tx.tokenAddress)}</span>
           </div>
           <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} />
@@ -504,8 +516,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
             {tx.batchData.length} transfer{tx.batchData.length > 1 ? "s" : ""}
           </span>
           <div className="flex items-center gap-2">
-            <Image src="/token/eth.svg" alt="ETH" width={20} height={20} />
-            <span className="font-medium">{formatEther(totalAmount)} ETH</span>
+            <span className="font-medium">{tx.batchData.length} transfers</span>
           </div>
         </div>
       );
@@ -552,7 +563,14 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     let to: `0x${string}` = tx.recipientAddress as `0x${string}`;
     let value = BigInt(tx.amount || "0");
 
-    if (tx.type !== "transfer") {
+    if (tx.type === "transfer") {
+      // Check if ERC20 transfer
+      if (tx.tokenAddress && tx.tokenAddress !== NATIVE_ETH.address) {
+        to = tx.tokenAddress as `0x${string}`;
+        value = 0n;
+        callData = encodeERC20Transfer(tx.recipientAddress!, BigInt(tx.amount || "0")) as `0x${string}`;
+      }
+    } else {
       to = tx.walletAddress as `0x${string}`;
       value = 0n;
 
@@ -563,10 +581,16 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       } else if (tx.type === "set_threshold") {
         callData = encodeUpdateThreshold(tx.newThreshold!);
       } else if (tx.type === "batch" && tx.batchData) {
-        // Encode batchTransfer call
         const recipients = tx.batchData.map(item => item.recipient as `0x${string}`);
         const amounts = tx.batchData.map(item => BigInt(item.amount));
-        callData = encodeBatchTransfer(recipients, amounts);
+        const tokenAddresses = tx.batchData.map(item => item.tokenAddress || NATIVE_ETH.address);
+
+        // Check if any ERC20 token in batch
+        const hasERC20 = tokenAddresses.some(addr => addr !== NATIVE_ETH.address);
+
+        callData = hasERC20
+          ? encodeBatchTransferMulti(recipients, amounts, tokenAddresses)
+          : encodeBatchTransfer(recipients, amounts);
       }
     }
 

@@ -14,6 +14,10 @@ export class CreateBatchItemDto {
   @IsString()
   amount: string;
 
+  @IsOptional()
+  @IsString()
+  tokenAddress?: string;
+
   @IsString()
   @IsOptional()
   contactId?: string;

@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Contact } from "@polypay/shared";
-import { X, Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useCreateGroup } from "~~/hooks";
 
 interface CreateGroupModalProps {
@@ -30,15 +30,13 @@ function formatAddress(address: string): string {
 
 function getContactGroups(contact: Contact): string {
   if (!contact.groups || contact.groups.length === 0) return "";
-  return contact.groups.map(g => g.group?.name).filter(Boolean).join(", ");
+  return contact.groups
+    .map(g => g.group?.name)
+    .filter(Boolean)
+    .join(", ");
 }
 
-export function CreateGroupModal({
-  isOpen,
-  onClose,
-  walletId,
-  contacts,
-}: CreateGroupModalProps) {
+export function CreateGroupModal({ isOpen, onClose, walletId, contacts }: CreateGroupModalProps) {
   const [name, setName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
@@ -51,9 +49,7 @@ export function CreateGroupModal({
     if (!searchTerm.trim()) return contacts;
     const term = searchTerm.toLowerCase();
     return contacts.filter(
-      contact =>
-        contact.name.toLowerCase().includes(term) ||
-        contact.address.toLowerCase().includes(term)
+      contact => contact.name.toLowerCase().includes(term) || contact.address.toLowerCase().includes(term),
     );
   }, [contacts, searchTerm]);
 
@@ -71,9 +67,7 @@ export function CreateGroupModal({
 
   const toggleContact = (contactId: string) => {
     setSelectedContactIds(prev =>
-      prev.includes(contactId)
-        ? prev.filter(id => id !== contactId)
-        : [...prev, contactId]
+      prev.includes(contactId) ? prev.filter(id => id !== contactId) : [...prev, contactId],
     );
   };
 
@@ -103,10 +97,7 @@ export function CreateGroupModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={handleClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
@@ -116,14 +107,9 @@ export function CreateGroupModal({
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
               <div className="w-5 h-5 rounded-full border-2 border-white" />
             </div>
-            <h3 className="font-bold text-lg tracking-wide uppercase text-gray-800">
-              New Group
-            </h3>
+            <h3 className="font-bold text-lg tracking-wide uppercase text-gray-800">New Group</h3>
           </div>
-          <button
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            onClick={handleClose}
-          >
+          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" onClick={handleClose}>
             <X size={20} className="text-gray-500" />
           </button>
         </div>
@@ -132,9 +118,7 @@ export function CreateGroupModal({
           <div className="p-5 space-y-5">
             {/* Group Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Group name
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Group name</label>
               <input
                 type="text"
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
@@ -147,9 +131,7 @@ export function CreateGroupModal({
             {/* Choose Contact */}
             {contacts.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Choose contact
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Choose contact</label>
 
                 {/* Search Input */}
                 <div className="relative mb-3">
@@ -178,14 +160,10 @@ export function CreateGroupModal({
                         {/* Checkbox */}
                         <div
                           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? "bg-[#FF7CEB] border-[#FF7CEB]"
-                              : "border-gray-300"
+                            isSelected ? "bg-[#FF7CEB] border-[#FF7CEB]" : "border-gray-300"
                           }`}
                         >
-                          {isSelected && (
-                            <div className="w-2 h-2 rounded-full bg-white" />
-                          )}
+                          {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                         </div>
 
                         {/* Avatar */}
@@ -199,14 +177,8 @@ export function CreateGroupModal({
 
                         {/* Contact Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-800 truncate">
-                            {contact.name}
-                          </p>
-                          {groupNames && (
-                            <p className="text-sm text-gray-500 truncate">
-                              {groupNames}
-                            </p>
-                          )}
+                          <p className="font-semibold text-gray-800 truncate">{contact.name}</p>
+                          {groupNames && <p className="text-sm text-gray-500 truncate">{groupNames}</p>}
                         </div>
 
                         {/* Address */}
@@ -217,11 +189,7 @@ export function CreateGroupModal({
                     );
                   })}
 
-                  {filteredContacts.length === 0 && (
-                    <p className="text-center text-gray-400 py-4">
-                      No contacts found
-                    </p>
-                  )}
+                  {filteredContacts.length === 0 && <p className="text-center text-gray-400 py-4">No contacts found</p>}
                 </div>
               </div>
             )}
@@ -248,11 +216,7 @@ export function CreateGroupModal({
               className="flex-[2] px-6 py-3 bg-[#FF7CEB] text-white font-medium rounded-xl hover:bg-[#f35ddd] transition-colors disabled:opacity-50"
               disabled={createGroup.isPending}
             >
-              {createGroup.isPending ? (
-                <span className="loading loading-spinner loading-sm" />
-              ) : (
-                "Create group"
-              )}
+              {createGroup.isPending ? <span className="loading loading-spinner loading-sm" /> : "Create group"}
             </button>
           </div>
         </form>

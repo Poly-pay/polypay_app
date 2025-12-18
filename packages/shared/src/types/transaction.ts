@@ -10,6 +10,7 @@ export interface Transaction {
   nonce: number;
   to?: string;
   value?: string;
+  tokenAddress?: string;
   contactId?: string;
   contact?: Contact;
   walletAddress: string;

@@ -725,7 +725,7 @@ const deployedContracts = {
   },
   11155111: {
     MetaMultiSigWallet: {
-      address: "0xDC27619e0c19C511e4a62267d486C241DE297653",
+      address: "0x8152887C1eAffC186AAd07AF3097483943fbf8D8",
       abi: [
         {
           inputs: [
@@ -923,6 +923,29 @@ const deployedContracts = {
             },
           ],
           name: "batchTransfer",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "recipients",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "amounts",
+              type: "uint256[]",
+            },
+            {
+              internalType: "address[]",
+              name: "tokenAddresses",
+              type: "address[]",
+            },
+          ],
+          name: "batchTransferMulti",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -1230,7 +1253,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 9821502,
+      deployedOnBlock: 9860333,
     },
   },
 } as const;

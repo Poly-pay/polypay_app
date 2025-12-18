@@ -15,23 +15,23 @@ datasource db {
 }
 
 model Account {
-  id          String   @id @default(cuid())
-  commitment  String   @unique
-  name        String?  // Global name for account
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  commitment String   @unique
+  name       String? // Global name for account
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  wallets     AccountWallet[]
-  batchItems  BatchItem[]
+  wallets    AccountWallet[]
+  batchItems BatchItem[]
 }
 
 model Wallet {
-  id          String   @id @default(cuid())
-  address     String   @unique
-  name        String
-  threshold   Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  address   String   @unique
+  name      String
+  threshold Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   accounts      AccountWallet[]
   transactions  Transaction[]
@@ -40,60 +40,59 @@ model Wallet {
 }
 
 model AccountWallet {
-  id          String   @id @default(cuid())
-  accountId   String
-  walletId    String
-  isCreator   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  accountId String
+  walletId  String
+  isCreator Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  account     Account  @relation(fields: [accountId], references: [id])
-  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  account Account @relation(fields: [accountId], references: [id])
+  wallet  Wallet  @relation(fields: [walletId], references: [id])
 
   @@unique([accountId, walletId])
 }
 
-
 model Transaction {
-  id                 String      @id @default(cuid())
-  txId               Int         @unique @default(autoincrement())
-  type               TxType
-  status             TxStatus    @default(PENDING)
-  nonce              Int
+  id     String   @id @default(cuid())
+  txId   Int      @unique @default(autoincrement())
+  type   TxType
+  status TxStatus @default(PENDING)
+  nonce  Int
 
   // Transfer (ETH only)
-  to                 String?
-  value              String?
+  to           String?
+  value        String?
+  tokenAddress String? // null for ETH, address for ERC20 
 
-  walletAddress      String
-  wallet             Wallet   @relation(fields: [walletAddress], references: [address])
+  walletAddress String
+  wallet        Wallet @relation(fields: [walletAddress], references: [address])
 
   // Link to contact for display name (optional)
-  contactId          String?
-  contact            Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
-
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Add/Remove Signer
-  signerCommitment   String?
+  signerCommitment String?
 
   // Set Threshold
-  newThreshold       Int?
+  newThreshold Int?
 
   // Batch data (JSON string of recipients + amounts)
-  batchData          String?
+  batchData String?
 
   // Metadata
-  createdBy          String      // commitment initial
-  threshold          Int         // approval threshold at the time of creation
-  totalSigners       Int         // total signers at the time of creation
+  createdBy    String // commitment initial
+  threshold    Int // approval threshold at the time of creation
+  totalSigners Int // total signers at the time of creation
 
   // Execution
-  txHash             String?
-  executedAt         DateTime?
+  txHash     String?
+  executedAt DateTime?
 
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  votes              Vote[]
+  votes Vote[]
 
   @@index([status])
   @@index([walletAddress])
@@ -101,27 +100,27 @@ model Transaction {
 }
 
 model Vote {
-  id               String       @id @default(cuid())
-  txId             Int
-  voterCommitment  String
-  voteType         VoteType
+  id              String   @id @default(cuid())
+  txId            Int
+  voterCommitment String
+  voteType        VoteType
 
   // ZK Proof (only APPROVE)
-  nullifier        String?      // This unique on-chain, but on our backend, it can be duplicate across tx (because txs can have same nonce)
-  jobId            String?      @unique
-  proofStatus      ProofStatus?
+  nullifier   String? // This unique on-chain, but on our backend, it can be duplicate across tx (because txs can have same nonce)
+  jobId       String?      @unique
+  proofStatus ProofStatus?
 
   // Aggregation data
-  aggregationId    String?
-  domainId         Int?         @default(0)
-  merkleProof      String[]
-  leafCount        Int?
-  leafIndex        Int?
+  aggregationId String?
+  domainId      Int?     @default(0)
+  merkleProof   String[]
+  leafCount     Int?
+  leafIndex     Int?
 
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  transaction      Transaction  @relation(fields: [txId], references: [txId])
+  transaction Transaction @relation(fields: [txId], references: [txId])
 
   @@unique([txId, voterCommitment])
   @@index([txId])
@@ -129,29 +128,31 @@ model Vote {
 }
 
 model BatchItem {
-  id          String   @id @default(cuid())
-  accountId   String
-  contactId   String?
-  recipient   String
-  amount      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  
+  id           String  @id @default(cuid())
+  accountId    String
+  contactId    String?
+  recipient    String
+  amount       String
+  tokenAddress String? // null for ETH, address for ERC20 
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
   @@index([accountId])
 }
 
 model AddressGroup {
-  id          String   @id @default(cuid())
-  walletId    String
-  name        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  walletId  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  contacts    ContactGroup[]
+  wallet   Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  contacts ContactGroup[]
 
   @@unique([walletId, name])
   @@map("address_groups")
@@ -168,7 +169,7 @@ model Contact {
   wallet       Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
   groups       ContactGroup[]
   transactions Transaction[]
-  batchItems   BatchItem[] 
+  batchItems   BatchItem[]
 
   @@unique([walletId, name])
   @@unique([walletId, address])

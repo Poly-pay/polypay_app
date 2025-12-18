@@ -60,8 +60,25 @@ export function encodeUpdateThreshold(newThreshold: number): Hex {
   });
 }
 
+export function encodeERC20Transfer(to: string, amount: bigint): string {
+  return encodeFunctionData({
+    abi: [
+      {
+        name: "transfer",
+        type: "function",
+        inputs: [
+          { name: "to", type: "address" },
+          { name: "amount", type: "uint256" },
+        ],
+      },
+    ],
+    functionName: "transfer",
+    args: [to as `0x${string}`, amount],
+  });
+}
+
 /**
- * Encode batchTransfer function call
+ * Encode batchTransfer without erc20 function call
  */
 export function encodeBatchTransfer(
   recipients: string[],
@@ -80,5 +97,34 @@ export function encodeBatchTransfer(
     ],
     functionName: "batchTransfer",
     args: [recipients as `0x${string}`[], amounts],
+  });
+}
+
+/**
+ * Encode batchTransferMulti with erc20 function call
+ */
+export function encodeBatchTransferMulti(
+  recipients: string[],
+  amounts: bigint[],
+  tokenAddresses: string[],
+): Hex {
+  return encodeFunctionData({
+    abi: [
+      {
+        name: "batchTransferMulti",
+        type: "function",
+        inputs: [
+          { name: "recipients", type: "address[]" },
+          { name: "amounts", type: "uint256[]" },
+          { name: "tokenAddresses", type: "address[]" },
+        ],
+      },
+    ],
+    functionName: "batchTransferMulti",
+    args: [
+      recipients as `0x${string}`[],
+      amounts,
+      tokenAddresses as `0x${string}`[],
+    ],
   });
 }
