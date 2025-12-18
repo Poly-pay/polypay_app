@@ -32,6 +32,45 @@ export class ZkVerifyService {
     this.vkeyPath = path.join(process.cwd(), 'assets', 'vkey.json');
   }
 
+  private async retryRequest<T>(
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    operationName: string = 'request',
+  ): Promise<T> {
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error: any) {
+        lastError = error;
+
+        // Check if retryable error
+        const isRetryable =
+          error.code === 'ETIMEDOUT' ||
+          error.code === 'ECONNRESET' ||
+          error.code === 'ECONNREFUSED' ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('network');
+
+        if (!isRetryable || attempt === maxRetries) {
+          this.logger.error(
+            `${operationName} failed after ${attempt} attempts: ${error.message}`,
+          );
+          throw error;
+        }
+
+        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        this.logger.warn(
+          `${operationName} attempt ${attempt} failed, retrying in ${delay}ms: ${error.code || error.message}`,
+        );
+        await this.sleep(delay);
+      }
+    }
+
+    throw lastError;
+  }
+
   /**
    * Submit proof and wait for finalized (IncludedInBlock)
    */
@@ -60,9 +99,15 @@ export class ZkVerifyService {
     };
 
     this.logger.log('Submitting proof to zkVerify...');
-    const submitResponse = await axios.post<ZkVerifySubmitResponse>(
-      `${this.apiUrl}/submit-proof/${this.apiKey}`,
-      params,
+    const submitResponse = await this.retryRequest(
+      () =>
+        axios.post<ZkVerifySubmitResponse>(
+          `${this.apiUrl}/submit-proof/${this.apiKey}`,
+          params,
+          { timeout: 30000 },
+        ),
+      3,
+      'submitProof',
     );
 
     if (submitResponse.data.optimisticVerify !== 'success') {
@@ -113,7 +158,6 @@ export class ZkVerifyService {
         await new Promise((resolve) => setTimeout(resolve, 5000));
       } catch (error) {
         this.logger.error(`Error checking job status: ${error.message}`);
-        throw error;
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 5000));

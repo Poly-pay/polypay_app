@@ -14,7 +14,7 @@ import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
-export default function SendContainer() {
+export default function TransferContainer() {
   const [amount, setAmount] = useState("");
   const [address, setAddress] = useState("");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -214,7 +214,7 @@ export default function SendContainer() {
           <div className="flex gap-[5px] items-center justify-center w-full">
             <div className="text-[#545454] text-6xl text-center font-bold uppercase">t</div>
             <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-[#545454] text-6xl text-center font-bold uppercase">friends</div>
+            <div className="text-[#545454] text-6xl text-center font-bold uppercase">anyone</div>
           </div>
         </div>
 
@@ -226,7 +226,7 @@ export default function SendContainer() {
         {/* Token selector and amount */}
         <div className="flex gap-1 items-center justify-center w-full max-w-md">
           {/* Token selector */}
-          <div className="relative">
+          <div className="relative mr-2">
             <div
               onClick={() => setShowTokenDropdown(!showTokenDropdown)}
               className="bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-0.5 rounded-full border border-[#e0e0e0] cursor-pointer hover:border-[#FF7CEB] transition-colors"

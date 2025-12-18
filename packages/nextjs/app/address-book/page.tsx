@@ -98,13 +98,13 @@ export default function AddressBookPage() {
         {/* Action Buttons */}
         <div className="flex gap-2">
           <button
-            className="px-4 py-2 border border-gray-200 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 border border-gray-200 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
             onClick={() => setIsCreateGroupOpen(true)}
           >
             New group
           </button>
           <button
-            className="px-4 py-2 bg-[#FF7CEB] text-white rounded-lg font-medium hover:bg-[#f35ddd] transition-colors"
+            className="px-4 py-2 bg-[#FF7CEB] text-white rounded-lg font-medium hover:bg-[#f35ddd] transition-colors cursor-pointer"
             onClick={() => setIsCreateContactOpen(true)}
           >
             New contact
@@ -116,7 +116,7 @@ export default function AddressBookPage() {
       <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
         <button
           onClick={() => handleSelectGroup(null)}
-          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors cursor-pointer ${
             selectedGroupId === null ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
@@ -126,7 +126,7 @@ export default function AddressBookPage() {
           <button
             key={group.id}
             onClick={() => handleSelectGroup(group.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors cursor-pointer ${
               selectedGroupId === group.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >

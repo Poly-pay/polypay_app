@@ -1,5 +1,5 @@
 import { accountKeys } from "./useAccount";
-import { CreateWalletDto, Wallet } from "@polypay/shared";
+import { CreateWalletDto, UpdateWalletDto, Wallet } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_BASE_URL } from "~~/constants";
 
@@ -35,6 +35,21 @@ const getWalletsAPI = async (): Promise<Wallet[]> => {
 
   if (!response.ok) {
     throw new Error("Failed to fetch wallets");
+  }
+
+  return response.json();
+};
+
+const updateWalletAPI = async (address: string, dto: UpdateWalletDto): Promise<Wallet> => {
+  const response = await fetch(`${API_BASE_URL}/api/wallets/${address}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dto),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to update wallet");
   }
 
   return response.json();
@@ -88,5 +103,19 @@ export const useWallets = () => {
   return useQuery({
     queryKey: walletKeys.all,
     queryFn: getWalletsAPI,
+  });
+};
+/**
+ * Update wallet by address
+ */
+export const useUpdateWallet = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ address, dto }: { address: string; dto: UpdateWalletDto }) => updateWalletAPI(address, dto),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: walletKeys.byAddress(variables.address) });
+      queryClient.invalidateQueries({ queryKey: walletKeys.all });
+    },
   });
 };

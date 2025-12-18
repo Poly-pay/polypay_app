@@ -1,21 +1,14 @@
-const path = require("path");
-
-const buildNextEslintCommand = (filenames) =>
-  `yarn next:lint --fix --file ${filenames
-    .map((f) => path.relative(path.join("packages", "nextjs"), f))
-    .join(" --file ")}`;
-
-const checkTypesNextCommand = () => "yarn next:check-types";
-
-const buildHardhatEslintCommand = (filenames) =>
-  `yarn hardhat:lint-staged --fix ${filenames
-    .map((f) => path.relative(path.join("packages", "hardhat"), f))
-    .join(" ")}`;
-
 module.exports = {
-  "packages/nextjs/**/*.{ts,tsx}": [
-    buildNextEslintCommand,
-    checkTypesNextCommand,
+  "packages/shared/**/*.{ts,tsx}": [
+    () => "yarn format:shared",
+    () => "yarn build:shared",
   ],
-  "packages/hardhat/**/*.{ts,tsx}": [buildHardhatEslintCommand],
+  "packages/backend/**/*.{ts,tsx}": [
+    () => "yarn format:backend",
+    () => "yarn build:backend",
+  ],
+  "packages/nextjs/**/*.{ts,tsx}": [
+    () => "yarn format:frontend",
+    () => "yarn build:frontend",
+  ],
 };

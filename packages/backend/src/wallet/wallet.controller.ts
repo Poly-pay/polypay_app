@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
 import { WalletService } from './wallet.service';
-import { CreateWalletDto } from '@polypay/shared';
+import { CreateWalletDto, UpdateWalletDto } from '@polypay/shared';
 
 @Controller('wallets')
 export class WalletController {
@@ -31,5 +31,17 @@ export class WalletController {
   @Get()
   async findAll() {
     return this.walletService.findAll();
+  }
+
+  /**
+   * Update wallet by address
+   * PATCH /api/wallets/:address
+   */
+  @Patch(':address')
+  async update(
+    @Param('address') address: string,
+    @Body() dto: UpdateWalletDto,
+  ) {
+    return this.walletService.update(address, dto);
   }
 }

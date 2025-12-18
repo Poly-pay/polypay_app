@@ -12,9 +12,10 @@ export const useInitializeApp = () => {
   useEffect(() => {
     const initialize = async () => {
       // No commitment = not logged in
-      if (!commitment) {
+      if (!commitment || !currentWallet) {
         setIsLoading(false);
         setIsInitialized(true);
+        router.push("/dashboard/new-wallet");
         return;
       }
 
@@ -30,11 +31,14 @@ export const useInitializeApp = () => {
           if (!isCurrentWalletValid) {
             // Set first wallet as current
             setCurrentWallet(wallets[0]);
+            // Redirect to dashboard
+            router.push("/dashboard");
           }
         } else {
           // No wallets, clear current
           if (currentWallet) {
             clearCurrentWallet();
+            router.push("/dashboard/new-wallet");
           }
         }
       } catch (err) {

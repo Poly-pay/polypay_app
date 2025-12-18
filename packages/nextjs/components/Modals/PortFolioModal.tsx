@@ -9,10 +9,27 @@ import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui
 import { ReceiveModal } from "./ReceiveModal";
 import { Eye, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
+import { NATIVE_ETH, SUPPORTED_TOKENS, Token } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
+import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 
 interface PortfolioModalProps {
   children: React.ReactNode;
+}
+
+function TokenBalanceRow({ token, balance, isLoading }: { token: Token; balance: string; isLoading: boolean }) {
+  return (
+    <span className="flex flex-row justify-between items-end mb-4">
+      <span className="flex flex-row">
+        <Image src={token.icon} alt={token.symbol} width={35} height={35} className="inline-block mr-2 mb-1" />
+        <span className="flex flex-col">
+          <span className="text-[#1B1B1B] font-semibold">{token.symbol}</span>
+          <span className="text/sub-600">Ethereum</span>
+        </span>
+      </span>
+      <span>{isLoading ? "..." : `${balance} ${token.symbol}`}</span>
+    </span>
+  );
 }
 
 export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
@@ -20,6 +37,8 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
 
   const router = useRouter();
   const [showBalance, setShowBalance] = React.useState(true);
+
+  const { balances, isLoading: isLoadingBalances } = useTokenBalances(metaMultiSigWallet?.address);
 
   const toggleShowBalance = () => {
     setShowBalance(!showBalance);
@@ -91,27 +110,14 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
           <div className="bg-white p-3 rounded-2xl h-full">
             <span className="text-[24px] text[#1B1B1B] font-semibold">My Assets</span>
             <div className="mt-3">
-              <span className="flex flex-row justify-between items-end mb-4">
-                <span className="flex flex-row ">
-                  <Image src="/token/usdc.svg" alt="USDC" width={35} height={35} className="inline-block mr-2 mb-1" />
-                  <span className="flex flex-col">
-                    <span className="text-[#1B1B1B] font-semibold">USDC</span>
-                    <span className="text/sub-600">Ethereum</span>
-                  </span>
-                </span>
-                <span>0.0 USDC</span>
-              </span>
-
-              <span className="flex flex-row justify-between items-end mb-4">
-                <span className="flex flex-row ">
-                  <Image src="/token/usdt.svg" alt="USDT" width={35} height={35} className="inline-block mr-2 mb-1" />
-                  <span className="flex flex-col">
-                    <span className="text-[#1B1B1B] font-semibold">USDT</span>
-                    <span className="text/sub-600">Ethereum</span>
-                  </span>
-                </span>
-                <span>0.0 USDT</span>
-              </span>
+              {SUPPORTED_TOKENS.filter(token => token.address !== NATIVE_ETH.address).map(token => (
+                <TokenBalanceRow
+                  key={token.address}
+                  token={token}
+                  balance={balances[token.address] || "0"}
+                  isLoading={isLoadingBalances}
+                />
+              ))}
             </div>
           </div>
         </div>
