@@ -25,7 +25,7 @@ export function encodeAddSigner(commitment: string, newThreshold: number): Hex {
  */
 export function encodeRemoveSigner(
   commitment: string,
-  newThreshold: number
+  newThreshold: number,
 ): Hex {
   return encodeFunctionData({
     abi: [
@@ -82,7 +82,7 @@ export function encodeERC20Transfer(to: string, amount: bigint): string {
  */
 export function encodeBatchTransfer(
   recipients: string[],
-  amounts: bigint[]
+  amounts: bigint[],
 ): Hex {
   return encodeFunctionData({
     abi: [
@@ -106,7 +106,7 @@ export function encodeBatchTransfer(
 export function encodeBatchTransferMulti(
   recipients: string[],
   amounts: bigint[],
-  tokenAddresses: string[]
+  tokenAddresses: string[],
 ): Hex {
   return encodeFunctionData({
     abi: [

@@ -19,6 +19,7 @@ export const NATIVE_ETH: Token = {
 export const SUPPORTED_TOKENS: Token[] = [
   NATIVE_ETH,
   {
+    // later switch to horizen testnet USDC: 0x01c7AEb2A0428b4159c0E333712f40e127aF639E
     address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // USDC Sepolia address
     symbol: "USDC",
     name: "USD Coin",
@@ -26,11 +27,12 @@ export const SUPPORTED_TOKENS: Token[] = [
     icon: "/token/usdc.svg",
   },
   {
-    address: "0x08210F9170F89Ab7658F0B5E3fF39b0E03C594D4", // EURC Sepolia address
-    symbol: "EURC",
-    name: "Euro Coin",
+    // later switch to horizen testnet USDT: 0x15d70535a71Dba52b572EbF746c7C2F5806ACd0e
+    address: "0x952897ed3f14576B51Ca4e5512809a88dBDB5Ca5", // USDT Sepolia address
+    symbol: "USDT",
+    name: "Tether USD",
     decimals: 6,
-    icon: "/token/eurc.svg",
+    icon: "/token/usdt.svg",
   },
 ];
 

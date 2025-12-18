@@ -19,7 +19,7 @@ export interface AddressGroup {
   id: string;
   walletId: string;
   name: string;
-  contacts: ContactGroup[]; 
+  contacts: ContactGroup[];
   createdAt: string;
   updatedAt: string;
 }

@@ -1,4 +1,4 @@
-import { X, AlertTriangle } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 import { useDeleteContact, useDeleteGroup } from "~~/hooks";
 
 interface DeleteConfirmModalProps {
@@ -13,13 +13,7 @@ interface DeleteConfirmModalProps {
   walletId: string;
 }
 
-export function DeleteConfirmModal({
-  isOpen,
-  onClose,
-  onSuccess,
-  target,
-  walletId,
-}: DeleteConfirmModalProps) {
+export function DeleteConfirmModal({ isOpen, onClose, onSuccess, target, walletId }: DeleteConfirmModalProps) {
   const deleteGroup = useDeleteGroup(walletId);
   const deleteContact = useDeleteContact(walletId);
 
@@ -71,16 +65,8 @@ export function DeleteConfirmModal({
           <button className="btn btn-ghost" onClick={onClose} disabled={isPending}>
             Cancel
           </button>
-          <button
-            className="btn btn-error"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            {isPending ? (
-              <span className="loading loading-spinner loading-sm" />
-            ) : (
-              "Delete"
-            )}
+          <button className="btn btn-error" onClick={handleDelete} disabled={isPending}>
+            {isPending ? <span className="loading loading-spinner loading-sm" /> : "Delete"}
           </button>
         </div>
       </div>

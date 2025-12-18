@@ -11,8 +11,8 @@ import { useMetaMultiSigWallet } from "~~/hooks";
 import { useBatchItems, useCreateTransaction, useDeleteBatchItem } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
-import { notification } from "~~/utils/scaffold-eth";
 import { formatAmount } from "~~/utils/format";
+import { notification } from "~~/utils/scaffold-eth";
 
 // ==================== Custom Checkbox ====================
 function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {

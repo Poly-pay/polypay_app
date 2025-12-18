@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { encodeERC20Transfer, TxType } from "@polypay/shared";
+import { TxType, encodeERC20Transfer } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
 import { ContactPicker } from "~~/components/address-book/ContactPicker";
