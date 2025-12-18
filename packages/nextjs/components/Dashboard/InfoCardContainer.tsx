@@ -6,6 +6,7 @@ import { EditAccountModal } from "../Modals/EditAccountModal";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
+import { useWalletStore } from "~~/services/store";
 
 interface InfoCardContainerProps {}
 
@@ -19,6 +20,8 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   const walletAddress = metaMultiSigWallet?.address || "";
 
   const { data: transactions } = usePendingTransactions(walletAddress);
+
+  const { currentWallet } = useWalletStore();
 
   useEffect(() => {
     const fetchCommitments = async () => {
@@ -43,7 +46,11 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             <span className="flex flex-row justify-between">
               <span className="text-white">Account</span>
               {!(walletClient?.account && commitments.length > 0) ? null : (
-                <EditAccountModal threshold={Number(signaturesRequired ?? "0")} signers={commitments}>
+                <EditAccountModal
+                  threshold={Number(signaturesRequired ?? "0")}
+                  signers={commitments}
+                  accountName={currentWallet?.name ?? "Default"}
+                >
                   <span className="cursor-pointer">
                     <Image
                       src="/misc/edit-icon.svg"
@@ -59,7 +66,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             <span className="flex flex-row gap-2 items-center">
               <Image src="/dashboard/circle-polypay-icon.svg" alt="Polypay Icon" width={30} height={30} />
               <Image src="/dashboard/polypay-text.svg" alt="Polypay text" width={130} height={130} />
-              <span className="text-black px-3 py-1 rounded-2xl bg-[#C2FFCA] ">Default</span>
+              <span className="text-black px-3 py-1 rounded-2xl bg-[#C2FFCA] ">{currentWallet?.name ?? "Default"}</span>
             </span>
           </div>
         </span>

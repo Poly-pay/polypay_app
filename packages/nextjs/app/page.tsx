@@ -6,7 +6,7 @@ import type { NextPage } from "next";
 
 const Home: NextPage = () => {
   useEffect(() => {
-    redirect("/dashboard/new-wallet");
+    redirect("/dashboard");
   }, []);
 
   return <></>;

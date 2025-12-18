@@ -2,6 +2,8 @@
 
 import React from "react";
 import Image from "next/image";
+import { copyToClipboard } from "~~/utils/copy";
+import { formatAddress } from "~~/utils/format";
 
 interface TransactionSummaryProps {
   transactions: {
@@ -26,7 +28,9 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
   loadingState = "",
 }) => {
   return (
-    <div className={`bg-white relative rounded-lg h-full overflow-hidden border border-primary ${className}`}>
+    <div
+      className={`bg-white relative rounded-lg h-full overflow-hidden border border-primary ${className} transition-all`}
+    >
       {/* Header Section */}
       <div className="flex flex-col gap-3 items-start justify-start p-3 w-full">
         {/* <img src="/misc/shopping-bag.svg" alt="Batch transactions" className="w-20 h-20" /> */}
@@ -63,10 +67,17 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
               {transaction.contactName ? (
                 <>
                   <span className="font-medium">{transaction.contactName}</span>
-                  <span className="text-gray-500 ml-1">({transaction.recipient})</span>
+                  <span
+                    className="text-gray-500 ml-1 cursor-pointer"
+                    onClick={() => copyToClipboard(transaction.recipient)}
+                  >
+                    ({formatAddress(transaction.recipient)})
+                  </span>
                 </>
               ) : (
-                transaction.recipient
+                <span className="cursor-pointer" onClick={() => copyToClipboard(transaction.recipient)}>
+                  {formatAddress(transaction.recipient)}
+                </span>
               )}
               ]
             </div>

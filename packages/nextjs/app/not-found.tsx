@@ -42,7 +42,7 @@ export default function NotFound() {
           <span
             className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[3]"
             onClick={() => {
-              router.push("/send");
+              router.push("/transfer");
             }}
           >
             Transfer

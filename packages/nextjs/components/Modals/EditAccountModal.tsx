@@ -6,24 +6,36 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Input } from "../ui/input";
 import { ConfirmDialog } from "./Confirm";
 import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
-import { Copy, Trash2, X } from "lucide-react";
-import { useMetaMultiSigWallet } from "~~/hooks";
+import { Copy, Repeat, Trash2, X } from "lucide-react";
+import { useMetaMultiSigWallet, useUpdateAccount, useUpdateWallet } from "~~/hooks";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
+import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface EditAccountModalProps {
   children: React.ReactNode;
   signers: string[]; // commitments
   threshold: number;
+  accountName?: string;
 }
 
-export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, signers = [], threshold = 0 }) => {
+export const EditAccountModal: React.FC<EditAccountModalProps> = ({
+  children,
+  signers = [],
+  threshold = 0,
+  accountName = "",
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [editThreshold, setEditThreshold] = useState(threshold);
   const [newSignerCommitment, setNewSignerCommitment] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
+  const [editName, setEditName] = useState(accountName || "");
+  const { commitment } = useIdentityStore();
+  const { mutateAsync: updateWallet, isPending: isUpdatingWallet } = useUpdateWallet();
+
+  const { currentWallet, setCurrentWallet } = useWalletStore();
 
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { generateProof } = useGenerateProof({
@@ -33,6 +45,34 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
 
   const newThresholdForAdd = editThreshold;
   const newThresholdForRemove = editThreshold;
+
+  const handleGenerateName = () => {
+    const randomName = `Wallet-${Math.random().toString(36).substring(2, 8)}`;
+    setEditName(randomName);
+  };
+
+  // ============ Update Account Name ============
+  const handleUpdateName = async () => {
+    if (!commitment || !editName.trim()) return;
+
+    if (editName === accountName) {
+      notification.warning("No changes to save");
+      return;
+    }
+
+    try {
+      const newWallet = await updateWallet({
+        address: currentWallet?.address || "",
+        dto: { name: editName.trim() },
+      });
+      setCurrentWallet(newWallet);
+      notification.success("Account name updated!");
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error("Failed to update account name:", error);
+      notification.error(error.message || "Failed to update account name");
+    }
+  };
 
   // ============ Add Signer ============
   const handleAddSigner = async () => {
@@ -225,11 +265,18 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
     notification.success("Copied to clipboard");
   };
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setEditThreshold(threshold);
+      setEditName(accountName || "");
+    }
+  }, [isOpen, threshold, accountName]);
+
   // ============ Render ============
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] p-0" showCloseButton={false}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] p-0 overflow-hidden" showCloseButton={false}>
         <DialogTitle hidden></DialogTitle>
         <div className="flex flex-col h-full bg-white rounded-lg">
           {/* Header */}
@@ -269,6 +316,50 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children, si
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6 pt-3 space-y-6">
+            {/* Account Name Section */}
+            <div className="mb-6">
+              <h3 className="font-semibold text-gray-900">ACCOUNT NAME</h3>
+              <p className="text-sm text-gray-500 mb-4">Give your account a name to easily identify it.</p>
+
+              <div className="flex gap-2 items-center">
+                <div className="relative flex-1">
+                  <Input
+                    type="text"
+                    value={editName}
+                    onChange={e => {
+                      if (e.target.value.length <= 30) {
+                        setEditName(e.target.value);
+                      }
+                    }}
+                    maxLength={30}
+                    placeholder="Your account name"
+                    className="w-full pr-16"
+                    disabled={loading || isUpdatingWallet}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                    {editName.length}/30
+                  </span>
+                </div>
+
+                <Button
+                  size="sm"
+                  onClick={handleGenerateName}
+                  className="h-10 w-10 p-0 bg-gray-200 hover:bg-gray-300 cursor-pointer"
+                  disabled={loading || isUpdatingWallet}
+                >
+                  <Repeat className="h-4 w-4 text-gray-600" />
+                </Button>
+              </div>
+
+              <Button
+                onClick={handleUpdateName}
+                className="w-full mt-3 bg-[#6D2EFF] hover:bg-[#5a25d9] cursor-pointer text-white"
+                disabled={loading || isUpdatingWallet || editName === accountName || !editName.trim()}
+              >
+                {isUpdatingWallet ? "Updating..." : "Update Name"}
+              </Button>
+            </div>
+
             {/* Wallet Signers Section */}
             <div>
               <h3 className="font-semibold text-gray-900">WALLET SIGNERS</h3>

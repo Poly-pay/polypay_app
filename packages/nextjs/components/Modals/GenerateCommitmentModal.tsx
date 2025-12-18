@@ -79,7 +79,7 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
               <img src={"/commitment/commitment-header-icon.svg"} width={36} height={36} />
               <span className="flex flex-col">
                 <span className="font-semibold text-gray-900 uppercase">New released</span>
-                <span className="text-gray-950 text-[14px]">Private your transaction by Commitment</span>
+                <span className="text-gray-950 text-[14px]">Make your experience private through Commitment</span>
               </span>
             </div>
             <DialogClose asChild>

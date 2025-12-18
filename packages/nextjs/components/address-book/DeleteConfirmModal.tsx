@@ -37,8 +37,8 @@ export function DeleteConfirmModal({ isOpen, onClose, onSuccess, target, walletI
   if (!isOpen || !target) return null;
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box">
+    <div className="modal modal-open ">
+      <div className="modal-box bg-white">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-bold text-lg">Confirm Delete</h3>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>

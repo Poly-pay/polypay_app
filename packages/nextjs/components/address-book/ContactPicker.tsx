@@ -95,7 +95,7 @@ export function ContactPicker({ walletId, onSelect, disabled }: ContactPickerPro
             <div className="flex gap-1 p-2 border-b border-gray-100 overflow-x-auto">
               <button
                 onClick={() => setSelectedGroupId(null)}
-                className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
+                className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors cursor-pointer ${
                   selectedGroupId === null ? "bg-primary text-white" : "bg-gray-100 hover:bg-gray-200"
                 }`}
               >
@@ -105,7 +105,7 @@ export function ContactPicker({ walletId, onSelect, disabled }: ContactPickerPro
                 <button
                   key={group.id}
                   onClick={() => setSelectedGroupId(group.id)}
-                  className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
+                  className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors cursor-pointer ${
                     selectedGroupId === group.id ? "bg-primary text-white" : "bg-gray-100 hover:bg-gray-200"
                   }`}
                 >
@@ -124,14 +124,14 @@ export function ContactPicker({ walletId, onSelect, disabled }: ContactPickerPro
                 <button
                   key={contact.id}
                   onClick={() => handleSelect(contact)}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left cursor-pointer"
                 >
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                     <span className="text-primary text-sm font-medium">{contact.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{contact.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{formatAddress(contact.address)}</p>
+                    <span className="block font-medium text-sm truncate">{contact.name}</span>
+                    <span className="block text-xs text-gray-400 truncate">{formatAddress(contact.address)}</span>
                   </div>
                 </button>
               ))

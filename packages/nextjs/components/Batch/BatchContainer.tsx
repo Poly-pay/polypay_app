@@ -4,14 +4,13 @@ import React, { useState } from "react";
 import Image from "next/image";
 import TransactionSummary from "./TransactionSummary";
 import { BatchItem, TxType, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
-import { formatEther } from "viem";
 import { useWalletClient } from "wagmi";
-import { NATIVE_ETH, formatTokenAmount, getTokenByAddress } from "~~/constants/token";
+import { NATIVE_ETH, getTokenByAddress } from "~~/constants/token";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useBatchItems, useCreateTransaction, useDeleteBatchItem } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
-import { formatAmount } from "~~/utils/format";
+import { formatAddress, formatAmount } from "~~/utils/format";
 import { notification } from "~~/utils/scaffold-eth";
 
 // ==================== Custom Checkbox ====================
@@ -57,13 +56,6 @@ function Header({ transactionCount }: { transactionCount: number }) {
   );
 }
 
-// ==================== Format Utils ====================
-function formatRecipient(address: string): string {
-  if (!address) return "";
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
 // ==================== Batch Transactions Component ====================
 function BatchTransactions({
   batchItems,
@@ -71,7 +63,6 @@ function BatchTransactions({
   activeItem,
   onSelectAll,
   onSelectItem,
-  onItemClick,
   onRemove,
   isLoading,
   isRemoving,
@@ -81,7 +72,6 @@ function BatchTransactions({
   activeItem: string | null;
   onSelectAll: () => void;
   onSelectItem: (id: string) => void;
-  onItemClick: (id: string) => void;
   onRemove: (id: string) => void;
   isLoading?: boolean;
   isRemoving?: boolean;
@@ -128,7 +118,9 @@ function BatchTransactions({
               className={`grid grid-cols-[auto_auto_1fr_auto_1fr_auto] gap-3 items-center p-3 w-full cursor-pointer rounded transition-colors ${
                 isActive ? "bg-[#066eff]" : "bg-[#f7f7f7] hover:bg-[#efefef]"
               }`}
-              onClick={() => onItemClick(item.id)}
+              onClick={() => {
+                onSelectItem(item.id);
+              }}
             >
               {/* Checkbox */}
               <div onClick={e => e.stopPropagation()}>
@@ -170,11 +162,11 @@ function BatchTransactions({
                   <>
                     <span className="font-medium">{item.contact.name}</span>
                     <span className={isActive ? "text-white/70 ml-1" : "text-gray-500 ml-1"}>
-                      ({formatRecipient(item.recipient)})
+                      ({formatAddress(item.recipient)})
                     </span>
                   </>
                 ) : (
-                  formatRecipient(item.recipient)
+                  formatAddress(item.recipient)
                 )}
                 ]
               </div>
@@ -202,7 +194,7 @@ export default function BatchContainer() {
   const { mutateAsync: deleteBatchItem, isPending: isRemoving } = useDeleteBatchItem();
   const { data: walletClient } = useWalletClient();
   const { secret, commitment: myCommitment } = useIdentityStore();
-  const { data: batchItems = [], isLoading } = useBatchItems(myCommitment);
+  const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useBatchItems(myCommitment);
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
   const { mutateAsync: createTransaction } = useCreateTransaction();
@@ -343,6 +335,8 @@ export default function BatchContainer() {
         notification.success("Batch transaction created! Waiting for approvals.");
         // Clear selection after successful proposal
         setSelectedItems(new Set());
+        // Refetch batch items to update UI
+        await refetchBatchItems();
       }
     } catch (error: any) {
       console.error("Propose batch error:", error);
@@ -378,7 +372,6 @@ export default function BatchContainer() {
           activeItem={activeItem}
           onSelectAll={handleSelectAll}
           onSelectItem={handleSelectItem}
-          onItemClick={handleItemClick}
           onRemove={handleRemove}
           isLoading={isLoading}
           isRemoving={isRemoving}
@@ -389,11 +382,11 @@ export default function BatchContainer() {
       {selectedItems.size > 0 && (
         <div className={`overflow-hidden ${isExiting ? "animate-slide-out" : "animate-slide-in"}`}>
           <TransactionSummary
-            className="w-[400px]"
+            className="w-[500px]"
             transactions={selectedBatchItems.map(item => ({
               id: item.id,
               amount: formatAmount(item.amount, item.tokenAddress),
-              recipient: formatRecipient(item.recipient),
+              recipient: item.recipient,
               contactName: item.contact?.name,
               tokenIcon: getTokenByAddress(item.tokenAddress).icon,
               tokenSymbol: getTokenByAddress(item.tokenAddress).symbol,

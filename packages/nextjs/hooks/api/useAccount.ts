@@ -1,4 +1,4 @@
-import { Account, CreateAccountDto } from "@polypay/shared";
+import { Account, CreateAccountDto, UpdateAccountDto } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_BASE_URL } from "~~/constants";
 
@@ -48,6 +48,21 @@ const getAccountWalletsAPI = async (commitment: string): Promise<AccountWallet[]
   return response.json();
 };
 
+const updateAccountAPI = async (commitment: string, dto: UpdateAccountDto): Promise<Account> => {
+  const response = await fetch(`${API_BASE_URL}/api/accounts/${commitment}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dto),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to update account");
+  }
+
+  return response.json();
+};
+
 // ============ Query Keys ============
 
 export const accountKeys = {
@@ -92,5 +107,21 @@ export const useAccountWallets = (commitment: string) => {
     queryKey: accountKeys.wallets(commitment),
     queryFn: () => getAccountWalletsAPI(commitment),
     enabled: !!commitment,
+  });
+};
+
+/**
+ * Update account
+ */
+export const useUpdateAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ commitment, dto }: { commitment: string; dto: UpdateAccountDto }) =>
+      updateAccountAPI(commitment, dto),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: accountKeys.byCommitment(variables.commitment) });
+      queryClient.invalidateQueries({ queryKey: accountKeys.wallets(variables.commitment) });
+    },
   });
 };

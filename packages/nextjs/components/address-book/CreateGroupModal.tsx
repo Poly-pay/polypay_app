@@ -109,7 +109,7 @@ export function CreateGroupModal({ isOpen, onClose, walletId, contacts }: Create
             </div>
             <h3 className="font-bold text-lg tracking-wide uppercase text-gray-800">New Group</h3>
           </div>
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors" onClick={handleClose}>
+          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer" onClick={handleClose}>
             <X size={20} className="text-gray-500" />
           </button>
         </div>
@@ -206,14 +206,14 @@ export function CreateGroupModal({ isOpen, onClose, walletId, contacts }: Create
           <div className="flex gap-3 p-5 border-t border-gray-100">
             <button
               type="button"
-              className="flex-1 px-6 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
+              className="flex-1 px-6 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors cursor-pointer"
               onClick={handleClose}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-[2] px-6 py-3 bg-[#FF7CEB] text-white font-medium rounded-xl hover:bg-[#f35ddd] transition-colors disabled:opacity-50"
+              className="flex-[2] px-6 py-3 bg-[#FF7CEB] text-white font-medium rounded-xl hover:bg-[#f35ddd] transition-colors disabled:opacity-50 cursor-pointer"
               disabled={createGroup.isPending}
             >
               {createGroup.isPending ? <span className="loading loading-spinner loading-sm" /> : "Create group"}

@@ -13,7 +13,7 @@ import { Address } from "viem";
 import { useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { useIdentityStore } from "~~/services/store";
+import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
 export const ACCOUNT_SIDEBAR_OFFSET = 285; // Main sidebar width
@@ -23,7 +23,7 @@ const SIDEBAR_LINKS = {
   DASHBOARD: "/dashboard",
   ADDRESS_BOOK: "/address-book",
   AI_ASSISTANT: "/ai-assistant",
-  SEND: "/send",
+  TRANSFER: "/transfer",
   SWAP: "/swap",
   TRANSACTIONS: "/transactions",
   BATCH: "/batch",
@@ -43,7 +43,7 @@ const sectionItems = [
     label: "Payments",
     description: "Move assets your way – fast, private.",
     menuItems: [
-      { icon: "/sidebar/send.svg", label: "transfer", link: SIDEBAR_LINKS.SEND },
+      { icon: "/sidebar/transfer.svg", label: "transfer", link: SIDEBAR_LINKS.TRANSFER },
       // { icon: "/sidebar/swap.svg", label: "swap", link: SIDEBAR_LINKS.SWAP },
       { icon: "/sidebar/batch.svg", label: "batch", link: SIDEBAR_LINKS.BATCH },
     ],
@@ -148,6 +148,7 @@ export default function Sidebar() {
   const { disconnect } = useDisconnect();
 
   const { commitment, clearIdentity } = useIdentityStore();
+  const { clearCurrentWallet } = useWalletStore();
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const router = useRouter();
@@ -285,6 +286,7 @@ export default function Sidebar() {
                       onClick={() => {
                         // Clear commitment and secret on disconnect
                         clearIdentity();
+                        clearCurrentWallet();
                         disconnect();
                       }}
                     />

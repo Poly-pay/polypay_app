@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { AccountService } from '@/account/account.service';
-import { CreateWalletDto } from '@polypay/shared';
+import { CreateWalletDto, UpdateWalletDto } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 
 @Injectable()
@@ -144,5 +144,27 @@ export class WalletService {
         isCreator: aw.isCreator,
       })),
     }));
+  }
+
+  /**
+   * Update wallet by address
+   */
+  async update(address: string, dto: UpdateWalletDto) {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: { address },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+
+    await this.prisma.wallet.update({
+      where: { address },
+      data: {
+        name: dto.name,
+      },
+    });
+
+    return this.findByAddress(address);
   }
 }
