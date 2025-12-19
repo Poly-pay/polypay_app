@@ -100,6 +100,9 @@ You have a tree structure where your commitment is one of the leaves (A, B, C, o
 | merkle_root | Field | Root of authorized signers tree |
 | nullifier | Field | Prevents double-signing |
 
+## More Detail
+- [Circuit Code Walkthrough](developer-documentation/circuit-code-walkthrough.md)
+
 ## Learn More
 
 - [Noir Language Documentation](https://noir-lang.org/docs)

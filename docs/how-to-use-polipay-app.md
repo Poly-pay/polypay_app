@@ -26,4 +26,20 @@ TODO: Add video demo
 
 ### Screenshots
 
-TODO: Add screenshots
+#### Dashboard
+
+Overview of your multisig wallet including balance, pending transactions, and signers list.
+
+![Dashboard](.gitbook/assets/dashboard.png)
+
+#### Create New Wallet
+
+Create a new multisig wallet by adding signer commitments and setting the threshold.
+
+![Create New Wallet](.gitbook/assets/new_wallet.png)
+
+#### Transfer
+
+Send funds to single or multiple recipients with ZK proof generation.
+
+![Transfer](.gitbook/assets/transfer.png)
