@@ -5,4 +5,6 @@
 * [Privacy Architecture](privacy-architecture.md)
 * [Zero-Knowledge Implementation](zero-knowledge-implementation.md)
 * [Architecture](architecture.md)
-* [Developer Documentation](developer-documentation.md)
+* [Developer Documentation](developer-documentation/README.md)
+  * [Getting Started](developer-documentation/getting-started.md)
+  * [Circuit Code Walkthrough](developer-documentation/circuit-code-walkthrough.md)
