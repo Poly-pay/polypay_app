@@ -1,4 +1,3 @@
-import { buildPoseidon } from "circomlibjs";
 import { type Hex, type WalletClient, hashMessage, keccak256, recoverPublicKey } from "viem";
 
 export const MERKLE_DEPTH = 4;
@@ -11,6 +10,18 @@ export interface MerkleTree {
   tree: bigint[][];
   root: bigint;
 }
+
+// ============ Lazy Poseidon ============
+let poseidonInstance: any = null;
+
+async function getPoseidon() {
+  if (!poseidonInstance) {
+    const { buildPoseidon } = await import("circomlibjs");
+    poseidonInstance = await buildPoseidon();
+  }
+  return poseidonInstance;
+}
+
 // ============ Helper Functions ============
 export function hexToByteArray(hex: string): number[] {
   const cleanHex = hex.startsWith("0x") ? hex.slice(2) : hex;
@@ -100,7 +111,7 @@ export async function computeMerkleRoot(leaf: bigint, leafIndex: bigint, merkleP
 }
 
 export async function poseidonHash2(a: bigint, b: bigint): Promise<bigint> {
-  const poseidon = await buildPoseidon();
+  const poseidon = await getPoseidon();
   const safeInputs = [a % BN254_MODULUS, b % BN254_MODULUS];
   const hash = poseidon(safeInputs);
   return BigInt(poseidon.F.toString(hash));
