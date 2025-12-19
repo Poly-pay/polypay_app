@@ -20,7 +20,7 @@ In PolyPay:
 
 ## The Four Proofs
 
-When you sign a transaction in PolyPay, the ZK circuit proves four things simultaneously. The circuit is written in [Noir](https://noir-lang.org), a domain-specific language for zero-knowledge proofs, and compiled to [UltraPlonk](https://docs.aztec.network/aztec/protocol/specifications/proving-system/ultraplonk) for efficient verification.
+When you sign a transaction in PolyPay, the ZK circuit proves four things simultaneously. The circuit is written in [Noir](https://noir-lang.org), a domain-specific language for zero-knowledge proofs, and compiled to [UltraPlonk](https://rknhr-uec.github.io/aztec-protocol-spec/protocol-specs/cryptography/proving-system/overview) for efficient verification.
 
 ### Proof 1: "I know the transaction"
 
