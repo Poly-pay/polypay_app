@@ -48,7 +48,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetTitle></SheetTitle>
-      <SheetContent side="right" className="w-[386px] h-[90%] p-0 border-l-0 top-[50px] right-[10px] rounded-lg">
+      <SheetContent side="right" className="w-[300px] h-[90%] p-0 border-l-0 top-[50px] right-[10px] rounded-lg">
         <div className="flex flex-col h-full bg-gray-200 p-1 rounded-lg">
           {/* Header with Balance Card */}
           <div className="relative bg-[url('/common/bg-main.png')] bg-no-repeat bg-cover rounded-2xl">

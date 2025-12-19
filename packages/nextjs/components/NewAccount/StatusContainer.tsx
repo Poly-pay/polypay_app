@@ -123,11 +123,12 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
               : "bg-gray-300 cursor-not-allowed"
           }`}
         >
-          {loading ? (
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent" />
-          ) : (
-            <span className="font-semibold text-[16px] text-white">Create your wallet</span>
-          )}
+          <span className="flex items-center gap-3 font-semibold text-[16px] text-white">
+            {loading ? "Creating your wallet..." : "Create your wallet"}
+            {loading && (
+              <div className="animate-spin h-6 w-6 rounded-full border-2 border-white border-t-transparent" />
+            )}
+          </span>
         </button>
       </div>
     </div>
