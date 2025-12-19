@@ -1,7 +1,5 @@
 import { useCallback } from "react";
 import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
-import { UltraPlonkBackend } from "@aztec/bb.js";
-import { Noir } from "@noir-lang/noir_js";
 import { type Hex } from "viem";
 import { useWalletClient } from "wagmi";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
@@ -82,7 +80,14 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       const noir_data = await circuit_json.json();
       const { bytecode, abi } = noir_data;
 
-      // 5. Execute Noir circuit
+      // 5. Dynamic import Noir libraries (only when needed)
+      setLoadingState("Loading ZK libraries...");
+      const [{ Noir }, { UltraPlonkBackend }] = await Promise.all([
+        import("@noir-lang/noir_js"),
+        import("@aztec/bb.js"),
+      ]);
+
+      // 6. Execute Noir circuit
       const input = {
         signature: sigBytes,
         pub_key_x: pubKeyX,
@@ -99,7 +104,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       const noir = new Noir({ bytecode, abi } as any);
       const execResult = await noir.execute(input);
 
-      // 6. Generate proof
+      // 7. Generate proof
       setLoadingState("Generating ZK proof...");
       const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
       const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
