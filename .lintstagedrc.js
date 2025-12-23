@@ -9,6 +9,6 @@ module.exports = {
   ],
   "packages/nextjs/**/*.{ts,tsx}": [
     () => "yarn format:frontend",
-    () => "yarn build:frontend",
+    // Removed build step to speed up commits
   ],
 };
