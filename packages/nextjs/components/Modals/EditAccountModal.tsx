@@ -284,7 +284,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
           <div className="flex flex-row items-center justify-between p-3 m-1 border-b bg-[#EDEDED] rounded-xl">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-gray-200 flex items-center justify-center">
-                <Image src={"/common/edit-wallet.svg"} alt="Edit wallet" />
+                <Image src={"/common/edit-wallet.svg"} alt="Edit wallet" width={24} height={24} />
               </div>
               <span className="flex flex-col">
                 <span className="text-lg font-semibold text-black">EDIT YOUR WALLET</span>

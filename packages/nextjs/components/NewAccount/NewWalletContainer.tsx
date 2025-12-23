@@ -101,7 +101,7 @@ export default function NewWalletContainer() {
   const EarthBackground = (
     <div className="w-full relative z-0">
       <div className="absolute -top-50 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
-        <Image src="/new-wallet/earth.svg" alt="Globe" className="w-full h-full" />
+        <Image src="/new-wallet/earth.svg" alt="Globe" className="w-full h-full" width={780} height={736} />
       </div>
       <div className="absolute top-10 left-0 right-0 h-[400px] w-full bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
     </div>

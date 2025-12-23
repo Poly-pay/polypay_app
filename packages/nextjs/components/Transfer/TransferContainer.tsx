@@ -200,10 +200,10 @@ export default function TransferContainer() {
     <div className="overflow-hidden relative w-full h-full flex flex-col rounded-lg">
       {/* Background images */}
       <div className="absolute -top-70 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
-        <Image src="/transfer/top-globe.svg" alt="Top globe" className="w-full h-full" />
+        <Image src="/transfer/top-globe.svg" alt="Top globe" className="w-full h-full" width={780} height={736} />
       </div>
       <div className="absolute -bottom-70 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
-        <Image src="/transfer/bottom-globe.svg" alt="Bottom globe" className="w-full h-full" />
+        <Image src="/transfer/bottom-globe.svg" alt="Bottom globe" className="w-full h-full" width={780} height={736} />
       </div>
 
       {/* Main content */}

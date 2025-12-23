@@ -34,7 +34,14 @@ export const DevelopingFeatureModal: React.FC<DevelopingFeatureModalProps> = ({ 
           <div className="flex flex-col items-center p-8 text-center space-y-3 bg-gray-100">
             {/* Illustration */}
             <div className="relative w-32 h-32">
-              <Image src="/common/develop-avatar.svg" alt="Development in progress" fill className="object-contain" />
+              <Image
+                src="/common/develop-avatar.svg"
+                alt="Development in progress"
+                fill
+                className="object-contain"
+                width={128}
+                height={128}
+              />
             </div>
 
             <div className="space-y-2">

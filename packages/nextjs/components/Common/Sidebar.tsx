@@ -101,6 +101,8 @@ const SectionItem = ({
               src={item.icon}
               alt={item.label}
               className="scale-125"
+              width={32}
+              height={32}
               style={{
                 filter:
                   selectedItem === item.link || hoveredItem === item.link || pathname === item.link
@@ -162,8 +164,14 @@ export default function Sidebar() {
         <div className="p-3">
           {/* Header */}
           <div className="flex flex-row items-center gap-3" onClick={() => router.push("/")}>
-            <Image src="/logo/polypay-icon.svg" alt="logo" className="w-8 h-8 cursor-pointer" />
-            <Image src="/logo/polypay-text.svg" alt="logo" className="scale-110 cursor-pointer" />
+            <Image src="/logo/polypay-icon.svg" alt="logo" className="w-8 h-8 cursor-pointer" width={32} height={32} />
+            <Image
+              src="/logo/polypay-text.svg"
+              alt="logo"
+              className="scale-110 cursor-pointer"
+              width={32}
+              height={32}
+            />
             <div className="flex flex-row items-center justify-center rounded-full px-3 py-1 bg-divider">
               <span className="text-sm font-normal text-[#B5009A] px-3 py-1 bg-[#FF7CEB33] rounded-full">Beta</span>
             </div>
