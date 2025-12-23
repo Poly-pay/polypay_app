@@ -4,18 +4,17 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { EditAccountModal } from "../Modals/EditAccountModal";
 import { useWalletClient } from "wagmi";
-import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks";
+import { useMetaMultiSigWallet } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
 import { useWalletStore } from "~~/services/store";
 
-interface InfoCardContainerProps {}
+type InfoCardContainerProps = unknown;
 
 const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   const { data: walletClient } = useWalletClient();
   const [commitments, setCommitments] = useState<string[]>([]);
 
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { data: signaturesRequired } = useWalletThreshold();
 
   const walletAddress = metaMultiSigWallet?.address || "";
 
@@ -46,11 +45,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             <span className="flex flex-row justify-between">
               <span className="text-white">Account</span>
               {!(walletClient?.account && commitments.length > 0) ? null : (
-                <EditAccountModal
-                  threshold={Number(signaturesRequired ?? "0")}
-                  signers={commitments}
-                  accountName={currentWallet?.name ?? "Default"}
-                >
+                <EditAccountModal>
                   <span className="cursor-pointer">
                     <Image
                       src="/misc/edit-icon.svg"
