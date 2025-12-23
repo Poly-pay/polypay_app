@@ -1,10 +1,8 @@
 "use client";
 
 import { Address, formatEther } from "viem";
-import { useDisplayUsdMode } from "~~/hooks/scaffold-eth/useDisplayUsdMode";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 import { useWatchBalance } from "~~/hooks/scaffold-eth/useWatchBalance";
-import { useGlobalState } from "~~/services/store/store";
 
 type BalanceProps = {
   address?: Address;
@@ -15,16 +13,10 @@ type BalanceProps = {
 /**
  * Display (ETH & USD) balance of an ETH address.
  */
-export const Balance = ({ address, className = "", usdMode }: BalanceProps) => {
+export const Balance = ({ address }: BalanceProps) => {
   const { targetNetwork } = useTargetNetwork();
-  const nativeCurrencyPrice = useGlobalState(state => state.nativeCurrency.price);
-  const isNativeCurrencyPriceFetching = useGlobalState(state => state.nativeCurrency.isFetching);
 
-  const {
-    data: balance,
-    isError,
-    isLoading,
-  } = useWatchBalance({
+  const { data: balance, isError } = useWatchBalance({
     address,
   });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { PortfolioModal } from "../Modals/PortFolioModal";
 
@@ -40,14 +41,14 @@ const Title: React.FC = () => {
       {/* Title */}
       <div className={`flex gap-1.5 items-center justify-start w-full bg-white rounded-[10px]`}>
         <div className="flex gap-[7px] items-center px-3 py-2 rounded-[10px] bg-background min-w-0 flex-1">
-          <img src="/dashboard/icon-dashboard.svg" alt="icon" className="w-8 h-8" />
+          <Image src="/dashboard/icon-dashboard.svg" alt="icon" className="w-8 h-8" width={32} height={32} />
           <div className="text-[17px] text-text-primary uppercase font-bold">{title}</div>
         </div>
       </div>
       {/* Portfolio */}
       <PortfolioModal>
         <div className="flex flex-row gap-2 w-[200px] justify-center items-center bg-white rounded-lg cursor-pointer">
-          <img src="/misc/coin-icon.gif" alt="portfolio" className="w-8 h-8" />
+          <Image src="/misc/coin-icon.gif" alt="portfolio" className="w-8 h-8" width={32} height={32} />
           <span className="text-text-primary font-bold">PORTFOLIO</span>
         </div>
       </PortfolioModal>

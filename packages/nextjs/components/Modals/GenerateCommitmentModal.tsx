@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
@@ -76,7 +76,7 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
           {/* Header */}
           <div className="flex items-center justify-between p-4 pb-2 border-b bg-gray-100">
             <div className="flex items-center gap-2">
-              <img src={"/commitment/commitment-header-icon.svg"} width={36} height={36} />
+              <Image src={"/commitment/commitment-header-icon.svg"} width={36} height={36} alt="icon" />
               <span className="flex flex-col">
                 <span className="font-semibold text-gray-900 uppercase">New released</span>
                 <span className="text-gray-950 text-[14px]">Make your experience private through Commitment</span>

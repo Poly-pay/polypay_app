@@ -52,7 +52,7 @@ export function DeleteConfirmModal({ isOpen, onClose, onSuccess, target, walletI
           </div>
           <p className="text-lg mb-2">
             Delete {target.type === "group" ? "group" : "contact"}{" "}
-            <span className="font-semibold">"{target.name}"</span>?
+            <span className="font-semibold">&quot;{target.name}&quot;</span>?
           </p>
           <p className="text-base-content/60 text-sm">
             {target.type === "group"

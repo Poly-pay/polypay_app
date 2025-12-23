@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { ConfirmDialog } from "./Confirm";
 import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
 import { Copy, Repeat, Trash2, X } from "lucide-react";
-import { useMetaMultiSigWallet, useUpdateAccount, useUpdateWallet } from "~~/hooks";
+import { useMetaMultiSigWallet, useUpdateWallet } from "~~/hooks";
 import { useCreateTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
@@ -283,7 +284,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
           <div className="flex flex-row items-center justify-between p-3 m-1 border-b bg-[#EDEDED] rounded-xl">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-gray-200 flex items-center justify-center">
-                <img src={"/common/edit-wallet.svg"} alt="Edit wallet" />
+                <Image src={"/common/edit-wallet.svg"} alt="Edit wallet" />
               </div>
               <span className="flex flex-col">
                 <span className="text-lg font-semibold text-black">EDIT YOUR WALLET</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { DevelopingFeatureModal } from "../Modals/DevelopingFeatureModal";
@@ -67,7 +67,6 @@ const SectionItem = ({
   menuItems,
   showDivider,
   selectedItem,
-  onItemClick,
 }: {
   walletAddress?: string;
   label: string;
@@ -98,7 +97,7 @@ const SectionItem = ({
       >
         <div className="flex flex-row items-center gap-3">
           <div className="w-8 h-8 flex items-center justify-center">
-            <img
+            <Image
               src={item.icon}
               alt={item.label}
               className="scale-125"
@@ -163,8 +162,8 @@ export default function Sidebar() {
         <div className="p-3">
           {/* Header */}
           <div className="flex flex-row items-center gap-3" onClick={() => router.push("/")}>
-            <img src="/logo/polypay-icon.svg" alt="logo" className="w-8 h-8 cursor-pointer" />
-            <img src="/logo/polypay-text.svg" alt="logo" className="scale-110 cursor-pointer" />
+            <Image src="/logo/polypay-icon.svg" alt="logo" className="w-8 h-8 cursor-pointer" />
+            <Image src="/logo/polypay-text.svg" alt="logo" className="scale-110 cursor-pointer" />
             <div className="flex flex-row items-center justify-center rounded-full px-3 py-1 bg-divider">
               <span className="text-sm font-normal text-[#B5009A] px-3 py-1 bg-[#FF7CEB33] rounded-full">Beta</span>
             </div>

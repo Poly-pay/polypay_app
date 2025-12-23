@@ -4,10 +4,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   devIndicators: false,
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   webpack: config => {
     config.resolve.fallback = { fs: false, net: false, tls: false };

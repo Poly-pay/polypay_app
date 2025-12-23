@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, ArrowRightLeft, Repeat } from "lucide-react";
+import { ArrowRight, Repeat } from "lucide-react";
 
 interface WalletNameProps {
   className?: string;

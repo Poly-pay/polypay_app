@@ -1,6 +1,7 @@
 "use client";
 
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
@@ -100,7 +101,7 @@ export default function NewWalletContainer() {
   const EarthBackground = (
     <div className="w-full relative z-0">
       <div className="absolute -top-50 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
-        <img src="/new-wallet/earth.svg" alt="Globe" className="w-full h-full" />
+        <Image src="/new-wallet/earth.svg" alt="Globe" className="w-full h-full" />
       </div>
       <div className="absolute top-10 left-0 right-0 h-[400px] w-full bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
     </div>

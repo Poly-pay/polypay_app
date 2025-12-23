@@ -8,7 +8,7 @@ import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
 import { useWalletStore } from "~~/services/store";
 
-interface InfoCardContainerProps {}
+type InfoCardContainerProps = unknown;
 
 const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   const { data: walletClient } = useWalletClient();

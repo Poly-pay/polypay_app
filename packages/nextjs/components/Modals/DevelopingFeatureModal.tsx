@@ -20,7 +20,7 @@ export const DevelopingFeatureModal: React.FC<DevelopingFeatureModalProps> = ({ 
           {/* Header */}
           <div className="flex items-center justify-between p-4 pb-2 border-b bg-gray-100">
             <div className="flex items-center gap-2">
-              <img src={"/common/develop-icon.svg"} width={36} height={36} />
+              <Image src={"/common/develop-icon.svg"} width={36} height={36} alt="icon" />
               <span className="font-semibold text-gray-900">DEVELOPING FEATURE</span>
             </div>
             <DialogClose asChild>
