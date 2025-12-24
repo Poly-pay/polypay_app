@@ -1,26 +1,24 @@
 use keccak256::keccak256;
 use poseidon::poseidon::bn254::hash_2;
-global DEPTH: u32 = 4; // Merkle tree depth, supports up to 16 signers (2^4)
 
 /// ZK Circuit for Private Multi-Signature
 ///
 /// This circuit proves that:
 /// 1. The prover knows a valid signature for tx_hash
-/// 2. The prover is a member of the authorized signers group (merkle tree)
+/// 2. The prover knows the secret for the given commitment
 /// 3. The prover has not signed this transaction before (nullifier)
 fn main(
     // ============ Private Inputs ============
-    signature: [u8; 64], // ECDSA signature (r, s) without recovery byte
-    pub_key_x: [u8; 32], // Public key X coordinate (recovered from signature)
-    pub_key_y: [u8; 32], // Public key Y coordinate (recovered from signature)
-    secret: Field, // Signer's secret (derived from signing "noir-identity" message)
-    leaf_index: Field, // Position of signer's commitment in merkle tree
-    merkle_path: [Field; DEPTH], // Sibling hashes for merkle proof
-    tx_hash_bytes: [u8; 32], // Transaction hash to be signed
+    signature: [u8; 64],
+    pub_key_x: [u8; 32],
+    pub_key_y: [u8; 32],
+    secret: Field,
+    tx_hash_bytes: [u8; 32],
+    
     // ============ Public Inputs ============
-    tx_hash_commitment: pub Field, // Poseidon hash of tx_hash (for public verification)
-    merkle_root: pub Field, // Root of authorized signers tree
-    nullifier: pub Field, // Unique identifier to prevent double-signing
+    tx_hash_commitment: pub Field,
+    commitment: pub Field,
+    nullifier: pub Field,
 ) {
     // ============ Step 1: Verify tx_hash commitment ============
     // Public inputs are limited to 32 fields by the verifier API.
@@ -54,12 +52,11 @@ fn main(
         std::ecdsa_secp256k1::verify_signature(pub_key_x, pub_key_y, signature, eth_signed_hash);
     assert(valid, "Invalid signature");
 
-    // ============ Step 3: Verify merkle membership ============
-    // Prove that the signer is an authorized member without revealing identity.
-    // commitment = hash(secret, secret), stored as leaf in merkle tree during registration.
-    let commitment = poseidon_hash2(secret, secret);
-    let computed_root = compute_merkle_root(commitment, leaf_index, merkle_path);
-    assert(computed_root == merkle_root, "Not a signer");
+    // ============ Step 3: Verify commitment ownership ============
+    // Proves: I know the secret for this commitment
+    // Contract will check: commitment in signers list?
+    let computed_commitment_from_secret = poseidon_hash2(secret, secret);
+    assert(computed_commitment_from_secret == commitment, "Invalid commitment");
 
     // ============ Step 4: Verify nullifier ============
     // Nullifier = hash(secret, tx_hash) ensures:
@@ -68,25 +65,6 @@ fn main(
     // Contract stores used nullifiers to reject duplicates.
     let computed_nullifier = poseidon_hash2(secret, tx_hash_field);
     assert(computed_nullifier == nullifier, "Invalid nullifier");
-}
-
-/// Compute merkle root from leaf and proof path
-/// Uses little-endian bit decomposition of index to determine left/right ordering
-fn compute_merkle_root<let N: u32>(leaf: Field, index: Field, hash_path: [Field; N]) -> Field {
-    let index_bits: [u1; N] = index.to_le_bits();
-    let mut current = leaf;
-    for i in 0..N {
-        // bit = 0: current is left child, sibling is right
-        // bit = 1: current is right child, sibling is left
-        let path_bit = index_bits[i] != 0;
-        let (hash_left, hash_right) = if path_bit {
-            (hash_path[i], current)
-        } else {
-            (current, hash_path[i])
-        };
-        current = poseidon_hash2(hash_left, hash_right);
-    }
-    current
 }
 
 fn poseidon_hash2(a: Field, b: Field) -> Field {

@@ -3,13 +3,14 @@ import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
 import { type Hex } from "viem";
 import { useWalletClient } from "wagmi";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
-import { buildMerkleTree, getMerklePath, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
+import { getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
 
 export interface GenerateProofResult {
   proof: number[];
   publicInputs: string[];
   nullifier: string;
   commitment: string;
+  vk?: any;
 }
 
 export interface UseGenerateProofOptions {
@@ -32,7 +33,6 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
 
   const generateProof = useCallback(
     async (txHash: Hex): Promise<GenerateProofResult> => {
-      // Validate dependencies
       if (!walletClient) {
         throw new Error("Wallet not connected");
       }
@@ -49,38 +49,33 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
         throw new Error("No commitment found. Please create identity first.");
       }
 
-      // 1. Sign txHash
+      // 1. Verify user is a signer (This is not a proof step, just a UX check. We will check on-chain again)
+      const commitments = await metaMultiSigWallet.read.getCommitments();
+      const isSigner = (commitments ?? []).some(c => BigInt(c) === BigInt(commitment));
+
+      if (!isSigner) {
+        throw new Error("You are not a signer of this wallet");
+      }
+
+      // 2. Sign txHash
       setLoadingState("Signing transaction...");
       const signature = await walletClient.signMessage({
         message: { raw: txHash },
       });
       const { pubKeyX, pubKeyY } = await getPublicKeyXY(signature, txHash);
 
-      // 2. Calculate values
+      // 3. Calculate values
       const txHashBytes = hexToByteArray(txHash);
       const sigBytes = hexToByteArray(signature).slice(0, 64);
       const txHashCommitment = await poseidonHash2(BigInt(txHash), 1n);
       const nullifier = await poseidonHash2(BigInt(secret), BigInt(txHash));
-
-      // 3. Get merkle data
-      const commitments = await metaMultiSigWallet.read.getCommitments();
-      const tree = await buildMerkleTree(commitments ?? []);
-      const merkleRoot = await metaMultiSigWallet.read.merkleRoot();
-
-      const leafIndex = (commitments ?? []).findIndex(c => BigInt(c) === BigInt(commitment));
-
-      if (leafIndex === -1) {
-        throw new Error("You are not a signer of this wallet");
-      }
-
-      const merklePath = getMerklePath(tree, leafIndex);
 
       // 4. Load circuit
       const circuit_json = await fetch("/circuit/target/circuit.json");
       const noir_data = await circuit_json.json();
       const { bytecode, abi } = noir_data;
 
-      // 5. Dynamic import Noir libraries (only when needed)
+      // 5. Dynamic import Noir libraries
       setLoadingState("Loading ZK libraries...");
       const [{ Noir }, { UltraPlonkBackend }] = await Promise.all([
         import("@noir-lang/noir_js"),
@@ -93,11 +88,9 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
         pub_key_x: pubKeyX,
         pub_key_y: pubKeyY,
         secret: secret,
-        leaf_index: leafIndex,
-        merkle_path: merklePath.map(p => p.toString()),
         tx_hash_bytes: txHashBytes,
         tx_hash_commitment: txHashCommitment.toString(),
-        merkle_root: merkleRoot?.toString() ?? "",
+        commitment: commitment,
         nullifier: nullifier.toString(),
       };
 
@@ -108,6 +101,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       setLoadingState("Generating ZK proof...");
       const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
       const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
+      // const vk = await plonk.getVerificationKey();
 
       setLoadingState("");
 
@@ -116,6 +110,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
         publicInputs,
         nullifier: nullifier.toString(),
         commitment,
+        // vk
       };
     },
     [walletClient, metaMultiSigWallet, secret, commitment, setLoadingState],

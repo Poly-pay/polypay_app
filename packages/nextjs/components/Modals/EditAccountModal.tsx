@@ -8,7 +8,7 @@ import { ConfirmDialog } from "./Confirm";
 import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
 import { Copy, Repeat, Trash2, X } from "lucide-react";
 import { useMetaMultiSigWallet, useUpdateAccount, useUpdateWallet } from "~~/hooks";
-import { useCreateTransaction } from "~~/hooks/api/useTransaction";
+import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
@@ -41,6 +41,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setLoadingState,
   });
+  const { mutateAsync: reserveNonce } = useReserveNonce();
   const { mutateAsync: createTransaction } = useCreateTransaction();
 
   const newThresholdForAdd = editThreshold;
@@ -86,28 +87,30 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
 
     setLoading(true);
     try {
-      // 1. Get current nonce and calculate txHash
-      const currentNonce = await metaMultiSigWallet.read.nonce();
+      // 1. Reserve nonce from backend
+      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
+
+      // 2. Get current threshold
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
-      // Build callData for addSigner
+      // 3. Build callData for addSigner
       const callData = encodeAddSigner(newSignerCommitment, newThresholdForAdd);
 
-      // 2. Get txHash from contract
+      // 4. Get txHash from contract
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        currentNonce,
+        BigInt(nonce),
         metaMultiSigWallet.address,
         0n,
         callData,
       ])) as `0x${string}`;
 
-      // 3. Generate proof
+      // 5. Generate proof
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // 4. Submit to backend
+      // 6. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce: Number(currentNonce),
+        nonce,
         type: TxType.ADD_SIGNER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -131,7 +134,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       setLoadingState("");
     }
   };
-
   // ============ Remove Signer ============
   const handleRemoveSigner = async (signerCommitment: string) => {
     if (!metaMultiSigWallet) return;
@@ -154,28 +156,30 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
 
     setLoading(true);
     try {
-      // 1. Get current nonce
-      const currentNonce = await metaMultiSigWallet.read.nonce();
+      // 1. Reserve nonce from backend
+      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
+
+      // 2. Get current threshold
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
-      // Build callData for removeSigner
+      // 3. Build callData for removeSigner
       const callData = encodeRemoveSigner(signerCommitment, newThreshold);
 
-      // 2. Get txHash
+      // 4. Get txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        currentNonce,
+        BigInt(nonce),
         metaMultiSigWallet.address,
         0n,
         callData,
       ])) as `0x${string}`;
 
-      // 3. Generate proof
+      // 5. Generate proof
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // 4. Submit to backend
+      // 6. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce: Number(currentNonce),
+        nonce,
         type: TxType.REMOVE_SIGNER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -215,28 +219,30 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
 
     setLoading(true);
     try {
-      // 1. Get current nonce
-      const currentNonce = await metaMultiSigWallet.read.nonce();
+      // 1. Reserve nonce from backend
+      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
+
+      // 2. Get current threshold
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
-      // Build callData for updateSignaturesRequired
+      // 3. Build callData for updateSignaturesRequired
       const callData = encodeUpdateThreshold(editThreshold);
 
-      // 2. Get txHash
+      // 4. Get txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        currentNonce,
+        BigInt(nonce),
         metaMultiSigWallet.address,
         0n,
         callData,
       ])) as `0x${string}`;
 
-      // 3. Generate proof
+      // 5. Generate proof
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // 4. Submit to backend
+      // 6. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce: Number(currentNonce),
+        nonce,
         type: TxType.SET_THRESHOLD,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),

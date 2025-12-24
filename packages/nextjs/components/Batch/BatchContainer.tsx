@@ -7,7 +7,7 @@ import { BatchItem, TxType, encodeBatchTransfer, encodeBatchTransferMulti } from
 import { useWalletClient } from "wagmi";
 import { NATIVE_ETH, getTokenByAddress } from "~~/constants/token";
 import { useMetaMultiSigWallet } from "~~/hooks";
-import { useBatchItems, useCreateTransaction, useDeleteBatchItem } from "~~/hooks/api";
+import { useBatchItems, useCreateTransaction, useDeleteBatchItem, useReserveNonce } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
@@ -198,6 +198,7 @@ export default function BatchContainer() {
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
   const { mutateAsync: createTransaction } = useCreateTransaction();
+  const { mutateAsync: reserveNonce } = useReserveNonce();
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
@@ -283,9 +284,11 @@ export default function BatchContainer() {
       const selectedBatchItems = batchItems.filter(item => selectedItems.has(item.id));
       const selectedIds = selectedBatchItems.map(item => item.id);
 
-      // Get current nonce and threshold
+      // 1. Reserve nonce from backend
+      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
+
+      // 2. Get current threshold and commitments
       setLoadingState("Preparing batch transaction...");
-      const currentNonce = await metaMultiSigWallet.read.nonce();
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
       const commitments = await metaMultiSigWallet.read.getCommitments();
 
@@ -302,20 +305,21 @@ export default function BatchContainer() {
         ? encodeBatchTransferMulti(recipients, amounts, tokenAddresses)
         : encodeBatchTransfer(recipients, amounts);
 
-      // 4. Calculate txHash (to = wallet itself, value = totalValue, data = batchTransfer call)
+      // 3. Calculate txHash (to = wallet itself, value = totalValue, data = batchTransfer call)
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        currentNonce,
+        BigInt(nonce),
         metaMultiSigWallet.address, // to = self
         0n, // value = 0 for batch, actual value is sum of amounts in data
         batchTransferData,
       ])) as `0x${string}`;
 
+      // 4. Generate proof
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // Submit to backend
+      // 5. Submit to backend
       setLoadingState("Submitting to backend...");
       const result = await createTransaction({
-        nonce: Number(currentNonce),
+        nonce,
         type: TxType.BATCH,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
