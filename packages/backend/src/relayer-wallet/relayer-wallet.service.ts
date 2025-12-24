@@ -93,10 +93,12 @@ export class RelayerService {
    */
   async executeTransaction(
     walletAddress: string,
+    nonce: number,
     to: string,
     value: string,
     data: string,
     zkProofs: {
+      commitment: string;
       nullifier: string;
       aggregationId: string;
       domainId: number;
@@ -260,6 +262,7 @@ export class RelayerService {
 
     // 2. Format proofs for contract
     const formattedProofs = zkProofs.map((proof) => ({
+      commitment: BigInt(proof.commitment),
       nullifier: BigInt(proof.nullifier),
       aggregationId: BigInt(proof.aggregationId),
       domainId: BigInt(proof.domainId),
@@ -269,6 +272,7 @@ export class RelayerService {
     }));
 
     const args = [
+      BigInt(nonce),
       to as `0x${string}`,
       BigInt(value),
       data as `0x${string}`,

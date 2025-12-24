@@ -57,7 +57,7 @@ model Transaction {
   txId   Int      @unique @default(autoincrement())
   type   TxType
   status TxStatus @default(PENDING)
-  nonce  Int
+  nonce  Int // unique per wallet
 
   // Transfer (ETH only)
   to           String?
@@ -94,9 +94,20 @@ model Transaction {
 
   votes Vote[]
 
+  @@unique([walletAddress, nonce])
   @@index([status])
   @@index([walletAddress])
   @@index([contactId])
+}
+
+model ReservedNonce {
+  id            String   @id @default(cuid())
+  walletAddress String
+  nonce         Int
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@unique([walletAddress, nonce])
 }
 
 model Vote {
@@ -197,9 +208,9 @@ enum TxType {
 
 enum TxStatus {
   PENDING
-  EXECUTING
+  EXECUTING // DEPRECATED: No longer needed. Check realtime on frontend instead
   EXECUTED
-  OUTDATED
+  OUTDATED // DEPRECATED: No longer needed with txId as nonce. Kept for backward compatibility.
   FAILED
 }
 

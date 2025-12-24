@@ -28,6 +28,7 @@ contract MetaMultiSigWallet {
 
     // ============ Structs ============
     struct ZkProof {
+        uint256 commitment;
         uint256 nullifier;
         uint256 aggregationId;
         uint256 domainId;
@@ -40,12 +41,13 @@ contract MetaMultiSigWallet {
     address public immutable zkvContract;
     bytes32 public immutable vkHash;
     uint256 public chainId;
-    uint256 public nonce;
     uint256 public signaturesRequired;
 
     // Signer management
     uint256[] public commitments;
-    uint256 public merkleRoot;
+
+    // Nonce tracking (prevent replay)
+    mapping(uint256 => bool) public usedNonces;
 
     // Nullifier tracking (prevent double-signing)
     mapping(uint256 => bool) public usedNullifiers;
@@ -73,8 +75,6 @@ contract MetaMultiSigWallet {
             commitments.push(_initialCommitments[i]);
             emit Owner(_initialCommitments[i], true);
         }
-
-        _rebuildMerkleRoot();
     }
 
     // ============ Modifiers ============
@@ -84,46 +84,31 @@ contract MetaMultiSigWallet {
     }
 
     // ============ Main Execute Function ============
-
-    /**
-     * @notice Execute transaction with ZK proofs
-     * @param to Target address
-     * @param value ETH value
-     * @param data Call data
-     * @param proofs Array of ZK proofs (must have >= signaturesRequired)
-     */
     function execute(
+        uint256 _nonce,
         address to,
         uint256 value,
         bytes calldata data,
         ZkProof[] calldata proofs
     ) external returns (bytes memory) {
+        require(!usedNonces[_nonce], "Nonce already used");
         require(proofs.length >= signaturesRequired, "Not enough proofs");
 
-        // Calculate tx hash
-        uint256 currentNonce = nonce;
-        bytes32 txHash = keccak256(abi.encodePacked(address(this), chainId, currentNonce, to, value, data));
+        bytes32 txHash = keccak256(abi.encodePacked(address(this), chainId, _nonce, to, value, data));
 
-        // Verify all proofs
         for (uint256 i = 0; i < proofs.length; i++) {
-            // Check nullifier not used
             require(!usedNullifiers[proofs[i].nullifier], "Nullifier already used");
-
-            // Verify proof
+            require(_isCurrentSigner(proofs[i].commitment), "Not a current signer");
             require(_verifyProof(txHash, proofs[i]), "Invalid proof");
-
-            // Mark nullifier as used
             usedNullifiers[proofs[i].nullifier] = true;
         }
 
-        // Increment nonce
-        nonce++;
+        usedNonces[_nonce] = true;
 
-        // Execute transaction
         (bool success, bytes memory result) = to.call{ value: value }(data);
         require(success, "Tx failed");
 
-        emit TransactionExecuted(currentNonce, to, value, data, result);
+        emit TransactionExecuted(_nonce, to, value, data, result);
         return result;
     }
 
@@ -140,7 +125,6 @@ contract MetaMultiSigWallet {
 
         commitments.push(newCommitment);
         signaturesRequired = newSigRequired;
-        _rebuildMerkleRoot();
 
         emit Owner(newCommitment, true);
     }
@@ -162,7 +146,6 @@ contract MetaMultiSigWallet {
         require(found, "Commitment not found");
 
         signaturesRequired = newSigRequired;
-        _rebuildMerkleRoot();
 
         emit Owner(commitment, false);
     }
@@ -241,16 +224,13 @@ contract MetaMultiSigWallet {
 
     // ============ Internal Functions ============
     function _verifyProof(bytes32 txHash, ZkProof calldata proof) internal view returns (bool) {
-        // Compute txHashCommitment = poseidon(txHash)
         uint256 txHashCommitment = poseidonHash2(uint256(txHash), 1);
 
-        // Encode public inputs (must match circuit order)
-        bytes memory encodedInputs = abi.encodePacked(txHashCommitment, merkleRoot, proof.nullifier);
+        // Public inputs order: tx_hash_commitment, commitment, nullifier
+        bytes memory encodedInputs = abi.encodePacked(txHashCommitment, proof.commitment, proof.nullifier);
 
-        // Calculate leaf for zkVerify
         bytes32 leaf = keccak256(abi.encodePacked(PROVING_SYSTEM_ID, vkHash, VERSION_HASH, keccak256(encodedInputs)));
 
-        // Verify with zkVerify
         return
             IVerifyProofAggregation(zkvContract).verifyProofAggregation(
                 proof.domainId,
@@ -262,26 +242,13 @@ contract MetaMultiSigWallet {
             );
     }
 
-    function _rebuildMerkleRoot() internal {
-        uint256[] memory leaves = new uint256[](MAX_SIGNERS);
-
+    function _isCurrentSigner(uint256 commitment) internal view returns (bool) {
         for (uint256 i = 0; i < commitments.length; i++) {
-            leaves[i] = commitments[i];
-        }
-
-        for (uint256 i = commitments.length; i < MAX_SIGNERS; i++) {
-            leaves[i] = 1;
-        }
-
-        uint256 n = MAX_SIGNERS;
-        while (n > 1) {
-            for (uint256 i = 0; i < n / 2; i++) {
-                leaves[i] = poseidonHash2(leaves[2 * i], leaves[2 * i + 1]);
+            if (commitments[i] == commitment) {
+                return true;
             }
-            n = n / 2;
         }
-
-        merkleRoot = leaves[0];
+        return false;
     }
 
     // ============ Receive ETH ============
