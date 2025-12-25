@@ -1,1 +1,1 @@
-export * from './horizenTestnet';
+export * from "./horizenTestnet";

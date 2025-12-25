@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useChainId, useSwitchChain } from "wagmi";
 import { horizenTestnet } from "@polypay/shared";
+import { useChainId, useSwitchChain } from "wagmi";
 
 export const useEnforceNetwork = () => {
   const chainId = useChainId();
