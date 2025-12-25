@@ -4,13 +4,13 @@ This page provides a detailed explanation of the [Noir](https://noir-lang.org) c
 
 ## Overview
 
-The circuit file is located at `packages/nextjs/public/circuit/src/main.nr`. It proves four things in a single proof: transaction hash commitment is correct, ECDSA signature is valid, prover is a member of authorized signers, and nullifier prevents double-signing.
+The circuit file is located at `packages/nextjs/public/circuit/src/main.nr`. It proves four things in a single proof: transaction hash commitment is correct, ECDSA signature is valid, prover knows the secret for their commitment, and nullifier prevents double-signing.
 
 ## Circuit Structure
 
-### Constants and Imports
+### Imports
 
-The circuit uses `keccak256` for Ethereum-compatible message hashing, `poseidon` as a ZK-friendly hash function for commitments and nullifiers, and sets `DEPTH = 4` meaning the Merkle tree supports 2^4 = 16 signers maximum.
+The circuit uses `keccak256` for Ethereum-compatible message hashing and `poseidon` as a ZK-friendly hash function for commitments and nullifiers.
 
 ## Main Function Inputs
 
@@ -24,8 +24,6 @@ These inputs are hidden from everyone - only the prover knows them:
 | pub_key_x | [u8; 32] | Public key X coordinate |
 | pub_key_y | [u8; 32] | Public key Y coordinate |
 | secret | Field | Signer's secret |
-| leaf_index | Field | Position in Merkle tree |
-| merkle_path | [Field; DEPTH] | Sibling hashes for proof |
 | tx_hash_bytes | [u8; 32] | Transaction hash to sign |
 
 ### Public Inputs
@@ -35,7 +33,7 @@ These inputs are visible on-chain and used for verification:
 | Input | Type | Description |
 |-------|------|-------------|
 | tx_hash_commitment | Field | Poseidon hash of tx_hash |
-| merkle_root | Field | Root of authorized signers tree |
+| commitment | Field | hash(secret, secret) - checked against signers list |
 | nullifier | Field | Unique identifier to prevent double-signing |
 
 ## Step-by-Step Explanation
@@ -52,11 +50,11 @@ The circuit reconstructs Ethereum's `personal_sign` prefix `"\x19Ethereum Signed
 
 **Why prefix?** Ethereum wallets always add this prefix when signing. We must match the exact message that was signed.
 
-### Step 3: Verify Merkle Membership
+### Step 3: Verify Commitment Ownership
 
-The circuit computes commitment from secret using `commitment = hash(secret, secret)`, uses `leaf_index` and `merkle_path` to compute [Merkle](https://en.wikipedia.org/wiki/Merkle_tree) root, then compares with public `merkle_root`.
+The circuit computes commitment from secret using `commitment = hash(secret, secret)`, then compares with public `commitment`.
 
-**Privacy:** The circuit proves "I know a secret whose commitment is in the tree" without revealing which leaf.
+**How authorization works:** The circuit proves "I know the secret for this commitment". Then the smart contract checks "Is this commitment in the signers list?" This two-step verification ensures only authorized signers can sign transactions.
 
 ### Step 4: Verify Nullifier
 
@@ -65,10 +63,6 @@ The circuit computes nullifier using `nullifier = hash(secret, tx_hash)` and com
 **Why?** Same signer + same tx = same nullifier → Contract rejects (already used). Different signer OR different tx = different nullifier → Contract accepts.
 
 ## Helper Functions
-
-### compute_merkle_root
-
-This function converts `leaf_index` to bits (little-endian), then for each level, the bit determines left/right position: bit = 0 means current is left child, bit = 1 means current is right child. It hashes with sibling from `merkle_path` and repeats until reaching root.
 
 ### bytes_to_field
 
@@ -83,7 +77,7 @@ Wrapper for [Poseidon](https://www.poseidon-hash.info) hash with 2 inputs.
 | Attack | Prevention |
 |--------|------------|
 | Fake signature | ECDSA verification in circuit |
-| Non-member signing | Merkle membership proof |
+| Non-member signing | Commitment checked against signers list on-chain |
 | Double signing | Nullifier stored on-chain |
 | Transaction tampering | tx_hash_commitment verification |
 | Replay attack | Nonce included in tx_hash |
@@ -91,7 +85,6 @@ Wrapper for [Poseidon](https://www.poseidon-hash.info) hash with 2 inputs.
 ## Compile and Test
 
 Navigate to noir package with `cd packages/nextjs/public/circuit/src`, compile circuit with `nargo compile`, run tests with `nargo test`.
-
 
 ## Learn More
 

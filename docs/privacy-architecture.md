@@ -5,30 +5,32 @@
 | Aspect          | Traditional Multisig             | PolyPay                   |
 | --------------- | -------------------------------- | ------------------------- |
 | Signer Identity | Public addresses stored on-chain | Hidden behind commitments |
-| Who Signed      | Visible to everyone              | Only the signer knows     |
+| Who Signed      | Visible to everyone              | Commitment visible, EOA hidden |
 
 ### Commitment-Based Identity
 
 Instead of storing addresses, PolyPay stores **commitments** (hash(secret, secret)):
 
 * The **secret** is derived from signing a message with your wallet
-* The **commitment** is stored on-chain (in a Merkle tree)
+* The **commitment** is stored on-chain in a signers list
 * Only you know the secret that matches your commitment
 
 ### How It Works
 
 1. **Setup**: Each signer generates a secret and computes their commitment
-2. **Registration**: Commitments are added to the smart contract's Merkle tree
-3. **Signing**: To approve a transaction, signers prove they know a secret that matches one of the commitments - without revealing which one
+2. **Registration**: Commitments are added to the smart contract's signers list
+3. **Signing**: To approve a transaction, signers prove they know the secret for their commitment using ZK proofs
+4. **Verification**: The smart contract checks if the commitment exists in the signers list
 
-### Anonymity Set
+### Privacy Model
 
-All signers share the same anonymity set. When you sign a transaction:
+When you sign a transaction:
 
-* The contract knows "one of the N signers approved"
-* Nobody knows "which specific signer approved"
+* The ZK proof verifies you know the secret for your commitment
+* The contract checks your commitment is in the authorized signers list
+* Your Ethereum address (EOA) is never revealed on-chain
 
-This is achieved through ZK proofs and Merkle tree membership proofs.
+This means observers can see which commitment signed, but cannot link it back to your wallet address.
 
 ### Relayer Privacy
 
@@ -43,4 +45,4 @@ PolyPay's backend uses a dedicated relayer wallet to deploy wallets and execute 
 | Deploy wallet       | Creator address exposed  | Only relayer visible |
 | Execute transaction | Executor address exposed | Only relayer visible |
 
-This creates **complete anonymity**: no signer address ever appears on-chain.
+This creates **complete EOA anonymity**: no signer's Ethereum address ever appears on-chain.
