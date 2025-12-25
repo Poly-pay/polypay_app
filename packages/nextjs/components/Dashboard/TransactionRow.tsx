@@ -12,6 +12,7 @@ import {
   encodeERC20Transfer,
   encodeRemoveSigner,
   encodeUpdateThreshold,
+  horizenTestnet,
 } from "@polypay/shared";
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useWalletClient } from "wagmi";
@@ -106,10 +107,8 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   // Map API status to UI status
   const statusMap: Record<ApiTxStatus, TxStatus> = {
     PENDING: "pending",
-    EXECUTING: "pending", // TODO: remove later
     EXECUTED: "executed",
     FAILED: "failed",
-    OUTDATED: "failed", // TODO: remove later
   };
 
   // Build members from votes
@@ -202,7 +201,7 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
   if (status === "executed") {
     return (
       <a
-        href={txHash ? `https://sepolia.etherscan.io/tx/${txHash}` : "#"}
+        href={txHash ? `${horizenTestnet.blockExplorers.default.url}/tx/${txHash}` : "#"}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full hover:bg-green-200 transition-colors"

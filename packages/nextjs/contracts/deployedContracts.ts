@@ -725,7 +725,7 @@ const deployedContracts = {
   },
   2651420: {
     MetaMultiSigWallet: {
-      address: "0x0b68dd63118E521a2aDEa40f362cAd4E2B46C5a1",
+      address: "0xa9c95A08850d294017902160d3047149A03984fC",
       abi: [
         {
           inputs: [
@@ -928,6 +928,29 @@ const deployedContracts = {
           type: "function",
         },
         {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "recipients",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "amounts",
+              type: "uint256[]",
+            },
+            {
+              internalType: "address[]",
+              name: "tokenAddresses",
+              type: "address[]",
+            },
+          ],
+          name: "batchTransferMulti",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
           inputs: [],
           name: "chainId",
           outputs: [
@@ -962,6 +985,11 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "uint256",
+              name: "_nonce",
+              type: "uint256",
+            },
+            {
               internalType: "address",
               name: "to",
               type: "address",
@@ -978,6 +1006,11 @@ const deployedContracts = {
             },
             {
               components: [
+                {
+                  internalType: "uint256",
+                  name: "commitment",
+                  type: "uint256",
+                },
                 {
                   internalType: "uint256",
                   name: "nullifier",
@@ -1086,32 +1119,6 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [],
-          name: "merkleRoot",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "nonce",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [
             {
               internalType: "uint256",
@@ -1187,6 +1194,25 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
+          name: "usedNonces",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
           name: "usedNullifiers",
           outputs: [
             {
@@ -1230,7 +1256,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 4248475,
+      deployedOnBlock: 5059301,
     },
   },
   11155111: {
