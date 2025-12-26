@@ -40,4 +40,13 @@ export class AccountController {
   ) {
     return this.accountService.update(commitment, dto);
   }
+
+  /**
+   * Get all accounts
+   * GET /api/accounts
+   */
+  @Get()
+  async findAll() {
+    return this.accountService.findAll();
+  }
 }
