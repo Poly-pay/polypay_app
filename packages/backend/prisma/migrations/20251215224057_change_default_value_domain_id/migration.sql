@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Vote" ALTER COLUMN "domainId" SET DEFAULT 175;

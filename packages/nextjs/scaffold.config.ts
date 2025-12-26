@@ -1,4 +1,30 @@
+import { defineChain } from "viem";
 import * as chains from "viem/chains";
+
+// We duplicate the horizenTestnet chain definition here to avoid error because mismatch versions of viem between packages/shared and packages/nextjs
+// It use the same version of viem but the hash return is different so TS thinks they are different versions
+// Can turn back to find root cause and remove this duplication
+const horizenTestnet = defineChain({
+  id: 2651420,
+  name: "Horizen Testnet",
+  nativeCurrency: {
+    name: "Ethereum",
+    symbol: "ETH",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://horizen-testnet.rpc.caldera.xyz/http"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Horizen Explorer",
+      url: "https://horizen-testnet.explorer.caldera.xyz",
+    },
+  },
+  testnet: true,
+});
 
 export type BaseConfig = {
   targetNetworks: readonly chains.Chain[];
@@ -17,7 +43,7 @@ const scaffoldConfig = {
   // The networks on which your DApp is live
   // targetNetworks: [chains.sepolia],
   // targetNetworks: [chains.hardhat],
-  targetNetworks: [chains.sepolia],
+  targetNetworks: [horizenTestnet],
   // The interval at which your front-end polls the RPC servers for new data (it has no effect if you only target the local network (default is 4000))
   pollingInterval: 30000,
   // This is ours Alchemy's default API key.

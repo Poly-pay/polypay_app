@@ -37,7 +37,7 @@ const config: HardhatUserConfig = {
       },
     ],
   },
-  defaultNetwork: "sepolia",
+  defaultNetwork: "horizenTestnet",
   // defaultNetwork: "localhost",
   namedAccounts: {
     deployer: {
@@ -125,6 +125,11 @@ const config: HardhatUserConfig = {
     celoAlfajores: {
       url: "https://alfajores-forno.celo-testnet.org",
       accounts: [deployerPrivateKey],
+    },
+    horizenTestnet: {
+      url: "https://horizen-testnet.rpc.caldera.xyz/http",
+      accounts: [deployerPrivateKey],
+      chainId: 2651420,
     },
   },
   // Configuration for harhdat-verify plugin
