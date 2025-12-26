@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog";
@@ -8,52 +8,44 @@ import { Input } from "../ui/input";
 import { ConfirmDialog } from "./Confirm";
 import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
 import { Copy, Repeat, Trash2, X } from "lucide-react";
-import { useMetaMultiSigWallet, useUpdateWallet } from "~~/hooks";
-import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
+import { useMetaMultiSigWallet, useUpdateWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
+import { useCreateTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface EditAccountModalProps {
   children: React.ReactNode;
-  signers: string[]; // commitments
-  threshold: number;
-  accountName?: string;
 }
 
-export const EditAccountModal: React.FC<EditAccountModalProps> = ({
-  children,
-  signers = [],
-  threshold = 0,
-  accountName = "",
-}) => {
+export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [editThreshold, setEditThreshold] = useState(threshold);
+  const [editThreshold, setEditThreshold] = useState(0);
   const [newSignerCommitment, setNewSignerCommitment] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
-  const [editName, setEditName] = useState(accountName || "");
+  const [editName, setEditName] = useState("");
   const { commitment } = useIdentityStore();
   const { mutateAsync: updateWallet, isPending: isUpdatingWallet } = useUpdateWallet();
-
   const { currentWallet, setCurrentWallet } = useWalletStore();
-
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setLoadingState,
   });
-  const { mutateAsync: reserveNonce } = useReserveNonce();
   const { mutateAsync: createTransaction } = useCreateTransaction();
 
-  const newThresholdForAdd = editThreshold;
-  const newThresholdForRemove = editThreshold;
+  const { data: thresholdData, refetch: refetchThreshold } = useWalletThreshold();
+  const { data: commitmentsData, refetch: refetchCommitments } = useWalletCommitments();
+
+  const threshold = Number(thresholdData ?? 0);
+  const signers = commitmentsData ? commitmentsData.map((c: bigint) => c.toString()) : [];
+  const accountName = currentWallet?.name ?? "Default";
 
   const handleGenerateName = () => {
     const randomName = `Wallet-${Math.random().toString(36).substring(2, 8)}`;
     setEditName(randomName);
   };
 
-  // ============ Update Account Name ============
   const handleUpdateName = async () => {
     if (!commitment || !editName.trim()) return;
 
@@ -76,53 +68,45 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
     }
   };
 
-  // ============ Add Signer ============
   const handleAddSigner = async () => {
     if (!metaMultiSigWallet || !newSignerCommitment.trim()) return;
 
-    // Validate
-    if (newThresholdForAdd < 1 || newThresholdForAdd > signers.length + 1) {
+    if (editThreshold < 1 || editThreshold > signers.length + 1) {
       notification.error("Invalid threshold value");
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Reserve nonce from backend
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-
-      // 2. Get current threshold
+      const currentNonce = await metaMultiSigWallet.read.nonce();
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-
-      // 3. Build callData for addSigner
-      const callData = encodeAddSigner(newSignerCommitment, newThresholdForAdd);
-
-      // 4. Get txHash from contract
+      const callData = encodeAddSigner(newSignerCommitment, editThreshold);
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        BigInt(nonce),
+        currentNonce,
         metaMultiSigWallet.address,
         0n,
         callData,
       ])) as `0x${string}`;
 
-      // 5. Generate proof
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // 6. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce,
+        nonce: Number(currentNonce),
         type: TxType.ADD_SIGNER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: signers.length,
         signerCommitment: newSignerCommitment.trim(),
-        newThreshold: newThresholdForAdd,
+        newThreshold: editThreshold,
         creatorCommitment: myCommitment,
         proof,
         publicInputs,
         nullifier,
       });
+
+      await refetchCommitments();
+      await refetchThreshold();
 
       notification.success("Add signer transaction created!");
       setNewSignerCommitment("");
@@ -135,7 +119,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       setLoadingState("");
     }
   };
-  // ============ Remove Signer ============
+
   const handleRemoveSigner = async (signerCommitment: string) => {
     if (!metaMultiSigWallet) return;
 
@@ -144,12 +128,11 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
       return;
     }
 
-    let newThreshold = newThresholdForRemove;
+    let newThreshold = editThreshold;
     if (newThreshold > signers.length - 1) {
       newThreshold = signers.length - 1;
     }
 
-    // Validate threshold
     if (newThreshold < 1 || newThreshold > signers.length - 1) {
       notification.error("Invalid threshold value for removal");
       return;
@@ -157,30 +140,21 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
 
     setLoading(true);
     try {
-      // 1. Reserve nonce from backend
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-
-      // 2. Get current threshold
+      const currentNonce = await metaMultiSigWallet.read.nonce();
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-
-      // 3. Build callData for removeSigner
       const callData = encodeRemoveSigner(signerCommitment, newThreshold);
-
-      // 4. Get txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        BigInt(nonce),
+        currentNonce,
         metaMultiSigWallet.address,
         0n,
         callData,
       ])) as `0x${string}`;
 
-      // 5. Generate proof
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // 6. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce,
+        nonce: Number(currentNonce),
         type: TxType.REMOVE_SIGNER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -193,6 +167,9 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
         nullifier,
       });
 
+      await refetchCommitments();
+      await refetchThreshold();
+
       notification.success("Remove signer transaction created!");
       setIsOpen(false);
     } catch (error: any) {
@@ -204,7 +181,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
     }
   };
 
-  // ============ Update Threshold ============
   const handleUpdateThreshold = async () => {
     if (!metaMultiSigWallet) return;
 
@@ -220,30 +196,21 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
 
     setLoading(true);
     try {
-      // 1. Reserve nonce from backend
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-
-      // 2. Get current threshold
+      const currentNonce = await metaMultiSigWallet.read.nonce();
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-
-      // 3. Build callData for updateSignaturesRequired
       const callData = encodeUpdateThreshold(editThreshold);
-
-      // 4. Get txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        BigInt(nonce),
+        currentNonce,
         metaMultiSigWallet.address,
         0n,
         callData,
       ])) as `0x${string}`;
 
-      // 5. Generate proof
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // 6. Submit to backend
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce,
+        nonce: Number(currentNonce),
         type: TxType.SET_THRESHOLD,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -254,6 +221,8 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
         publicInputs,
         nullifier,
       });
+
+      await refetchThreshold();
 
       notification.success("Update threshold transaction created!");
       setIsOpen(false);
@@ -266,31 +235,35 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
     }
   };
 
-  // ============ Copy to Clipboard ============
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     notification.success("Copied to clipboard");
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (isOpen) {
+      refetchThreshold();
+      refetchCommitments();
+    }
+  }, [isOpen, refetchThreshold, refetchCommitments]);
+
+  useEffect(() => {
     if (isOpen) {
       setEditThreshold(threshold);
       setEditName(accountName || "");
     }
   }, [isOpen, threshold, accountName]);
 
-  // ============ Render ============
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] p-0 overflow-hidden" showCloseButton={false}>
         <DialogTitle hidden></DialogTitle>
         <div className="flex flex-col h-full bg-white rounded-lg">
-          {/* Header */}
           <div className="flex flex-row items-center justify-between p-3 m-1 border-b bg-[#EDEDED] rounded-xl">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-gray-200 flex items-center justify-center">
-                <Image src={"/common/edit-wallet.svg"} alt="Edit wallet" width={24} height={24} />
+                <Image src="/common/edit-wallet.svg" alt="Edit wallet" width={40} height={40} />
               </div>
               <span className="flex flex-col">
                 <span className="text-lg font-semibold text-black">EDIT YOUR WALLET</span>
@@ -316,14 +289,11 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
             </Button>
           </div>
 
-          {/* Loading State */}
           {loading && loadingState && (
             <div className="px-6 py-2 bg-blue-50 text-blue-700 text-sm text-center">{loadingState}</div>
           )}
 
-          {/* Content */}
           <div className="flex-1 overflow-y-auto p-6 pt-3 space-y-6">
-            {/* Account Name Section */}
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900">ACCOUNT NAME</h3>
               <p className="text-sm text-gray-500 mb-4">Give your account a name to easily identify it.</p>
@@ -367,7 +337,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
               </Button>
             </div>
 
-            {/* Wallet Signers Section */}
             <div>
               <h3 className="font-semibold text-gray-900">WALLET SIGNERS</h3>
               <p className="text-sm text-gray-500 mb-4">
@@ -375,7 +344,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
                 identified by their commitment (hash of secret).
               </p>
 
-              {/* Existing Signers */}
               <div className="space-y-3 mb-4">
                 {signers.map((signer, index) => (
                   <div key={index} className="flex items-center justify-between p-3 border rounded">
@@ -390,7 +358,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
                         <Copy className="h-4 w-4" />
                       </Button>
 
-                      {/* Remove Signer with Threshold Input */}
                       <ConfirmDialog
                         title="Remove Signer"
                         description="Are you sure you want to remove this signer?"
@@ -409,7 +376,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
                 ))}
               </div>
 
-              {/* Add New Signer */}
               <div className="space-y-3 p-3 border border-dashed border-gray-300 rounded-lg">
                 <Input
                   placeholder="Enter new signer commitment"
@@ -430,7 +396,6 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({
               </div>
             </div>
 
-            {/* Threshold Section */}
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">THRESHOLD</h3>
               <p className="text-sm text-gray-500 mb-4">

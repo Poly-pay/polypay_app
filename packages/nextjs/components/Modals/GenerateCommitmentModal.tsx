@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { X } from "lucide-react";
@@ -19,6 +19,7 @@ interface GenerateCommitmentModalProps {
 
 export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = ({ children }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { setCurrentWallet, clearCurrentWallet } = useWalletStore();
   const { data: walletClient } = useWalletClient();
   const { setIdentity } = useIdentityStore();
@@ -29,12 +30,16 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
     if (!isOpen && identity?.secret && identity?.commitment) {
       setIdentity(identity.secret, identity.commitment);
 
-      // Check wallets of account
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/${identity.commitment}/wallets`);
         const wallets = await response.json();
 
-        // Route based on wallets
+        const shouldRedirect = pathname === "/" || pathname.startsWith("/dashboard");
+
+        if (!shouldRedirect) {
+          return;
+        }
+
         if (wallets && wallets.length > 0) {
           setCurrentWallet(wallets[0]);
           router.push("/dashboard");
@@ -44,7 +49,10 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
         }
       } catch (err) {
         console.error("Failed to check wallets:", err);
-        router.push("/create-wallet");
+        // Only redirect on error if we're on home or dashboard
+        if (pathname === "/" || pathname.startsWith("/dashboard")) {
+          router.push("/dashboard/new-wallet");
+        }
       }
     }
   };

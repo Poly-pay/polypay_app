@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 
 export const useInitializeApp = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { commitment } = useIdentityStore();
   const { currentWallet, setCurrentWallet, clearCurrentWallet } = useWalletStore();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -11,11 +12,13 @@ export const useInitializeApp = () => {
 
   useEffect(() => {
     const initialize = async () => {
-      // No commitment = not logged in
       if (!commitment || !currentWallet) {
         setIsLoading(false);
         setIsInitialized(true);
-        router.push("/dashboard/new-wallet");
+
+        if (pathname === "/dashboard") {
+          router.push("/dashboard/new-wallet");
+        }
         return;
       }
 
@@ -31,13 +34,18 @@ export const useInitializeApp = () => {
           if (!isCurrentWalletValid) {
             // Set first wallet as current
             setCurrentWallet(wallets[0]);
-            // Redirect to dashboard
-            router.push("/dashboard");
+            // Redirect to dashboard only if on new-wallet page
+            if (pathname === "/dashboard/new-wallet") {
+              router.push("/dashboard");
+            }
           }
         } else {
           // No wallets, clear current
           if (currentWallet) {
             clearCurrentWallet();
+          }
+          // Only redirect if on dashboard route
+          if (pathname === "/dashboard") {
             router.push("/dashboard/new-wallet");
           }
         }
@@ -50,6 +58,7 @@ export const useInitializeApp = () => {
     };
 
     initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commitment]);
 
   return { isInitialized, isLoading };
