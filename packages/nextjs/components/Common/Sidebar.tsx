@@ -3,15 +3,15 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { DevelopingFeatureModal } from "../Modals/DevelopingFeatureModal";
-import { GenerateCommitmentModal } from "../Modals/GenerateCommitmentModal";
-import { ReceiveModal } from "../Modals/ReceiveModal";
+import { DevelopingFeatureModal } from "../modals/DevelopingFeatureModal";
+import { GenerateCommitmentModal } from "../modals/GenerateCommitmentModal";
 import { Balance } from "../scaffold-eth";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
 import { Copy } from "lucide-react";
 import { Address } from "viem";
 import { useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
+import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
@@ -148,6 +148,7 @@ export default function Sidebar() {
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
 
+  const { openModal } = useModalApp();
   const { commitment, clearIdentity } = useIdentityStore();
   const { clearCurrentWallet } = useWalletStore();
 
@@ -265,15 +266,18 @@ export default function Sidebar() {
                   </span>
                   {/* Right side */}
                   <span className="flex flex-col gap-2">
-                    <ReceiveModal address={walletClient?.account?.address as Address}>
-                      <Image
-                        src="/sidebar/qrcode.svg"
-                        width={36}
-                        height={36}
-                        alt="Qr Code"
-                        className="cursor-pointer"
-                      />
-                    </ReceiveModal>
+                    {/* <ReceiveModal address={walletClient?.account?.address as Address}> */}
+                    <Image
+                      src="/sidebar/qrcode.svg"
+                      width={36}
+                      height={36}
+                      alt="Qr Code"
+                      onClick={() =>
+                        openModal("qrAddressReceiver", { address: walletClient?.account?.address as Address })
+                      }
+                      className="cursor-pointer"
+                    />
+                    {/* </ReceiveModal> */}
                     <span>
                       <a
                         target="_blank"
