@@ -98,4 +98,9 @@ export class TransactionController {
   async executeOnChain(@Param('txId', ParseIntPipe) txId: number) {
     return this.transactionService.executeOnChain(txId);
   }
+
+  @Post('reserve-nonce')
+  async reserveNonce(@Body('walletAddress') walletAddress: string) {
+    return this.transactionService.reserveNonce(walletAddress);
+  }
 }
