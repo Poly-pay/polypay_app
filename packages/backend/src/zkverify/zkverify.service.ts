@@ -8,10 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
-import {
-  ZkVerifySubmitResponse,
-  ZkVerifyJobStatusResponse,
-} from './dto';
+import { ZkVerifySubmitResponse, ZkVerifyJobStatusResponse } from './dto';
 import { PrismaService } from '@/database/prisma.service';
 import { horizenTestnet } from '@polypay/shared';
 

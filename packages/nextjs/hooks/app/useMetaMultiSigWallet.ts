@@ -39,34 +39,6 @@ export const useMetaMultiSigWalletInfo = () => {
   };
 };
 
-// ============ Read Contract Hooks ============
-
-export const useWalletMerkleRoot = () => {
-  const { currentWallet } = useWalletStore();
-
-  return useReadContract({
-    address: currentWallet?.address as `0x${string}`,
-    abi: METAMULTISIG_ABI,
-    functionName: "merkleRoot",
-    query: {
-      enabled: !!currentWallet?.address,
-    },
-  });
-};
-
-export const useWalletNonce = () => {
-  const { currentWallet } = useWalletStore();
-
-  return useReadContract({
-    address: currentWallet?.address as `0x${string}`,
-    abi: METAMULTISIG_ABI,
-    functionName: "nonce",
-    query: {
-      enabled: !!currentWallet?.address,
-    },
-  });
-};
-
 export const useWalletThreshold = () => {
   const { currentWallet } = useWalletStore();
 
@@ -104,33 +76,4 @@ export const useWalletSignersCount = () => {
       enabled: !!currentWallet?.address,
     },
   });
-};
-
-export const useWalletExecute = () => {
-  const metaMultiSigWallet = useMetaMultiSigWallet();
-  const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
-  const { currentWallet } = useWalletStore();
-
-  const execute = async (to: `0x${string}`, value: bigint, data: `0x${string}`, zkProofs: any[]) => {
-    if (!metaMultiSigWallet || !publicClient || !walletClient || !currentWallet) {
-      throw new Error("Contract or wallet not available");
-    }
-
-    // Estimate gas
-    const gasEstimate = await publicClient.estimateContractGas({
-      address: currentWallet.address as `0x${string}`,
-      abi: METAMULTISIG_ABI,
-      functionName: "execute",
-      args: [to, value, data, zkProofs],
-      account: walletClient.account,
-    });
-
-    // Execute with gas buffer
-    const txHash = await metaMultiSigWallet.write.execute([to, value, data, zkProofs], { gas: gasEstimate + 10000n });
-
-    return txHash;
-  };
-
-  return { execute };
 };

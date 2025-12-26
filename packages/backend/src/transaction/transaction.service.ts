@@ -22,6 +22,7 @@ import {
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
 import { Transaction } from '@/generated/prisma/client';
+import { DOMAIN_ID_HORIZEN_TESTNET } from '@/common/constants';
 
 @Injectable()
 export class TransactionService {
@@ -145,6 +146,7 @@ export class TransactionService {
           nullifier: dto.nullifier,
           jobId: proofResult.jobId,
           proofStatus: 'PENDING',
+          domainId: DOMAIN_ID_HORIZEN_TESTNET,
         },
       });
 
@@ -238,6 +240,7 @@ export class TransactionService {
         nullifier: dto.nullifier,
         jobId: proofResult.jobId,
         proofStatus: 'PENDING',
+        domainId: DOMAIN_ID_HORIZEN_TESTNET,
       },
     });
 
@@ -394,7 +397,7 @@ export class TransactionService {
       commitment: vote.voterCommitment,
       nullifier: vote.nullifier,
       aggregationId: vote.aggregationId,
-      domainId: vote.domainId ?? 0,
+      domainId: vote.domainId ?? DOMAIN_ID_HORIZEN_TESTNET,
       zkMerklePath: vote.merkleProof,
       leafCount: vote.leafCount,
       index: vote.leafIndex,

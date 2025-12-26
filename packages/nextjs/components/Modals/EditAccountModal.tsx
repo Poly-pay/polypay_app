@@ -9,7 +9,7 @@ import { ConfirmDialog } from "./Confirm";
 import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
 import { Copy, Repeat, Trash2, X } from "lucide-react";
 import { useMetaMultiSigWallet, useUpdateWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
-import { useCreateTransaction } from "~~/hooks/api/useTransaction";
+import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
@@ -33,6 +33,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) 
     onLoadingStateChange: setLoadingState,
   });
   const { mutateAsync: createTransaction } = useCreateTransaction();
+  const { mutateAsync: reserveNonce } = useReserveNonce();
 
   const { data: thresholdData, refetch: refetchThreshold } = useWalletThreshold();
   const { data: commitmentsData, refetch: refetchCommitments } = useWalletCommitments();
@@ -78,11 +79,11 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) 
 
     setLoading(true);
     try {
-      const currentNonce = await metaMultiSigWallet.read.nonce();
+      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
       const callData = encodeAddSigner(newSignerCommitment, editThreshold);
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        currentNonce,
+        BigInt(nonce),
         metaMultiSigWallet.address,
         0n,
         callData,
@@ -92,7 +93,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) 
 
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce: Number(currentNonce),
+        nonce: nonce,
         type: TxType.ADD_SIGNER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -140,11 +141,11 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) 
 
     setLoading(true);
     try {
-      const currentNonce = await metaMultiSigWallet.read.nonce();
+      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
       const callData = encodeRemoveSigner(signerCommitment, newThreshold);
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        currentNonce,
+        BigInt(nonce),
         metaMultiSigWallet.address,
         0n,
         callData,
@@ -154,7 +155,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) 
 
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce: Number(currentNonce),
+        nonce: nonce,
         type: TxType.REMOVE_SIGNER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -196,11 +197,11 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) 
 
     setLoading(true);
     try {
-      const currentNonce = await metaMultiSigWallet.read.nonce();
+      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
       const callData = encodeUpdateThreshold(editThreshold);
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        currentNonce,
+        BigInt(nonce),
         metaMultiSigWallet.address,
         0n,
         callData,
@@ -210,7 +211,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) 
 
       setLoadingState("Submitting to backend...");
       await createTransaction({
-        nonce: Number(currentNonce),
+        nonce: nonce,
         type: TxType.SET_THRESHOLD,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),

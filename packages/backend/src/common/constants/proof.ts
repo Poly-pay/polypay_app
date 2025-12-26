@@ -1,0 +1,1 @@
+export const DOMAIN_ID_HORIZEN_TESTNET = 175;
