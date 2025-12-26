@@ -87,11 +87,6 @@ interface TransactionRowData {
   walletAddress: string;
 }
 
-// ============ Helper: Calculate batch total ============
-function calculateBatchTotal(batchData: BatchTransfer[]): bigint {
-  return batchData.reduce((sum, item) => sum + BigInt(item.amount), 0n);
-}
-
 // ============ Helper: Convert API Transaction to Row Data ============
 export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
   // Map API type to UI type
@@ -106,10 +101,8 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   // Map API status to UI status
   const statusMap: Record<ApiTxStatus, TxStatus> = {
     PENDING: "pending",
-    EXECUTING: "pending", // TODO: remove later
     EXECUTED: "executed",
     FAILED: "failed",
-    OUTDATED: "failed", // TODO: remove later
   };
 
   // Build members from votes
@@ -346,7 +339,6 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
   }
 
   if (tx.type === "batch" && tx.batchData) {
-    const totalAmount = calculateBatchTotal(tx.batchData);
     return (
       <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
         <div className="flex items-center justify-between mb-3">
@@ -510,7 +502,6 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
       if (!tx.batchData || tx.batchData.length === 0) {
         return <span className="text-gray-500">No transfers</span>;
       }
-      const totalAmount = calculateBatchTotal(tx.batchData);
       return (
         <div className="flex items-center gap-3">
           <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-3 py-1 rounded-3xl">
@@ -541,7 +532,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
 
   const { mutateAsync: approve } = useApprove();
   const { mutateAsync: deny } = useDeny();
-  const { mutateAsync: executeOnChain, isPending: isExecuting } = useExecuteOnChain();
+  const { mutateAsync: executeOnChain } = useExecuteOnChain();
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setLoadingState,
   });
@@ -609,7 +600,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
 
       // 2. Submit to backend
       setLoadingState("Submitting to backend...");
-      const result = await approve({
+      await approve({
         txId: tx.txId,
         dto: {
           voterCommitment: proofData.commitment,

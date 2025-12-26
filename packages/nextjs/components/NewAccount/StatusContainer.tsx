@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 interface StatusContainerProps {
   className?: string;
@@ -51,7 +52,13 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
 
         {/* Wallet Name Card */}
         <div className="bg-[url('/common/bg-main.png')] bg-no-repeat bg-cover rounded-2xl w-full flex flex-col items-center justify-center relative h-[200px] gap-2 overflow-hidden p-3">
-          <img src="/new-wallet/wallet-avatar.svg" alt="Wallet" className="w-50 h-50 opacity-80" />
+          <Image
+            src="/new-wallet/wallet-avatar.svg"
+            alt="Wallet"
+            className="w-50 h-50 opacity-80"
+            width={200}
+            height={200}
+          />
           <span className="text-white text-[22px] py-1 font-semibold px-4 text-center w-[80%] rounded-lg bg-[#00000078]">
             {walletName || "Your wallet name"}
           </span>
@@ -69,7 +76,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
             {currentStep === 1 ? (
               // Step 1 - Placeholder
               <div className="flex flex-col gap-3 items-center justify-center h-full">
-                <img src="/new-wallet/frame.svg" alt="Setup" className="w-25 h-25" />
+                <Image src="/new-wallet/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
                 <span className="text-[#1E1E1E] text-[14px]">Setup on next step</span>
               </div>
             ) : (

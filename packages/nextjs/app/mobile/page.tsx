@@ -7,23 +7,23 @@ import { Button } from "~~/components/ui/button";
 // import { ActionButton } from "@/components/Common/ActionButton";
 
 // Social media data
-const socialLinks = [
-  {
-    handle: "@qash_finance",
-    link: "https://x.com/qash_finance",
-    icon: "/social/twitter.svg",
-  },
-  // {
-  //   handle: "@qash",
-  //   link: "https://github.com/q3x",
-  //   icon: "/social/github.svg",
-  // },
-  // {
-  //   handle: "@q3xfinance",
-  //   link: "https://t.me/q3xfinance",
-  //   icon: "/social/telegram.svg",
-  // },
-];
+// const socialLinks = [
+//   {
+//     handle: "@qash_finance",
+//     link: "https://x.com/qash_finance",
+//     icon: "/social/twitter.svg",
+//   },
+//   // {
+//   //   handle: "@qash",
+//   //   link: "https://github.com/q3x",
+//   //   icon: "/social/github.svg",
+//   // },
+//   // {
+//   //   handle: "@q3xfinance",
+//   //   link: "https://t.me/q3xfinance",
+//   //   icon: "/social/telegram.svg",
+//   // },
+// ];
 
 export default function MobilePage() {
   const handleBackToHome = () => {

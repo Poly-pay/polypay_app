@@ -202,7 +202,7 @@ export default function BatchContainer() {
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
-  const [isExiting, setIsExiting] = useState(false);
+  const [isExiting] = useState(false);
   const [isProposing, setIsProposing] = useState(false);
 
   // State cho loading message
@@ -230,19 +230,6 @@ export default function BatchContainer() {
       newSelected.add(id);
     }
     setSelectedItems(newSelected);
-  };
-
-  // Item click handler (for highlighting)
-  const handleItemClick = (id: string) => {
-    if (activeItem === id) {
-      setIsExiting(true);
-      setTimeout(() => {
-        setActiveItem(null);
-        setIsExiting(false);
-      }, 300);
-    } else {
-      setActiveItem(id);
-    }
   };
 
   // Remove item handler

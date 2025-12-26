@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AddressGroup, Contact } from "@polypay/shared";
+import { Contact } from "@polypay/shared";
 import { Search } from "lucide-react";
 import { ContactDetail } from "~~/components/address-book/ContactDetail";
 import { ContactList } from "~~/components/address-book/ContactList";
@@ -28,7 +28,7 @@ export default function AddressBookPage() {
   } | null>(null);
 
   // Queries
-  const { data: groups = [], isLoading: isLoadingGroups } = useGroups(walletId);
+  const { data: groups = [] } = useGroups(walletId);
   const { data: contacts = [], isLoading: isLoadingContacts } = useContacts(walletId, selectedGroupId || undefined);
 
   // Filter contacts by search

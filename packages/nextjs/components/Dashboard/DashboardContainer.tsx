@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
