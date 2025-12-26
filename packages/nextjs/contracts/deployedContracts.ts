@@ -725,7 +725,7 @@ const deployedContracts = {
   },
   11155111: {
     MetaMultiSigWallet: {
-      address: "0x8152887C1eAffC186AAd07AF3097483943fbf8D8",
+      address: "0x25a0E9491b2b3baA9578F07cA7AB64836C490BB4",
       abi: [
         {
           inputs: [
@@ -985,6 +985,11 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "uint256",
+              name: "_nonce",
+              type: "uint256",
+            },
+            {
               internalType: "address",
               name: "to",
               type: "address",
@@ -1001,6 +1006,11 @@ const deployedContracts = {
             },
             {
               components: [
+                {
+                  internalType: "uint256",
+                  name: "commitment",
+                  type: "uint256",
+                },
                 {
                   internalType: "uint256",
                   name: "nullifier",
@@ -1109,32 +1119,6 @@ const deployedContracts = {
           type: "function",
         },
         {
-          inputs: [],
-          name: "merkleRoot",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
-          name: "nonce",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
           inputs: [
             {
               internalType: "uint256",
@@ -1210,6 +1194,25 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
+          name: "usedNonces",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
           name: "usedNullifiers",
           outputs: [
             {
@@ -1253,7 +1256,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 9860333,
+      deployedOnBlock: 9902448,
     },
   },
 } as const;

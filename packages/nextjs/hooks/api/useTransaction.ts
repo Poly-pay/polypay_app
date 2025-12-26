@@ -139,6 +139,21 @@ const executeOnChainAPI = async (
   return response.json();
 };
 
+const reserveNonceAPI = async (walletAddress: string): Promise<{ nonce: number; expiresAt: string }> => {
+  const response = await fetch(`${API_BASE_URL}/api/transactions/reserve-nonce`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ walletAddress }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to reserve nonce");
+  }
+
+  return response.json();
+};
+
 // ============ Query Keys ============
 
 export const transactionKeys = {
@@ -252,6 +267,12 @@ export const useExecuteOnChain = () => {
   });
 };
 
+export const useReserveNonce = () => {
+  return useMutation({
+    mutationFn: reserveNonceAPI,
+  });
+};
+
 // ============ Utility Hooks ============
 
 /**
@@ -259,11 +280,4 @@ export const useExecuteOnChain = () => {
  */
 export const usePendingTransactions = (walletAddress: string) => {
   return useTransactions(walletAddress, TxStatus.PENDING);
-};
-
-/**
- * Get executing transactions for a wallet
- */
-export const useExecutingTransactions = (walletAddress: string) => {
-  return useTransactions(walletAddress, TxStatus.EXECUTING);
 };

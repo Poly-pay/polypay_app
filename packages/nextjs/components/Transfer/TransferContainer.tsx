@@ -9,7 +9,7 @@ import { ContactPicker } from "~~/components/address-book/ContactPicker";
 import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
-import { useCreateTransaction } from "~~/hooks/api/useTransaction";
+import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
@@ -29,6 +29,7 @@ export default function TransferContainer() {
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { mutateAsync: createTransaction } = useCreateTransaction();
+  const { mutateAsync: reserveNonce } = useReserveNonce();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
   const { generateProof } = useGenerateProof({
@@ -63,22 +64,24 @@ export default function TransferContainer() {
     setIsLoading(true);
 
     try {
-      // 1. Get current nonce and threshold
+      // 1. Reserve nonce from backend
+      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
+
+      // 2. Get current threshold and commitments
       setLoadingState("Preparing transaction...");
-      const currentNonce = await metaMultiSigWallet.read.nonce();
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
       const valueInSmallestUnit = isNativeETH
         ? parseEther(amount).toString()
         : parseTokenAmount(amount, selectedToken.decimals);
       const commitments = await metaMultiSigWallet.read.getCommitments();
 
-      // 2. Calculate txHash (different for ETH vs ERC20)
+      // 3. Calculate txHash (different for ETH vs ERC20)
       let txHash: `0x${string}`;
 
       if (isNativeETH) {
         // ETH: to = recipient, value = amount, data = 0x
         txHash = (await metaMultiSigWallet.read.getTransactionHash([
-          currentNonce,
+          BigInt(nonce),
           address as `0x${string}`,
           BigInt(valueInSmallestUnit),
           "0x" as `0x${string}`,
@@ -87,18 +90,20 @@ export default function TransferContainer() {
         // ERC20: to = tokenAddress, value = 0, data = transfer(recipient, amount)
         const encodedData = encodeERC20Transfer(address, BigInt(valueInSmallestUnit));
         txHash = (await metaMultiSigWallet.read.getTransactionHash([
-          currentNonce,
+          BigInt(nonce),
           selectedToken.address as `0x${string}`,
           0n,
           encodedData as `0x${string}`,
         ])) as `0x${string}`;
       }
+
+      // 4. Generate proof
       const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
 
-      // 8. Submit to backend
+      // 5. Submit to backend
       setLoadingState("Submitting to backend...");
       const result = await createTransaction({
-        nonce: Number(currentNonce),
+        nonce,
         type: TxType.TRANSFER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
@@ -200,10 +205,10 @@ export default function TransferContainer() {
     <div className="overflow-hidden relative w-full h-full flex flex-col rounded-lg">
       {/* Background images */}
       <div className="absolute -top-70 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
-        <Image src="/transfer/top-globe.svg" alt="Top globe" className="w-full h-full" width={780} height={736} />
+        <Image src="/transfer/top-globe.svg" alt="Top globe" className="w-full h-full" />
       </div>
       <div className="absolute -bottom-70 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
-        <Image src="/transfer/bottom-globe.svg" alt="Bottom globe" className="w-full h-full" width={780} height={736} />
+        <Image src="/transfer/bottom-globe.svg" alt="Bottom globe" className="w-full h-full" />
       </div>
 
       {/* Main content */}

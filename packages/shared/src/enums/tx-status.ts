@@ -1,7 +1,5 @@
 export enum TxStatus {
   PENDING = "PENDING",
-  EXECUTING = "EXECUTING",
   EXECUTED = "EXECUTED",
-  OUTDATED = "OUTDATED",
   FAILED = "FAILED",
 }

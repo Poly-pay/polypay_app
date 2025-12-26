@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   TxStatus as ApiTxStatus,
@@ -26,7 +26,7 @@ import { notification } from "~~/utils/scaffold-eth";
 // ============ Types ============
 type TxType = "transfer" | "add_signer" | "remove_signer" | "set_threshold" | "batch";
 type VoteStatus = "approved" | "denied" | "waiting";
-type TxStatus = "pending" | "executing" | "executed" | "failed" | "outdated";
+type TxStatus = "pending" | "executed" | "failed";
 
 interface Member {
   commitment: string;
@@ -78,6 +78,7 @@ interface TransactionRowData {
   members: Member[];
   votedCount: number;
   threshold: number;
+  approveCount: number;
 
   // Current user vote
   myVoteStatus: VoteStatus | null;
@@ -100,10 +101,10 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   // Map API status to UI status
   const statusMap: Record<ApiTxStatus, TxStatus> = {
     PENDING: "pending",
-    EXECUTING: "executing",
+    EXECUTING: "pending", // TODO: remove later
     EXECUTED: "executed",
     FAILED: "failed",
-    OUTDATED: "outdated",
+    OUTDATED: "failed", // TODO: remove later
   };
 
   // Build members from votes
@@ -117,6 +118,9 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   // Find my vote
   const myVote = tx.votes.find(v => v.voterCommitment === myCommitment);
   const myVoteStatus: VoteStatus | null = myVote ? (myVote.voteType === "APPROVE" ? "approved" : "denied") : null;
+
+  // Calculate approve count
+  const approveCount = tx.votes.filter(v => v.voteType === "APPROVE").length;
 
   // Parse batchData if exists
   let batchData: BatchTransfer[] | undefined;
@@ -146,6 +150,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     members,
     votedCount: tx.votes.length,
     threshold: tx.threshold,
+    approveCount,
     myVoteStatus,
     walletAddress: tx.walletAddress,
     contact: tx.contact
@@ -207,10 +212,6 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
     return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Failed</span>;
   }
 
-  if (status === "outdated") {
-    return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Outdated</span>;
-  }
-
   return null;
 }
 
@@ -220,15 +221,15 @@ function ActionButtons({
   onDeny,
   onExecute,
   loading,
-  txStatus,
+  isExecutable,
 }: {
   onApprove: () => void;
   onDeny: () => void;
   onExecute: () => void;
   loading: boolean;
-  txStatus?: TxStatus;
+  isExecutable: boolean;
 }) {
-  if (txStatus === "executing") {
+  if (isExecutable) {
     return (
       <button
         onClick={e => {
@@ -238,10 +239,11 @@ function ActionButtons({
         disabled={loading}
         className="px-6 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-full hover:bg-blue-200 transition-colors cursor-pointer disabled:opacity-50"
       >
-        Execute
+        {loading ? "Executing..." : "Execute"}
       </button>
     );
   }
+
   return (
     <div className="flex items-center gap-2">
       <button
@@ -267,7 +269,6 @@ function ActionButtons({
     </div>
   );
 }
-
 // ============ Transaction Header (Purple) Component ============
 function TxHeader({ tx }: { tx: TransactionRowData }) {
   if (tx.type === "transfer") {
@@ -537,6 +538,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setLoadingState,
   });
+  const [isExecutable, setIsExecutable] = useState(false);
 
   // ============ Handle Approve ============
   const handleApprove = async () => {
@@ -548,8 +550,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       notification.error("No commitment found");
       return;
     }
-
-    const currentNonce = await metaMultiSigWallet.read.nonce();
 
     // 1. Build callData based on tx type
     let callData: `0x${string}` = "0x";
@@ -589,7 +589,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
 
     // 2. Get txHash
     const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-      BigInt(currentNonce),
+      BigInt(tx.nonce),
       to,
       value,
       callData,
@@ -674,24 +674,43 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
 
   // ============ Render Right Side ============
   const renderRightSide = () => {
-    if (tx.status === "executed" || tx.status === "failed" || tx.status === "outdated") {
+    if (tx.status === "executed" || tx.status === "failed") {
       return <StatusBadge status={tx.status} txHash={tx.txHash} />;
     }
 
-    if (tx.myVoteStatus === null || tx.status === "executing") {
+    if (tx.myVoteStatus === null || isExecutable) {
       return (
         <ActionButtons
           onApprove={handleApprove}
           onDeny={handleDeny}
           onExecute={() => handleExecute(tx.txId)}
           loading={loading}
-          txStatus={tx.status}
+          isExecutable={isExecutable}
         />
       );
     }
 
     return <VoteBadge status={tx.myVoteStatus} />;
   };
+
+  useEffect(() => {
+    const checkExecutable = async () => {
+      if (tx.status !== "pending" || !metaMultiSigWallet) {
+        setIsExecutable(false);
+        return;
+      }
+
+      try {
+        const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
+        setIsExecutable(tx.approveCount >= Number(currentThreshold));
+      } catch (error) {
+        console.error("Failed to check threshold:", error);
+        setIsExecutable(false);
+      }
+    };
+
+    checkExecutable();
+  }, [tx.status, tx.approveCount, metaMultiSigWallet]);
 
   return (
     <div className="w-full mb-2">
@@ -707,7 +726,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       >
         <div className="flex items-center gap-4">
           {/* Nonce */}
-          <span className="font-semibold text-gray-600">#{tx.nonce}</span>
           {expanded ? (
             <ChevronDown size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
           ) : (

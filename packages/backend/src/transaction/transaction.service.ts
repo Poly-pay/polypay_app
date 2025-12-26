@@ -17,6 +17,7 @@ import {
   encodeBatchTransferMulti,
   encodeERC20Transfer,
   encodeBatchTransfer,
+  TxStatus,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -40,12 +41,25 @@ export class TransactionService {
     // 1. Validate based on type
     this.validateTransactionDto(dto);
 
-    // 2. Check wallet exists and get total signers count
+    // 2. Validate nonce is reserved
+    const reserved = await this.prisma.reservedNonce.findFirst({
+      where: {
+        walletAddress: dto.walletAddress,
+        nonce: dto.nonce,
+        expiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!reserved) {
+      throw new BadRequestException(
+        'Nonce not reserved or expired. Please reserve nonce first.',
+      );
+    }
+
+    // 3. Check wallet exists and get total signers count
     const wallet = await this.prisma.wallet.findUnique({
       where: { address: dto.walletAddress },
-      include: {
-        accounts: true,
-      },
+      include: { accounts: true },
     });
 
     if (!wallet) {
@@ -86,7 +100,7 @@ export class TransactionService {
       );
     }
 
-    // 3. Submit proof to zkVerify
+    // 4. Submit proof to zkVerify
     const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized({
       proof: dto.proof,
       publicInputs: dto.publicInputs,
@@ -97,8 +111,13 @@ export class TransactionService {
       throw new BadRequestException('Proof verification failed');
     }
 
-    // 4. Create transaction + first vote
+    // 5. Create transaction + first vote + delete reservation
     const transaction = await this.prisma.$transaction(async (prisma) => {
+      // Delete reservation
+      await prisma.reservedNonce.delete({
+        where: { id: reserved.id },
+      });
+
       const tx = await prisma.transaction.create({
         data: {
           nonce: dto.nonce,
@@ -139,15 +158,15 @@ export class TransactionService {
       return tx;
     });
 
-    this.logger.log(`Created transaction txId: ${transaction.txId}`);
-
-    // 5. Check if already enough approvals (threshold = 1)
-    const result = await this.checkAndTriggerExecution(transaction.txId);
+    this.logger.log(
+      `Created transaction txId: ${transaction.txId}, nonce: ${transaction.nonce}`,
+    );
 
     return {
       txId: transaction.txId,
+      nonce: transaction.nonce,
       type: transaction.type,
-      status: result?.status || transaction.status,
+      status: transaction.status,
       jobId: proofResult.jobId,
     };
   }
@@ -224,14 +243,11 @@ export class TransactionService {
 
     this.logger.log(`Vote APPROVE added for txId: ${txId}`);
 
-    // 6. Check if enough approvals
-    const result = await this.checkAndTriggerExecution(txId);
-
     return {
       txId,
       voteType: 'APPROVE',
       jobId: proofResult.jobId,
-      status: result?.status || transaction.status,
+      status: transaction.status,
       approveCount: await this.getApproveCount(txId),
       threshold: transaction.threshold,
     };
@@ -375,6 +391,7 @@ export class TransactionService {
 
     // Format proofs for smart contract
     const zkProofs = approveVotes.map((vote) => ({
+      commitment: vote.voterCommitment,
       nullifier: vote.nullifier,
       aggregationId: vote.aggregationId,
       domainId: vote.domainId ?? 0,
@@ -385,6 +402,7 @@ export class TransactionService {
 
     return {
       txId,
+      nonce: transaction.nonce,
       walletAddress: transaction.walletAddress,
       to,
       value,
@@ -393,6 +411,7 @@ export class TransactionService {
       threshold: transaction.threshold,
     };
   }
+
   /**
    * Mark transaction as executed
    */
@@ -407,20 +426,7 @@ export class TransactionService {
         throw new NotFoundException(`Transaction ${txId} not found`);
       }
 
-      // 2. Mark all transactions with same nonce as OUTDATED (except this one)
-      await tx.transaction.updateMany({
-        where: {
-          nonce: transaction.nonce,
-          walletAddress: transaction.walletAddress,
-          txId: { not: txId },
-          status: { notIn: ['EXECUTED', 'OUTDATED', 'FAILED'] },
-        },
-        data: {
-          status: 'OUTDATED',
-        },
-      });
-
-      // 3. Handle ADD_SIGNER: create Account + AccountWallet link
+      // Handle ADD_SIGNER: create Account + AccountWallet link
       if (
         transaction.type === TxType.ADD_SIGNER &&
         transaction.signerCommitment
@@ -459,7 +465,7 @@ export class TransactionService {
         }
       }
 
-      // 4. Handle REMOVE_SIGNER: delete AccountWallet link
+      // Handle REMOVE_SIGNER: delete AccountWallet link + delete pending votes
       if (
         transaction.type === 'REMOVE_SIGNER' &&
         transaction.signerCommitment
@@ -484,9 +490,49 @@ export class TransactionService {
             `Removed signer ${transaction.signerCommitment} from wallet ${wallet.address}`,
           );
         }
+
+        // Delete all pending votes from removed signer (same wallet only)
+        const deletedVotes = await tx.vote.deleteMany({
+          where: {
+            voterCommitment: transaction.signerCommitment,
+            transaction: {
+              walletAddress: transaction.walletAddress,
+              status: { in: ['PENDING'] },
+            },
+          },
+        });
+
+        if (deletedVotes.count > 0) {
+          this.logger.log(
+            `Deleted ${deletedVotes.count} pending votes from removed signer ${transaction.signerCommitment}`,
+          );
+        }
       }
 
-      // 5. Mark this transaction as EXECUTED
+      // Handle SET_THRESHOLD: update threshold for all pending transactions in the same wallet
+      if (
+        transaction.type === TxType.SET_THRESHOLD &&
+        transaction.newThreshold
+      ) {
+        const updatedTxs = await tx.transaction.updateMany({
+          where: {
+            walletAddress: transaction.walletAddress,
+            status: TxStatus.PENDING,
+            txId: { not: txId }, // Exclude current transaction
+          },
+          data: {
+            threshold: transaction.newThreshold,
+          },
+        });
+
+        if (updatedTxs.count > 0) {
+          this.logger.log(
+            `Updated threshold to ${transaction.newThreshold} for ${updatedTxs.count} pending transactions in wallet ${transaction.walletAddress}`,
+          );
+        }
+      }
+
+      // Mark this transaction as EXECUTED
       return tx.transaction.update({
         where: { txId },
         data: {
@@ -509,6 +555,7 @@ export class TransactionService {
       // 2. Execute via relayer (includes balance check + receipt verification)
       const { txHash } = await this.relayerService.executeTransaction(
         executionData.walletAddress,
+        executionData.nonce,
         executionData.to,
         executionData.value,
         executionData.data,
@@ -551,6 +598,42 @@ export class TransactionService {
         error.message || 'Failed to execute transaction',
       );
     }
+  }
+
+  async reserveNonce(walletAddress: string) {
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Clean expired reservations
+      await tx.reservedNonce.deleteMany({
+        where: { expiresAt: { lt: new Date() } },
+      });
+
+      // 2. Find next available nonce
+      const maxTxNonce = await tx.transaction.findFirst({
+        where: { walletAddress },
+        orderBy: { nonce: 'desc' },
+        select: { nonce: true },
+      });
+
+      const maxReservedNonce = await tx.reservedNonce.findFirst({
+        where: { walletAddress },
+        orderBy: { nonce: 'desc' },
+        select: { nonce: true },
+      });
+
+      const nextNonce = Math.max(
+        (maxTxNonce?.nonce ?? -1) + 1,
+        (maxReservedNonce?.nonce ?? -1) + 1,
+      );
+
+      // 3. Reserve (expires 2 min)
+      const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
+
+      await tx.reservedNonce.create({
+        data: { walletAddress, nonce: nextNonce, expiresAt },
+      });
+
+      return { nonce: nextNonce, expiresAt };
+    });
   }
 
   // ============ Private Methods ============
@@ -681,33 +764,6 @@ export class TransactionService {
       default:
         throw new BadRequestException(`Unknown transaction type`);
     }
-  }
-
-  private async checkAndTriggerExecution(txId: number) {
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { txId },
-    });
-
-    if (!transaction || transaction.status !== 'PENDING') {
-      return null;
-    }
-
-    const approveCount = await this.getApproveCount(txId);
-
-    if (approveCount >= transaction.threshold) {
-      await this.prisma.transaction.update({
-        where: { txId },
-        data: { status: 'EXECUTING' },
-      });
-
-      this.logger.log(
-        `Transaction ${txId} has enough approvals (${approveCount}/${transaction.threshold}), ready for execution`,
-      );
-
-      return { status: 'EXECUTING', approveCount };
-    }
-
-    return null;
   }
 
   private async checkIfFailed(txId: number, totalSigners: number) {
