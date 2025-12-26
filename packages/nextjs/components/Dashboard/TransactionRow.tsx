@@ -101,10 +101,8 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   // Map API status to UI status
   const statusMap: Record<ApiTxStatus, TxStatus> = {
     PENDING: "pending",
-    EXECUTING: "pending", // TODO: remove later
     EXECUTED: "executed",
     FAILED: "failed",
-    OUTDATED: "failed", // TODO: remove later
   };
 
   // Build members from votes
