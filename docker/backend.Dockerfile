@@ -1,38 +1,104 @@
-FROM node:24-alpine
-
+# ===== STAGE 1: DEPS =====
+# Install all dependencies and generate Prisma client
+FROM node:24-alpine AS deps
 WORKDIR /app
 
-# Enable corepack for yarn 3.x
 RUN corepack enable
 
-# Copy package files first (better cache)
+# Copy yarn config
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+
+# Copy package files
 COPY package.json yarn.lock ./
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/backend/package.json ./packages/backend/
-
-# Configure yarn to use node-modules instead of PnP
-RUN echo 'nodeLinker: node-modules' > .yarnrc.yml
-
-# Install dependencies
-RUN yarn install
-
-# Copy shared source and build first
 COPY packages/shared ./packages/shared
-RUN yarn workspace @polypay/shared build
-
-# Copy backend source
 COPY packages/backend ./packages/backend
 
-# Generate Prisma client (dummy DATABASE_URL for generate only)
+# Copy package.json of other workspaces (yarn needs to resolve all)
+COPY packages/nextjs/package.json ./packages/nextjs/
+COPY packages/hardhat/package.json ./packages/hardhat/
+
+# Clean up local artifacts and install
+RUN rm -rf packages/shared/node_modules \
+    packages/backend/node_modules \
+    packages/shared/dist \
+    packages/backend/dist && \
+    yarn install --immutable
+
+# Generate Prisma client
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
     yarn workspace @polypay/backend prisma generate
 
-# Build backend
-RUN yarn workspace @polypay/backend build
 
-# Set working directory
+# ===== STAGE 2: BUILDER =====
+# Build shared and backend packages
+FROM node:24-alpine AS builder
+WORKDIR /app
+
+RUN corepack enable
+
+# Copy yarn config and package files
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY --from=deps /app/package.json ./
+COPY --from=deps /app/yarn.lock ./
+
+# Copy node_modules from deps
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=deps /app/packages/backend/node_modules ./packages/backend/node_modules
+
+# Copy source code
+COPY packages/shared ./packages/shared
+COPY packages/backend ./packages/backend
+
+# Build shared first, then backend with bundle
+RUN yarn workspace @polypay/shared build && \
+    yarn workspace @polypay/backend build:bundle
+
+
+# ===== STAGE 3: RUNNER =====
+# Minimal production image with bundled code
+FROM node:24-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nestjs
+
+# Copy shared package (external in bundle)
+COPY --chown=nestjs:nodejs --from=builder /app/packages/shared/package.json ./packages/shared/
+COPY --chown=nestjs:nodejs --from=builder /app/packages/shared/dist ./packages/shared/dist
+
+# Copy bundled backend
+COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/dist/main.bundle.js ./packages/backend/dist/
+
+# Copy prisma files
+COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/prisma ./packages/backend/prisma
+COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/prisma.config.ts ./packages/backend/
+
+# Install runtime dependencies
 WORKDIR /app/packages/backend
+RUN npm init -y && \
+    npm install --no-save \
+    @prisma/client \
+    @prisma/adapter-pg \
+    prisma \
+    pg \
+    @nestjs/platform-express \
+    class-transformer \
+    class-validator \
+    viem \
+    dotenv && \
+    mkdir -p node_modules/@polypay && \
+    ln -s /app/packages/shared node_modules/@polypay/shared && \
+    ln -s /app/packages/backend/node_modules /app/packages/shared/node_modules && \
+    chown -R nestjs:nodejs /app/packages/backend/node_modules
+
+USER nestjs
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && yarn start:prod"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.bundle.js"]
