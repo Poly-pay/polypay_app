@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { PortfolioModal } from "../Modals/PortFolioModal";
+import { PortfolioModal } from "../modals/PortFolioModal";
 
 const Title: React.FC = () => {
   const pathname = usePathname();

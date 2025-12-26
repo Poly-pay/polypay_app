@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { EditAccountModal } from "../Modals/EditAccountModal";
+import { EditAccountModal } from "../modals/EditAccountModal";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
