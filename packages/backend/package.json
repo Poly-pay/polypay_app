@@ -7,7 +7,6 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "build:bundle": "nest build && node esbuild.config.js",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -48,7 +47,6 @@
     "@types/node": "^22.10.7",
     "@types/pg": "^8.15.5",
     "@types/supertest": "^6.0.2",
-    "esbuild": "^0.27.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

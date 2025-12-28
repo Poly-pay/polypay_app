@@ -85,7 +85,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/packages/nextjs/.next/static ./pa
 
 # Copy public folder and remove unnecessary files
 COPY --from=builder --chown=nextjs:nodejs /app/packages/nextjs/public ./packages/nextjs/public
-RUN rm -rf ./packages/nextjs/public/circuit
 
 USER nextjs
 

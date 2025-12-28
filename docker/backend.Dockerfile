@@ -52,13 +52,13 @@ COPY --from=deps /app/packages/backend/node_modules ./packages/backend/node_modu
 COPY packages/shared ./packages/shared
 COPY packages/backend ./packages/backend
 
-# Build shared first, then backend with bundle
+# Build shared first, then backend
 RUN yarn workspace @polypay/shared build && \
-    yarn workspace @polypay/backend build:bundle
+    yarn workspace @polypay/backend build
 
 
 # ===== STAGE 3: RUNNER =====
-# Minimal production image with bundled code
+# Production image
 FROM node:24-alpine AS runner
 WORKDIR /app
 
@@ -68,37 +68,30 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-# Copy shared package (external in bundle)
-COPY --chown=nestjs:nodejs --from=builder /app/packages/shared/package.json ./packages/shared/
-COPY --chown=nestjs:nodejs --from=builder /app/packages/shared/dist ./packages/shared/dist
+# Copy node_modules with correct ownership
+COPY --chown=nestjs:nodejs --from=deps /app/node_modules ./node_modules
+COPY --chown=nestjs:nodejs --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --chown=nestjs:nodejs --from=deps /app/packages/backend/node_modules ./packages/backend/node_modules
 
-# Copy bundled backend
-COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/dist/main.bundle.js ./packages/backend/dist/
+# Copy package.json
+COPY --chown=nestjs:nodejs --from=builder /app/packages/shared/package.json ./packages/shared/
+COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/package.json ./packages/backend/
+
+# Copy built output
+COPY --chown=nestjs:nodejs --from=builder /app/packages/shared/dist ./packages/shared/dist
+COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/dist ./packages/backend/dist
 
 # Copy prisma files
 COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/prisma ./packages/backend/prisma
 COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/prisma.config.ts ./packages/backend/
 
-# Install runtime dependencies
-WORKDIR /app/packages/backend
-RUN npm init -y && \
-    npm install --no-save \
-    @prisma/client \
-    @prisma/adapter-pg \
-    prisma \
-    pg \
-    @nestjs/platform-express \
-    class-transformer \
-    class-validator \
-    viem \
-    dotenv && \
-    mkdir -p node_modules/@polypay && \
-    ln -s /app/packages/shared node_modules/@polypay/shared && \
-    ln -s /app/packages/backend/node_modules /app/packages/shared/node_modules && \
-    chown -R nestjs:nodejs /app/packages/backend/node_modules
+# Copy assets folder
+COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/assets ./packages/backend/assets
 
 USER nestjs
 
+WORKDIR /app/packages/backend
+
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.bundle.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
