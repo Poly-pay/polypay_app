@@ -1,6 +1,8 @@
+ARG NODE_VERSION=24-alpine
+
 # ===== STAGE 1: DEPS =====
 # Install all dependencies for yarn workspace
-FROM node:24-alpine AS deps
+FROM node:${NODE_VERSION} AS deps
 WORKDIR /app
 
 # Enable corepack for yarn 3.x
@@ -21,18 +23,17 @@ COPY packages/nextjs ./packages/nextjs
 COPY packages/backend/package.json ./packages/backend/
 COPY packages/hardhat/package.json ./packages/hardhat/
 
-# Clean up any local artifacts
+# Clean up any local artifacts and install dependencies
 RUN rm -rf packages/shared/node_modules \
     packages/nextjs/node_modules \
     packages/nextjs/.next \
-    packages/shared/dist
-
-RUN yarn install --immutable
+    packages/shared/dist && \
+    yarn install --immutable
 
 
 # ===== STAGE 2: BUILDER =====
 # Build shared and frontend packages
-FROM node:24-alpine AS builder
+FROM node:${NODE_VERSION} AS builder
 WORKDIR /app
 
 RUN corepack enable
@@ -59,16 +60,14 @@ ARG STANDALONE=true
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV STANDALONE=$STANDALONE
 
-# Build shared first (frontend depends on it)
-RUN yarn workspace @polypay/shared build
-
-# Build frontend with standalone output
-RUN yarn workspace @polypay/frontend build
+# Build shared and frontend packages
+RUN yarn workspace @polypay/shared build && \
+    yarn workspace @polypay/frontend build
 
 
 # ===== STAGE 3: RUNNER =====
 # Minimal production image
-FROM node:24-alpine AS runner
+FROM node:${NODE_VERSION} AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
