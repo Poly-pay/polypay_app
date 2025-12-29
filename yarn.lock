@@ -4512,7 +4512,7 @@ __metadata:
     prettier: ~3.5.3
     qrcode.react: ~4.0.1
     react: ~19.0.0
-    react-dom: ^19.0.0
+    react-dom: ~19.0.0
     react-hot-toast: ~2.4.0
     sonner: ^2.0.7
     tailwind-merge: ^3.4.0
@@ -5653,9 +5653,9 @@ __metadata:
   linkType: hard
 
 "@sindresorhus/is@npm:^7.0.1":
-  version: 7.1.1
-  resolution: "@sindresorhus/is@npm:7.1.1"
-  checksum: 9e17b304db5f959b5269b6556a4b65d0a7ac8e632da794adfce4be618bc7dfc224777cb52c4dcc1acb166d32594504f3bf3adc40367ef41d34e0d7011f6d8376
+  version: 7.2.0
+  resolution: "@sindresorhus/is@npm:7.2.0"
+  checksum: 43d5d20b9457508d8e874695c2868167838b4b10cb888d2a961608843828277a6bffb464c9be8a54ba1d87d17d62dfd78c5ac41cc654516748f6be65ef79b8bc
   languageName: node
   linkType: hard
 
@@ -18697,11 +18697,11 @@ __metadata:
   linkType: hard
 
 "prettier-linter-helpers@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "prettier-linter-helpers@npm:1.0.0"
+  version: 1.0.1
+  resolution: "prettier-linter-helpers@npm:1.0.1"
   dependencies:
     fast-diff: ^1.1.2
-  checksum: 00ce8011cf6430158d27f9c92cfea0a7699405633f7f1d4a45f07e21bf78e99895911cbcdc3853db3a824201a7c745bd49bfea8abd5fb9883e765a90f74f8392
+  checksum: 2dc35f5036a35f4c4f5e645887edda1436acb63687a7f12b2383e0a6f3c1f76b8a0a4709fe4d82e19157210feb5984b159bb714d43290022911ab53d606474ec
   languageName: node
   linkType: hard
 
@@ -19169,14 +19169,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^19.0.0":
-  version: 19.2.3
-  resolution: "react-dom@npm:19.2.3"
+"react-dom@npm:~19.0.0":
+  version: 19.0.3
+  resolution: "react-dom@npm:19.0.3"
   dependencies:
-    scheduler: ^0.27.0
+    scheduler: ^0.25.0
   peerDependencies:
-    react: ^19.2.3
-  checksum: cb1f95df052802f5332cae78303b7fc6f58092d5c7f8d01f0401188b2e0157c1d273a041b900fcc4801f730c70ed17249bd5af170038692878ebe257f641488b
+    react: ^19.0.3
+  checksum: b5f53f84f9a044f9d77cb363fd6a0990cda5b7b89649b59c298ced63176e36df37a9289047d596aadf8fd7182df6c1d4f5b3f78839058b692d325dcee17af790
   languageName: node
   linkType: hard
 
@@ -19821,10 +19821,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"scheduler@npm:^0.27.0":
-  version: 0.27.0
-  resolution: "scheduler@npm:0.27.0"
-  checksum: 92644ead0a9443e20f9d24132fe93675b156209b9eeb35ea245f8a86768d0cc0fcca56f341eeef21d9b6dd8e72d6d5e260eb5a41d34b05cd605dd45a29f572ef
+"scheduler@npm:^0.25.0":
+  version: 0.25.0
+  resolution: "scheduler@npm:0.25.0"
+  checksum: b7bb9fddbf743e521e9aaa5198a03ae823f5e104ebee0cb9ec625392bb7da0baa1c28ab29cee4b1e407a94e76acc6eee91eeb749614f91f853efda2613531566
   languageName: node
   linkType: hard
 
@@ -21312,11 +21312,11 @@ __metadata:
   linkType: hard
 
 "ts-api-utils@npm:^2.0.1, ts-api-utils@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "ts-api-utils@npm:2.1.0"
+  version: 2.3.0
+  resolution: "ts-api-utils@npm:2.3.0"
   peerDependencies:
     typescript: ">=4.8.4"
-  checksum: 5b1ef89105654d93d67582308bd8dfe4bbf6874fccbcaa729b08fbb00a940fd4c691ca6d0d2b18c3c70878d9a7e503421b7cc473dbc3d0d54258b86401d4b15d
+  checksum: c11d5fe54418beaccb1a7c0b0816903bd088c4ee1848b7dd25ea489431f3c83880a3eaf8667964354a1c9fdf86b012a1f0b16a2e61d248c0774ab139d2173941
   languageName: node
   linkType: hard
 
