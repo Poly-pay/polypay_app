@@ -15,3 +15,6 @@ export * from "./chains";
 
 // Contracts
 export * from "./contracts";
+
+// Events
+export * from "./events";

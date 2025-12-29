@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Notification, SendCommitmentDto } from "@polypay/shared";
+import { NOTIFICATION_NEW_EVENT, Notification, SendCommitmentDto } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API_BASE_URL } from "~~/constants";
 import { useSocket } from "~~/hooks/app/useSocket";
@@ -104,10 +104,10 @@ export const useNotifications = () => {
       queryClient.setQueryData<number>(notificationKeys.unreadCount(commitment), old => (old ?? 0) + 1);
     };
 
-    socket.on("notification:new", handleNewNotification);
+    socket.on(NOTIFICATION_NEW_EVENT, handleNewNotification);
 
     return () => {
-      socket.off("notification:new", handleNewNotification);
+      socket.off(NOTIFICATION_NEW_EVENT, handleNewNotification);
     };
   }, [socket, commitment, queryClient]);
 

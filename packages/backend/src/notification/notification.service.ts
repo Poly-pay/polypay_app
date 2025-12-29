@@ -5,7 +5,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { SendCommitmentDto, NotificationType } from '@polypay/shared';
+import {
+  SendCommitmentDto,
+  NotificationType,
+  NOTIFICATION_NEW_EVENT,
+} from '@polypay/shared';
 import { EventsService } from '@/events/events.service';
 
 @Injectable()
@@ -62,7 +66,7 @@ export class NotificationService {
     // Emit realtime event to recipient
     this.eventsService.emitToUser(
       recipientCommitment,
-      'notification:new',
+      NOTIFICATION_NEW_EVENT,
       notification,
     );
 
