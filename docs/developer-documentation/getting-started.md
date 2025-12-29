@@ -41,13 +41,10 @@ cd polypay_app
 # 2. Install dependencies
 yarn install
 
-# 3. Build application
-yarn build
-
-# 4. Frontend Setup
+# 3. Frontend Setup
 cp packages/nextjs/.env.example packages/nextjs/.env
 
-# 5. Backend Setup
+# 4. Backend Setup
 cd packages/backend
 
 # Start PostgreSQL with Docker
@@ -62,6 +59,9 @@ npx prisma migrate dev
 npx prisma generate
 
 cd ../..
+
+# 5. Build application
+yarn build
 
 # 6. Run the Application
 # Terminal 1: Start backend
