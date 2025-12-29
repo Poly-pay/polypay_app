@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { io, Socket } from "socket.io-client";
+import { Socket, io } from "socket.io-client";
 import { API_BASE_URL } from "~~/constants";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 
@@ -26,7 +26,7 @@ export function useSocket() {
       console.log("[Socket] Disconnected");
     });
 
-    socket.on("connect_error", (error) => {
+    socket.on("connect_error", error => {
       console.error("[Socket] Connection error:", error.message);
     });
 

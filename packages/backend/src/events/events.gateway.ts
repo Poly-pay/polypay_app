@@ -22,7 +22,9 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const commitment = client.handshake.query.commitment as string;
 
     if (!commitment) {
-      this.logger.warn(`Client ${client.id} connected without commitment, disconnecting`);
+      this.logger.warn(
+        `Client ${client.id} connected without commitment, disconnecting`,
+      );
       client.disconnect();
       return;
     }

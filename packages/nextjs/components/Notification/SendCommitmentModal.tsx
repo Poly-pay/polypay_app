@@ -2,15 +2,9 @@
 
 import React from "react";
 import { Account } from "@polypay/shared";
-import { Send, X, Users } from "lucide-react";
+import { Send, Users} from "lucide-react";
 import { Button } from "~~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~~/components/ui/dialog";
 import { useAccounts } from "~~/hooks/api/useAccount";
 import { useSendCommitment } from "~~/hooks/api/useNotification";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
@@ -76,10 +70,7 @@ export const SendCommitmentModal: React.FC = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          size="sm"
-          className="w-full bg-[#FF7CEB] hover:bg-[#f35ddd] text-white"
-        >
+        <Button size="sm" className="w-full bg-[#FF7CEB] hover:bg-[#f35ddd] text-white">
           <Send className="w-4 h-4 mr-2" />
           Send my commitment
         </Button>
@@ -101,12 +92,7 @@ export const SendCommitmentModal: React.FC = () => {
           ) : otherAccounts.length > 0 ? (
             <div className="flex flex-col gap-2">
               {otherAccounts.map(account => (
-                <AccountItem
-                  key={account.id}
-                  account={account}
-                  onSelect={handleSelect}
-                  isLoading={isSending}
-                />
+                <AccountItem key={account.id} account={account} onSelect={handleSelect} isLoading={isSending} />
               ))}
             </div>
           ) : (

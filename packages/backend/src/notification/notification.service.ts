@@ -60,7 +60,11 @@ export class NotificationService {
     );
 
     // Emit realtime event to recipient
-    this.eventsService.emitToUser(recipientCommitment, 'notification:new', notification);
+    this.eventsService.emitToUser(
+      recipientCommitment,
+      'notification:new',
+      notification,
+    );
 
     return notification;
   }

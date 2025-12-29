@@ -6,7 +6,7 @@ import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { NotificationItem } from "./NotificationItem";
 import { SendCommitmentModal } from "./SendCommitmentModal";
-import { Bell, X } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useMarkAllAsRead, useNotifications, useUnreadCount } from "~~/hooks/api/useNotification";
 
 export const NotificationPanel: React.FC = () => {

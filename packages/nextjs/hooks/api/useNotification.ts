@@ -1,9 +1,9 @@
+import { useEffect } from "react";
 import { Notification, SendCommitmentDto } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
 import { API_BASE_URL } from "~~/constants";
-import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { useSocket } from "~~/hooks/app/useSocket";
+import { useIdentityStore } from "~~/services/store/useIdentityStore";
 
 // ============ API Functions ============
 
@@ -96,16 +96,12 @@ export const useNotifications = () => {
 
     const handleNewNotification = (notification: Notification) => {
       // Add new notification to cache
-      queryClient.setQueryData<Notification[]>(
-        notificationKeys.byCommitment(commitment),
-        old => (old ? [notification, ...old] : [notification]),
+      queryClient.setQueryData<Notification[]>(notificationKeys.byCommitment(commitment), old =>
+        old ? [notification, ...old] : [notification],
       );
 
       // Update unread count
-      queryClient.setQueryData<number>(
-        notificationKeys.unreadCount(commitment),
-        old => (old ?? 0) + 1,
-      );
+      queryClient.setQueryData<number>(notificationKeys.unreadCount(commitment), old => (old ?? 0) + 1);
     };
 
     socket.on("notification:new", handleNewNotification);
@@ -156,16 +152,12 @@ export const useMarkAsRead = () => {
     mutationFn: markAsReadAPI,
     onSuccess: updatedNotification => {
       // Update notification in cache
-      queryClient.setQueryData<Notification[]>(
-        notificationKeys.byCommitment(commitment!),
-        old => old?.map(n => (n.id === updatedNotification.id ? { ...n, read: true } : n)),
+      queryClient.setQueryData<Notification[]>(notificationKeys.byCommitment(commitment!), old =>
+        old?.map(n => (n.id === updatedNotification.id ? { ...n, read: true } : n)),
       );
 
       // Decrease unread count
-      queryClient.setQueryData<number>(
-        notificationKeys.unreadCount(commitment!),
-        old => Math.max((old ?? 1) - 1, 0),
-      );
+      queryClient.setQueryData<number>(notificationKeys.unreadCount(commitment!), old => Math.max((old ?? 1) - 1, 0));
     },
   });
 };
@@ -181,9 +173,8 @@ export const useMarkAllAsRead = () => {
     mutationFn: () => markAllAsReadAPI(commitment!),
     onSuccess: () => {
       // Update all notifications in cache
-      queryClient.setQueryData<Notification[]>(
-        notificationKeys.byCommitment(commitment!),
-        old => old?.map(n => ({ ...n, read: true })),
+      queryClient.setQueryData<Notification[]>(notificationKeys.byCommitment(commitment!), old =>
+        old?.map(n => ({ ...n, read: true })),
       );
 
       // Reset unread count

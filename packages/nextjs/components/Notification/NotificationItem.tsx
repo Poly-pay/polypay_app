@@ -27,7 +27,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
 
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      toast.error("Failed to copy");
+      toast.error("Failed to copy" +  error);
     }
   };
 
