@@ -2,13 +2,13 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { X } from "lucide-react";
 import { useWalletClient } from "wagmi";
 import DecryptedText from "~~/components/effects/DecryptedText";
 import { useCreateAccount } from "~~/hooks/api";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { createCommitment, createSecret } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
@@ -18,8 +18,7 @@ interface GenerateCommitmentModalProps {
 }
 
 export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = ({ children }) => {
-  const router = useRouter();
-  const pathname = usePathname();
+  const router = useAppRouter();
   const { setCurrentWallet, clearCurrentWallet } = useWalletStore();
   const { data: walletClient } = useWalletClient();
   const { setIdentity } = useIdentityStore();
@@ -34,7 +33,7 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/${identity.commitment}/wallets`);
         const wallets = await response.json();
 
-        const shouldRedirect = pathname === "/" || pathname.startsWith("/dashboard");
+        const shouldRedirect = router.pathname === "/" || router.pathname.startsWith("/dashboard");
 
         if (!shouldRedirect) {
           return;
@@ -42,16 +41,15 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
 
         if (wallets && wallets.length > 0) {
           setCurrentWallet(wallets[0]);
-          router.push("/dashboard");
+          router.goToDashboard();
         } else {
           clearCurrentWallet();
-          router.push("/dashboard/new-wallet");
+          router.goToDashboardNewWallet();
         }
       } catch (err) {
         console.error("Failed to check wallets:", err);
-        // Only redirect on error if we're on home or dashboard
-        if (pathname === "/" || pathname.startsWith("/dashboard")) {
-          router.push("/dashboard/new-wallet");
+        if (router.pathname === "/" || router.pathname.startsWith("/dashboard")) {
+          router.goToDashboardNewWallet();
         }
       }
     }
@@ -64,11 +62,9 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
     const cm = await createCommitment(secret);
     setLocalIdentity({ secret: secret.toString(), commitment: cm.toString() });
 
-    // create account on backend
     try {
       await createAccount({ commitment: cm.toString() });
     } catch (err: any) {
-      // Ignore nếu account đã tồn tại (409 Conflict)
       if (!err.message?.includes("already exists")) {
         console.error("Failed to create account:", err);
       }
@@ -81,7 +77,6 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
       <DialogContent className="sm:max-w-[500px] p-0 gap-0" showCloseButton={false}>
         <DialogTitle hidden></DialogTitle>
         <div className="flex flex-col bg-white rounded-lg overflow-hidden">
-          {/* Header */}
           <div className="flex items-center justify-between p-4 pb-2 border-b bg-gray-100">
             <div className="flex items-center gap-2">
               <Image src={"/commitment/commitment-header-icon.svg"} width={36} height={36} alt="icon" />
@@ -97,9 +92,7 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
             </DialogClose>
           </div>
 
-          {/* Content */}
           <div className="flex flex-col items-center p-8 text-center space-y-3 bg-gray-100">
-            {/* Illustration */}
             <div className="h-[200px] w-full max-w-[200px] flex items-center justify-center relative">
               <div className="relative w-full h-full"></div>
               <div className="absolute w-50 h-50 rounded-full border-[1px] border-gray-300">
@@ -131,7 +124,6 @@ export const GenerateCommitmentModal: React.FC<GenerateCommitmentModalProps> = (
             )}
           </div>
 
-          {/* Footer */}
           <div className="p-4">
             {identity?.commitment ? (
               <DialogClose asChild>
