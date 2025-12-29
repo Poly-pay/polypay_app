@@ -72,9 +72,7 @@ export class RelayerService {
     this.logger.log(`Deploy tx sent: ${txHash}`);
 
     // Wait for receipt
-    const receipt = await this.publicClient.waitForTransactionReceipt({
-      hash: txHash,
-    });
+    const receipt = await this.waitForReceiptWithRetry(txHash);
 
     if (!receipt.contractAddress) {
       throw new Error('Contract deployment failed - no address returned');
@@ -304,9 +302,7 @@ export class RelayerService {
     this.logger.log(`Execute tx sent: ${txHash}`);
 
     // 5. Wait for receipt and verify status
-    const receipt = await this.publicClient.waitForTransactionReceipt({
-      hash: txHash,
-    });
+    const receipt = await this.waitForReceiptWithRetry(txHash);
 
     if (receipt.status === 'reverted') {
       throw new Error(`Transaction reverted on-chain. TxHash: ${txHash}`);
@@ -317,5 +313,51 @@ export class RelayerService {
     );
 
     return { txHash };
+  }
+
+  private async waitForReceiptWithRetry(
+    txHash: `0x${string}`,
+    maxRetries: number = 5,
+  ): Promise<any> {
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const receipt = await this.publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+        return receipt;
+      } catch (error: any) {
+        lastError = error;
+
+        // Check if retryable error
+        const isRetryable =
+          error.code === 'ETIMEDOUT' ||
+          error.code === 'ECONNRESET' ||
+          error.code === 'ECONNREFUSED' ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('network') ||
+          error.message?.includes('connection');
+
+        if (!isRetryable || attempt === maxRetries) {
+          this.logger.error(
+            `waitForReceipt failed after ${attempt} attempts: ${error.message}`,
+          );
+          throw error;
+        }
+
+        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+        this.logger.warn(
+          `waitForReceipt attempt ${attempt} failed, retrying in ${delay}ms: ${error.code || error.message}`,
+        );
+        await this.sleep(delay);
+      }
+    }
+
+    throw lastError;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
