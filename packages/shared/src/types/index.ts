@@ -5,3 +5,4 @@ export { Transaction } from "./transaction";
 export { BatchItem } from "./batch-item";
 export { AddressGroup, Contact } from "./address-book";
 export { Notification } from "./notification";
+export * from "./socket-events";

@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import { Socket, io } from "socket.io-client";
 import { API_BASE_URL } from "~~/constants";
+import { useWalletStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 
 export function useSocket() {
   const { commitment } = useIdentityStore();
+  const { currentWallet } = useWalletStore();
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -12,9 +14,12 @@ export function useSocket() {
       return;
     }
 
-    // Connect with commitment as query param
+    // Connect with walletAddress as query params
     const socket = io(API_BASE_URL, {
-      query: { commitment },
+      query: {
+        // commitment,
+        walletAddress: currentWallet?.address || "",
+      },
       transports: ["websocket"],
     });
 
@@ -32,12 +37,12 @@ export function useSocket() {
 
     socketRef.current = socket;
 
-    // Cleanup on unmount or commitment change
+    // Cleanup on unmount or dependency change
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [commitment]);
+  }, [currentWallet?.address]);
 
   return socketRef.current;
 }

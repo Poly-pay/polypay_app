@@ -13,6 +13,6 @@ export interface Vote {
   merkleProof: string[];
   leafCount?: number;
   leafIndex?: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

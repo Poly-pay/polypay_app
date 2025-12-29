@@ -4,7 +4,6 @@ import React from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { PortfolioModal } from "../Modals/PortFolioModal";
-import { NotificationPanel } from "../Notification/NotificationPanel";
 
 const Title: React.FC = () => {
   const pathname = usePathname();
@@ -55,8 +54,8 @@ const Title: React.FC = () => {
         </div>
       </PortfolioModal>
 
-      {/* Notification */}
-      <NotificationPanel />
+      {/* Notification - We dont need it for now */}
+      {/* <NotificationPanel /> */}
     </div>
   );
 };

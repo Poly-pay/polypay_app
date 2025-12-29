@@ -11,4 +11,11 @@ export class EventsService {
   emitToUser(commitment: string, event: string, data: any) {
     this.eventsGateway.server.to(commitment).emit(event, data);
   }
+
+  /**
+   * Emit event to all users in a wallet
+   */
+  emitToWallet(walletAddress: string, event: string, data: any) {
+    this.eventsGateway.server.to(walletAddress).emit(event, data);
+  }
 }
