@@ -27,7 +27,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
 
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      toast.error("Failed to copy" +  error);
+      toast.error("Failed to copy" + error);
     }
   };
 
@@ -57,7 +57,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
       {/* Copy button */}
       <button
         onClick={handleCopy}
-        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+        className="p-2 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
         title="Copy commitment"
       >
         {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}

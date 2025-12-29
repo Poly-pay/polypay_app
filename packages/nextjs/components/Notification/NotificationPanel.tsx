@@ -3,10 +3,10 @@
 import React from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { NotificationItem } from "./NotificationItem";
 import { SendCommitmentModal } from "./SendCommitmentModal";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { useMarkAllAsRead, useNotifications, useUnreadCount } from "~~/hooks/api/useNotification";
 
 export const NotificationPanel: React.FC = () => {
@@ -19,33 +19,41 @@ export const NotificationPanel: React.FC = () => {
       <SheetTrigger asChild>
         <div className="w-[65px] relative flex items-center justify-center bg-white rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
           <Image src="/misc/bell-icon.gif" alt="Bell" width={35} height={35} />
+          {Number(unreadCount) > 0 && (
+            <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-blue-500 rounded-full">
+              {unreadCount}
+            </span>
+          )}
         </div>
       </SheetTrigger>
+      <SheetTitle></SheetTitle>
 
       <SheetContent side="right" className="w-[350px] h-[90%] p-0 border-l-0 top-[50px] right-[10px] rounded-lg">
         <div className="flex flex-col h-full bg-gray-200 p-1 rounded-lg">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 bg-white rounded-t-lg">
+          <div className="relative flex items-center p-4 bg-white rounded-t-lg gap-2">
             <span className="text-xl font-semibold text-[#1B1B1B]">Notifications</span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mr-3 cursor-pointer">
               {Number(unreadCount) > 0 && (
                 <Button
                   size="sm"
-                  variant="ghost"
                   onClick={() => markAllAsRead()}
-                  className="text-sm text-blue-500 hover:text-blue-600"
+                  className="text-sm text-blue-500 bg-blue-50 hover:bg-blue-100 cursor-pointer"
                 >
                   Mark all as read
                 </Button>
               )}
-
-              {/* <SheetTrigger asChild>
-                <Button size="sm" className="h-8 w-8 p-0 bg-gray-100 hover:bg-gray-200">
-                  <X className="h-4 w-4 text-gray-600" />
-                </Button>
-              </SheetTrigger> */}
             </div>
+
+            <SheetTrigger asChild>
+              <Button
+                size="sm"
+                className="h8 w-8 p-4 text-black bg-gray-50 hover:bg-gray-100 cursor-pointer absolute top-4 right-4"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
           </div>
 
           <div className="px-4 py-2 bg-white border-b">
