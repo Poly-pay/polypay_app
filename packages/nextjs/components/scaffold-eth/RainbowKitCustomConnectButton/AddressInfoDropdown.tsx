@@ -1,3 +1,5 @@
+"use client";
+
 import { useRef, useState } from "react";
 import { NetworkOptions } from "./NetworkOptions";
 import { getAddress } from "viem";
