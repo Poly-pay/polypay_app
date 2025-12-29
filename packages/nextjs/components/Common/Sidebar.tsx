@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { DevelopingFeatureModal } from "../modals/DevelopingFeatureModal";
 import { Balance } from "../scaffold-eth";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
 import { Copy } from "lucide-react";
@@ -13,6 +12,7 @@ import ShinyText from "~~/components/effects/ShinyText";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
+import { ModalName } from "~~/types/modal";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
 export const ACCOUNT_SIDEBAR_OFFSET = 285; // Main sidebar width
@@ -66,6 +66,7 @@ const SectionItem = ({
   menuItems,
   showDivider,
   selectedItem,
+  openModal,
 }: {
   walletAddress?: string;
   label: string;
@@ -73,12 +74,15 @@ const SectionItem = ({
   showDivider?: boolean;
   selectedItem: string | null;
   onItemClick: (itemLabel: string) => void;
+  openModal: (name: ModalName, props?: Record<string, any>) => void;
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
-  const itemComponent = (item: any, notRoute = false) => {
+  const itemComponent = (item: any) => {
+    const isDevelopingFeature = ["swap", "ai assistant"].includes(item.label);
+
     return (
       <div
         key={item.label}
@@ -88,7 +92,10 @@ const SectionItem = ({
             : "hover:bg-white hover:text-black"
         }`}
         onClick={() => {
-          if (notRoute) return;
+          if (isDevelopingFeature) {
+            openModal("developingFeature");
+            return;
+          }
           router.push(item.link);
         }}
         onMouseEnter={() => setHoveredItem(item.link)}
@@ -129,14 +136,7 @@ const SectionItem = ({
       <div className="flex flex-col">
         <span className="text-lg text-text-primary text-[#ADADAD]">{label}</span>
       </div>
-      <div className="flex flex-col gap-0.5">
-        {menuItems.map(item => {
-          if (["swap", "ai assistant"].includes(item.label)) {
-            return <DevelopingFeatureModal key={item.label}>{itemComponent(item, true)}</DevelopingFeatureModal>;
-          }
-          return itemComponent(item);
-        })}
-      </div>
+      <div className="flex flex-col gap-0.5">{menuItems.map(item => itemComponent(item))}</div>
       {showDivider && <div className="w-full h-[1px] my-1 bg-gray-300" />}
     </div>
   );
@@ -184,6 +184,7 @@ export default function Sidebar() {
                 showDivider={index < sectionItems.length - 1}
                 selectedItem={selectedItem}
                 onItemClick={handleItemClick}
+                openModal={openModal}
               />
             ))}
           </div>

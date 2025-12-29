@@ -20,6 +20,15 @@ const modals: ModalRegistry = {
   generateCommitment: dynamic(() => import("./GenerateCommitmentModal"), {
     ssr: false,
   }),
+  confirm: dynamic(() => import("./ConfirmModal"), {
+    ssr: false,
+  }),
+  editAccount: dynamic(() => import("./EditAccountModal"), {
+    ssr: false,
+  }),
+  developingFeature: dynamic(() => import("./DevelopingFeatureModal"), {
+    ssr: false,
+  }),
 };
 
 type ModalInstance = {
