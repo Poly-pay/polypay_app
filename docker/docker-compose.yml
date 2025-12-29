@@ -1,5 +1,7 @@
 services:
   postgres:
+    restart: unless-stopped
+    container_name: polypay-postgres
     image: postgres:16-alpine
     env_file:
       - .env
@@ -17,6 +19,9 @@ services:
       retries: 3
 
   backend:
+    restart: unless-stopped 
+    container_name: polypay-backend
+    image: polypay-backend:latest
     build:
       context: ..
       dockerfile: docker/backend.Dockerfile
@@ -29,6 +34,9 @@ services:
       - "4000:4000"
 
   frontend:
+    restart: unless-stopped 
+    container_name: polypay-frontend
+    image: polypay-frontend:latest
     build:
       context: ..
       dockerfile: docker/frontend.Dockerfile
