@@ -122,11 +122,11 @@ model Vote {
   proofStatus ProofStatus?
 
   // Aggregation data
-  aggregationId String?
-  domainId      Int?     @default(0)
-  merkleProof   String[]
-  leafCount     Int?
-  leafIndex     Int?
+  aggregationId    String?
+  domainId         Int?         @default(175)
+  merkleProof      String[]
+  leafCount        Int?
+  leafIndex        Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

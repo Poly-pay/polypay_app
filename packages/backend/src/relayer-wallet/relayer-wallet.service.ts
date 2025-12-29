@@ -6,12 +6,12 @@ import {
   decodeFunctionData,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { sepolia } from 'viem/chains';
+import { horizenTestnet } from '@polypay/shared';
 import {
   METAMULTISIG_ABI,
   METAMULTISIG_BYTECODE,
   METAMULTISIG_CONSTANTS,
-} from '@/common/contracts/MetaMultiSigWallet';
+} from '@polypay/shared';
 
 @Injectable()
 export class RelayerService {
@@ -30,13 +30,13 @@ export class RelayerService {
     this.account = privateKeyToAccount(privateKey);
 
     this.publicClient = createPublicClient({
-      chain: sepolia,
+      chain: horizenTestnet,
       transport: http(),
     });
 
     this.walletClient = createWalletClient({
       account: this.account,
-      chain: sepolia,
+      chain: horizenTestnet,
       transport: http(),
     });
 
@@ -66,7 +66,7 @@ export class RelayerService {
         BigInt(threshold),
       ],
       account: this.account,
-      chain: sepolia,
+      chain: horizenTestnet,
     });
 
     this.logger.log(`Deploy tx sent: ${txHash}`);
@@ -297,7 +297,7 @@ export class RelayerService {
       functionName: 'execute',
       args,
       account: this.account,
-      chain: sepolia,
+      chain: horizenTestnet,
       gas: gasEstimate + 50000n,
     });
 

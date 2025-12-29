@@ -9,18 +9,16 @@ import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
-  SubmitProofDto,
   ZkVerifySubmitResponse,
   ZkVerifyJobStatusResponse,
-  ProposeTxAndSubmitProofDto,
-  SignTxDto,
 } from './dto';
 import { PrismaService } from '@/database/prisma.service';
+import { horizenTestnet } from '@polypay/shared';
 
 @Injectable()
 export class ZkVerifyService {
   private readonly logger = new Logger(ZkVerifyService.name);
-  private readonly apiUrl = 'https://relayer-api-testnet.horizenlabs.io/api/v1';
+  private readonly apiUrl = 'https://api-testnet.kurier.xyz/api/v1';
   private readonly apiKey: string;
   private readonly vkeyPath: string;
 
@@ -86,7 +84,7 @@ export class ZkVerifyService {
     const params = {
       proofType: 'ultraplonk',
       vkRegistered: true,
-      chainId: 11155111,
+      chainId: horizenTestnet.id,
       proofOptions: {
         numberOfPublicInputs,
       },

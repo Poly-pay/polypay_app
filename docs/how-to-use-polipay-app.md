@@ -2,7 +2,7 @@
 
 ## Polypay App (Beta v0.1)
 
-Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web application that allows you to create and manage a multisig wallet on **Ethereum Sepolia testnet** with a focus on privacy. It is not yet production ready. Current version includes the following features:
+Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web application that allows you to create and manage a multisig wallet on **Horizen testnet** with a focus on privacy. It is not yet production ready. Current version includes the following features:
 
 - Create and manage a multisig wallet
 - Hide signers(multisig wallet owners) identities with ZK proofs

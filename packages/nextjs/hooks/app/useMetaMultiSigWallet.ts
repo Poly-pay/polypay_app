@@ -1,7 +1,7 @@
 import { useMemo } from "react";
+import { METAMULTISIG_ABI } from "@polypay/shared";
 import { getContract } from "viem";
 import { usePublicClient, useReadContract, useWalletClient } from "wagmi";
-import { METAMULTISIG_ABI } from "~~/contracts/MetaMultiSigWallet";
 import { useWalletStore } from "~~/services/store/useWalletStore";
 
 export const useMetaMultiSigWallet = () => {

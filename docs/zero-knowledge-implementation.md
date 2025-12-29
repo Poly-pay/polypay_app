@@ -15,8 +15,8 @@ In a traditional multisig wallet:
 - Signer addresses are public on blockchain
 
 In PolyPay:
-- You prove "I am an authorized signer" without revealing WHICH signer you are
-- Only the proof is public, your identity stays private
+- You prove "I know the secret for an authorized commitment" without revealing your EOA address
+- Your Ethereum address stays private, only the commitment is visible
 
 ## The Four Proofs
 
@@ -44,18 +44,22 @@ When you sign a transaction in PolyPay, the ZK circuit proves four things simult
 
 ### Proof 3: "I am authorized"
 
-**Problem:** How to prove you're in the signers list without revealing which one?
+**Problem:** How to prove you're in the signers list?
 
 **Solution:**
 - Each signer has a secret "commitment" stored as: `commitment = hash(secret, secret)`
-- All commitments form a [Merkle Tree](https://en.wikipedia.org/wiki/Merkle_tree)
-- You prove your commitment exists in the tree WITHOUT revealing which leaf
+- The circuit proves you know the secret for a given commitment
+- The smart contract checks if that commitment exists in the signers list
 
-**Analogy:** Imagine a club membership list. You prove "my name is on the list" without pointing to which line.
+**Analogy:** Imagine a club membership list. You prove "I know the password for one of these memberships" and the club verifies that membership is on the list.
 
-**How Merkle Proof works:**
+**How it works:**
 
-You have a tree structure where your commitment is one of the leaves (A, B, C, or D). To prove membership, you provide sibling hashes along the path from your leaf to the root. The circuit computes the root from your path and checks it matches the public root.
+The circuit verifies: `hash(secret, secret) == commitment`
+
+Then the smart contract checks: `commitment in signers list?`
+
+This two-step verification ensures only authorized signers can sign transactions while keeping their Ethereum addresses private.
 
 ### Proof 4: "I haven't signed before"
 
@@ -72,11 +76,11 @@ You have a tree structure where your commitment is one of the leaves (A, B, C, o
 
 1. **User Signs:** User signs tx_hash with their Ethereum wallet → Produces signature, pub_key_x, pub_key_y
 
-2. **Frontend Generates Proof:** [Noir](https://noir-lang.org) circuit receives private inputs (signature, pub_key, secret, merkle_path, tx_hash) and public inputs (tx_hash_commitment, merkle_root, nullifier) → Outputs ZK Proof
+2. **Frontend Generates Proof:** [Noir](https://noir-lang.org) circuit receives private inputs (signature, pub_key, secret, tx_hash) and public inputs (tx_hash_commitment, commitment, nullifier) → Outputs ZK Proof
 
 3. **Backend Verifies via zkVerify:** Proof submitted to [zkVerify](https://docs.zkverify.io) for verification → Returns aggregation_id, attestation
 
-4. **Smart Contract Executes:** When threshold signatures reached, contract verifies all proofs on-chain, checks nullifiers not used, checks merkle_root matches current signers, then executes transaction
+4. **Smart Contract Executes:** When threshold signatures reached, contract verifies all proofs on-chain, checks nullifiers not used, checks each commitment is in current signers list, then executes transaction
 
 ## Circuit Inputs Reference
 
@@ -88,8 +92,6 @@ You have a tree structure where your commitment is one of the leaves (A, B, C, o
 | pub_key_x | [u8; 32] | Public key X coordinate |
 | pub_key_y | [u8; 32] | Public key Y coordinate |
 | secret | Field | Signer's secret (from signing "polypay-identity") |
-| leaf_index | Field | Position in Merkle tree |
-| merkle_path | [Field; 4] | Sibling hashes for proof |
 | tx_hash_bytes | [u8; 32] | Transaction hash to sign |
 
 ### Public Inputs (Visible on-chain)
@@ -97,7 +99,7 @@ You have a tree structure where your commitment is one of the leaves (A, B, C, o
 | Input | Type | Description |
 |-------|------|-------------|
 | tx_hash_commitment | Field | Poseidon hash of tx_hash |
-| merkle_root | Field | Root of authorized signers tree |
+| commitment | Field | hash(secret, secret) - checked against signers list |
 | nullifier | Field | Prevents double-signing |
 
 ## More Detail

@@ -23,4 +23,4 @@ This section covers:
 ## Quick Links
 
 - [GitHub Repository](https://github.com/Poly-pay/polypay_app)
-- [Smart Contract on Sepolia](https://sepolia.etherscan.io)
+- [Smart Contract on Horizen testnet](https://horizen-testnet.explorer.caldera.xyz/)
