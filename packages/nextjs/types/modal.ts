@@ -14,4 +14,4 @@ export type ModalComponent = React.ComponentType<ModalProps>;
 
 export type ModalRegistry = Record<string, ModalComponent>;
 
-export type ModalName = "qrAddressReceiver";
+export type ModalName = "qrAddressReceiver" | "generateCommitment";

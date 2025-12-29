@@ -17,6 +17,7 @@ const QRAddressReceiverModal: React.FC<QRAddressReceiverModalProps> = ({ isOpen,
     <ModalContainer
       isOpen={isOpen}
       onClose={onClose}
+      isCloseButton={true}
       className="bg-[url('/common/bg-qrcode.png')] bg-no-repeat bg-center bg-cover rounded-2xl w-[600px] px-0 pb-0"
     >
       <div className="flex flex-col p-5 pb-0">

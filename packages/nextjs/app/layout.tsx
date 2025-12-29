@@ -29,9 +29,9 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
     <html suppressHydrationWarning className={`${barlow.variable} ${repetitionScroll.variable} font-barlow`}>
       <body>
         <ThemeProvider enableSystem>
-          <ModalLayout>
-            <ScaffoldEthAppWithProviders>{children}</ScaffoldEthAppWithProviders>
-          </ModalLayout>
+          <ScaffoldEthAppWithProviders>
+            <ModalLayout>{children}</ModalLayout>
+          </ScaffoldEthAppWithProviders>
         </ThemeProvider>
       </body>
     </html>

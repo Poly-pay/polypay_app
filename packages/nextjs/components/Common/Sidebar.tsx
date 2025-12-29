@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { DevelopingFeatureModal } from "../modals/DevelopingFeatureModal";
-import { GenerateCommitmentModal } from "../modals/GenerateCommitmentModal";
 import { Balance } from "../scaffold-eth";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
 import { Copy } from "lucide-react";
@@ -166,13 +165,7 @@ export default function Sidebar() {
           {/* Header */}
           <div className="flex flex-row items-center gap-3" onClick={() => router.push("/")}>
             <Image src="/logo/polypay-icon.svg" alt="logo" className="w-8 h-8 cursor-pointer" width={32} height={32} />
-            <Image
-              src="/logo/polypay-text.svg"
-              alt="logo"
-              className="scale-110 cursor-pointer"
-              width={32}
-              height={32}
-            />
+            <Image src="/logo/polypay-text.svg" alt="logo" className="cursor-pointer" width={68} height={68} />
             <div className="flex flex-row items-center justify-center rounded-full px-3 py-1 bg-divider">
               <span className="text-sm font-normal text-[#B5009A] px-3 py-1 bg-[#FF7CEB33] rounded-full">Beta</span>
             </div>
@@ -257,9 +250,7 @@ export default function Sidebar() {
                             />
                           </span>
                         ) : (
-                          <GenerateCommitmentModal>
-                            <span>Generate your commitment</span>
-                          </GenerateCommitmentModal>
+                          <span onClick={() => openModal("generateCommitment")}>Generate your commitment</span>
                         )}
                       </span>
                     </span>

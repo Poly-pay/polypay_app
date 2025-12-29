@@ -17,6 +17,9 @@ const modals: ModalRegistry = {
   qrAddressReceiver: dynamic(() => import("./QRAddressReceiverModal"), {
     ssr: false,
   }),
+  generateCommitment: dynamic(() => import("./GenerateCommitmentModal"), {
+    ssr: false,
+  }),
 };
 
 type ModalInstance = {
