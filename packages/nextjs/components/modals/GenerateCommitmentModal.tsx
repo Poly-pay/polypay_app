@@ -2,26 +2,55 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import ModalContainer from "./ModalContainer";
 import { X } from "lucide-react";
 import { useWalletClient } from "wagmi";
 import DecryptedText from "~~/components/effects/DecryptedText";
 import { useCreateAccount } from "~~/hooks/api";
-import { useIdentityStore } from "~~/services/store";
+import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
 import { createCommitment, createSecret } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
 const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { setCurrentWallet, clearCurrentWallet } = useWalletStore();
   const { data: walletClient } = useWalletClient();
   const { setIdentity } = useIdentityStore();
   const { mutateAsync: createAccount } = useCreateAccount();
   const [identity, setLocalIdentity] = useState<{ secret: string; commitment: string } | null>(null);
 
-  const handleClose = () => {
+  const handleClose = async () => {
     if (identity?.secret && identity?.commitment) {
       setIdentity(identity.secret, identity.commitment);
+
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/${identity.commitment}/wallets`);
+        const wallets = await response.json();
+
+        const shouldRedirect = pathname === "/" || pathname.startsWith("/dashboard");
+
+        if (!shouldRedirect) {
+          onClose();
+          return;
+        }
+
+        if (wallets && wallets.length > 0) {
+          setCurrentWallet(wallets[0]);
+          router.push("/dashboard");
+        } else {
+          clearCurrentWallet();
+          router.push("/dashboard/new-wallet");
+        }
+      } catch (err) {
+        console.error("Failed to check wallets:", err);
+        if (pathname === "/" || pathname.startsWith("/dashboard")) {
+          router.push("/dashboard/new-wallet");
+        }
+      }
     }
     onClose();
   };
