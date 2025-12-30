@@ -184,6 +184,10 @@ export const useContacts = (walletId: string | null, groupId?: string) => {
     queryKey: addressBookKeys.contacts(walletId || "", groupId),
     queryFn: () => getContactsAPI(walletId!, groupId),
     enabled: !!walletId,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };
 

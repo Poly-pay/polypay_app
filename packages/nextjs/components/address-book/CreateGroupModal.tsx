@@ -6,6 +6,7 @@ import { useCreateGroup } from "~~/hooks";
 interface CreateGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   walletId: string;
   contacts: Contact[];
 }
@@ -36,7 +37,7 @@ function getContactGroups(contact: Contact): string {
     .join(", ");
 }
 
-export function CreateGroupModal({ isOpen, onClose, walletId, contacts }: CreateGroupModalProps) {
+export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contacts }: CreateGroupModalProps) {
   const [name, setName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
@@ -86,6 +87,7 @@ export function CreateGroupModal({ isOpen, onClose, walletId, contacts }: Create
         name: name.trim(),
         contactIds: selectedContactIds.length > 0 ? selectedContactIds : undefined,
       });
+      onSuccess?.();
       handleClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create group");
