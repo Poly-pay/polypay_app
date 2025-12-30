@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSocket } from "../app";
+import { useSocket } from "../app/useSocket";
 import {
   ApproveTransactionDto,
   CreateTransactionDto,
