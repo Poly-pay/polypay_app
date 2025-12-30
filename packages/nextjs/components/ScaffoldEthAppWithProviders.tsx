@@ -5,7 +5,7 @@ import Sidebar from "./Common/Sidebar";
 import Title from "./Common/Title";
 import { InitializeApp } from "./InitializeApp";
 import { RainbowKitProvider, darkTheme, lightTheme } from "@rainbow-me/rainbowkit";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { useTheme } from "next-themes";
 import { Toaster } from "react-hot-toast";
@@ -14,6 +14,7 @@ import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { useEnforceNetwork } from "~~/hooks";
 import { useMobileDetection } from "~~/hooks/app/useMobileDetection";
 import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
+import { queryClient } from "~~/services/queryClient";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
@@ -43,14 +44,6 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
     </>
   );
 };
-
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 export const ScaffoldEthAppWithProviders = ({ children }: { children: React.ReactNode }) => {
   const { resolvedTheme } = useTheme();
