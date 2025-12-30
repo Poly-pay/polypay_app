@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Contact } from "@polypay/shared";
 import { Search } from "lucide-react";
 import { ContactDetail } from "~~/components/address-book/ContactDetail";
@@ -34,6 +34,16 @@ export default function AddressBookPage() {
     isLoading: isLoadingContacts,
     refetch: refetchContacts,
   } = useContacts(walletId, selectedGroupId || undefined);
+
+  // Auto sync selectedContact when contacts data updates
+  useEffect(() => {
+    if (selectedContact) {
+      const updatedContact = contacts.find(c => c.id === selectedContact.id);
+      if (updatedContact && JSON.stringify(updatedContact) !== JSON.stringify(selectedContact)) {
+        setSelectedContact(updatedContact);
+      }
+    }
+  }, [contacts, selectedContact]);
 
   // Filter contacts by search
   const filteredContacts = contacts.filter(

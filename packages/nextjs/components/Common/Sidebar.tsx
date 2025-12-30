@@ -169,8 +169,8 @@ export default function Sidebar() {
               src="/logo/polypay-text.svg"
               alt="logo"
               className="scale-110 cursor-pointer"
-              width={32}
-              height={32}
+              width={72}
+              height={72}
             />
             <div className="flex flex-row items-center justify-center rounded-full px-3 py-1 bg-divider">
               <span className="text-sm font-normal text-[#B5009A] px-3 py-1 bg-[#FF7CEB33] rounded-full">Beta</span>
