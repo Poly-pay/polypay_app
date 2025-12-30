@@ -346,7 +346,7 @@ export const EditAccountModal: React.FC<EditAccountModalProps> = ({ children }) 
               </p>
 
               <div className="space-y-3 mb-4">
-                {signers.map((signer, index) => (
+                {signers.map((signer: any, index: number) => (
                   <div key={index} className="flex items-center justify-between p-3 border rounded">
                     <span className="font-mono text-sm text-gray-900 w-[400px] truncate">{signer}</span>
                     <div className="flex items-center gap-2">
