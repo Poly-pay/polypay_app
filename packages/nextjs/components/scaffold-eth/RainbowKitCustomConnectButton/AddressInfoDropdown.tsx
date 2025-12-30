@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { NetworkOptions } from "./NetworkOptions";
+import { createCommitment, createSecret } from "@polypay/shared";
 import { getAddress } from "viem";
 import { Address } from "viem";
 import { useAccount, useDisconnect, useWalletClient } from "wagmi";
@@ -19,7 +20,6 @@ import {
 import { BlockieAvatar, isENS } from "~~/components/scaffold-eth";
 import { useCopyToClipboard, useOutsideClick } from "~~/hooks/scaffold-eth";
 import { getTargetNetworks, notification } from "~~/utils/scaffold-eth";
-import { createCommitment, createSecret } from "@polypay/shared";
 
 const BURNER_WALLET_ID = "burnerWallet";
 

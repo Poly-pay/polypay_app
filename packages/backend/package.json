@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aztec/bb.js": "0.84.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -30,6 +31,7 @@
     "@nestjs/swagger": "^8.0.7",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/websockets": "^11.1.10",
+    "@noir-lang/noir_js": "1.0.0-beta.6",
     "@polypay/shared": "1.0.0",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",

@@ -22,7 +22,7 @@ export function hexToByteArray(hex: string): number[] {
  */
 export async function getPublicKeyXY(
   signature: Hex,
-  messageHash: Hex
+  messageHash: Hex,
 ): Promise<{ pubKeyX: number[]; pubKeyY: number[] }> {
   const prefixedHash = hashMessage({ raw: messageHash });
 

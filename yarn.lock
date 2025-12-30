@@ -4576,6 +4576,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@polypay/backend@workspace:packages/backend"
   dependencies:
+    "@aztec/bb.js": 0.84.0
     "@eslint/eslintrc": ^3.2.0
     "@eslint/js": ^9.18.0
     "@nestjs/cli": ^11.0.0
@@ -4590,7 +4591,11 @@ __metadata:
     "@nestjs/swagger": ^8.0.7
     "@nestjs/terminus": ^11.0.0
     "@nestjs/testing": ^11.0.1
+<<<<<<< HEAD
     "@nestjs/websockets": ^11.1.10
+=======
+    "@noir-lang/noir_js": 1.0.0-beta.6
+>>>>>>> 5abdb3f (Test script for full flow e2e: Create accout -> Create wallet -> Create tx -> Approve tx -> Execute)
     "@polypay/shared": 1.0.0
     "@prisma/adapter-pg": ^7.1.0
     "@prisma/client": ^7.1.0

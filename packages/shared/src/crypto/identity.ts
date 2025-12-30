@@ -8,7 +8,9 @@ import { poseidonHash2 } from "./poseidon";
  * @param walletClient - Viem wallet client
  * @returns Secret as bigint
  */
-export async function createSecret(walletClient: WalletClient): Promise<bigint> {
+export async function createSecret(
+  walletClient: WalletClient,
+): Promise<bigint> {
   const [account] = await walletClient.getAddresses();
 
   // Sign fixed message to derive secret
