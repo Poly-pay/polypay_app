@@ -5,7 +5,7 @@ import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
 import { type Hex } from "viem";
 import { useWalletClient } from "wagmi";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
-import { getPublicKeyXY, hexToByteArray, poseidonHash2 } from "~~/utils/multisig";
+import { getPublicKeyXY, hexToByteArray, poseidonHash2 } from "@polypay/shared";
 
 export interface GenerateProofResult {
   proof: number[];

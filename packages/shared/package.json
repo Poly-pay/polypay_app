@@ -10,11 +10,13 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
+    "circomlibjs": "^0.1.7",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "viem": "2.31.1"
   },
   "devDependencies": {
+    "@types/circomlibjs": "^0",
     "prettier": "~3.5.3",
     "typescript": "^5.0.0"
   }

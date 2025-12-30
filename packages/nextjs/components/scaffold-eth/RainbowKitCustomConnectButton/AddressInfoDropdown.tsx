@@ -18,8 +18,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { BlockieAvatar, isENS } from "~~/components/scaffold-eth";
 import { useCopyToClipboard, useOutsideClick } from "~~/hooks/scaffold-eth";
-import { createCommitment, createSecret } from "~~/utils/multisig";
 import { getTargetNetworks, notification } from "~~/utils/scaffold-eth";
+import { createCommitment, createSecret } from "@polypay/shared";
 
 const BURNER_WALLET_ID = "burnerWallet";
 
@@ -95,7 +95,7 @@ export const AddressInfoDropdown = ({
               onClick={async () => {
                 if (!walletClient || generateCommitment) return;
 
-                const secret = await createSecret(walletClient);
+                const secret = await createSecret(walletClient as any);
                 const commitment = await createCommitment(secret);
                 localStorage.setItem("secret", secret.toString());
                 localStorage.setItem("commitment", commitment.toString());
