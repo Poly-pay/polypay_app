@@ -1,10 +1,18 @@
+import { useEffect } from "react";
+import { useSocket } from "../app";
 import {
   ApproveTransactionDto,
   CreateTransactionDto,
   DenyTransactionDto,
+  TX_CREATED_EVENT,
+  TX_STATUS_EVENT,
+  TX_VOTED_EVENT,
   Transaction,
+  TxCreatedEventData,
   TxStatus,
+  TxStatusEventData,
   TxType,
+  TxVotedEventData,
   VoteType,
 } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -280,4 +288,46 @@ export const useReserveNonce = () => {
  */
 export const usePendingTransactions = (walletAddress: string) => {
   return useTransactions(walletAddress, TxStatus.PENDING);
+};
+
+/**
+ * Listen for realtime transaction updates
+ */
+export const useTransactionRealtime = (walletAddress: string | undefined) => {
+  const socket = useSocket();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!socket || !walletAddress) return;
+
+    // Handle new transaction created
+    const handleTxCreated = (data: TxCreatedEventData) => {
+      console.log("[Socket] TX created:", data);
+      queryClient.invalidateQueries({ queryKey: transactionKeys.byWallet(walletAddress) });
+    };
+
+    const handleTxStatus = (data: TxStatusEventData) => {
+      console.log("[Socket] TX status:", data);
+      queryClient.setQueryData<Transaction[]>(transactionKeys.byWallet(walletAddress), old =>
+        old?.map(tx => (tx.txId === data.txId ? { ...tx, status: data.status, txHash: data.txHash || tx.txHash } : tx)),
+      );
+    };
+
+    const handleTxVoted = (data: TxVotedEventData) => {
+      console.log("[Socket] TX voted:", data);
+      queryClient.setQueryData<Transaction[]>(transactionKeys.byWallet(walletAddress), old =>
+        old?.map(tx => (tx.txId === data.txId ? { ...tx, votes: [...tx.votes, data.vote] } : tx)),
+      );
+    };
+
+    socket.on(TX_CREATED_EVENT, handleTxCreated);
+    socket.on(TX_STATUS_EVENT, handleTxStatus);
+    socket.on(TX_VOTED_EVENT, handleTxVoted);
+
+    return () => {
+      socket.off(TX_CREATED_EVENT, handleTxCreated);
+      socket.off(TX_STATUS_EVENT, handleTxStatus);
+      socket.off(TX_VOTED_EVENT, handleTxVoted);
+    };
+  }, [socket, walletAddress, queryClient]);
 };

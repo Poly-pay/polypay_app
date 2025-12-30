@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import Routes from "~~/configs/routes.config";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
 
 export function useMobileDetection() {
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
+  const router = useAppRouter();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -16,13 +16,11 @@ export function useMobileDetection() {
       setIsMobile(isMobileDevice);
       setIsLoading(false);
 
-      // Redirect to mobile page if on mobile and not already on mobile page
-      if (isMobileDevice && pathname !== "/mobile") {
-        router.push("/mobile");
+      if (isMobileDevice && router.pathname !== Routes.MOBILE.path) {
+        router.goToMobile();
       }
-      // Redirect to home if not mobile and on mobile page
-      if (!isMobileDevice && pathname === "/mobile") {
-        router.push("/");
+      if (!isMobileDevice && router.pathname === Routes.MOBILE.path) {
+        router.goToDashboard();
       }
     };
 
@@ -30,7 +28,7 @@ export function useMobileDetection() {
     window.addEventListener("resize", checkMobile);
 
     return () => window.removeEventListener("resize", checkMobile);
-  }, [router, pathname]);
+  }, [router]);
 
   return { isMobile, isLoading };
 }

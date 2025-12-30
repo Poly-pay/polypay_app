@@ -63,6 +63,16 @@ const updateAccountAPI = async (commitment: string, dto: UpdateAccountDto): Prom
   return response.json();
 };
 
+const getAccountsAPI = async (): Promise<Account[]> => {
+  const response = await fetch(`${API_BASE_URL}/api/accounts`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch accounts");
+  }
+
+  return response.json();
+};
+
 // ============ Query Keys ============
 
 export const accountKeys = {
@@ -123,5 +133,12 @@ export const useUpdateAccount = () => {
       queryClient.invalidateQueries({ queryKey: accountKeys.byCommitment(variables.commitment) });
       queryClient.invalidateQueries({ queryKey: accountKeys.wallets(variables.commitment) });
     },
+  });
+};
+
+export const useAccounts = () => {
+  return useQuery({
+    queryKey: accountKeys.all,
+    queryFn: getAccountsAPI,
   });
 };
