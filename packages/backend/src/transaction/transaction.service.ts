@@ -18,11 +18,20 @@ import {
   encodeERC20Transfer,
   encodeBatchTransfer,
   TxStatus,
+  TX_CREATED_EVENT,
+  TX_VOTED_EVENT,
+  TX_STATUS_EVENT,
+  TxCreatedEventData,
+  TxVotedEventData,
+  VoteType,
+  ProofStatus,
+  TxStatusEventData,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
-import { Transaction } from '@/generated/prisma/client';
 import { DOMAIN_ID_HORIZEN_TESTNET } from '@/common/constants';
+import { EventsService } from '@/events/events.service';
+import { Transaction } from '@/generated/prisma/client';
 
 @Injectable()
 export class TransactionService {
@@ -33,6 +42,7 @@ export class TransactionService {
     private zkVerifyService: ZkVerifyService,
     private relayerService: RelayerService,
     private batchItemService: BatchItemService,
+    private readonly eventsService: EventsService,
   ) {}
 
   /**
@@ -164,6 +174,18 @@ export class TransactionService {
       `Created transaction txId: ${transaction.txId}, nonce: ${transaction.nonce}`,
     );
 
+    // Emit realtime event
+    const eventData: TxCreatedEventData = {
+      txId: transaction.txId,
+      type: transaction.type as TxType,
+      walletAddress: transaction.walletAddress,
+    };
+    this.eventsService.emitToWallet(
+      dto.walletAddress,
+      TX_CREATED_EVENT,
+      eventData,
+    );
+
     return {
       txId: transaction.txId,
       nonce: transaction.nonce,
@@ -232,23 +254,45 @@ export class TransactionService {
     }
 
     // 5. Create vote
-    await this.prisma.vote.create({
+    const vote = await this.prisma.vote.create({
       data: {
         txId,
         voterCommitment: dto.voterCommitment,
-        voteType: 'APPROVE',
+        voteType: VoteType.APPROVE,
         nullifier: dto.nullifier,
         jobId: proofResult.jobId,
-        proofStatus: 'PENDING',
+        proofStatus: ProofStatus.PENDING,
         domainId: DOMAIN_ID_HORIZEN_TESTNET,
       },
     });
 
     this.logger.log(`Vote APPROVE added for txId: ${txId}`);
 
+    // Calculate approve count
+    const approveCount = await this.prisma.vote.count({
+      where: { txId, voteType: VoteType.APPROVE },
+    });
+
+    // Emit realtime event
+    const eventData: TxVotedEventData = {
+      txId,
+      voteType: VoteType.APPROVE,
+      approveCount,
+      vote: {
+        ...vote,
+        voteType: vote.voteType as VoteType,
+        proofStatus: vote.proofStatus as ProofStatus,
+      },
+    };
+    this.eventsService.emitToWallet(
+      transaction.walletAddress,
+      TX_VOTED_EVENT,
+      eventData,
+    );
+
     return {
       txId,
-      voteType: 'APPROVE',
+      voteType: VoteType.APPROVE,
       jobId: proofResult.jobId,
       status: transaction.status,
       approveCount: await this.getApproveCount(txId),
@@ -292,11 +336,11 @@ export class TransactionService {
     }
 
     // 3. Create deny vote
-    await this.prisma.vote.create({
+    const vote = await this.prisma.vote.create({
       data: {
         txId,
         voterCommitment: dto.voterCommitment,
-        voteType: 'DENY',
+        voteType: VoteType.DENY,
       },
     });
 
@@ -309,9 +353,31 @@ export class TransactionService {
       where: { txId },
     });
 
+    // Calculate approve count
+    const approveCount = await this.prisma.vote.count({
+      where: { txId, voteType: VoteType.APPROVE },
+    });
+
+    // Emit realtime event
+    const eventData: TxVotedEventData = {
+      txId,
+      voteType: VoteType.DENY,
+      approveCount,
+      vote: {
+        ...vote,
+        voteType: vote.voteType as VoteType,
+        proofStatus: vote.proofStatus as ProofStatus,
+      },
+    };
+    this.eventsService.emitToWallet(
+      transaction.walletAddress,
+      TX_VOTED_EVENT,
+      eventData,
+    );
+
     return {
       txId,
-      voteType: 'DENY',
+      voteType: VoteType.DENY,
       status: updatedTx?.status,
       denyCount: await this.getDenyCount(txId),
     };
@@ -536,14 +602,28 @@ export class TransactionService {
       }
 
       // Mark this transaction as EXECUTED
-      return tx.transaction.update({
+      const updatedTx = tx.transaction.update({
         where: { txId },
         data: {
-          status: 'EXECUTED',
+          status: TxStatus.EXECUTED,
           txHash,
           executedAt: new Date(),
         },
       });
+
+      // emit event for status update
+      const eventData: TxStatusEventData = {
+        txId,
+        status: TxStatus.EXECUTED,
+        txHash,
+      };
+      this.eventsService.emitToWallet(
+        transaction.walletAddress,
+        TX_STATUS_EVENT,
+        eventData,
+      );
+
+      return updatedTx;
     });
   }
 
@@ -778,7 +858,7 @@ export class TransactionService {
     if (!transaction) return;
 
     const approveCount = transaction.votes.filter(
-      (v) => v.voteType === 'APPROVE',
+      (v) => v.voteType === VoteType.APPROVE,
     ).length;
     const totalVoted = transaction.votes.length;
 
@@ -788,11 +868,22 @@ export class TransactionService {
     if (maxPossibleApproves < transaction.threshold) {
       await this.prisma.transaction.update({
         where: { txId },
-        data: { status: 'FAILED' },
+        data: { status: TxStatus.FAILED },
       });
 
       this.logger.log(
         `Transaction ${txId} FAILED - cannot reach threshold (approve: ${approveCount}, remaining: ${remainingVoters}, need: ${transaction.threshold})`,
+      );
+
+      // Emit realtime event
+      const eventData: TxStatusEventData = {
+        txId,
+        status: TxStatus.FAILED,
+      };
+      this.eventsService.emitToWallet(
+        transaction.walletAddress,
+        TX_STATUS_EVENT,
+        eventData,
       );
     }
   }
