@@ -103,4 +103,10 @@ export class AccountService {
       },
     });
   }
+
+  async findAll() {
+    return this.prisma.account.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

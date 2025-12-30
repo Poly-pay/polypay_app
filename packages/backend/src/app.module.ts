@@ -8,6 +8,8 @@ import { WalletModule } from './wallet/wallet.module';
 import { RelayerModule } from './relayer-wallet/relayer-wallet.module';
 import { BatchItemModule } from './batch-item/batch-item.module';
 import { AddressBookModule } from './address-book/address-book.module';
+import { EventsModule } from './events/events.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { AddressBookModule } from './address-book/address-book.module';
     RelayerModule,
     BatchItemModule,
     AddressBookModule,
+    EventsModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}

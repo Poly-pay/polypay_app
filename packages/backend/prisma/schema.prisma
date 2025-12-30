@@ -21,8 +21,10 @@ model Account {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  wallets    AccountWallet[]
-  batchItems BatchItem[]
+  wallets               AccountWallet[]
+  batchItems            BatchItem[]
+  receivedNotifications Notification[]  @relation("ReceivedNotifications")
+  sentNotifications     Notification[]  @relation("SentNotifications")
 }
 
 model Wallet {
@@ -198,6 +200,24 @@ model ContactGroup {
   @@map("contact_groups")
 }
 
+model Notification {
+  id String @id @default(cuid())
+
+  recipientId String
+  recipient   Account @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   Account @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([recipientId])
+  @@index([senderId])
+  @@index([read])
+}
+
 enum TxType {
   TRANSFER
   ADD_SIGNER
@@ -223,4 +243,8 @@ enum ProofStatus {
   PENDING
   AGGREGATED
   FAILED
+}
+
+enum NotificationType {
+  COMMITMENT_RECEIVED
 }

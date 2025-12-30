@@ -45,6 +45,7 @@ const Title: React.FC = () => {
           <div className="text-[17px] text-text-primary uppercase font-bold">{title}</div>
         </div>
       </div>
+
       {/* Portfolio */}
       <PortfolioModal>
         <div className="flex flex-row gap-2 w-[200px] justify-center items-center bg-white rounded-lg cursor-pointer">
@@ -52,6 +53,9 @@ const Title: React.FC = () => {
           <span className="text-text-primary font-bold">PORTFOLIO</span>
         </div>
       </PortfolioModal>
+
+      {/* Notification - We dont need it for now */}
+      {/* <NotificationPanel /> */}
     </div>
   );
 };

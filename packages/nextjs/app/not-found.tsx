@@ -2,36 +2,33 @@
 
 import React from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
 
 export default function NotFound() {
-  const router = useRouter();
+  const router = useAppRouter();
+
   return (
     <div
       data-testid="not-found"
       className="bg-[url('/common/bg-main.png')] bg-no-repeat bg-cover absolute size-full w-full h-full top-0 left-0 flex flex-col items-center overflow-hidden z-9999"
     >
       <span className="flex flex-row justify-between items-center top-10 w-full px-20 py-5">
-        <span
-          className="flex flex-row cursor-pointer"
-          onClick={() => {
-            router.push("/dashboard");
-          }}
-        >
+        <span className="flex flex-row cursor-pointer" onClick={router.goToDashboard}>
           <Image src="/logo/polypay-icon.svg" alt="Polypay Logo" width={60} height={60} />
           <Image src="/logo/polypay-text.svg" alt="Polypay Text" width={150} height={150} />
         </span>
         <span className="flex -space-x-[25px]">
           <span
             className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 relative z-[0]"
-            onClick={() => {
-              router.push("/dashboard");
-            }}
+            onClick={router.goToDashboard}
           >
             Dashboard
           </span>
 
-          <span className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[1]">
+          <span
+            className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[1]"
+            onClick={router.goToAddressBook}
+          >
             Address Book
           </span>
 
@@ -41,9 +38,7 @@ export default function NotFound() {
 
           <span
             className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[3]"
-            onClick={() => {
-              router.push("/transfer");
-            }}
+            onClick={router.goToTransfer}
           >
             Transfer
           </span>
@@ -52,7 +47,10 @@ export default function NotFound() {
             Swap
           </span>
 
-          <span className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[5]">
+          <span
+            className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[5]"
+            onClick={router.goToBatch}
+          >
             Batch
           </span>
         </span>
