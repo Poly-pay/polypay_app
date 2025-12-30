@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import Routes from "~~/configs/routes.config";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 
 export const useInitializeApp = () => {
-  const router = useRouter();
-  const pathname = usePathname();
+  const router = useAppRouter();
   const { commitment } = useIdentityStore();
   const { currentWallet, setCurrentWallet, clearCurrentWallet } = useWalletStore();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -16,37 +16,31 @@ export const useInitializeApp = () => {
         setIsLoading(false);
         setIsInitialized(true);
 
-        if (pathname === "/dashboard") {
-          router.push("/dashboard/new-wallet");
+        if (router.pathname === Routes.DASHBOARD.path) {
+          router.goToDashboardNewWallet();
         }
         return;
       }
 
       try {
-        // Fetch wallets from backend
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/${commitment}/wallets`);
         const wallets = await response.json();
 
         if (wallets && wallets.length > 0) {
-          // Check if currentWallet is still valid
           const isCurrentWalletValid = currentWallet && wallets.some((w: any) => w.address === currentWallet.address);
 
           if (!isCurrentWalletValid) {
-            // Set first wallet as current
             setCurrentWallet(wallets[0]);
-            // Redirect to dashboard only if on new-wallet page
-            if (pathname === "/dashboard/new-wallet") {
-              router.push("/dashboard");
+            if (router.pathname === Routes.DASHBOARD.subroutes.NEW_WALLET.path) {
+              router.goToDashboard();
             }
           }
         } else {
-          // No wallets, clear current
           if (currentWallet) {
             clearCurrentWallet();
           }
-          // Only redirect if on dashboard route
-          if (pathname === "/dashboard") {
-            router.push("/dashboard/new-wallet");
+          if (router.pathname === Routes.DASHBOARD.path) {
+            router.goToDashboardNewWallet();
           }
         }
       } catch (err) {
@@ -58,8 +52,7 @@ export const useInitializeApp = () => {
     };
 
     initialize();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commitment]);
+  }, [commitment, currentWallet, router, setCurrentWallet, clearCurrentWallet]);
 
   return { isInitialized, isLoading };
 };
