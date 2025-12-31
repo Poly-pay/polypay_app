@@ -1,19 +1,11 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useAuthProof } from "./useAuthProof";
-import { LoginResponse } from "@polypay/shared";
+import { authApi } from "~~/services/api";
 import { useIdentityStore } from "~~/services/store";
-import { API_BASE_URL } from "~~/constants";
 
 export const useAuth = () => {
   const { generateAuthProof, isGenerating } = useAuthProof();
-  const {
-    isAuthenticated,
-    accessToken,
-    refreshToken,
-    commitment,
-    setTokens,
-    logout: storeLogout,
-  } = useIdentityStore();
+  const { isAuthenticated, accessToken, refreshToken, commitment, setTokens, logout: storeLogout } = useIdentityStore();
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,22 +23,12 @@ export const useAuth = () => {
       }
 
       // 2. Call login API
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          commitment: proofResult.commitment,
-          proof: proofResult.proof,
-          publicInputs: proofResult.publicInputs,
-        }),
+      const data = await authApi.login({
+        commitment: proofResult.commitment,
+        proof: proofResult.proof,
+        publicInputs: proofResult.publicInputs,
+        vk: Buffer.from(proofResult.vk).toString("base64"),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Login failed");
-      }
-
-      const data: LoginResponse = await response.json();
 
       // 3. Store tokens
       setTokens(data.accessToken, data.refreshToken);
@@ -66,18 +48,7 @@ export const useAuth = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      if (!response.ok) {
-        storeLogout();
-        return false;
-      }
-
-      const data = await response.json();
+      const data = await authApi.refresh({ refreshToken });
       setTokens(data.accessToken, data.refreshToken);
 
       return true;

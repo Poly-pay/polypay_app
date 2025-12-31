@@ -16,7 +16,7 @@ export const useAuthProof = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { secret, commitment, setIdentity } = useIdentityStore();
+  const {  setIdentity } = useIdentityStore();
 
   const generateAuthProof = async (): Promise<AuthProofResult | null> => {
     if (!walletClient) {
@@ -29,7 +29,6 @@ export const useAuthProof = () => {
 
     try {
       // 1. Sign identity message
-      const [account] = await walletClient.getAddresses();
       const secret = await createSecret(walletClient);
       const commitment = await createCommitment(secret);
 

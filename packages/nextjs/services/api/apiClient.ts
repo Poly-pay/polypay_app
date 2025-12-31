@@ -1,5 +1,10 @@
+import { useIdentityStore } from "../store";
+import { authApi } from "./authApi";
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "~~/constants";
+
+const AUTHORIZATION_HEADER = (accessToken: string) => `Bearer ${accessToken}`;
+const AUTH_TIMEOUT = 300000; // 300s for ZK proof generation + verification
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -11,6 +16,17 @@ export const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Increase timeout for auth endpoints (ZK proof takes time)
+    if (config.url?.includes("/auth/")) {
+      config.timeout = AUTH_TIMEOUT;
+    }
+
+    // Add auth header if token exists
+    const { accessToken } = useIdentityStore.getState();
+    if (accessToken) {
+      config.headers.Authorization = AUTHORIZATION_HEADER(accessToken);
+    }
+
     if (process.env.NODE_ENV === "development") {
       console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     }
@@ -29,7 +45,32 @@ apiClient.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    // Auto refresh token on 401
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      const { refreshToken, setTokens, logout } = useIdentityStore.getState();
+
+      if (refreshToken) {
+        try {
+          const response = await authApi.refresh({ refreshToken });
+          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response;
+          setTokens(newAccessToken, newRefreshToken);
+
+          originalRequest.headers.Authorization = AUTHORIZATION_HEADER(newAccessToken);
+          return apiClient(originalRequest);
+        } catch {
+          logout();
+        }
+      } else {
+        logout();
+      }
+    }
+
+    // Existing error handling
     if (error.response) {
       const status = error.response.status;
       const message = (error.response.data as any)?.message || error.message;

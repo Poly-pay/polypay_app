@@ -58,4 +58,9 @@ export const API_ENDPOINTS = {
     markAsRead: (id: string) => `/api/notifications/${id}/read`,
     markAllAsRead: "/api/notifications/read-all",
   },
+
+  auth: {
+    login: "/api/auth/login",
+    refresh: "/api/auth/refresh",
+  },
 } as const;

@@ -1,30 +1,32 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ZkVerifySubmitResponse, ZkVerifyJobStatusResponse } from './dto';
-import { PrismaService } from '@/database/prisma.service';
 import { horizenTestnet } from '@polypay/shared';
+
+export type CircuitType = 'transaction' | 'auth';
 
 @Injectable()
 export class ZkVerifyService {
   private readonly logger = new Logger(ZkVerifyService.name);
   private readonly apiUrl = 'https://api-testnet.kurier.xyz/api/v1';
   private readonly apiKey: string;
-  private readonly vkeyPath: string;
+  private readonly assetsDir: string;
 
   constructor(
     private configService: ConfigService,
-    private prisma: PrismaService,
   ) {
     this.apiKey = this.configService.get<string>('RELAYER_ZKVERIFY_API_KEY');
-    this.vkeyPath = path.join(process.cwd(), 'assets', 'vkey.json');
+    this.assetsDir = path.join(process.cwd(), 'assets');
+  }
+
+  /**
+   * Get vkey file path by circuit type
+   */
+  private getVkeyPath(circuitType: CircuitType): string {
+    return path.join(this.assetsDir, `vkey-${circuitType}.json`);
   }
 
   private async retryRequest<T>(
@@ -68,15 +70,24 @@ export class ZkVerifyService {
 
   /**
    * Submit proof and wait for finalized (IncludedInBlock)
+   * @param dto - Proof data
+   * @param circuitType - Circuit type: 'transaction' or 'auth'
    */
-  async submitProofAndWaitFinalized(dto: {
-    proof: number[];
-    publicInputs: string[];
-    vk?: string;
-  }): Promise<{ jobId: string; status: string }> {
+  async submitProofAndWaitFinalized(
+    dto: {
+      proof: number[];
+      publicInputs: string[];
+      vk?: string;
+    },
+    circuitType: CircuitType = 'transaction',
+  ): Promise<{ jobId: string; status: string }> {
     const proofUint8 = new Uint8Array(dto.proof);
     const numberOfPublicInputs = dto.publicInputs?.length || 1;
-    const vk = await this.loadOrRegisterVk(dto.vk, numberOfPublicInputs);
+    const vk = await this.loadOrRegisterVk(
+      circuitType,
+      dto.vk,
+      numberOfPublicInputs,
+    );
 
     const params = {
       proofType: 'ultraplonk',
@@ -93,7 +104,7 @@ export class ZkVerifyService {
       },
     };
 
-    this.logger.log('Submitting proof to zkVerify...');
+    this.logger.log(`Submitting ${circuitType} proof to zkVerify...`);
     const submitResponse = await this.retryRequest(
       () =>
         axios.post<ZkVerifySubmitResponse>(
@@ -159,10 +170,16 @@ export class ZkVerifyService {
     throw new BadRequestException('Timeout waiting for aggregation');
   }
 
+  /**
+   * Register VK for a specific circuit type
+   */
   private async registerVk(
+    circuitType: CircuitType,
     vk: string,
     numberOfPublicInputs: number,
   ): Promise<void> {
+    const vkeyPath = this.getVkeyPath(circuitType);
+
     const params = {
       proofType: 'ultraplonk',
       vk,
@@ -172,47 +189,56 @@ export class ZkVerifyService {
     };
 
     try {
-      this.logger.log('Registering VK...');
+      this.logger.log(`Registering VK for ${circuitType} circuit...`);
       const response = await axios.post(
         `${this.apiUrl}/register-vk/${this.apiKey}`,
         params,
       );
-      const dir = path.dirname(this.vkeyPath);
+
+      const dir = path.dirname(vkeyPath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
 
-      fs.writeFileSync(this.vkeyPath, JSON.stringify(response.data));
-      this.logger.log('VK registered successfully');
+      fs.writeFileSync(vkeyPath, JSON.stringify(response.data));
+      this.logger.log(`VK registered successfully for ${circuitType} circuit`);
     } catch (error: any) {
-      this.logger.error('VK registration failed:', error.message);
+      this.logger.error(
+        `VK registration failed for ${circuitType}:`,
+        error.message,
+      );
       this.logger.warn('VK registration error, saving response...');
 
-      const dir = path.dirname(this.vkeyPath);
+      const dir = path.dirname(vkeyPath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
 
-      fs.writeFileSync(
-        this.vkeyPath,
-        JSON.stringify(error.response?.data || {}),
-      );
+      fs.writeFileSync(vkeyPath, JSON.stringify(error.response?.data || {}));
     }
   }
 
+  /**
+   * Load or register VK for a specific circuit type
+   */
   private async loadOrRegisterVk(
+    circuitType: CircuitType,
     vk?: string,
     numberOfPublicInputs?: number,
   ): Promise<string> {
-    if (!fs.existsSync(this.vkeyPath)) {
+    const vkeyPath = this.getVkeyPath(circuitType);
+
+    if (!fs.existsSync(vkeyPath)) {
       if (!vk) {
-        throw new BadRequestException('VK required for first registration');
+        throw new BadRequestException(
+          `VK required for first registration of ${circuitType} circuit`,
+        );
       }
-      await this.registerVk(vk, numberOfPublicInputs);
+      await this.registerVk(circuitType, vk, numberOfPublicInputs);
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
-    const vkData = JSON.parse(fs.readFileSync(this.vkeyPath, 'utf-8'));
+    const vkData = JSON.parse(fs.readFileSync(vkeyPath, 'utf-8'));
     const vkHash = vkData.vkHash || vkData.meta?.vkHash;
     return vkHash;
   }
