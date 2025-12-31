@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,9 +19,11 @@ import {
 } from '@nestjs/swagger';
 import { BatchItemService } from './batch-item.service';
 import { CreateBatchItemDto, UpdateBatchItemDto } from '@polypay/shared';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
 @ApiTags('batch-items')
 @Controller('batch-items')
+@UseGuards(JwtAuthGuard)
 export class BatchItemController {
   constructor(private readonly batchItemService: BatchItemService) {}
 

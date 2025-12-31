@@ -2,7 +2,7 @@ import { type Hex, type WalletClient, hashMessage, keccak256, recoverPublicKey }
 
 export const MERKLE_DEPTH = 4;
 export const MAX_SIGNERS = 16;
-const BN254_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
+export const BN254_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
 // ============ Types ============
 export interface MerkleTree {

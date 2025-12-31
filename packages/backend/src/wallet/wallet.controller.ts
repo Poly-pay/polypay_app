@@ -1,4 +1,3 @@
-import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -6,11 +5,14 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { CreateWalletDto, UpdateWalletDto } from '@polypay/shared';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
 @ApiTags('wallets')
 @Controller('wallets')
+@UseGuards(JwtAuthGuard)
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 

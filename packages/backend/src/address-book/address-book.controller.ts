@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,9 +25,11 @@ import {
   CreateContactDto,
   UpdateContactDto,
 } from '@polypay/shared';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
 @ApiTags('address-book')
 @Controller('address-book')
+@UseGuards(JwtAuthGuard)
 export class AddressBookController {
   constructor(private readonly addressBookService: AddressBookService) {}
 

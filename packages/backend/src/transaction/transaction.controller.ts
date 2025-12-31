@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,9 +23,11 @@ import {
   ApproveTransactionDto,
   DenyTransactionDto,
 } from '@polypay/shared';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
 @ApiTags('transactions')
 @Controller('transactions')
+@UseGuards(JwtAuthGuard)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
