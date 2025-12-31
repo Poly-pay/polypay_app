@@ -25,6 +25,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.10",
+    "@nestjs/swagger": "^8.0.7",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/websockets": "^11.1.10",
     "@polypay/shared": "1.0.0",
