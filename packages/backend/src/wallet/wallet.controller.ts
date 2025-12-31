@@ -1,7 +1,15 @@
 import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { WalletService } from './wallet.service';
 import { CreateWalletDto, UpdateWalletDto } from '@polypay/shared';
 
+@ApiTags('wallets')
 @Controller('wallets')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
@@ -11,6 +19,10 @@ export class WalletController {
    * POST /api/wallets
    */
   @Post()
+  @ApiOperation({ summary: 'Create a new wallet' })
+  @ApiBody({ type: CreateWalletDto })
+  @ApiResponse({ status: 201, description: 'Wallet created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   async create(@Body() dto: CreateWalletDto) {
     return this.walletService.create(dto);
   }
@@ -20,6 +32,10 @@ export class WalletController {
    * GET /api/wallets/:address
    */
   @Get(':address')
+  @ApiOperation({ summary: 'Get wallet by address' })
+  @ApiParam({ name: 'address', description: 'Wallet address' })
+  @ApiResponse({ status: 200, description: 'Wallet found' })
+  @ApiResponse({ status: 404, description: 'Wallet not found' })
   async findByAddress(@Param('address') address: string) {
     return this.walletService.findByAddress(address);
   }
@@ -29,6 +45,8 @@ export class WalletController {
    * GET /api/wallets
    */
   @Get()
+  @ApiOperation({ summary: 'Get all wallets' })
+  @ApiResponse({ status: 200, description: 'List of all wallets' })
   async findAll() {
     return this.walletService.findAll();
   }
@@ -38,6 +56,11 @@ export class WalletController {
    * PATCH /api/wallets/:address
    */
   @Patch(':address')
+  @ApiOperation({ summary: 'Update wallet information' })
+  @ApiParam({ name: 'address', description: 'Wallet address' })
+  @ApiBody({ type: UpdateWalletDto })
+  @ApiResponse({ status: 200, description: 'Wallet updated successfully' })
+  @ApiResponse({ status: 404, description: 'Wallet not found' })
   async update(
     @Param('address') address: string,
     @Body() dto: UpdateWalletDto,

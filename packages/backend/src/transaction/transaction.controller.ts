@@ -8,6 +8,14 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { TransactionService } from './transaction.service';
 import {
   CreateTransactionDto,
@@ -15,6 +23,7 @@ import {
   DenyTransactionDto,
 } from '@polypay/shared';
 
+@ApiTags('transactions')
 @Controller('transactions')
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
@@ -24,6 +33,10 @@ export class TransactionController {
    * POST /api/transactions
    */
   @Post()
+  @ApiOperation({ summary: 'Create a new transaction (auto-approved)' })
+  @ApiBody({ type: CreateTransactionDto })
+  @ApiResponse({ status: 201, description: 'Transaction created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   async createTransaction(@Body() dto: CreateTransactionDto) {
     return this.transactionService.createTransaction(dto);
   }
@@ -33,6 +46,18 @@ export class TransactionController {
    * GET /api/transactions?walletAddress=xxx&status=PENDING
    */
   @Get()
+  @ApiOperation({ summary: 'Get all transactions for a wallet' })
+  @ApiQuery({
+    name: 'walletAddress',
+    required: true,
+    description: 'Wallet address',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Transaction status filter',
+  })
+  @ApiResponse({ status: 200, description: 'List of transactions' })
   async getTransactions(
     @Query('walletAddress') walletAddress: string,
     @Query('status') status?: string,
@@ -45,6 +70,10 @@ export class TransactionController {
    * GET /api/transactions/:txId
    */
   @Get(':txId')
+  @ApiOperation({ summary: 'Get a single transaction by ID' })
+  @ApiParam({ name: 'txId', type: 'number', description: 'Transaction ID' })
+  @ApiResponse({ status: 200, description: 'Transaction found' })
+  @ApiResponse({ status: 404, description: 'Transaction not found' })
   async getTransaction(@Param('txId', ParseIntPipe) txId: number) {
     return this.transactionService.getTransaction(txId);
   }
@@ -54,6 +83,14 @@ export class TransactionController {
    * POST /api/transactions/:txId/approve
    */
   @Post(':txId/approve')
+  @ApiOperation({ summary: 'Approve a transaction' })
+  @ApiParam({ name: 'txId', type: 'number', description: 'Transaction ID' })
+  @ApiBody({ type: ApproveTransactionDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Transaction approved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Transaction not found' })
   async approve(
     @Param('txId', ParseIntPipe) txId: number,
     @Body() dto: ApproveTransactionDto,
@@ -66,6 +103,11 @@ export class TransactionController {
    * POST /api/transactions/:txId/deny
    */
   @Post(':txId/deny')
+  @ApiOperation({ summary: 'Deny a transaction' })
+  @ApiParam({ name: 'txId', type: 'number', description: 'Transaction ID' })
+  @ApiBody({ type: DenyTransactionDto })
+  @ApiResponse({ status: 200, description: 'Transaction denied successfully' })
+  @ApiResponse({ status: 404, description: 'Transaction not found' })
   async deny(
     @Param('txId', ParseIntPipe) txId: number,
     @Body() dto: DenyTransactionDto,
