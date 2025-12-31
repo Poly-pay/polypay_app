@@ -2,71 +2,103 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { DevelopingFeatureModal } from "../Modals/DevelopingFeatureModal";
-import { GenerateCommitmentModal } from "../Modals/GenerateCommitmentModal";
-import { ReceiveModal } from "../Modals/ReceiveModal";
+import { usePathname, useRouter } from "next/navigation";
 import { Balance } from "../scaffold-eth";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
 import { Copy } from "lucide-react";
 import { Address } from "viem";
 import { useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
-import { useAppRouter } from "~~/hooks/app/useRouteApp";
+import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
-import { RouteKey } from "~~/types/route";
+import { ModalName } from "~~/types/modal";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
-export const ACCOUNT_SIDEBAR_OFFSET = 285;
-export const NEW_SUB_ACCOUNT_SIDEBAR_OFFSET = 567;
+export const ACCOUNT_SIDEBAR_OFFSET = 285; // Main sidebar width
+export const NEW_SUB_ACCOUNT_SIDEBAR_OFFSET = 567; // Account sidebar width + gap
+
+const SIDEBAR_LINKS = {
+  DASHBOARD: "/dashboard",
+  ADDRESS_BOOK: "/address-book",
+  AI_ASSISTANT: "/ai-assistant",
+  TRANSFER: "/transfer",
+  SWAP: "/swap",
+  TRANSACTIONS: "/transactions",
+  BATCH: "/batch",
+  VETKEYS: "/vetkeys",
+};
 
 const sectionItems = [
   {
     label: "Quick Access",
     menuItems: [
-      { icon: "/sidebar/dashboard.svg", label: "dashboard", routeKey: "DASHBOARD" as RouteKey },
-      { icon: "/sidebar/address-book.svg", label: "address book", routeKey: "ADDRESS_BOOK" as RouteKey },
+      { icon: "/sidebar/dashboard.svg", label: "dashboard", link: SIDEBAR_LINKS.DASHBOARD },
+      { icon: "/sidebar/address-book.svg", label: "address book", link: SIDEBAR_LINKS.ADDRESS_BOOK },
+      // { icon: "/sidebar/ai-assistant.svg", label: "ai assistant", link: SIDEBAR_LINKS.AI_ASSISTANT },
     ],
   },
   {
     label: "Payments",
     description: "Move assets your way – fast, private.",
     menuItems: [
-      { icon: "/sidebar/transfer.svg", label: "transfer", routeKey: "TRANSFER" as RouteKey },
-      { icon: "/sidebar/batch.svg", label: "batch", routeKey: "BATCH" as RouteKey },
+      { icon: "/sidebar/transfer.svg", label: "transfer", link: SIDEBAR_LINKS.TRANSFER },
+      // { icon: "/sidebar/swap.svg", label: "swap", link: SIDEBAR_LINKS.SWAP },
+      { icon: "/sidebar/batch.svg", label: "batch", link: SIDEBAR_LINKS.BATCH },
     ],
   },
+  // {
+  //   label: "teams",
+  //   description: "Multi-sig? Shared control? It's all here.",
+  //   menuItems: [
+  //     {
+  //       icon: "/sidebar/transaction.svg",
+  //       label: "transactions",
+  //       transactionsCount: 10,
+  //       link: SIDEBAR_LINKS.TRANSACTIONS,
+  //     },
+  //   ],
+  // },
 ];
 
 const SectionItem = ({
   label,
   menuItems,
   showDivider,
+  selectedItem,
+  openModal,
 }: {
   walletAddress?: string;
   label: string;
-  menuItems: { icon: string; label: string; transactionsCount?: number; routeKey: RouteKey }[];
+  menuItems: { icon: string; label: string; transactionsCount?: number; link: string }[];
   showDivider?: boolean;
-  selectedItem?: string | null;
-  onItemClick?: (itemLabel: string) => void;
+  selectedItem: string | null;
+  onItemClick: (itemLabel: string) => void;
+  openModal: (name: ModalName, props?: Record<string, any>) => void;
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const router = useAppRouter();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const itemComponent = (item: any, notRoute = false) => {
-    const isActive = router.isActiveRoute(item.routeKey);
+  const itemComponent = (item: any) => {
+    const isDevelopingFeature = ["swap", "ai assistant"].includes(item.label);
 
     return (
       <div
         key={item.label}
         className={`group flex flex-row items-center gap-3 px-2 py-2 rounded-[12px] cursor-pointer justify-between capitalize ${
-          isActive ? "bg-white text-black font-semibold" : "hover:bg-white hover:text-black"
+          selectedItem === item.link || pathname === item.link
+            ? "bg-white text-black font-semibold"
+            : "hover:bg-white hover:text-black"
         }`}
         onClick={() => {
-          if (notRoute) return;
-          router.navigateTo(item.routeKey);
+          if (isDevelopingFeature) {
+            openModal("developingFeature");
+            return;
+          }
+          router.push(item.link);
         }}
-        onMouseEnter={() => setHoveredItem(item.routeKey)}
+        onMouseEnter={() => setHoveredItem(item.link)}
         onMouseLeave={() => setHoveredItem(null)}
       >
         <div className="flex flex-row items-center gap-3">
@@ -79,7 +111,7 @@ const SectionItem = ({
               height={32}
               style={{
                 filter:
-                  isActive || hoveredItem === item.routeKey
+                  selectedItem === item.link || hoveredItem === item.link || pathname === item.link
                     ? "brightness(0) saturate(100%) invert(62%) sepia(85%) saturate(1295%) hue-rotate(288deg) brightness(101%) contrast(104%)"
                     : "none",
               }}
@@ -87,7 +119,7 @@ const SectionItem = ({
           </div>
           <span
             className={`${
-              isActive
+              selectedItem === item.link || pathname === item.link
                 ? "font-semibold text-black"
                 : "font-normal text-text-primary group-hover:font-semibold group-hover:text-black font-barlow"
             }`}
@@ -104,14 +136,7 @@ const SectionItem = ({
       <div className="flex flex-col">
         <span className="text-lg text-text-primary text-[#ADADAD]">{label}</span>
       </div>
-      <div className="flex flex-col gap-0.5">
-        {menuItems.map(item => {
-          if (["swap", "ai assistant"].includes(item.label)) {
-            return <DevelopingFeatureModal key={item.label}>{itemComponent(item, true)}</DevelopingFeatureModal>;
-          }
-          return itemComponent(item);
-        })}
-      </div>
+      <div className="flex flex-col gap-0.5">{menuItems.map(item => itemComponent(item))}</div>
       {showDivider && <div className="w-full h-[1px] my-1 bg-gray-300" />}
     </div>
   );
@@ -122,30 +147,34 @@ export default function Sidebar() {
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
 
+  const { openModal } = useModalApp();
   const { commitment, clearIdentity } = useIdentityStore();
   const { clearCurrentWallet } = useWalletStore();
 
-  const router = useAppRouter();
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const router = useRouter();
+
+  const handleItemClick = (itemLabel: string) => {
+    setSelectedItem(itemLabel);
+  };
 
   return (
     <>
       <div className="bg-background relative rounded-lg h-screen min-w-[300px] max-w-[310px] justify-between flex flex-col z-30 border border-[#EDEDED] py-1">
         <div className="p-3">
-          <div className="flex flex-row items-center gap-3" onClick={router.goToDashboard}>
+          {/* Header */}
+          <div className="flex flex-row items-center gap-3" onClick={() => router.push("/")}>
             <Image src="/logo/polypay-icon.svg" alt="logo" className="w-8 h-8 cursor-pointer" width={32} height={32} />
-            <Image
-              src="/logo/polypay-text.svg"
-              alt="logo"
-              className="scale-110 cursor-pointer"
-              width={32}
-              height={32}
-            />
+            <Image src="/logo/polypay-text.svg" alt="logo" className="cursor-pointer" width={68} height={68} />
             <div className="flex flex-row items-center justify-center rounded-full px-3 py-1 bg-divider">
               <span className="text-sm font-normal text-[#B5009A] px-3 py-1 bg-[#FF7CEB33] rounded-full">Beta</span>
             </div>
           </div>
 
+          {/* Divider */}
           <div className="w-full h-[1px] my-3 bg-gray-300" />
+
+          {/* Menu */}
           <div className="flex flex-col gap-2">
             {sectionItems.map((item, index) => (
               <SectionItem
@@ -153,12 +182,16 @@ export default function Sidebar() {
                 label={item.label}
                 menuItems={item.menuItems}
                 showDivider={index < sectionItems.length - 1}
+                selectedItem={selectedItem}
+                onItemClick={handleItemClick}
+                openModal={openModal}
               />
             ))}
           </div>
         </div>
 
         <div className="flex flex-col gap-2 px-1">
+          {/* Account */}
           <div className="flex flex-col p-3 pb-6">
             {walletClient?.account ? (
               <span className="flex flex-col gap-1 bg-white px-1 py-2 rounded-lg">
@@ -218,24 +251,25 @@ export default function Sidebar() {
                             />
                           </span>
                         ) : (
-                          <GenerateCommitmentModal>
-                            <span>Generate your commitment</span>
-                          </GenerateCommitmentModal>
+                          <span onClick={() => openModal("generateCommitment")}>Generate your commitment</span>
                         )}
                       </span>
                     </span>
                   </span>
                   {/* Right side */}
                   <span className="flex flex-col gap-2">
-                    <ReceiveModal address={walletClient?.account?.address as Address}>
-                      <Image
-                        src="/sidebar/qrcode.svg"
-                        width={36}
-                        height={36}
-                        alt="Qr Code"
-                        className="cursor-pointer"
-                      />
-                    </ReceiveModal>
+                    {/* <ReceiveModal address={walletClient?.account?.address as Address}> */}
+                    <Image
+                      src="/sidebar/qrcode.svg"
+                      width={36}
+                      height={36}
+                      alt="Qr Code"
+                      onClick={() =>
+                        openModal("qrAddressReceiver", { address: walletClient?.account?.address as Address })
+                      }
+                      className="cursor-pointer"
+                    />
+                    {/* </ReceiveModal> */}
                     <span>
                       <a
                         target="_blank"
@@ -253,6 +287,7 @@ export default function Sidebar() {
                       alt="Logout"
                       className="cursor-pointer"
                       onClick={() => {
+                        // Clear commitment and secret on disconnect
                         clearIdentity();
                         clearCurrentWallet();
                         disconnect();

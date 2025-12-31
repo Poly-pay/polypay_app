@@ -8,7 +8,13 @@ import { BatchItemModule } from '@/batch-item/batch-item.module';
 import { EventsModule } from '@/events/events.module';
 
 @Module({
-  imports: [DatabaseModule, ZkVerifyModule, RelayerModule, BatchItemModule, EventsModule],
+  imports: [
+    DatabaseModule,
+    ZkVerifyModule,
+    RelayerModule,
+    BatchItemModule,
+    EventsModule,
+  ],
   controllers: [TransactionController],
   providers: [TransactionService],
   exports: [TransactionService],

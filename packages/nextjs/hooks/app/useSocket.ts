@@ -42,6 +42,7 @@ export function useSocket() {
       socket.disconnect();
       socketRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentWallet?.address]);
 
   return socketRef.current;

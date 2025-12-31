@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback } from "react";
 import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
 import { type Hex } from "viem";

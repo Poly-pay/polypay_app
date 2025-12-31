@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { EditAccountModal } from "../Modals/EditAccountModal";
 import { useWalletClient } from "wagmi";
-import { useMetaMultiSigWallet } from "~~/hooks";
+import { useMetaMultiSigWallet, useModalApp } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
 import { useWalletStore } from "~~/services/store";
 
@@ -13,6 +12,7 @@ type InfoCardContainerProps = unknown;
 const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   const { data: walletClient } = useWalletClient();
   const [commitments, setCommitments] = useState<string[]>([]);
+  const { openModal } = useModalApp();
 
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
@@ -45,17 +45,15 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             <span className="flex flex-row justify-between">
               <span className="text-white">Account</span>
               {!(walletClient?.account && commitments.length > 0) ? null : (
-                <EditAccountModal>
-                  <span className="cursor-pointer">
-                    <Image
-                      src="/misc/edit-icon.svg"
-                      alt="Edit Account"
-                      width={25}
-                      height={25}
-                      style={{ filter: "brightness(0) saturate(100%) invert(100%)" }}
-                    />
-                  </span>
-                </EditAccountModal>
+                <span className="cursor-pointer" onClick={() => openModal("editAccount")}>
+                  <Image
+                    src="/misc/edit-icon.svg"
+                    alt="Edit Account"
+                    width={25}
+                    height={25}
+                    style={{ filter: "brightness(0) saturate(100%) invert(100%)" }}
+                  />
+                </span>
               )}
             </span>
             <span className="flex flex-row gap-2 items-center">
