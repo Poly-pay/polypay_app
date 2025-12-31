@@ -4,3 +4,4 @@ export * from "./transaction";
 export * from "./batch-item";
 export * from "./address-book";
 export * from "./notification";
+export * from "./auth";
