@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { NotificationItem } from "./NotificationItem";
-import { SendCommitmentModal } from "./SendCommitmentModal";
 import { Bell, X } from "lucide-react";
 import { useMarkAllAsRead, useNotifications, useUnreadCount } from "~~/hooks/api/useNotification";
 
@@ -54,10 +53,6 @@ export const NotificationPanel: React.FC = () => {
                 <X className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-          </div>
-
-          <div className="px-4 py-2 bg-white border-b">
-            <SendCommitmentModal />
           </div>
 
           {/* Notification list */}

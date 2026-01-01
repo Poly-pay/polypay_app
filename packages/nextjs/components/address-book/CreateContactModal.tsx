@@ -6,6 +6,7 @@ import { useCreateContact } from "~~/hooks";
 interface CreateContactModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   walletId: string;
   groups: AddressGroup[];
 }
@@ -14,7 +15,7 @@ function getMemberCount(group: AddressGroup): number {
   return group.contacts?.length || 0;
 }
 
-export function CreateContactModal({ isOpen, onClose, walletId, groups }: CreateContactModalProps) {
+export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, groups }: CreateContactModalProps) {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,6 +74,7 @@ export function CreateContactModal({ isOpen, onClose, walletId, groups }: Create
         address: address.trim(),
         groupIds: selectedGroupIds,
       });
+      onSuccess?.();
       handleClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create contact");

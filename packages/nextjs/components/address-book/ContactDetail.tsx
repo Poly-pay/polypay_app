@@ -10,9 +10,10 @@ interface ContactDetailProps {
   walletId: string;
   onDelete: (contact: Contact) => void;
   onUpdate: () => void;
+  onSuccess?: () => void;
 }
 
-export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate }: ContactDetailProps) {
+export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate, onSuccess }: ContactDetailProps) {
   const [editName, setEditName] = useState("");
   const [editAddress, setEditAddress] = useState("");
   const [editGroupIds, setEditGroupIds] = useState<string[]>([]);
@@ -67,12 +68,15 @@ export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate }:
     if (Object.keys(dto).length > 0) {
       try {
         await updateContact.mutateAsync({ id: contact.id, dto });
+        notification.success("Contact updated successfully");
+        setHasChanges(false);
+        onSuccess?.();
+        onUpdate();
       } catch (error) {
         console.error("Failed to update contact:", error);
         notification.error(error instanceof Error ? error.message : "Failed to update contact");
         return;
       }
-      onUpdate();
     }
   };
 

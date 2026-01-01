@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Contact } from "@polypay/shared";
 import { Search } from "lucide-react";
 import { ContactDetail } from "~~/components/address-book/ContactDetail";
@@ -28,8 +28,22 @@ export default function AddressBookPage() {
   } | null>(null);
 
   // Queries
-  const { data: groups = [] } = useGroups(walletId);
-  const { data: contacts = [], isLoading: isLoadingContacts } = useContacts(walletId, selectedGroupId || undefined);
+  const { data: groups = [], refetch: refetchGroups } = useGroups(walletId);
+  const {
+    data: contacts = [],
+    isLoading: isLoadingContacts,
+    refetch: refetchContacts,
+  } = useContacts(walletId, selectedGroupId || undefined);
+
+  // Auto sync selectedContact when contacts data updates
+  useEffect(() => {
+    if (selectedContact) {
+      const updatedContact = contacts.find(c => c.id === selectedContact.id);
+      if (updatedContact && JSON.stringify(updatedContact) !== JSON.stringify(selectedContact)) {
+        setSelectedContact(updatedContact);
+      }
+    }
+  }, [contacts, selectedContact]);
 
   // Filter contacts by search
   const filteredContacts = contacts.filter(
@@ -42,6 +56,7 @@ export default function AddressBookPage() {
   const handleSelectGroup = (groupId: string | null) => {
     setSelectedGroupId(groupId);
     setSelectedContact(null);
+    refetchContacts();
   };
 
   const handleSelectContact = (contact: Contact) => {
@@ -53,8 +68,14 @@ export default function AddressBookPage() {
   };
 
   const handleDeleteSuccess = () => {
-    if (deleteTarget?.type === "contact" && selectedContact?.id === deleteTarget.id) {
-      setSelectedContact(null);
+    if (deleteTarget?.type === "contact") {
+      refetchContacts();
+      if (selectedContact?.id === deleteTarget.id) {
+        setSelectedContact(null);
+      }
+    } else if (deleteTarget?.type === "group") {
+      refetchGroups();
+      refetchContacts();
     }
     setDeleteTarget(null);
   };
@@ -156,6 +177,9 @@ export default function AddressBookPage() {
               walletId={walletId}
               onDelete={handleDeleteContact}
               onUpdate={() => setSelectedContact(null)}
+              onSuccess={async () => {
+                await Promise.all([refetchGroups(), refetchContacts()]);
+              }}
             />
           </div>
         )}
@@ -165,6 +189,10 @@ export default function AddressBookPage() {
       <CreateGroupModal
         isOpen={isCreateGroupOpen}
         onClose={() => setIsCreateGroupOpen(false)}
+        onSuccess={() => {
+          refetchGroups();
+          refetchContacts();
+        }}
         walletId={walletId}
         contacts={contacts}
       />
@@ -172,6 +200,7 @@ export default function AddressBookPage() {
       <CreateContactModal
         isOpen={isCreateContactOpen}
         onClose={() => setIsCreateContactOpen(false)}
+        onSuccess={refetchContacts}
         walletId={walletId}
         groups={groups}
       />
