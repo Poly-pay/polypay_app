@@ -4,13 +4,11 @@ import React from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { PortfolioModal } from "../modals/PortFolioModal";
-import { useAccountWallets } from "~~/hooks/api/useAccount";
-import { useIdentityStore } from "~~/services/store/useIdentityStore";
+import { useMyWallets } from "~~/hooks";
 
 const Title: React.FC = () => {
   const pathname = usePathname();
-  const { commitment } = useIdentityStore();
-  const { data: wallets } = useAccountWallets(commitment || "");
+  const { data: wallets } = useMyWallets();
   const hasMultisigWallet = wallets && wallets.length > 0;
   let title;
 
