@@ -6,7 +6,7 @@ import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
 import { TransactionRow, convertToRowData } from "./TransactionRow";
 import { useMetaMultiSigWallet } from "~~/hooks";
-import { useTransactions } from "~~/hooks/api/useTransaction";
+import { useTransactionRealtime, useTransactions } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store";
 
 export interface WalletData {
@@ -36,6 +36,7 @@ export default function DashboardContainer() {
   const walletAddress = metaMultiSigWallet?.address || "";
 
   const { data: transactions, isLoading, refetch } = useTransactions(walletAddress);
+  useTransactionRealtime(walletAddress);
 
   const handleSuccess = () => {
     refetch();

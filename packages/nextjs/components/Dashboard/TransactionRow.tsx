@@ -18,7 +18,7 @@ import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-reac
 import { useWalletClient } from "wagmi";
 import { NATIVE_ETH, getTokenByAddress } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
-import { useApprove, useDeny, useExecuteOnChain } from "~~/hooks/api/useTransaction";
+import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { formatAddress, formatAmount } from "~~/utils/format";
@@ -531,9 +531,9 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
-  const { mutateAsync: approve } = useApprove();
-  const { mutateAsync: deny } = useDeny();
-  const { mutateAsync: executeOnChain } = useExecuteOnChain();
+  const { mutateAsync: approve } = useApproveTransaction();
+  const { mutateAsync: deny } = useDenyTransaction();
+  const { mutateAsync: executeOnChain } = useExecuteTransaction();
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setLoadingState,
   });

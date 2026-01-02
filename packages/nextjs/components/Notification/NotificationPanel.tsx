@@ -6,12 +6,12 @@ import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { NotificationItem } from "./NotificationItem";
 import { Bell, X } from "lucide-react";
-import { useMarkAllAsRead, useNotifications, useUnreadCount } from "~~/hooks/api/useNotification";
+import { useMarkAllNotificationsAsRead, useNotifications, useUnreadCount } from "~~/hooks/api/useNotification";
 
 export const NotificationPanel: React.FC = () => {
   const { data: notifications, isLoading } = useNotifications();
   const { data: unreadCount } = useUnreadCount();
-  const { mutate: markAllAsRead } = useMarkAllAsRead();
+  const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead();
 
   return (
     <Sheet>

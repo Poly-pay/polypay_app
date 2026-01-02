@@ -48,4 +48,14 @@ export const API_ENDPOINTS = {
     execute: (txId: number) => `/api/transactions/${txId}/execute`,
     reserveNonce: "/api/transactions/reserve-nonce",
   },
+
+  notifications: {
+    base: "/api/notifications",
+    byId: (id: string) => `/api/notifications/${id}`,
+    byCommitment: (commitment: string) => `/api/notifications?commitment=${commitment}`,
+    unreadCount: (commitment: string) => `/api/notifications/unread-count?commitment=${commitment}`,
+    sendCommitment: "/api/notifications/send-commitment",
+    markAsRead: (id: string) => `/api/notifications/${id}/read`,
+    markAllAsRead: "/api/notifications/read-all",
+  },
 } as const;

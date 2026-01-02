@@ -5,6 +5,7 @@ export { accountApi } from "./accountApi";
 export { addressBookApi } from "./addressBookApi";
 export { batchItemApi } from "./batchItemApi";
 export { transactionApi } from "./transactionApi";
+export { notificationApi } from "./notificationApi";
 export { queryClient } from "../queryClient";
 
 export type { AccountWallet } from "./accountApi";

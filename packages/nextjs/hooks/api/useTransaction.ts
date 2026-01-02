@@ -1,8 +1,7 @@
-import { useEffect } from "react";
-import { useSocket } from "../app/useSocket";
+import { useCallback } from "react";
+import { useSocketEvent } from "../app/useSocketEvent";
 import {
   ApproveTransactionDto,
-  CreateTransactionDto,
   DenyTransactionDto,
   TX_CREATED_EVENT,
   TX_STATUS_EVENT,
@@ -11,156 +10,10 @@ import {
   TxCreatedEventData,
   TxStatus,
   TxStatusEventData,
-  TxType,
   TxVotedEventData,
-  VoteType,
 } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { API_BASE_URL } from "~~/constants";
-
-// ============ API Functions ============
-
-const createTransactionAPI = async (
-  dto: CreateTransactionDto,
-): Promise<{
-  nonce: number;
-  type: TxType;
-  status: TxStatus;
-  jobId: string;
-}> => {
-  const response = await fetch(`${API_BASE_URL}/api/transactions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dto),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to create transaction");
-  }
-
-  return response.json();
-};
-
-const getTransactionsAPI = async (walletAddress: string, status?: TxStatus): Promise<Transaction[]> => {
-  const params = new URLSearchParams({ walletAddress });
-  if (status) params.append("status", status);
-
-  const response = await fetch(`${API_BASE_URL}/api/transactions?${params}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch transactions");
-  }
-
-  return response.json();
-};
-
-const getTransactionAPI = async (txId: number): Promise<Transaction> => {
-  const response = await fetch(`${API_BASE_URL}/api/transactions/${txId}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch transaction");
-  }
-
-  return response.json();
-};
-
-const approveAPI = async (
-  txId: number,
-  dto: ApproveTransactionDto,
-): Promise<{
-  txId: number;
-  voteType: VoteType;
-  jobId: string;
-  status: TxStatus;
-  approveCount: number;
-  threshold: number;
-}> => {
-  const response = await fetch(`${API_BASE_URL}/api/transactions/${txId}/approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dto),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to approve transaction");
-  }
-
-  return response.json();
-};
-
-const denyAPI = async (
-  txId: number,
-  dto: DenyTransactionDto,
-): Promise<{
-  txId: number;
-  voteType: VoteType;
-  status: TxStatus;
-  denyCount: number;
-}> => {
-  const response = await fetch(`${API_BASE_URL}/api/transactions/${txId}/deny`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dto),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to deny transaction");
-  }
-
-  return response.json();
-};
-
-const markExecutedAPI = async (txId: number, txHash: string): Promise<Transaction> => {
-  const response = await fetch(`${API_BASE_URL}/api/transactions/${txId}/executed`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ txHash }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to mark transaction as executed");
-  }
-
-  return response.json();
-};
-
-const executeOnChainAPI = async (
-  txId: number,
-): Promise<{
-  txId: number;
-  txHash: string;
-  status: TxStatus;
-}> => {
-  const response = await fetch(`${API_BASE_URL}/api/transactions/${txId}/execute`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to execute transaction");
-  }
-
-  return response.json();
-};
-
-const reserveNonceAPI = async (walletAddress: string): Promise<{ nonce: number; expiresAt: string }> => {
-  const response = await fetch(`${API_BASE_URL}/api/transactions/reserve-nonce`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ walletAddress }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to reserve nonce");
-  }
-
-  return response.json();
-};
+import { transactionApi } from "~~/services/api";
 
 // ============ Query Keys ============
 
@@ -170,19 +23,18 @@ export const transactionKeys = {
   byWalletAndStatus: (walletAddress: string, status: TxStatus) =>
     [...transactionKeys.all, walletAddress, status] as const,
   byTxId: (txId: number) => [...transactionKeys.all, "detail", txId] as const,
-  execution: (txId: number) => [...transactionKeys.all, "execution", txId] as const,
 };
 
 // ============ Hooks ============
 
 /**
- * Create new transaction with auto-approve
+ * Create new transaction with ZK proof
  */
 export const useCreateTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createTransactionAPI,
+    mutationFn: transactionApi.create,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: transactionKeys.byWallet(variables.walletAddress),
@@ -199,7 +51,7 @@ export const useTransactions = (walletAddress: string, status?: TxStatus) => {
     queryKey: status
       ? transactionKeys.byWalletAndStatus(walletAddress, status)
       : transactionKeys.byWallet(walletAddress),
-    queryFn: () => getTransactionsAPI(walletAddress, status),
+    queryFn: () => transactionApi.getAll(walletAddress, status),
     enabled: !!walletAddress,
   });
 };
@@ -210,7 +62,7 @@ export const useTransactions = (walletAddress: string, status?: TxStatus) => {
 export const useTransaction = (txId: number) => {
   return useQuery({
     queryKey: transactionKeys.byTxId(txId),
-    queryFn: () => getTransactionAPI(txId),
+    queryFn: () => transactionApi.getById(txId),
     enabled: txId > 0,
   });
 };
@@ -218,11 +70,11 @@ export const useTransaction = (txId: number) => {
 /**
  * Approve transaction with ZK proof
  */
-export const useApprove = () => {
+export const useApproveTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ txId, dto }: { txId: number; dto: ApproveTransactionDto }) => approveAPI(txId, dto),
+    mutationFn: ({ txId, dto }: { txId: number; dto: ApproveTransactionDto }) => transactionApi.approve(txId, dto),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
@@ -231,13 +83,13 @@ export const useApprove = () => {
 };
 
 /**
- * Deny transaction (no proof needed)
+ * Deny transaction
  */
-export const useDeny = () => {
+export const useDenyTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ txId, dto }: { txId: number; dto: DenyTransactionDto }) => denyAPI(txId, dto),
+    mutationFn: ({ txId, dto }: { txId: number; dto: DenyTransactionDto }) => transactionApi.deny(txId, dto),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
@@ -248,11 +100,11 @@ export const useDeny = () => {
 /**
  * Mark transaction as executed
  */
-export const useMarkExecuted = () => {
+export const useMarkTransactionExecuted = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ txId, txHash }: { txId: number; txHash: string }) => markExecutedAPI(txId, txHash),
+    mutationFn: ({ txId, txHash }: { txId: number; txHash: string }) => transactionApi.markExecuted(txId, txHash),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
@@ -263,11 +115,11 @@ export const useMarkExecuted = () => {
 /**
  * Execute transaction on-chain via relayer
  */
-export const useExecuteOnChain = () => {
+export const useExecuteTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (txId: number) => executeOnChainAPI(txId),
+    mutationFn: transactionApi.execute,
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
@@ -275,9 +127,12 @@ export const useExecuteOnChain = () => {
   });
 };
 
+/**
+ * Reserve nonce for new transaction
+ */
 export const useReserveNonce = () => {
   return useMutation({
-    mutationFn: reserveNonceAPI,
+    mutationFn: transactionApi.reserveNonce,
   });
 };
 
@@ -292,42 +147,52 @@ export const usePendingTransactions = (walletAddress: string) => {
 
 /**
  * Listen for realtime transaction updates
+ * Use this in components that display transaction list
  */
 export const useTransactionRealtime = (walletAddress: string | undefined) => {
-  const socket = useSocket();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!socket || !walletAddress) return;
-
-    // Handle new transaction created
-    const handleTxCreated = (data: TxCreatedEventData) => {
+  // Handle new transaction created
+  const handleTxCreated = useCallback(
+    (data: TxCreatedEventData) => {
       console.log("[Socket] TX created:", data);
-      queryClient.invalidateQueries({ queryKey: transactionKeys.byWallet(walletAddress) });
-    };
+      if (walletAddress) {
+        queryClient.invalidateQueries({ queryKey: transactionKeys.byWallet(walletAddress) });
+      }
+    },
+    [queryClient, walletAddress],
+  );
 
-    const handleTxStatus = (data: TxStatusEventData) => {
+  // Handle transaction status change
+  const handleTxStatus = useCallback(
+    (data: TxStatusEventData) => {
       console.log("[Socket] TX status:", data);
-      queryClient.setQueryData<Transaction[]>(transactionKeys.byWallet(walletAddress), old =>
-        old?.map(tx => (tx.txId === data.txId ? { ...tx, status: data.status, txHash: data.txHash || tx.txHash } : tx)),
-      );
-    };
+      if (walletAddress) {
+        queryClient.setQueryData<Transaction[]>(transactionKeys.byWallet(walletAddress), old =>
+          old?.map(tx =>
+            tx.txId === data.txId ? { ...tx, status: data.status, txHash: data.txHash || tx.txHash } : tx,
+          ),
+        );
+      }
+    },
+    [queryClient, walletAddress],
+  );
 
-    const handleTxVoted = (data: TxVotedEventData) => {
+  // Handle transaction voted
+  const handleTxVoted = useCallback(
+    (data: TxVotedEventData) => {
       console.log("[Socket] TX voted:", data);
-      queryClient.setQueryData<Transaction[]>(transactionKeys.byWallet(walletAddress), old =>
-        old?.map(tx => (tx.txId === data.txId ? { ...tx, votes: [...tx.votes, data.vote] } : tx)),
-      );
-    };
+      if (walletAddress) {
+        queryClient.setQueryData<Transaction[]>(transactionKeys.byWallet(walletAddress), old =>
+          old?.map(tx => (tx.txId === data.txId ? { ...tx, votes: [...tx.votes, data.vote] } : tx)),
+        );
+      }
+    },
+    [queryClient, walletAddress],
+  );
 
-    socket.on(TX_CREATED_EVENT, handleTxCreated);
-    socket.on(TX_STATUS_EVENT, handleTxStatus);
-    socket.on(TX_VOTED_EVENT, handleTxVoted);
-
-    return () => {
-      socket.off(TX_CREATED_EVENT, handleTxCreated);
-      socket.off(TX_STATUS_EVENT, handleTxStatus);
-      socket.off(TX_VOTED_EVENT, handleTxVoted);
-    };
-  }, [socket, walletAddress, queryClient]);
+  // Subscribe to socket events
+  useSocketEvent(TX_CREATED_EVENT, handleTxCreated);
+  useSocketEvent(TX_STATUS_EVENT, handleTxStatus);
+  useSocketEvent(TX_VOTED_EVENT, handleTxVoted);
 };
