@@ -1,0 +1,5 @@
+/**
+ * BN254 curve modulus - used for field arithmetic in ZK proofs
+ */
+export const BN254_MODULUS =
+  21888242871839275222246405745257275088548364400416034343698204186575808495617n;

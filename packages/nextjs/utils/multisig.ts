@@ -1,15 +1,6 @@
 import { type Hex, type WalletClient, hashMessage, keccak256, recoverPublicKey } from "viem";
 
-export const MERKLE_DEPTH = 4;
-export const MAX_SIGNERS = 16;
-export const BN254_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
-
-// ============ Types ============
-export interface MerkleTree {
-  leaves: bigint[];
-  tree: bigint[][];
-  root: bigint;
-}
+const BN254_MODULUS = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
 // ============ Lazy Poseidon ============
 let poseidonInstance: any = null;
@@ -47,67 +38,6 @@ export async function createSecret(walletClient: WalletClient): Promise<bigint> 
   const secret = BigInt(signatureHash) % BN254_MODULUS;
 
   return secret;
-}
-
-export async function buildMerkleTree(commitments: readonly bigint[]): Promise<MerkleTree> {
-  const leaves = [...commitments];
-  while (leaves.length < MAX_SIGNERS) {
-    leaves.push(BigInt(1));
-  }
-
-  const tree: bigint[][] = [leaves];
-  let currentLevel = leaves;
-
-  while (currentLevel.length > 1) {
-    const nextLevel: bigint[] = [];
-    for (let i = 0; i < currentLevel.length; i += 2) {
-      const left = currentLevel[i];
-      const right = currentLevel[i + 1];
-      const parent = await poseidonHash2(left, right);
-      nextLevel.push(parent);
-    }
-    tree.push(nextLevel);
-    currentLevel = nextLevel;
-  }
-
-  return {
-    leaves,
-    tree,
-    root: tree[tree.length - 1][0],
-  };
-}
-
-export function getMerklePath(merkleTree: MerkleTree, leafIndex: number): bigint[] {
-  const path: bigint[] = [];
-  let index = leafIndex;
-
-  for (let level = 0; level < MERKLE_DEPTH; level++) {
-    const isRight = index % 2 === 1;
-    const siblingIndex = isRight ? index - 1 : index + 1;
-    path.push(merkleTree.tree[level][siblingIndex]);
-    index = Math.floor(index / 2);
-  }
-
-  return path;
-}
-
-export async function computeMerkleRoot(leaf: bigint, leafIndex: bigint, merklePath: bigint[]) {
-  let current = leaf;
-  let index = leafIndex;
-
-  for (let i = 0; i < merklePath.length; i++) {
-    const sibling = merklePath[i];
-    if (index % 2n === 0n) {
-      // Current on left
-      current = await poseidonHash2(current, sibling);
-    } else {
-      // Current on right
-      current = await poseidonHash2(sibling, current);
-    }
-    index = index / 2n;
-  }
-
-  return current;
 }
 
 export async function poseidonHash2(a: bigint, b: bigint): Promise<bigint> {

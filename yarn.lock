@@ -4576,6 +4576,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@polypay/backend@workspace:packages/backend"
   dependencies:
+    "@aztec/bb.js": 0.84.0
     "@eslint/eslintrc": ^3.2.0
     "@eslint/js": ^9.18.0
     "@nestjs/cli": ^11.0.0
@@ -4591,6 +4592,7 @@ __metadata:
     "@nestjs/terminus": ^11.0.0
     "@nestjs/testing": ^11.0.1
     "@nestjs/websockets": ^11.1.10
+    "@noir-lang/noir_js": 1.0.0-beta.6
     "@polypay/shared": 1.0.0
     "@prisma/adapter-pg": ^7.1.0
     "@prisma/client": ^7.1.0
@@ -4697,6 +4699,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@polypay/shared@workspace:packages/shared"
   dependencies:
+    "@types/circomlibjs": ^0
+    circomlibjs: ^0.1.7
     class-transformer: ^0.5.1
     class-validator: ^0.14.2
     prettier: ~3.5.3

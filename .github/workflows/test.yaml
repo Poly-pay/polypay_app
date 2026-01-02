@@ -1,0 +1,72 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "yarn"
+
+      - name: Install dependencies (root)
+        run: yarn install --frozen-lockfile
+
+      - name: Build shared package
+        run: |
+          cd packages/shared
+          yarn build
+
+      - name: Install backend dependencies
+        run: |
+          cd packages/backend
+          yarn install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Run database migrations
+        run: |
+          cd packages/backend
+          npx prisma migrate deploy
+
+      - name: Run E2E tests
+        run: |
+          cd packages/backend
+          yarn test:e2e
+        env:
+          RELAYER_WALLET_KEY: ${{ secrets.RELAYER_WALLET_KEY }}
+          RELAYER_ZKVERIFY_API_KEY: ${{ secrets.RELAYER_ZKVERIFY_API_KEY }}
+          TEST_SIGNER_A_KEY: ${{ secrets.TEST_SIGNER_A_KEY }}
+          TEST_SIGNER_B_KEY: ${{ secrets.TEST_SIGNER_B_KEY }}
+          NODE_ENV: test

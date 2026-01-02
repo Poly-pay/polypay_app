@@ -1,0 +1,19 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@polypay/shared$": "<rootDir>/../../shared/src",
+    "^@polypay/shared/(.*)$": "<rootDir>/../../shared/src/$1",
+    "^@/(.*)$": "<rootDir>/../src/$1"
+  },
+  "setupFilesAfterEnv": ["<rootDir>/jest.setup.ts"],
+  "testTimeout": 300000,
+  "verbose": true,
+  "forceExit": true,
+  "detectOpenHandles": true
+}
