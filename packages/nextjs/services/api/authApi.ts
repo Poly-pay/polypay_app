@@ -1,5 +1,5 @@
 import apiClient from "./apiClient";
-import { API_ENDPOINTS } from "./endpoints";
+import { API_ENDPOINTS } from "@polypay/shared";
 import { AuthTokens, LoginDto, LoginResponse, RefreshDto } from "@polypay/shared";
 
 export const authApi = {

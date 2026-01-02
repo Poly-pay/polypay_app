@@ -1,6 +1,5 @@
 import { apiClient } from "./apiClient";
-import { API_ENDPOINTS } from "./endpoints";
-import { Account, CreateAccountDto, UpdateAccountDto, Wallet } from "@polypay/shared";
+import { API_ENDPOINTS, Account, CreateAccountDto, UpdateAccountDto, Wallet } from "@polypay/shared";
 
 export const accountApi = {
   create: async (dto: CreateAccountDto): Promise<Account> => {

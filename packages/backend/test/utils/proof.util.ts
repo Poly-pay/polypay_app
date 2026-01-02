@@ -1,16 +1,16 @@
-import { type Hex, keccak256 } from "viem";
-import * as fs from "fs";
-import * as path from "path";
+import { type Hex, keccak256 } from 'viem';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   poseidonHash2,
   hexToByteArray,
   getPublicKeyXY,
   BN254_MODULUS,
-} from "@polypay/shared";
-import { TestSigner, signRawMessage } from "./signer.util";
+} from '@polypay/shared';
+import { TestSigner, signRawMessage } from './signer.util';
 
 /**
- * Proof generation result
+ * Proof generation result for transaction
  */
 export interface ProofResult {
   proof: number[];
@@ -20,17 +20,27 @@ export interface ProofResult {
 }
 
 /**
- * Load circuit from JSON file
- * @returns Circuit data with bytecode and abi
+ * Proof generation result for authentication
  */
-function loadCircuit(): { bytecode: string; abi: any } {
-  const circuitPath = path.join(__dirname, "../circuit/circuit.json");
+export interface AuthProofResult {
+  proof: number[];
+  publicInputs: string[];
+}
+
+/**
+ * Load circuit from JSON file
+ */
+function loadCircuit(circuitName: 'circuit' | 'auth-circuit'): {
+  bytecode: string;
+  abi: any;
+} {
+  const circuitPath = path.join(__dirname, `../circuit/${circuitName}.json`);
 
   if (!fs.existsSync(circuitPath)) {
     throw new Error(`Circuit file not found at: ${circuitPath}`);
   }
 
-  const circuitData = JSON.parse(fs.readFileSync(circuitPath, "utf-8"));
+  const circuitData = JSON.parse(fs.readFileSync(circuitPath, 'utf-8'));
   return {
     bytecode: circuitData.bytecode,
     abi: circuitData.abi,
@@ -47,7 +57,7 @@ function loadCircuit(): { bytecode: string; abi: any } {
 export async function generateTestProof(
   signer: TestSigner,
   secret: bigint,
-  txHash: Hex
+  txHash: Hex,
 ): Promise<ProofResult> {
   // 1. Sign txHash (local signing, no RPC)
   const signature = await signRawMessage(signer, txHash);
@@ -80,7 +90,7 @@ export async function generateTestProof(
   };
 
   // 6. Load circuit and generate proof
-  const { bytecode, abi } = loadCircuit();
+  const { bytecode, abi } = loadCircuit('circuit');
 
   // Dynamic import Noir libraries
   const { Noir } = await import("@noir-lang/noir_js");
@@ -108,12 +118,45 @@ export async function generateTestProof(
 }
 
 /**
+ * Generate ZK proof for authentication
+ */
+export async function generateTestAuthProof(
+  secret: bigint,
+): Promise<AuthProofResult> {
+  // 1. Compute commitment
+  const commitment = await poseidonHash2(secret, secret);
+
+  // 2. Prepare circuit inputs
+  const circuitInputs = {
+    secret: secret.toString(),
+    commitment: commitment.toString(),
+  };
+
+  // 3. Load auth circuit and generate proof
+  const { bytecode, abi } = loadCircuit('auth-circuit');
+
+  const { Noir } = await import('@noir-lang/noir_js');
+  const { UltraPlonkBackend } = await import('@aztec/bb.js');
+
+  const backend = new UltraPlonkBackend(bytecode);
+  const noir = new Noir({ bytecode, abi } as any);
+
+  const { witness } = await noir.execute(circuitInputs);
+  const { proof, publicInputs } = await backend.generateProof(witness);
+
+  return {
+    proof: Array.from(proof),
+    publicInputs: publicInputs,
+  };
+}
+
+/**
  * Generate secret from signer (local signing, no RPC)
  * @param signer - Test signer
  * @returns Secret as bigint
  */
 export async function generateSecret(signer: TestSigner): Promise<bigint> {
-  const message = "noir-identity";
+  const message = 'noir-identity';
 
   // Local signing - no RPC call
   const signature = await signer.account.signMessage({

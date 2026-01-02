@@ -14,7 +14,8 @@ export const API_ENDPOINTS = {
     groups: {
       base: "/api/address-book/groups",
       byId: (id: string) => `/api/address-book/groups/${id}`,
-      byWallet: (walletId: string) => `/api/address-book/groups?walletId=${walletId}`,
+      byWallet: (walletId: string) =>
+        `/api/address-book/groups?walletId=${walletId}`,
     },
     contacts: {
       base: "/api/address-book/contacts",
@@ -51,8 +52,10 @@ export const API_ENDPOINTS = {
   notifications: {
     base: "/api/notifications",
     byId: (id: string) => `/api/notifications/${id}`,
-    byCommitment: (commitment: string) => `/api/notifications?commitment=${commitment}`,
-    unreadCount: (commitment: string) => `/api/notifications/unread-count?commitment=${commitment}`,
+    byCommitment: (commitment: string) =>
+      `/api/notifications?commitment=${commitment}`,
+    unreadCount: (commitment: string) =>
+      `/api/notifications/unread-count?commitment=${commitment}`,
     sendCommitment: "/api/notifications/send-commitment",
     markAsRead: (id: string) => `/api/notifications/${id}/read`,
     markAllAsRead: "/api/notifications/read-all",
