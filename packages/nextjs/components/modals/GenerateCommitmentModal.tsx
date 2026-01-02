@@ -1,73 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import ModalContainer from "./ModalContainer";
 import { X } from "lucide-react";
-import { useWalletClient } from "wagmi";
 import DecryptedText from "~~/components/effects/DecryptedText";
-import { useCreateAccount } from "~~/hooks/api";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
+import { useAuth } from "~~/hooks";
 import { ModalProps } from "~~/types/modal";
-import { createCommitment, createSecret } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
 const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { setCurrentWallet, clearCurrentWallet } = useWalletStore();
-  const { data: walletClient } = useWalletClient();
-  const { setIdentity } = useIdentityStore();
-  const { mutateAsync: createAccount } = useCreateAccount();
-  const [identity, setLocalIdentity] = useState<{ secret: string; commitment: string } | null>(null);
+  const { login, isLoading, error, commitment } = useAuth();
 
-  const handleClose = async () => {
-    if (identity?.secret && identity?.commitment) {
-      setIdentity(identity.secret, identity.commitment);
-
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/accounts/${identity.commitment}/wallets`);
-        const wallets = await response.json();
-
-        const shouldRedirect = pathname === "/" || pathname.startsWith("/dashboard");
-
-        if (!shouldRedirect) {
-          onClose();
-          return;
-        }
-
-        if (wallets && wallets.length > 0) {
-          setCurrentWallet(wallets[0]);
-          router.push("/dashboard");
-        } else {
-          clearCurrentWallet();
-          router.push("/dashboard/new-wallet");
-        }
-      } catch (err) {
-        console.error("Failed to check wallets:", err);
-        if (pathname === "/" || pathname.startsWith("/dashboard")) {
-          router.push("/dashboard/new-wallet");
-        }
-      }
-    }
+  const handleClose = () => {
+    if (isLoading) return; // Prevent close when loading
     onClose();
   };
 
-  const handleGenerateCommitment = async () => {
-    if (!walletClient) return;
-
-    const secret = await createSecret(walletClient);
-    const cm = await createCommitment(secret);
-    setLocalIdentity({ secret: secret.toString(), commitment: cm.toString() });
-
-    try {
-      await createAccount({ commitment: cm.toString() });
-    } catch (err: any) {
-      if (!err.message?.includes("already exists")) {
-        console.error("Failed to create account:", err);
-      }
+  const handleGenerateAndLogin = async () => {
+    const success = await login();
+    if (!success) {
+      notification.error(error || "Login failed. Please try again.");
     }
   };
 
@@ -86,6 +40,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             size="sm"
             className="h-8 w-8 p-1 text-black bg-white cursor-pointer hover:bg-gray-200"
             onClick={handleClose}
+            disabled={isLoading}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -105,16 +60,16 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               We now using commitment to protect your privacy. Your commitment can be used as a multisig signer address.
             </span>
           </div>
-          {identity?.commitment && (
+          {commitment && (
             <span
               className="p-2 bg-[#FF7CEB1A] border-[1px] border-primary rounded-2xl text-[#FF0ADA] font-repetition text-[17px] cursor-pointer"
               onClick={() => {
-                navigator.clipboard.writeText(identity.commitment || "");
+                navigator.clipboard.writeText(commitment);
                 notification.success("Commitment copied to clipboard");
               }}
             >
               <DecryptedText
-                text={`${identity.commitment.slice(0, 15)}...${identity.commitment.slice(-4)}`}
+                text={`${commitment.slice(0, 15)}...${commitment.slice(-4)}`}
                 animateOn="view"
                 revealDirection="center"
               />
@@ -123,7 +78,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="p-4">
-          {identity?.commitment ? (
+          {commitment ? (
             <Button
               className="w-full bg-[#1E1E1E] hover:bg-[#1E1E1E]/80 text-white rounded-lg py-3 cursor-pointer transition-all duration-200"
               onClick={handleClose}
@@ -132,10 +87,11 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             </Button>
           ) : (
             <Button
+              onClick={handleGenerateAndLogin}
+              disabled={isLoading}
               className="w-full bg-[#FF7CEB] text-white rounded-lg py-3 cursor-pointer"
-              onClick={handleGenerateCommitment}
             >
-              Generate Commitment
+              {isLoading ? "Generating & Logging in..." : "Generate & Login"}
             </Button>
           )}
         </div>

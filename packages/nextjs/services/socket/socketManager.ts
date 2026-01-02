@@ -1,28 +1,45 @@
 import { Socket, io } from "socket.io-client";
 import { API_BASE_URL } from "~~/constants";
 
-type EventCallback = (data: any) => void;
+type EventCallback<T = unknown> = (data: T) => void;
+
+interface ConnectOptions {
+  walletAddress?: string;
+  commitment: string;
+}
 
 class SocketManager {
   private socket: Socket | null = null;
+  private currentCommitment: string | null = null;
   private currentWalletAddress: string | null = null;
 
   /**
-   * Connect to socket server and join wallet room
+   * Connect to socket server with commitment (required) and optional wallet
    */
-  connect(walletAddress: string): void {
-    // Skip if already connected to same wallet
-    if (this.socket?.connected && this.currentWalletAddress === walletAddress) {
+  connect(options: ConnectOptions): void {
+    const { commitment, walletAddress } = options;
+
+    // Skip if already connected with same commitment
+    if (this.socket?.connected && this.currentCommitment === commitment) {
+      // If wallet changed, just switch room
+      if (walletAddress && this.currentWalletAddress !== walletAddress) {
+        this.joinWallet(walletAddress);
+      }
       return;
     }
 
-    // Disconnect existing connection if different wallet
+    // Disconnect existing connection
     if (this.socket) {
       this.disconnect();
     }
 
+    const query: Record<string, string> = { commitment };
+    if (walletAddress) {
+      query.walletAddress = walletAddress;
+    }
+
     this.socket = io(API_BASE_URL, {
-      query: { walletAddress },
+      query,
       transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -30,7 +47,8 @@ class SocketManager {
       reconnectionDelayMax: 5000,
     });
 
-    this.currentWalletAddress = walletAddress;
+    this.currentCommitment = commitment;
+    this.currentWalletAddress = walletAddress ?? null;
 
     this.socket.on("connect", () => {
       console.log("[Socket] Connected:", this.socket?.id);
@@ -52,24 +70,31 @@ class SocketManager {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
+      this.currentCommitment = null;
       this.currentWalletAddress = null;
       console.log("[Socket] Manually disconnected");
     }
   }
 
   /**
-   * Reconnect with new wallet address
+   * Switch to a different wallet room without reconnecting
    */
-  reconnect(walletAddress: string): void {
-    this.disconnect();
-    this.connect(walletAddress);
+  joinWallet(walletAddress: string): void {
+    if (!this.socket?.connected) {
+      console.warn("[Socket] Cannot join wallet, socket not connected");
+      return;
+    }
+
+    this.socket.emit("join:wallet", walletAddress);
+    this.currentWalletAddress = walletAddress;
+    console.log("[Socket] Switched to wallet:", walletAddress);
   }
 
   /**
    * Subscribe to an event
    * @returns Unsubscribe function
    */
-  subscribe(event: string, callback: EventCallback): () => void {
+  subscribe<T = unknown>(event: string, callback: EventCallback<T>): () => void {
     if (!this.socket) {
       console.warn("[Socket] Cannot subscribe, socket not connected");
       return () => {};
@@ -88,6 +113,13 @@ class SocketManager {
    */
   isConnected(): boolean {
     return this.socket?.connected ?? false;
+  }
+
+  /**
+   * Get current commitment
+   */
+  getCurrentCommitment(): string | null {
+    return this.currentCommitment;
   }
 
   /**

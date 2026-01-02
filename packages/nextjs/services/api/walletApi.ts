@@ -13,11 +13,6 @@ export const walletApi = {
     return data;
   },
 
-  getAll: async (): Promise<Wallet[]> => {
-    const { data } = await apiClient.get<Wallet[]>(API_ENDPOINTS.wallets.base);
-    return data;
-  },
-
   update: async (address: string, dto: UpdateWalletDto): Promise<Wallet> => {
     const { data } = await apiClient.patch<Wallet>(API_ENDPOINTS.wallets.byAddress(address), dto);
     return data;

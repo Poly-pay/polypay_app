@@ -2,10 +2,6 @@ import { IsArray, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class ApproveTransactionDto {
   @IsNotEmpty()
-  @IsString()
-  voterCommitment: string;
-
-  @IsNotEmpty()
   @IsArray()
   proof: number[];
 

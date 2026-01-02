@@ -6,7 +6,7 @@ import {
   Delete,
   Body,
   Param,
-  Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -14,10 +14,13 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { BatchItemService } from './batch-item.service';
 import { CreateBatchItemDto, UpdateBatchItemDto } from '@polypay/shared';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { BatchItemOwnerGuard } from '@/auth/guards/batch-item-owner.guard';
+import { Account } from '@/generated/prisma/client';
 
 @ApiTags('batch-items')
 @Controller('batch-items')
@@ -29,28 +32,25 @@ export class BatchItemController {
    * POST /api/batch-items
    */
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new batch item' })
   @ApiBody({ type: CreateBatchItemDto })
   @ApiResponse({ status: 201, description: 'Batch item created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  async create(@Body() dto: CreateBatchItemDto) {
-    return this.batchItemService.create(dto);
+  async create(@CurrentUser() user: Account, @Body() dto: CreateBatchItemDto) {
+    return this.batchItemService.create(dto, user.commitment);
   }
 
   /**
-   * Get batch items by commitment
-   * GET /api/batch-items?commitment=xxx
+   * Get my batch items
+   * GET /api/batch-items/me
    */
-  @Get()
-  @ApiOperation({ summary: 'Get batch items by commitment' })
-  @ApiQuery({
-    name: 'commitment',
-    required: true,
-    description: 'Account commitment hash',
-  })
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get my batch items' })
   @ApiResponse({ status: 200, description: 'List of batch items' })
-  async findByCommitment(@Query('commitment') commitment: string) {
-    return this.batchItemService.findByCommitment(commitment);
+  async getMyBatchItems(@CurrentUser() user: Account) {
+    return this.batchItemService.findByCommitment(user.commitment);
   }
 
   /**
@@ -58,6 +58,7 @@ export class BatchItemController {
    * PATCH /api/batch-items/:id
    */
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, BatchItemOwnerGuard)
   @ApiOperation({ summary: 'Update a batch item' })
   @ApiParam({ name: 'id', description: 'Batch item ID' })
   @ApiBody({ type: UpdateBatchItemDto })
@@ -72,6 +73,7 @@ export class BatchItemController {
    * DELETE /api/batch-items/:id
    */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, BatchItemOwnerGuard)
   @ApiOperation({ summary: 'Delete a batch item' })
   @ApiParam({ name: 'id', description: 'Batch item ID' })
   @ApiResponse({ status: 200, description: 'Batch item deleted successfully' })
@@ -81,18 +83,14 @@ export class BatchItemController {
   }
 
   /**
-   * Clear all batch items by commitment
-   * DELETE /api/batch-items?commitment=xxx
+   * Clear all my batch items
+   * DELETE /api/batch-items/me
    */
-  @Delete()
-  @ApiOperation({ summary: 'Clear all batch items by commitment' })
-  @ApiQuery({
-    name: 'commitment',
-    required: true,
-    description: 'Account commitment hash',
-  })
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Clear all my batch items' })
   @ApiResponse({ status: 200, description: 'Batch items cleared successfully' })
-  async clearByCommitment(@Query('commitment') commitment: string) {
-    return this.batchItemService.clearByCommitment(commitment);
+  async clearMyBatchItems(@CurrentUser() user: Account) {
+    return this.batchItemService.clearByCommitment(user.commitment);
   }
 }

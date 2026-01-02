@@ -4,9 +4,10 @@ import { WalletService } from './wallet.service';
 import { DatabaseModule } from '@/database/database.module';
 import { AccountModule } from '@/account/account.module';
 import { RelayerModule } from '@/relayer-wallet/relayer-wallet.module';
+import { EventsModule } from '@/events/events.module';
 
 @Module({
-  imports: [DatabaseModule, AccountModule, RelayerModule],
+  imports: [DatabaseModule, AccountModule, RelayerModule, EventsModule],
   controllers: [WalletController],
   providers: [WalletService],
   exports: [WalletService],

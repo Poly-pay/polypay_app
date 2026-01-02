@@ -14,8 +14,4 @@ export class CreateWalletDto {
   @IsArray()
   @IsString({ each: true })
   commitments: string[];
-
-  @IsNotEmpty()
-  @IsString()
-  creatorCommitment: string;
 }

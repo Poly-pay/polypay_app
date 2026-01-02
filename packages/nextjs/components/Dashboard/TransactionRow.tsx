@@ -604,7 +604,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       await approve({
         txId: tx.txId,
         dto: {
-          voterCommitment: proofData.commitment,
           proof: proofData.proof,
           publicInputs: proofData.publicInputs,
           nullifier: proofData.nullifier,
@@ -635,7 +634,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       await deny({
         txId: tx.txId,
         dto: {
-          voterCommitment: commitment,
           totalSigners: tx.totalSigners,
         },
       });

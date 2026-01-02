@@ -1,7 +1,14 @@
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAppRouter } from "../app/useRouteApp";
 import { accountKeys } from "./useAccount";
-import { UpdateWalletDto } from "@polypay/shared";
+import { UpdateWalletDto, WALLET_CREATED_EVENT, WalletCreatedEventData } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { walletApi } from "~~/services/api";
+import { accountApi, walletApi } from "~~/services/api";
+import { socketManager } from "~~/services/socket/socketManager";
+import { useWalletStore } from "~~/services/store";
+import { handleError } from "~~/utils/errorHandler";
+import { notification } from "~~/utils/scaffold-eth/notification";
 
 export const walletKeys = {
   all: ["wallets"] as const,
@@ -13,13 +20,10 @@ export const useCreateWallet = () => {
 
   return useMutation({
     mutationFn: walletApi.create,
-    onSuccess: (data, variables) => {
+    onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
       queryClient.setQueryData(walletKeys.byAddress(data.address), data);
-
-      variables.commitments.forEach(commitment => {
-        queryClient.invalidateQueries({ queryKey: accountKeys.wallets(commitment) });
-      });
+      queryClient.invalidateQueries({ queryKey: accountKeys.meWallets });
     },
   });
 };
@@ -29,13 +33,6 @@ export const useWallet = (address: string) => {
     queryKey: walletKeys.byAddress(address),
     queryFn: () => walletApi.getByAddress(address),
     enabled: !!address,
-  });
-};
-
-export const useWallets = () => {
-  return useQuery({
-    queryKey: walletKeys.all,
-    queryFn: walletApi.getAll,
   });
 };
 
@@ -50,3 +47,41 @@ export const useUpdateWallet = () => {
     },
   });
 };
+
+/**
+ * Hook to handle wallet-related realtime events
+ * Fetches wallets, selects new wallet, and redirects to dashboard
+ */
+export function useWalletRealtime(): void {
+  const router = useAppRouter();
+  const { setCurrentWallet } = useWalletStore();
+
+  useEffect(() => {
+    const unsubscribe = socketManager.subscribe<WalletCreatedEventData>(WALLET_CREATED_EVENT, async data => {
+      try {
+        // Fetch latest wallets
+        const wallets = await accountApi.getMyWallets();
+
+        // Find the newly created wallet
+        const newWallet = wallets.find(w => w.address === data.walletAddress);
+
+        if (newWallet) {
+          // Select the new wallet
+          setCurrentWallet(newWallet);
+
+          // Show notification
+          notification.success(
+            `Wallet "${data.name}" has been created! You are a signer of this ${data.threshold}-of-${data.signerCount} multisig wallet.`,
+          );
+
+          // Redirect to dashboard
+          router.goToDashboard();
+        }
+      } catch (error) {
+        handleError(error, { showNotification: true });
+      }
+    });
+
+    return unsubscribe;
+  }, [router, setCurrentWallet]);
+}

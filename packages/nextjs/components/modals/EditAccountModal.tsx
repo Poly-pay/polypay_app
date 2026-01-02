@@ -5,7 +5,7 @@ import Image from "next/image";
 import ModalContainer from "../modals/ModalContainer";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
+import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold, horizenTestnet } from "@polypay/shared";
 import { Copy, Repeat, Trash2, X } from "lucide-react";
 import {
   useGenerateProof,
@@ -91,7 +91,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         callData,
       ])) as `0x${string}`;
 
-      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier } = await generateProof(txHash);
 
       setLoadingState("Submitting to backend...");
       await createTransaction({
@@ -102,7 +102,6 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         totalSigners: signers.length,
         signerCommitment: newSignerCommitment.trim(),
         newThreshold: editThreshold,
-        creatorCommitment: myCommitment,
         proof,
         publicInputs,
         nullifier,
@@ -153,7 +152,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         callData,
       ])) as `0x${string}`;
 
-      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier } = await generateProof(txHash);
 
       setLoadingState("Submitting to backend...");
       await createTransaction({
@@ -164,7 +163,6 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         totalSigners: signers.length,
         signerCommitment: signerCommitment,
         newThreshold: newThreshold,
-        creatorCommitment: myCommitment,
         proof,
         publicInputs,
         nullifier,
@@ -209,7 +207,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         callData,
       ])) as `0x${string}`;
 
-      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier } = await generateProof(txHash);
 
       setLoadingState("Submitting to backend...");
       await createTransaction({
@@ -219,7 +217,6 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         threshold: Number(currentThreshold),
         totalSigners: signers.length,
         newThreshold: editThreshold,
-        creatorCommitment: myCommitment,
         proof,
         publicInputs,
         nullifier,
@@ -271,7 +268,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 className="text-sm cursor-pointer"
                 onClick={() => copyToClipboard(metaMultiSigWallet?.address ?? "")}
               >
-                <span className="text-black">Ethereum </span>
+                <span className="text-black">{horizenTestnet.name} </span>
                 <span className="text-primary">
                   [{metaMultiSigWallet?.address?.slice(0, 6)}...
                   {metaMultiSigWallet?.address?.slice(-4)}]

@@ -1,19 +1,11 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import NewWalletContainer from "~~/components/NewAccount/NewWalletContainer";
-import { useAppRouter } from "~~/hooks/app/useRouteApp";
-import { useWalletStore } from "~~/services/store";
+import { useWalletRealtime } from "~~/hooks";
 
 const NewAccountPage = () => {
-  const router = useAppRouter();
-  const { currentWallet } = useWalletStore();
-
-  useEffect(() => {
-    if (currentWallet) {
-      router.goToDashboard();
-    }
-  }, [currentWallet, router]);
+  useWalletRealtime();
 
   return <NewWalletContainer />;
 };

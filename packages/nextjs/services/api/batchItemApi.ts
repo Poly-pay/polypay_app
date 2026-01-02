@@ -8,13 +8,8 @@ export const batchItemApi = {
     return data;
   },
 
-  getAll: async (commitment: string): Promise<BatchItem[]> => {
-    const { data } = await apiClient.get<BatchItem[]>(API_ENDPOINTS.batchItems.byCommitment(commitment));
-    return data;
-  },
-
-  getById: async (id: string): Promise<BatchItem> => {
-    const { data } = await apiClient.get<BatchItem>(API_ENDPOINTS.batchItems.byId(id));
+  getMyBatchItems: async (): Promise<BatchItem[]> => {
+    const { data } = await apiClient.get<BatchItem[]>(API_ENDPOINTS.batchItems.me);
     return data;
   },
 
@@ -27,7 +22,7 @@ export const batchItemApi = {
     await apiClient.delete(API_ENDPOINTS.batchItems.byId(id));
   },
 
-  clearAll: async (commitment: string): Promise<void> => {
-    await apiClient.delete(API_ENDPOINTS.batchItems.clearByCommitment(commitment));
+  clearMyBatchItems: async (): Promise<void> => {
+    await apiClient.delete(API_ENDPOINTS.batchItems.me);
   },
 };

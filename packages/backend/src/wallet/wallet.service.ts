@@ -5,9 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { AccountService } from '@/account/account.service';
-import { CreateWalletDto, UpdateWalletDto } from '@polypay/shared';
+import {
+  CreateWalletDto,
+  UpdateWalletDto,
+  WALLET_CREATED_EVENT,
+  WalletCreatedEventData,
+} from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
+import { EventsService } from '@/events/events.service';
 
 @Injectable()
 export class WalletService {
@@ -15,16 +20,16 @@ export class WalletService {
 
   constructor(
     private prisma: PrismaService,
-    private accountService: AccountService,
     private relayerService: RelayerService,
+    private readonly eventsService: EventsService,
   ) {}
 
   /**
    * Create new wallet with signers
    */
-  async create(dto: CreateWalletDto) {
+  async create(dto: CreateWalletDto, creatorCommitment: string) {
     // 1. Validate creator is in commitments list
-    if (!dto.commitments.includes(dto.creatorCommitment)) {
+    if (!dto.commitments.includes(creatorCommitment)) {
       throw new BadRequestException('Creator must be in signers list');
     }
 
@@ -72,17 +77,50 @@ export class WalletService {
             data: {
               accountId: account.id,
               walletId: wallet.id,
-              isCreator: account.commitment === dto.creatorCommitment,
+              isCreator: account.commitment === creatorCommitment,
             },
           }),
         ),
       );
 
-      return wallet;
+      return prisma.wallet.findUniqueOrThrow({
+        where: { id: wallet.id },
+        include: {
+          accounts: {
+            include: {
+              account: true,
+            },
+          },
+        },
+      });
     });
 
     this.logger.log(`Created wallet in DB: ${wallet.address}`);
 
+    const eventData: WalletCreatedEventData = {
+      walletAddress: wallet.address,
+      name: wallet.name,
+      threshold: wallet.threshold,
+      signerCount: wallet.accounts.length,
+      createdAt: wallet.createdAt.toISOString(),
+    };
+
+    // Filter out creator, only notify other signers
+    const otherSigners = wallet.accounts
+      .map((aw) => aw.account.commitment)
+      .filter((commitment) => commitment !== creatorCommitment);
+
+    if (otherSigners.length > 0) {
+      this.eventsService.emitToCommitments(
+        otherSigners,
+        WALLET_CREATED_EVENT,
+        eventData,
+      );
+
+      this.logger.log(
+        `Emitted ${WALLET_CREATED_EVENT} to ${otherSigners.length} other signers`,
+      );
+    }
     return this.findByAddress(address);
   }
 

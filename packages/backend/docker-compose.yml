@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: polypay-postgres
+    container_name: polypay-postgres-db
     ports:
       - "5433:5432"
     environment:

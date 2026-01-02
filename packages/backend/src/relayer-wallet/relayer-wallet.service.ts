@@ -12,6 +12,8 @@ import {
   METAMULTISIG_BYTECODE,
   METAMULTISIG_CONSTANTS,
 } from '@polypay/shared';
+import { ConfigService } from '@nestjs/config';
+import { CONFIG_KEYS } from '@/config/config.keys';
 
 @Injectable()
 export class RelayerService {
@@ -20,8 +22,10 @@ export class RelayerService {
   private publicClient;
   private walletClient;
 
-  constructor() {
-    const privateKey = process.env.RELAYER_WALLET_KEY as `0x${string}`;
+  constructor(private readonly configService: ConfigService) {
+    const privateKey = this.configService.get<string>(
+      CONFIG_KEYS.RELAYER_WALLET_KEY,
+    ) as `0x${string}`;
 
     if (!privateKey) {
       throw new Error('RELAYER_WALLET_KEY is not set');

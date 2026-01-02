@@ -33,10 +33,6 @@ export class CreateTransactionDto {
   @Min(1)
   totalSigners: number;
 
-  @IsNotEmpty()
-  @IsString()
-  creatorCommitment: string;
-
   // TRANSFER
   @IsOptional()
   @IsString()

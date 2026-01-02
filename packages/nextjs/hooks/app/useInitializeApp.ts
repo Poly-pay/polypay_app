@@ -7,7 +7,7 @@ import { ErrorCode, handleError, parseError } from "~~/utils/errorHandler";
 
 export const useInitializeApp = () => {
   const router = useAppRouter();
-  const { commitment, clearIdentity } = useIdentityStore();
+  const { logout, accessToken } = useIdentityStore();
   const { currentWallet, setCurrentWallet, clearCurrentWallet } = useWalletStore();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -24,8 +24,8 @@ export const useInitializeApp = () => {
       }
       abortControllerRef.current = new AbortController();
 
-      // Case 1: No commitment (not logged in or logged out)
-      if (!commitment) {
+      // Case 1: No accessToken - clear state and redirect
+      if (!accessToken) {
         clearCurrentWallet();
         setIsLoading(false);
         setIsInitialized(true);
@@ -39,7 +39,7 @@ export const useInitializeApp = () => {
 
       // Case 2: Has commitment, fetch wallets
       try {
-        const wallets = await accountApi.getWallets(commitment);
+        const wallets = await accountApi.getMyWallets();
 
         // Check if request was aborted
         if (abortControllerRef.current?.signal.aborted) {
@@ -78,7 +78,7 @@ export const useInitializeApp = () => {
         // Handle based on error code
         if (appError.code === ErrorCode.UNAUTHORIZED) {
           // Token expired, logout user
-          clearIdentity();
+          logout();
           clearCurrentWallet();
           router.goToDashboard();
         } else if (appError.code === ErrorCode.NOT_FOUND) {
@@ -105,7 +105,7 @@ export const useInitializeApp = () => {
     return () => {
       abortControllerRef.current?.abort();
     };
-  }, [commitment]);
+  }, [accessToken]);
 
   return { isInitialized, isLoading };
 };

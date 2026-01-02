@@ -10,6 +10,7 @@ import { BatchItemModule } from './batch-item/batch-item.module';
 import { AddressBookModule } from './address-book/address-book.module';
 import { EventsModule } from './events/events.module';
 import { NotificationModule } from './notification/notification.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { NotificationModule } from './notification/notification.module';
     AddressBookModule,
     EventsModule,
     NotificationModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

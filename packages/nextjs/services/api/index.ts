@@ -6,6 +6,5 @@ export { addressBookApi } from "./addressBookApi";
 export { batchItemApi } from "./batchItemApi";
 export { transactionApi } from "./transactionApi";
 export { notificationApi } from "./notificationApi";
+export { authApi } from "./authApi";
 export { queryClient } from "../queryClient";
-
-export type { AccountWallet } from "./accountApi";
