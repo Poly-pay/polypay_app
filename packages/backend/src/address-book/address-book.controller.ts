@@ -9,6 +9,7 @@ import {
   Query,
   BadRequestException,
   UseGuards,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,37 +27,47 @@ import {
   UpdateContactDto,
 } from '@polypay/shared';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { AddressGroupAccessGuard } from '@/auth/guards/address-group-access.guard';
+import { ContactAccessGuard } from '@/auth/guards/contact-access.guard';
+import { Account } from '@/generated/prisma/client';
 
 @ApiTags('address-book')
 @Controller('address-book')
-@UseGuards(JwtAuthGuard)
 export class AddressBookController {
+  private readonly logger = new Logger(AddressBookController.name);
   constructor(private readonly addressBookService: AddressBookService) {}
 
   // ============ GROUPS ============
 
   @Post('groups')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new address group' })
   @ApiBody({ type: CreateAddressGroupDto })
   @ApiResponse({ status: 201, description: 'Group created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  createGroup(@Body() dto: CreateAddressGroupDto) {
-    return this.addressBookService.createGroup(dto);
+  createGroup(
+    @CurrentUser() user: Account,
+    @Body() dto: CreateAddressGroupDto,
+  ) {
+    return this.addressBookService.createGroup(dto, user.commitment);
   }
 
   @Get('groups')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all address groups for a wallet' })
   @ApiQuery({ name: 'walletId', required: true, description: 'Wallet ID' })
   @ApiResponse({ status: 200, description: 'List of address groups' })
   @ApiResponse({ status: 400, description: 'walletId is required' })
-  getGroups(@Query('walletId') walletId: string) {
+  getGroups(@CurrentUser() user: Account, @Query('walletId') walletId: string) {
     if (!walletId) {
       throw new BadRequestException('walletId is required');
     }
-    return this.addressBookService.getGroups(walletId);
+    return this.addressBookService.getGroups(walletId, user.commitment);
   }
 
   @Get('groups/:id')
+  @UseGuards(JwtAuthGuard, AddressGroupAccessGuard)
   @ApiOperation({ summary: 'Get a single address group by ID' })
   @ApiParam({ name: 'id', description: 'Group ID' })
   @ApiResponse({ status: 200, description: 'Group found' })
@@ -66,6 +77,7 @@ export class AddressBookController {
   }
 
   @Patch('groups/:id')
+  @UseGuards(JwtAuthGuard, AddressGroupAccessGuard)
   @ApiOperation({ summary: 'Update an address group' })
   @ApiParam({ name: 'id', description: 'Group ID' })
   @ApiBody({ type: UpdateAddressGroupDto })
@@ -76,6 +88,7 @@ export class AddressBookController {
   }
 
   @Delete('groups/:id')
+  @UseGuards(JwtAuthGuard, AddressGroupAccessGuard)
   @ApiOperation({ summary: 'Delete an address group' })
   @ApiParam({ name: 'id', description: 'Group ID' })
   @ApiResponse({ status: 200, description: 'Group deleted successfully' })
@@ -87,15 +100,19 @@ export class AddressBookController {
   // ============ CONTACTS ============
 
   @Post('contacts')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new contact' })
   @ApiBody({ type: CreateContactDto })
   @ApiResponse({ status: 201, description: 'Contact created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  createContact(@Body() dto: CreateContactDto) {
-    return this.addressBookService.createContact(dto);
+  createContact(@CurrentUser() user: Account, @Body() dto: CreateContactDto) {
+    this.logger.log(`Creating contact for user ${user.commitment}`);
+    this.logger.log(`Creating contact for user ${user.id}`);
+    return this.addressBookService.createContact(dto, user.commitment);
   }
 
   @Get('contacts')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all contacts for a wallet' })
   @ApiQuery({ name: 'walletId', required: true, description: 'Wallet ID' })
   @ApiQuery({
@@ -106,16 +123,24 @@ export class AddressBookController {
   @ApiResponse({ status: 200, description: 'List of contacts' })
   @ApiResponse({ status: 400, description: 'walletId is required' })
   getContacts(
+    @CurrentUser() user: Account,
     @Query('walletId') walletId: string,
     @Query('groupId') groupId?: string,
   ) {
     if (!walletId) {
       throw new BadRequestException('walletId is required');
     }
-    return this.addressBookService.getContacts(walletId, groupId);
+    this.logger.log(`Getting contacts for user ${user.commitment}`);
+    this.logger.log(`Getting contacts for user ${user.id}`);
+    return this.addressBookService.getContacts(
+      walletId,
+      user.commitment,
+      groupId,
+    );
   }
 
   @Get('contacts/:id')
+  @UseGuards(JwtAuthGuard, ContactAccessGuard)
   @ApiOperation({ summary: 'Get a single contact by ID' })
   @ApiParam({ name: 'id', description: 'Contact ID' })
   @ApiResponse({ status: 200, description: 'Contact found' })
@@ -125,6 +150,7 @@ export class AddressBookController {
   }
 
   @Patch('contacts/:id')
+  @UseGuards(JwtAuthGuard, ContactAccessGuard)
   @ApiOperation({ summary: 'Update a contact' })
   @ApiParam({ name: 'id', description: 'Contact ID' })
   @ApiBody({ type: UpdateContactDto })
@@ -135,6 +161,7 @@ export class AddressBookController {
   }
 
   @Delete('contacts/:id')
+  @UseGuards(JwtAuthGuard, ContactAccessGuard)
   @ApiOperation({ summary: 'Delete a contact' })
   @ApiParam({ name: 'id', description: 'Contact ID' })
   @ApiResponse({ status: 200, description: 'Contact deleted successfully' })

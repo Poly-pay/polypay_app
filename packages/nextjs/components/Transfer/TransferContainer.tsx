@@ -98,7 +98,7 @@ export default function TransferContainer() {
       }
 
       // 4. Generate proof
-      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier } = await generateProof(txHash);
 
       // 5. Submit to backend
       setLoadingState("Submitting to backend...");
@@ -112,7 +112,6 @@ export default function TransferContainer() {
         value: valueInSmallestUnit,
         tokenAddress: isNativeETH ? undefined : selectedToken.address,
         contactId: selectedContactId || undefined,
-        creatorCommitment: myCommitment,
         proof: Array.from(proof),
         publicInputs,
         nullifier: nullifier.toString(),
@@ -167,7 +166,6 @@ export default function TransferContainer() {
         : parseTokenAmount(amount, selectedToken.decimals);
 
       await createBatchItem({
-        commitment,
         recipient: address,
         amount: valueInSmallestUnit,
         tokenAddress: isNativeETH ? undefined : selectedToken.address,

@@ -5,6 +5,8 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import {
   CreateAddressGroupDto,
@@ -15,6 +17,7 @@ import {
 
 @Injectable()
 export class AddressBookService {
+  private readonly logger = new Logger(AddressBookService.name);
   constructor(private prisma: PrismaService) {}
 
   // Helper to handle Prisma unique constraint errors
@@ -40,7 +43,19 @@ export class AddressBookService {
 
   // ============ ADDRESS GROUP ============
 
-  async createGroup(dto: CreateAddressGroupDto) {
+  async createGroup(dto: CreateAddressGroupDto, userCommitment: string) {
+    // Check if user is a member of the wallet
+    const membership = await this.prisma.accountWallet.findFirst({
+      where: {
+        wallet: { id: dto.walletId },
+        account: { commitment: userCommitment },
+      },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this wallet');
+    }
+
     if (dto.contactIds?.length) {
       const contacts = await this.prisma.contact.findMany({
         where: { id: { in: dto.contactIds }, walletId: dto.walletId },
@@ -71,7 +86,19 @@ export class AddressBookService {
     }
   }
 
-  async getGroups(walletId: string) {
+  async getGroups(walletId: string, userCommitment: string) {
+    // Check if user is a member of the wallet
+    const membership = await this.prisma.accountWallet.findFirst({
+      where: {
+        wallet: { id: walletId },
+        account: { commitment: userCommitment },
+      },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this wallet');
+    }
+
     return this.prisma.addressGroup.findMany({
       where: { walletId },
       include: {
@@ -146,7 +173,19 @@ export class AddressBookService {
 
   // ============ CONTACT ============
 
-  async createContact(dto: CreateContactDto) {
+  async createContact(dto: CreateContactDto, userCommitment: string) {
+    // Check if user is a member of the wallet
+    const membership = await this.prisma.accountWallet.findFirst({
+      where: {
+        wallet: { id: dto.walletId },
+        account: { commitment: userCommitment },
+      },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this wallet');
+    }
+
     const groups = await this.prisma.addressGroup.findMany({
       where: { id: { in: dto.groupIds }, walletId: dto.walletId },
     });
@@ -176,7 +215,25 @@ export class AddressBookService {
     }
   }
 
-  async getContacts(walletId: string, groupId?: string) {
+  async getContacts(
+    walletId: string,
+    userCommitment?: string,
+    groupId?: string,
+  ) {
+    // Check if user is a member of the wallet
+    if (userCommitment) {
+      const membership = await this.prisma.accountWallet.findFirst({
+        where: {
+          wallet: { id: walletId },
+          account: { commitment: userCommitment },
+        },
+      });
+
+      if (!membership) {
+        throw new ForbiddenException('You are not a member of this wallet');
+      }
+    }
+
     return this.prisma.contact.findMany({
       where: {
         walletId,

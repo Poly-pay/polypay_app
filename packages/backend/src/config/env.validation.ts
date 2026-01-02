@@ -8,7 +8,9 @@ export const validationSchema = Joi.object({
 
   // JWT - optional with default
   JWT_SECRET: Joi.string().default('default-jwt-secret-change-in-production'),
-  JWT_REFRESH_SECRET: Joi.string().default('default-jwt-refresh-secret-change-in-production'),
+  JWT_REFRESH_SECRET: Joi.string().default(
+    'default-jwt-refresh-secret-change-in-production',
+  ),
 
   // Application - optional with default
   NODE_ENV: Joi.string()

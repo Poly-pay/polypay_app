@@ -22,9 +22,9 @@ export class WalletService {
   /**
    * Create new wallet with signers
    */
-  async create(dto: CreateWalletDto) {
+  async create(dto: CreateWalletDto, creatorCommitment: string) {
     // 1. Validate creator is in commitments list
-    if (!dto.commitments.includes(dto.creatorCommitment)) {
+    if (!dto.commitments.includes(creatorCommitment)) {
       throw new BadRequestException('Creator must be in signers list');
     }
 
@@ -72,7 +72,7 @@ export class WalletService {
             data: {
               accountId: account.id,
               walletId: wallet.id,
-              isCreator: account.commitment === dto.creatorCommitment,
+              isCreator: account.commitment === creatorCommitment,
             },
           }),
         ),

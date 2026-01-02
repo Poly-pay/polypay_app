@@ -27,6 +27,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Account not found');
     }
 
-    return { commitment: payload.sub, accountId: account.id };
+    return account;
   }
 }

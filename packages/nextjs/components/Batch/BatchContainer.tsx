@@ -7,7 +7,7 @@ import { BatchItem, TxType, encodeBatchTransfer, encodeBatchTransferMulti } from
 import { useWalletClient } from "wagmi";
 import { NATIVE_ETH, getTokenByAddress } from "~~/constants/token";
 import { useMetaMultiSigWallet } from "~~/hooks";
-import { useBatchItems, useCreateTransaction, useDeleteBatchItem, useReserveNonce } from "~~/hooks/api";
+import { useCreateTransaction, useDeleteBatchItem, useMyBatchItems, useReserveNonce } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
@@ -194,7 +194,7 @@ export default function BatchContainer() {
   const { mutateAsync: deleteBatchItem, isPending: isRemoving } = useDeleteBatchItem();
   const { data: walletClient } = useWalletClient();
   const { secret, commitment: myCommitment } = useIdentityStore();
-  const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useBatchItems(myCommitment);
+  const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useMyBatchItems();
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
   const { mutateAsync: createTransaction } = useCreateTransaction();
@@ -301,7 +301,7 @@ export default function BatchContainer() {
       ])) as `0x${string}`;
 
       // 4. Generate proof
-      const { proof, publicInputs, nullifier, commitment: myCommitment } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier } = await generateProof(txHash);
 
       // 5. Submit to backend
       setLoadingState("Submitting to backend...");
@@ -314,7 +314,6 @@ export default function BatchContainer() {
         // For BATCH: to = wallet, value = 0
         to: metaMultiSigWallet.address,
         value: "0",
-        creatorCommitment: myCommitment,
         proof: Array.from(proof),
         publicInputs,
         nullifier: nullifier.toString(),

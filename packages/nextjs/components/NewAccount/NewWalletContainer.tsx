@@ -69,7 +69,6 @@ export default function NewWalletContainer() {
         name: formData.name,
         commitments: validSigners,
         threshold: formData.threshold,
-        creatorCommitment: commitment,
       });
 
       setCurrentWallet(wallet);

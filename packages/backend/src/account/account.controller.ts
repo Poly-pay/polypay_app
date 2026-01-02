@@ -1,27 +1,15 @@
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiBody,
-} from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  UseGuards,
-} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, UseGuards, Logger } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { CreateAccountDto, UpdateAccountDto } from '@polypay/shared';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { CurrentUser } from '@/auth/decorators/current-user.decorator';
+import { Account } from '@/generated/prisma/client';
 
 @ApiTags('accounts')
 @Controller('accounts')
-@UseGuards(JwtAuthGuard)
 export class AccountController {
+  private readonly logger = new Logger(AccountController.name);
   constructor(private readonly accountService: AccountService) {}
 
   /**
@@ -38,41 +26,46 @@ export class AccountController {
   }
 
   /**
-   * Get account by commitment
-   * GET /api/accounts/:commitment
+   * Get current user account
+   * GET /api/accounts/me
    */
-  @Get(':commitment')
-  @ApiOperation({ summary: 'Get account by commitment' })
-  @ApiParam({ name: 'commitment', description: 'Account commitment hash' })
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current user account' })
   @ApiResponse({ status: 200, description: 'Account found' })
   @ApiResponse({ status: 404, description: 'Account not found' })
-  async findByCommitment(@Param('commitment') commitment: string) {
-    return this.accountService.findByCommitment(commitment);
+  async getMe(@CurrentUser() user: Account) {
+    return this.accountService.findByCommitment(user.commitment);
   }
 
   /**
-   * Get wallets for account
-   * GET /api/accounts/:commitment/wallets
+   * Get wallets for current user
+   * GET /api/accounts/me/wallets
    */
-  @Get(':commitment/wallets')
-  @ApiOperation({ summary: 'Get all wallets for an account' })
-  @ApiParam({ name: 'commitment', description: 'Account commitment hash' })
+  @Get('me/wallets')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get all wallets for current user' })
   @ApiResponse({ status: 200, description: 'Wallets retrieved successfully' })
-  async getWallets(@Param('commitment') commitment: string) {
-    return this.accountService.getWallets(commitment);
+  async getMyWallets(@CurrentUser() user: Account) {
+    this.logger.log(`Fetching wallets for account: ${user.commitment}`);
+    return this.accountService.getWallets(user.commitment);
   }
 
-  @Patch(':commitment')
-  @ApiOperation({ summary: 'Update account information' })
-  @ApiParam({ name: 'commitment', description: 'Account commitment hash' })
+  /**
+   * Update current user account
+   * PATCH /api/accounts/me
+   */
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update current user account' })
   @ApiBody({ type: UpdateAccountDto })
   @ApiResponse({ status: 200, description: 'Account updated successfully' })
   @ApiResponse({ status: 404, description: 'Account not found' })
-  update(
-    @Param('commitment') commitment: string,
+  async updateMe(
+    @CurrentUser() user: Account,
     @Body() dto: UpdateAccountDto,
   ) {
-    return this.accountService.update(commitment, dto);
+    return this.accountService.update(user.commitment, dto);
   }
 
   /**
@@ -80,6 +73,7 @@ export class AccountController {
    * GET /api/accounts
    */
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get all accounts' })
   @ApiResponse({ status: 200, description: 'List of all accounts' })
   async findAll() {

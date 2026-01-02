@@ -148,7 +148,7 @@ export default function Sidebar() {
   const { disconnect } = useDisconnect();
 
   const { openModal } = useModalApp();
-  const { commitment, clearIdentity } = useIdentityStore();
+  const { commitment, logout } = useIdentityStore();
   const { clearCurrentWallet } = useWalletStore();
 
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
@@ -288,7 +288,7 @@ export default function Sidebar() {
                       className="cursor-pointer"
                       onClick={() => {
                         // Clear commitment and secret on disconnect
-                        clearIdentity();
+                        logout();
                         clearCurrentWallet();
                         disconnect();
                       }}

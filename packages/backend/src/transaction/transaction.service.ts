@@ -3,6 +3,7 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
@@ -48,7 +49,19 @@ export class TransactionService {
   /**
    * Create transaction with txId from smart contract nonce
    */
-  async createTransaction(dto: CreateTransactionDto) {
+  async createTransaction(dto: CreateTransactionDto, userCommitment: string) {
+    // Check if user is a member of the wallet
+    const membership = await this.prisma.accountWallet.findFirst({
+      where: {
+        wallet: { address: dto.walletAddress },
+        account: { commitment: userCommitment },
+      },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this wallet');
+    }
+
     // 1. Validate based on type
     this.validateTransactionDto(dto);
 
@@ -141,7 +154,7 @@ export class TransactionService {
           contactId: dto.contactId,
           signerCommitment: dto.signerCommitment,
           newThreshold: dto.newThreshold,
-          createdBy: dto.creatorCommitment,
+          createdBy: userCommitment,
           status: 'PENDING',
           batchData,
           totalSigners,
@@ -151,7 +164,7 @@ export class TransactionService {
       await prisma.vote.create({
         data: {
           txId: tx.txId,
-          voterCommitment: dto.creatorCommitment,
+          voterCommitment: userCommitment,
           voteType: 'APPROVE',
           nullifier: dto.nullifier,
           jobId: proofResult.jobId,
@@ -198,7 +211,11 @@ export class TransactionService {
   /**
    * Approve transaction
    */
-  async approve(txId: number, dto: ApproveTransactionDto) {
+  async approve(
+    txId: number,
+    dto: ApproveTransactionDto,
+    userCommitment: string,
+  ) {
     // 1. Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -221,7 +238,7 @@ export class TransactionService {
       where: {
         txId_voterCommitment: {
           txId,
-          voterCommitment: dto.voterCommitment,
+          voterCommitment: userCommitment,
         },
       },
     });
@@ -257,7 +274,7 @@ export class TransactionService {
     const vote = await this.prisma.vote.create({
       data: {
         txId,
-        voterCommitment: dto.voterCommitment,
+        voterCommitment: userCommitment,
         voteType: VoteType.APPROVE,
         nullifier: dto.nullifier,
         jobId: proofResult.jobId,
@@ -303,7 +320,7 @@ export class TransactionService {
   /**
    * Deny transaction
    */
-  async deny(txId: number, dto: DenyTransactionDto) {
+  async deny(txId: number, dto: DenyTransactionDto, userCommitment: string) {
     // 1. Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -326,7 +343,7 @@ export class TransactionService {
       where: {
         txId_voterCommitment: {
           txId,
-          voterCommitment: dto.voterCommitment,
+          voterCommitment: userCommitment,
         },
       },
     });
@@ -339,7 +356,7 @@ export class TransactionService {
     const vote = await this.prisma.vote.create({
       data: {
         txId,
-        voterCommitment: dto.voterCommitment,
+        voterCommitment: userCommitment,
         voteType: VoteType.DENY,
       },
     });
@@ -407,7 +424,24 @@ export class TransactionService {
   /**
    * Get all transactions for a wallet
    */
-  async getTransactions(walletAddress: string, status?: string) {
+  async getTransactions(
+    walletAddress: string,
+    userCommitment: string,
+    status?: string,
+  ) {
+    // Check if user is a member of the wallet
+    if (userCommitment) {
+      const membership = await this.prisma.accountWallet.findFirst({
+        where: {
+          wallet: { address: walletAddress },
+          account: { commitment: userCommitment },
+        },
+      });
+
+      if (!membership) {
+        throw new ForbiddenException('You are not a member of this wallet');
+      }
+    }
     const where: any = { walletAddress };
     if (status) {
       where.status = status;
@@ -683,7 +717,19 @@ export class TransactionService {
     }
   }
 
-  async reserveNonce(walletAddress: string) {
+  async reserveNonce(walletAddress: string, userCommitment: string) {
+    // Check if user is a member of the wallet
+    const membership = await this.prisma.accountWallet.findFirst({
+      where: {
+        wallet: { address: walletAddress },
+        account: { commitment: userCommitment },
+      },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this wallet');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       // 1. Clean expired reservations
       await tx.reservedNonce.deleteMany({

@@ -1,18 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import ModalContainer from "./ModalContainer";
 import { X } from "lucide-react";
-import { useWalletClient } from "wagmi";
 import DecryptedText from "~~/components/effects/DecryptedText";
 import { useAuth } from "~~/hooks";
-import { useCreateAccount } from "~~/hooks/api";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
-import { createCommitment, createSecret } from "~~/utils/multisig";
 import { notification } from "~~/utils/scaffold-eth";
 
 const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {

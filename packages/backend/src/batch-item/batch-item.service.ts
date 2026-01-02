@@ -11,12 +11,15 @@ export class BatchItemService {
   /**
    * Create new batch item
    */
-  async create(dto: CreateBatchItemDto) {
-    const account = await this.prisma.account.upsert({
-      where: { commitment: dto.commitment },
-      create: { commitment: dto.commitment },
-      update: {},
+  async create(dto: CreateBatchItemDto, userCommitment: string) {
+    // Find account by commitment
+    const account = await this.prisma.account.findUnique({
+      where: { commitment: userCommitment },
     });
+
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
 
     const batchItem = await this.prisma.batchItem.create({
       data: {

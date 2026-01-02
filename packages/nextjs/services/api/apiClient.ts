@@ -4,7 +4,7 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestCo
 import { API_BASE_URL } from "~~/constants";
 
 const AUTHORIZATION_HEADER = (accessToken: string) => `Bearer ${accessToken}`;
-const AUTH_TIMEOUT = 300000; // 300s for ZK proof generation + verification
+const ZK_TIMEOUT = 300000; // 300s for ZK proof generation + verification
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -17,8 +17,8 @@ export const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Increase timeout for auth endpoints (ZK proof takes time)
-    if (config.url?.includes("/auth/")) {
-      config.timeout = AUTH_TIMEOUT;
+    if (config.url?.includes("/auth/") || config.url?.includes("/transaction/")) {
+      config.timeout = ZK_TIMEOUT;
     }
 
     // Add auth header if token exists
@@ -50,6 +50,13 @@ apiClient.interceptors.response.use(
 
     // Auto refresh token on 401
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // Skip auto-refresh for auth endpoints (prevent loop)
+      if (originalRequest.url?.includes("/auth/")) {
+        const { logout } = useIdentityStore.getState();
+        logout();
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       const { refreshToken, setTokens, logout } = useIdentityStore.getState();

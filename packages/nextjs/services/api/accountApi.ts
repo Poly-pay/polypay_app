@@ -2,33 +2,24 @@ import { apiClient } from "./apiClient";
 import { API_ENDPOINTS } from "./endpoints";
 import { Account, CreateAccountDto, UpdateAccountDto, Wallet } from "@polypay/shared";
 
-export interface AccountWallet {
-  id: string;
-  address: string;
-  name: string;
-  threshold: number;
-  createdAt: string;
-  isCreator: boolean;
-}
-
 export const accountApi = {
   create: async (dto: CreateAccountDto): Promise<Account> => {
     const { data } = await apiClient.post<Account>(API_ENDPOINTS.accounts.base, dto);
     return data;
   },
 
-  getByCommitment: async (commitment: string): Promise<Account> => {
-    const { data } = await apiClient.get<Account>(API_ENDPOINTS.accounts.byCommitment(commitment));
+  getMe: async (): Promise<Account> => {
+    const { data } = await apiClient.get<Account>(API_ENDPOINTS.accounts.me);
     return data;
   },
 
-  getWallets: async (commitment: string): Promise<Wallet[]> => {
-    const { data } = await apiClient.get<Wallet[]>(API_ENDPOINTS.accounts.wallets(commitment));
+  getMyWallets: async (): Promise<Wallet[]> => {
+    const { data } = await apiClient.get<Wallet[]>(API_ENDPOINTS.accounts.meWallets);
     return data;
   },
 
-  update: async (commitment: string, dto: UpdateAccountDto): Promise<Account> => {
-    const { data } = await apiClient.patch<Account>(API_ENDPOINTS.accounts.byCommitment(commitment), dto);
+  updateMe: async (dto: UpdateAccountDto): Promise<Account> => {
+    const { data } = await apiClient.patch<Account>(API_ENDPOINTS.accounts.me, dto);
     return data;
   },
 };

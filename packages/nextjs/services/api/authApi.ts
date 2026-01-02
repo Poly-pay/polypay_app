@@ -1,6 +1,6 @@
-import { LoginDto, RefreshDto, LoginResponse, AuthTokens } from "@polypay/shared";
 import apiClient from "./apiClient";
 import { API_ENDPOINTS } from "./endpoints";
+import { AuthTokens, LoginDto, LoginResponse, RefreshDto } from "@polypay/shared";
 
 export const authApi = {
   login: async (dto: LoginDto): Promise<LoginResponse> => {

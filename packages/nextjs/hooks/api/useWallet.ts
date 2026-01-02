@@ -13,13 +13,10 @@ export const useCreateWallet = () => {
 
   return useMutation({
     mutationFn: walletApi.create,
-    onSuccess: (data, variables) => {
+    onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
       queryClient.setQueryData(walletKeys.byAddress(data.address), data);
-
-      variables.commitments.forEach(commitment => {
-        queryClient.invalidateQueries({ queryKey: accountKeys.wallets(commitment) });
-      });
+      queryClient.invalidateQueries({ queryKey: accountKeys.meWallets });
     },
   });
 };
@@ -29,13 +26,6 @@ export const useWallet = (address: string) => {
     queryKey: walletKeys.byAddress(address),
     queryFn: () => walletApi.getByAddress(address),
     enabled: !!address,
-  });
-};
-
-export const useWallets = () => {
-  return useQuery({
-    queryKey: walletKeys.all,
-    queryFn: walletApi.getAll,
   });
 };
 

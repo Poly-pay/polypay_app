@@ -6,8 +6,8 @@ export const API_ENDPOINTS = {
 
   accounts: {
     base: "/api/accounts",
-    byCommitment: (commitment: string) => `/api/accounts/${commitment}`,
-    wallets: (commitment: string) => `/api/accounts/${commitment}/wallets`,
+    me: "/api/accounts/me",
+    meWallets: "/api/accounts/me/wallets",
   },
 
   addressBook: {
@@ -29,9 +29,8 @@ export const API_ENDPOINTS = {
 
   batchItems: {
     base: "/api/batch-items",
+    me: "/api/batch-items/me",
     byId: (id: string) => `/api/batch-items/${id}`,
-    byCommitment: (commitment: string) => `/api/batch-items?commitment=${commitment}`,
-    clearByCommitment: (commitment: string) => `/api/batch-items?commitment=${commitment}`,
   },
 
   transactions: {

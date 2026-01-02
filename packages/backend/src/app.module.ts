@@ -25,7 +25,7 @@ import { AuthModule } from './auth/auth.module';
     AddressBookModule,
     EventsModule,
     NotificationModule,
-    AuthModule
+    AuthModule,
   ],
 })
 export class AppModule {}
