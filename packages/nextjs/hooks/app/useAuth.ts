@@ -5,7 +5,15 @@ import { useIdentityStore } from "~~/services/store";
 
 export const useAuth = () => {
   const { generateAuthProof, isGenerating } = useAuthProof();
-  const { isAuthenticated, accessToken, refreshToken, commitment, setTokens, logout: storeLogout } = useIdentityStore();
+  const {
+    isAuthenticated,
+    accessToken,
+    refreshToken,
+    commitment,
+    setIdentity,
+    setTokens,
+    logout: storeLogout,
+  } = useIdentityStore();
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +38,8 @@ export const useAuth = () => {
         vk: Buffer.from(proofResult.vk).toString("base64"),
       });
 
-      // 3. Store tokens
+      // 3. Store tokens and identity
+      setIdentity(proofResult.secret, proofResult.commitment);
       setTokens(data.accessToken, data.refreshToken);
 
       return true;
@@ -40,7 +49,7 @@ export const useAuth = () => {
     } finally {
       setIsLoggingIn(false);
     }
-  }, [generateAuthProof, setTokens]);
+  }, [generateAuthProof, setTokens, setIdentity]);
 
   const refresh = useCallback(async (): Promise<boolean> => {
     if (!refreshToken) {

@@ -3432,6 +3432,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nestjs/jwt@npm:^11.0.2":
+  version: 11.0.2
+  resolution: "@nestjs/jwt@npm:11.0.2"
+  dependencies:
+    "@types/jsonwebtoken": 9.0.10
+    jsonwebtoken: 9.0.3
+  peerDependencies:
+    "@nestjs/common": ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0
+  checksum: 9d8a25b48a52276a91e7ce1f1aec929f7e611391dda2bdc1848aed72bfed466db821edc5d37eaacf44f61cab813e3b53cd0782953f061f1e51e201e548ab0908
+  languageName: node
+  linkType: hard
+
 "@nestjs/mapped-types@npm:2.0.6":
   version: 2.0.6
   resolution: "@nestjs/mapped-types@npm:2.0.6"
@@ -3446,18 +3458,6 @@ __metadata:
     class-validator:
       optional: true
   checksum: dea0e728ba881ba3e454d3d2edb049b39da8dfd681869ed577d4feda249ba1b8fd82337dad4f54a72095d3341bad0a404e81d93570d03210def1a3631681ea32
-  languageName: node
-  linkType: hard
-
-"@nestjs/jwt@npm:^11.0.2":
-  version: 11.0.2
-  resolution: "@nestjs/jwt@npm:11.0.2"
-  dependencies:
-    "@types/jsonwebtoken": 9.0.10
-    jsonwebtoken: 9.0.3
-  peerDependencies:
-    "@nestjs/common": ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0
-  checksum: 9d8a25b48a52276a91e7ce1f1aec929f7e611391dda2bdc1848aed72bfed466db821edc5d37eaacf44f61cab813e3b53cd0782953f061f1e51e201e548ab0908
   languageName: node
   linkType: hard
 

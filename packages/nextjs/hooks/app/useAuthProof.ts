@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { keccak256 } from "viem";
 import { useWalletClient } from "wagmi";
-import { useIdentityStore } from "~~/services/store";
-import { BN254_MODULUS, createCommitment, createSecret, poseidonHash2 } from "~~/utils/multisig";
+import { createCommitment, createSecret } from "~~/utils/multisig";
 
 interface AuthProofResult {
+  secret: string;
   commitment: string;
   proof: number[];
   publicInputs: string[];
@@ -15,8 +14,6 @@ export const useAuthProof = () => {
   const { data: walletClient } = useWalletClient();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const {  setIdentity } = useIdentityStore();
 
   const generateAuthProof = async (): Promise<AuthProofResult | null> => {
     if (!walletClient) {
@@ -31,9 +28,6 @@ export const useAuthProof = () => {
       // 1. Sign identity message
       const secret = await createSecret(walletClient);
       const commitment = await createCommitment(secret);
-
-      // Save to store
-      setIdentity(secret.toString(), commitment.toString());
 
       // 3. Load auth circuit
       const circuitResponse = await fetch("/auth-circuit/target/circuit.json");
@@ -63,6 +57,7 @@ export const useAuthProof = () => {
       const proofArray = Array.from(proof);
 
       return {
+        secret: secret.toString(),
         commitment: commitment.toString(),
         proof: proofArray,
         publicInputs,
