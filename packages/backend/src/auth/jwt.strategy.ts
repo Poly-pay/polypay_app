@@ -1,15 +1,20 @@
-import { PrismaService } from "@/database/prisma.service";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { PassportStrategy } from "@nestjs/passport";
-import { ExtractJwt, Strategy } from "passport-jwt";
+import { CONFIG_KEYS } from '@/config/config.keys';
+import { PrismaService } from '@/database/prisma.service';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    configService: ConfigService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || "your-secret-key",
+      secretOrKey: configService.get<string>(CONFIG_KEYS.JWT_SECRET),
     });
   }
 
@@ -19,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     if (!account) {
-      throw new UnauthorizedException("Account not found");
+      throw new UnauthorizedException('Account not found');
     }
 
     return { commitment: payload.sub, accountId: account.id };

@@ -8,6 +8,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
 import { LoginDto, RefreshDto } from '@polypay/shared';
 import { PrismaService } from '@/database/prisma.service';
+import { ConfigService } from '@nestjs/config';
+import { CONFIG_KEYS } from '@/config/config.keys';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +19,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly zkVerifyService: ZkVerifyService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -78,7 +81,7 @@ export class AuthService {
 
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+        secret: this.configService.get<string>(CONFIG_KEYS.JWT_REFRESH_SECRET),
       });
 
       // Verify account exists
@@ -106,13 +109,13 @@ export class AuthService {
     const payload = { sub: commitment };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET || 'your-secret-key',
-      expiresIn: '15m',
+      secret: this.configService.get<string>(CONFIG_KEYS.JWT_SECRET),
+      expiresIn: Number(this.configService.get(CONFIG_KEYS.JWT_EXPIRES_IN)),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-      expiresIn: '7d',
+      secret: this.configService.get<string>(CONFIG_KEYS.JWT_REFRESH_SECRET),
+      expiresIn: Number(this.configService.get(CONFIG_KEYS.JWT_REFRESH_EXPIRES_IN)),
     });
 
     return { accessToken, refreshToken };

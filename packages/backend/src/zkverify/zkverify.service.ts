@@ -15,9 +15,7 @@ export class ZkVerifyService {
   private readonly apiKey: string;
   private readonly assetsDir: string;
 
-  constructor(
-    private configService: ConfigService,
-  ) {
+  constructor(private configService: ConfigService) {
     this.apiKey = this.configService.get<string>('RELAYER_ZKVERIFY_API_KEY');
     this.assetsDir = path.join(process.cwd(), 'assets');
   }
