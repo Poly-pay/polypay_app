@@ -3,9 +3,16 @@ import {
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { getCommitmentRoom, getWalletRoom } from '@polypay/shared';
+
+interface ConnectionQuery {
+  walletAddress?: string;
+  commitment?: string;
+}
 
 @WebSocketGateway({
   cors: {
@@ -19,29 +26,41 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(EventsGateway.name);
 
   handleConnection(client: Socket) {
-    // const commitment = client.handshake.query.commitment as string;
-    const walletAddress = client.handshake.query.walletAddress as string;
+    const { walletAddress, commitment } = client.handshake
+      .query as ConnectionQuery;
 
-    // if (!commitment) {
-    //   this.logger.warn(`Client ${client.id} connected without commitment, disconnecting`);
-    //   client.disconnect();
-    //   return;
-    // }
+    // Join commitment room for personal notifications
+    if (commitment) {
+      const commitmentRoom = getCommitmentRoom(commitment);
+      client.join(commitmentRoom);
+      this.logger.log(`Client ${client.id} joined ${commitmentRoom}`);
+    }
 
-    // Join room by commitment (for personal notifications)
-    // client.join(commitment);
-    // this.logger.log(`Client ${client.id} joined room: ${commitment.slice(0, 10)}...`);
-
-    // Join room by wallet address (for transaction updates)
+    // Join wallet room if provided
     if (walletAddress) {
-      client.join(walletAddress);
-      this.logger.log(
-        `Client ${client.id} joined wallet room: ${walletAddress}`,
-      );
+      const walletRoom = getWalletRoom(walletAddress);
+      client.join(walletRoom);
+      this.logger.log(`Client ${client.id} joined ${walletRoom}`);
     }
   }
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Client ${client.id} disconnected`);
+  }
+
+  @SubscribeMessage('join:wallet')
+  handleJoinWallet(client: Socket, walletAddress: string): void {
+    // Leave all existing wallet rooms
+    client.rooms.forEach((room) => {
+      if (room.startsWith('wallet:')) {
+        client.leave(room);
+        this.logger.log(`Client ${client.id} left ${room}`);
+      }
+    });
+
+    // Join new wallet room
+    const walletRoom = getWalletRoom(walletAddress);
+    client.join(walletRoom);
+    this.logger.log(`Client ${client.id} joined ${walletRoom}`);
   }
 }

@@ -19,3 +19,11 @@ export interface TxVotedEventData {
   approveCount: number;
   vote: Vote;
 }
+
+export interface WalletCreatedEventData {
+  walletAddress: string;
+  name: string;
+  threshold: number;
+  signerCount: number;
+  createdAt: string;
+}

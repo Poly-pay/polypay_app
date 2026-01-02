@@ -5,9 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { AccountService } from '@/account/account.service';
-import { CreateWalletDto, UpdateWalletDto } from '@polypay/shared';
+import {
+  CreateWalletDto,
+  UpdateWalletDto,
+  WALLET_CREATED_EVENT,
+  WalletCreatedEventData,
+} from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
+import { EventsService } from '@/events/events.service';
 
 @Injectable()
 export class WalletService {
@@ -15,8 +20,8 @@ export class WalletService {
 
   constructor(
     private prisma: PrismaService,
-    private accountService: AccountService,
     private relayerService: RelayerService,
+    private readonly eventsService: EventsService,
   ) {}
 
   /**
@@ -78,10 +83,37 @@ export class WalletService {
         ),
       );
 
-      return wallet;
+      return prisma.wallet.findUniqueOrThrow({
+        where: { id: wallet.id },
+        include: {
+          accounts: {
+            include: {
+              account: true,
+            },
+          },
+        },
+      });
     });
 
     this.logger.log(`Created wallet in DB: ${wallet.address}`);
+
+    const eventData: WalletCreatedEventData = {
+      walletAddress: wallet.address,
+      name: wallet.name,
+      threshold: wallet.threshold,
+      signerCount: wallet.accounts.length,
+      createdAt: wallet.createdAt.toISOString(),
+    };
+
+    this.eventsService.emitToCommitments(
+      wallet.accounts.map((aw) => aw.account.commitment),
+      WALLET_CREATED_EVENT,
+      eventData,
+    );
+
+    this.logger.log(
+      `Emitted ${WALLET_CREATED_EVENT} to ${wallet.accounts.length} signers`,
+    );
 
     return this.findByAddress(address);
   }
