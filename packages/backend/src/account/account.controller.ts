@@ -1,5 +1,13 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { Controller, Get, Post, Body, Patch, UseGuards, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  UseGuards,
+  Logger,
+} from '@nestjs/common';
 import { AccountService } from './account.service';
 import { CreateAccountDto, UpdateAccountDto } from '@polypay/shared';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
@@ -61,10 +69,7 @@ export class AccountController {
   @ApiBody({ type: UpdateAccountDto })
   @ApiResponse({ status: 200, description: 'Account updated successfully' })
   @ApiResponse({ status: 404, description: 'Account not found' })
-  async updateMe(
-    @CurrentUser() user: Account,
-    @Body() dto: UpdateAccountDto,
-  ) {
+  async updateMe(@CurrentUser() user: Account, @Body() dto: UpdateAccountDto) {
     return this.accountService.update(user.commitment, dto);
   }
 

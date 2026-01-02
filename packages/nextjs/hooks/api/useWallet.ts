@@ -6,9 +6,9 @@ import { UpdateWalletDto, WALLET_CREATED_EVENT, WalletCreatedEventData } from "@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { accountApi, walletApi } from "~~/services/api";
 import { socketManager } from "~~/services/socket/socketManager";
-import { notification } from "~~/utils/scaffold-eth/notification";
 import { useWalletStore } from "~~/services/store";
 import { handleError } from "~~/utils/errorHandler";
+import { notification } from "~~/utils/scaffold-eth/notification";
 
 export const walletKeys = {
   all: ["wallets"] as const,
