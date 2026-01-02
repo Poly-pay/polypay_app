@@ -12,11 +12,20 @@ export const useInitializeApp = () => {
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setMounted] = useState(false);
 
   // Prevent race conditions
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Mark mounted after first render to make sure hydration is done
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
     const initialize = async () => {
       // Cancel previous request if exists
       if (abortControllerRef.current) {
