@@ -1,70 +1,9 @@
-import { useEffect } from "react";
-import { NOTIFICATION_NEW_EVENT, Notification, SendCommitmentDto } from "@polypay/shared";
+import { useCallback } from "react";
+import { useSocketEvent } from "../app/useSocketEvent";
+import { NOTIFICATION_NEW_EVENT, Notification } from "@polypay/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { API_BASE_URL } from "~~/constants";
-import { useSocket } from "~~/hooks/app/useSocket";
+import { notificationApi } from "~~/services/api";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
-
-// ============ API Functions ============
-
-const fetchNotificationsAPI = async (commitment: string): Promise<Notification[]> => {
-  const response = await fetch(`${API_BASE_URL}/api/notifications?commitment=${commitment}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch notifications");
-  }
-
-  return response.json();
-};
-
-const fetchUnreadCountAPI = async (commitment: string): Promise<number> => {
-  const response = await fetch(`${API_BASE_URL}/api/notifications/unread-count?commitment=${commitment}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch unread count");
-  }
-
-  return response.json();
-};
-
-const sendCommitmentAPI = async (dto: SendCommitmentDto): Promise<Notification> => {
-  const response = await fetch(`${API_BASE_URL}/api/notifications/send-commitment`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dto),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to send commitment");
-  }
-
-  return response.json();
-};
-
-const markAsReadAPI = async (id: string): Promise<Notification> => {
-  const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
-    method: "PATCH",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to mark as read");
-  }
-
-  return response.json();
-};
-
-const markAllAsReadAPI = async (commitment: string): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ commitment }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to mark all as read");
-  }
-};
 
 // ============ Query Keys ============
 
@@ -81,37 +20,12 @@ export const notificationKeys = {
  */
 export const useNotifications = () => {
   const { commitment } = useIdentityStore();
-  const socket = useSocket();
-  const queryClient = useQueryClient();
 
-  const query = useQuery({
+  return useQuery({
     queryKey: notificationKeys.byCommitment(commitment!),
-    queryFn: () => fetchNotificationsAPI(commitment!),
+    queryFn: () => notificationApi.getAll(commitment!),
     enabled: !!commitment,
   });
-
-  // Listen for realtime notifications
-  useEffect(() => {
-    if (!socket || !commitment) return;
-
-    const handleNewNotification = (notification: Notification) => {
-      // Add new notification to cache
-      queryClient.setQueryData<Notification[]>(notificationKeys.byCommitment(commitment), old =>
-        old ? [notification, ...old] : [notification],
-      );
-
-      // Update unread count
-      queryClient.setQueryData<number>(notificationKeys.unreadCount(commitment), old => (old ?? 0) + 1);
-    };
-
-    socket.on(NOTIFICATION_NEW_EVENT, handleNewNotification);
-
-    return () => {
-      socket.off(NOTIFICATION_NEW_EVENT, handleNewNotification);
-    };
-  }, [socket, commitment, queryClient]);
-
-  return query;
 };
 
 /**
@@ -122,7 +36,7 @@ export const useUnreadCount = () => {
 
   return useQuery({
     queryKey: notificationKeys.unreadCount(commitment!),
-    queryFn: () => fetchUnreadCountAPI(commitment!),
+    queryFn: () => notificationApi.getUnreadCount(commitment!),
     enabled: !!commitment,
   });
 };
@@ -134,7 +48,7 @@ export const useSendCommitment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: sendCommitmentAPI,
+    mutationFn: notificationApi.sendCommitment,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
@@ -144,12 +58,12 @@ export const useSendCommitment = () => {
 /**
  * Mark single notification as read
  */
-export const useMarkAsRead = () => {
+export const useMarkNotificationAsRead = () => {
   const { commitment } = useIdentityStore();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: markAsReadAPI,
+    mutationFn: notificationApi.markAsRead,
     onSuccess: updatedNotification => {
       // Update notification in cache
       queryClient.setQueryData<Notification[]>(notificationKeys.byCommitment(commitment!), old =>
@@ -165,12 +79,12 @@ export const useMarkAsRead = () => {
 /**
  * Mark all notifications as read
  */
-export const useMarkAllAsRead = () => {
+export const useMarkAllNotificationsAsRead = () => {
   const { commitment } = useIdentityStore();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => markAllAsReadAPI(commitment!),
+    mutationFn: () => notificationApi.markAllAsRead(commitment!),
     onSuccess: () => {
       // Update all notifications in cache
       queryClient.setQueryData<Notification[]>(notificationKeys.byCommitment(commitment!), old =>
@@ -181,4 +95,34 @@ export const useMarkAllAsRead = () => {
       queryClient.setQueryData<number>(notificationKeys.unreadCount(commitment!), 0);
     },
   });
+};
+
+// ============ Realtime Hook ============
+
+/**
+ * Listen for realtime notification updates
+ * Use this in components that display notifications
+ */
+export const useNotificationRealtime = () => {
+  const { commitment } = useIdentityStore();
+  const queryClient = useQueryClient();
+
+  const handleNewNotification = useCallback(
+    (notification: Notification) => {
+      console.log("[Socket] New notification:", notification);
+
+      if (!commitment) return;
+
+      // Add new notification to cache
+      queryClient.setQueryData<Notification[]>(notificationKeys.byCommitment(commitment), old =>
+        old ? [notification, ...old] : [notification],
+      );
+
+      // Update unread count
+      queryClient.setQueryData<number>(notificationKeys.unreadCount(commitment), old => (old ?? 0) + 1);
+    },
+    [commitment, queryClient],
+  );
+
+  useSocketEvent(NOTIFICATION_NEW_EVENT, handleNewNotification);
 };

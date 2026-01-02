@@ -3,7 +3,7 @@
 import React from "react";
 import { Notification } from "@polypay/shared";
 import { Check, Copy } from "lucide-react";
-import { useMarkAsRead } from "~~/hooks/api/useNotification";
+import { useMarkNotificationAsRead } from "~~/hooks";
 import { notification as toast } from "~~/utils/scaffold-eth";
 
 interface NotificationItemProps {
@@ -11,7 +11,7 @@ interface NotificationItemProps {
 }
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({ notification }) => {
-  const { mutate: markAsRead } = useMarkAsRead();
+  const { mutate: markAsRead } = useMarkNotificationAsRead();
   const [copied, setCopied] = React.useState(false);
 
   const senderCommitment = notification.sender?.commitment || "";

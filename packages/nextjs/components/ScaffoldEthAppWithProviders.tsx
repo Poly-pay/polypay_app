@@ -13,6 +13,7 @@ import { WagmiProvider } from "wagmi";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { useEnforceNetwork } from "~~/hooks";
 import { useMobileDetection } from "~~/hooks/app/useMobileDetection";
+import { useSocketConnection } from "~~/hooks/app/useSocketConnection";
 import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
 import { queryClient } from "~~/services/queryClient";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
@@ -21,6 +22,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   useInitializeNativeCurrencyPrice();
   useMobileDetection();
   useEnforceNetwork();
+  useSocketConnection();
 
   return (
     <>

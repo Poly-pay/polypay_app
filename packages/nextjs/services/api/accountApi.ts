@@ -1,6 +1,6 @@
 import { apiClient } from "./apiClient";
 import { API_ENDPOINTS } from "./endpoints";
-import { Account, CreateAccountDto, UpdateAccountDto } from "@polypay/shared";
+import { Account, CreateAccountDto, UpdateAccountDto, Wallet } from "@polypay/shared";
 
 export interface AccountWallet {
   id: string;
@@ -22,8 +22,8 @@ export const accountApi = {
     return data;
   },
 
-  getWallets: async (commitment: string): Promise<AccountWallet[]> => {
-    const { data } = await apiClient.get<AccountWallet[]>(API_ENDPOINTS.accounts.wallets(commitment));
+  getWallets: async (commitment: string): Promise<Wallet[]> => {
+    const { data } = await apiClient.get<Wallet[]>(API_ENDPOINTS.accounts.wallets(commitment));
     return data;
   },
 
