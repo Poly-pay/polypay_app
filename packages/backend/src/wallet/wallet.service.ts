@@ -105,16 +105,22 @@ export class WalletService {
       createdAt: wallet.createdAt.toISOString(),
     };
 
-    this.eventsService.emitToCommitments(
-      wallet.accounts.map((aw) => aw.account.commitment),
-      WALLET_CREATED_EVENT,
-      eventData,
-    );
+    // Filter out creator, only notify other signers
+    const otherSigners = wallet.accounts
+      .map((aw) => aw.account.commitment)
+      .filter((commitment) => commitment !== creatorCommitment);
 
-    this.logger.log(
-      `Emitted ${WALLET_CREATED_EVENT} to ${wallet.accounts.length} signers`,
-    );
+    if (otherSigners.length > 0) {
+      this.eventsService.emitToCommitments(
+        otherSigners,
+        WALLET_CREATED_EVENT,
+        eventData,
+      );
 
+      this.logger.log(
+        `Emitted ${WALLET_CREATED_EVENT} to ${otherSigners.length} other signers`,
+      );
+    }
     return this.findByAddress(address);
   }
 
