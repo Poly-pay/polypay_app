@@ -4,9 +4,12 @@ import React from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { PortfolioModal } from "../modals/PortFolioModal";
+import { useMyWallets } from "~~/hooks";
 
 const Title: React.FC = () => {
   const pathname = usePathname();
+  const { data: wallets } = useMyWallets();
+  const hasMultisigWallet = wallets && wallets.length > 0;
   let title;
 
   switch (pathname) {
@@ -46,13 +49,15 @@ const Title: React.FC = () => {
         </div>
       </div>
 
-      {/* Portfolio */}
-      <PortfolioModal>
-        <div className="flex flex-row gap-2 w-[200px] justify-center items-center bg-white rounded-lg cursor-pointer">
-          <Image src="/misc/coin-icon.gif" alt="portfolio" className="w-8 h-8" width={32} height={32} />
-          <span className="text-text-primary font-bold">PORTFOLIO</span>
-        </div>
-      </PortfolioModal>
+      {/* Portfolio - Only show if account has multisig wallet */}
+      {hasMultisigWallet && (
+        <PortfolioModal>
+          <div className="flex flex-row gap-2 w-[200px] justify-center items-center bg-white rounded-lg cursor-pointer">
+            <Image src="/misc/coin-icon.gif" alt="portfolio" className="w-8 h-8" width={32} height={32} />
+            <span className="text-text-primary font-bold">PORTFOLIO</span>
+          </div>
+        </PortfolioModal>
+      )}
 
       {/* Notification - We dont need it for now */}
       {/* <NotificationPanel /> */}
