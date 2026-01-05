@@ -11,9 +11,14 @@ import { useWalletStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
 
+export interface Signer {
+  commitment: string;
+  name?: string;
+}
+
 export interface WalletFormData {
   name: string;
-  signers: string[]; // Array of commitments
+  signers: Signer[];
   threshold: number;
 }
 
@@ -28,7 +33,7 @@ export default function NewWalletContainer() {
 
   const [formData, setFormData] = useState<WalletFormData>({
     name: "",
-    signers: [commitment || ""], // Start with one empty signer
+    signers: [{ name: "", commitment: commitment || "" }],
     threshold: 1,
   });
 
@@ -48,7 +53,7 @@ export default function NewWalletContainer() {
     setFormData(prev => ({ ...prev, name }));
   };
 
-  const handleUpdateSigners = (signers: string[]) => {
+  const handleUpdateSigners = (signers: Signer[]) => {
     setFormData(prev => ({ ...prev, signers }));
   };
 
@@ -63,11 +68,11 @@ export default function NewWalletContainer() {
     }
 
     try {
-      const validSigners = formData.signers.filter(s => s.trim() !== "");
+      const validSigners = formData.signers.filter(s => s?.name?.trim() !== "" && s.commitment.trim() !== "");
 
       const wallet = await createWallet({
         name: formData.name,
-        commitments: validSigners,
+        signers: validSigners,
         threshold: formData.threshold,
       });
 
@@ -84,8 +89,12 @@ export default function NewWalletContainer() {
     if (commitment) {
       setFormData(prev => {
         // If the current commitment is not in the signers list, add it at the beginning
-        if (!prev.signers.includes(commitment)) {
-          return { ...prev, signers: [commitment, ...prev.signers] };
+        const hasMyCommitment = prev.signers.some(s => s.commitment === commitment);
+        if (!hasMyCommitment) {
+          return {
+            ...prev,
+            signers: [{ name: "", commitment }, ...prev.signers],
+          };
         }
         return prev;
       });
@@ -93,7 +102,7 @@ export default function NewWalletContainer() {
   }, [commitment]);
 
   // Validation
-  const validSigners = formData.signers.filter(s => s.trim() !== "");
+  const validSigners = formData.signers.filter(s => s?.name?.trim() !== "" && s.commitment.trim() !== "");
   const isStep1Valid = formData.name.trim().length > 0;
   const isStep2Valid = validSigners.length > 0 && formData.threshold >= 1 && formData.threshold <= validSigners.length;
 

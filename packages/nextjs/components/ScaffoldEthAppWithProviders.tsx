@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "./Common/Sidebar";
 import Title from "./Common/Title";
 import { InitializeApp } from "./InitializeApp";
+import Sidebar from "./Sidebar/Sidebar";
 import { RainbowKitProvider, darkTheme, lightTheme } from "@rainbow-me/rainbowkit";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
@@ -11,7 +11,7 @@ import { useTheme } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
-import { useEnforceNetwork } from "~~/hooks";
+import { useCommitmentGuard, useEnforceNetwork } from "~~/hooks";
 import { useMobileDetection } from "~~/hooks/app/useMobileDetection";
 import { useSocketConnection } from "~~/hooks/app/useSocketConnection";
 import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
@@ -23,6 +23,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   useMobileDetection();
   useEnforceNetwork();
   useSocketConnection();
+  useCommitmentGuard();
 
   return (
     <>
