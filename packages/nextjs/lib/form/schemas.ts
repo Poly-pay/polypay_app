@@ -96,3 +96,21 @@ export const changePasswordSchema = z
     path: ["confirmNewPassword"],
   });
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
+
+// ==================== Edit Account ====================
+
+export const editAccountNameSchema = z.object({
+  name: z.string().min(1, "Account name is required").max(30, "Name must be 30 characters or less"),
+});
+export type EditAccountNameFormData = z.infer<typeof editAccountNameSchema>;
+
+export const addSignerSchema = z.object({
+  signerCommitment: z.string().min(1, "Signer commitment is required"),
+  threshold: z.number().min(1, "Threshold must be at least 1"),
+});
+export type AddSignerFormData = z.infer<typeof addSignerSchema>;
+
+export const updateThresholdSchema = z.object({
+  threshold: z.number().min(1, "Threshold must be at least 1"),
+});
+export type UpdateThresholdFormData = z.infer<typeof updateThresholdSchema>;
