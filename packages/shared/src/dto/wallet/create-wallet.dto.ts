@@ -1,4 +1,17 @@
-import { IsArray, IsNotEmpty, IsNumber, IsString, Min } from "class-validator";
+import {
+  ArrayMinSize,
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Min,
+  ValidateNested,
+} from "class-validator";
+
+export interface Signer {
+  commitment: string;
+  name?: string;
+}
 
 export class CreateWalletDto {
   @IsNotEmpty()
@@ -10,8 +23,7 @@ export class CreateWalletDto {
   @Min(1)
   threshold: number;
 
-  @IsNotEmpty()
   @IsArray()
-  @IsString({ each: true })
-  commitments: string[];
+  @ArrayMinSize(1)
+  signers: Signer[];
 }

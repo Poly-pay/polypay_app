@@ -2,12 +2,13 @@
 
 import React from "react";
 import Image from "next/image";
+import { Signer } from "./NewWalletContainer";
 
 interface StatusContainerProps {
   className?: string;
   walletName: string;
   currentStep: number;
-  signers: string[];
+  signers: Signer[];
   threshold: number;
   onCreateWallet: () => void;
   loading: boolean;
@@ -93,9 +94,11 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
                           <span className="text-primary text-[12px] font-medium">{index + 1}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[12px] text-gray-500">{index === 0 ? "You" : `Signer ${index + 1}`}</div>
-                          <div className="text-[11px] font-mono text-gray-700 truncate">
-                            {signer.slice(0, 12)}...{signer.slice(-8)}
+                          <div className="text-[12px] text-gray-700 font-medium">
+                            {signer.name || `Signer ${index + 1}`}
+                          </div>
+                          <div className="text-[11px] font-mono text-gray-500 truncate">
+                            {signer.commitment.slice(0, 12)}...{signer.commitment.slice(-8)}
                           </div>
                         </div>
                       </div>

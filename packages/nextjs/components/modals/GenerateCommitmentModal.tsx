@@ -26,7 +26,13 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <ModalContainer isOpen={isOpen} onClose={handleClose} className="sm:max-w-[500px] p-0" isCloseButton={false}>
+    <ModalContainer
+      isOpen={isOpen}
+      onClose={handleClose}
+      preventClose={!commitment}
+      className="sm:max-w-[500px] p-0"
+      isCloseButton={false}
+    >
       <div className="flex flex-col bg-white rounded-lg overflow-hidden -mx-1.5 -my-4">
         <div className="flex items-center justify-between p-4 pb-2 border-b bg-gray-100">
           <div className="flex items-center gap-2">
@@ -36,14 +42,16 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               <span className="text-gray-950 text-[14px]">Make your experience private through Commitment</span>
             </span>
           </div>
-          <Button
-            size="sm"
-            className="h-8 w-8 p-1 text-black bg-white cursor-pointer hover:bg-gray-200"
-            onClick={handleClose}
-            disabled={isLoading}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          {commitment && (
+            <Button
+              size="sm"
+              className="h-8 w-8 p-1 text-black bg-white cursor-pointer hover:bg-gray-200"
+              onClick={handleClose}
+              disabled={isLoading}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col items-center p-8 text-center space-y-3 bg-gray-100">

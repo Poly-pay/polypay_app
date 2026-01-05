@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import ModalContainer from "../modals/ModalContainer";
 import { Button } from "../ui/button";
@@ -12,6 +12,7 @@ import {
   useMetaMultiSigWallet,
   useModalApp,
   useUpdateWallet,
+  useWallet,
   useWalletCommitments,
   useWalletThreshold,
 } from "~~/hooks";
@@ -36,6 +37,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   });
   const { mutateAsync: createTransaction } = useCreateTransaction();
   const { mutateAsync: reserveNonce } = useReserveNonce();
+  const { data: wallet } = useWallet(metaMultiSigWallet?.address || "");
 
   const { data: thresholdData, refetch: refetchThreshold } = useWalletThreshold();
   const { data: commitmentsData, refetch: refetchCommitments } = useWalletCommitments();
@@ -43,6 +45,17 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const threshold = Number(thresholdData ?? 0);
   const signers = commitmentsData ? commitmentsData.map((c: bigint) => c.toString()) : [];
   const accountName = currentWallet?.name ?? "Default";
+
+  const signerMap = useMemo(() => {
+    if (!wallet?.signers) return {};
+    return wallet.signers.reduce(
+      (acc, signer) => {
+        acc[signer.commitment] = signer.name || null;
+        return acc;
+      },
+      {} as Record<string, string | null>,
+    );
+  }, [wallet?.signers]);
 
   const handleGenerateName = () => {
     const randomName = `Wallet-${Math.random().toString(36).substring(2, 8)}`;
@@ -343,9 +356,14 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             </p>
 
             <div className="space-y-3 mb-4">
-              {signers.map((signer: any, index: number) => (
+              {signers.map((signer: string, index: number) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded">
-                  <span className="font-mono text-sm text-gray-900 w-[400px] truncate">{signer}</span>
+                  <div className="flex flex-col min-w-0 flex-1 mr-2">
+                    <span className="text-sm font-medium text-gray-900">
+                      {signerMap[signer] || `Signer ${index + 1}`}
+                    </span>
+                    <span className="font-mono text-xs text-gray-500 truncate">{signer}</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"

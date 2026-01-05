@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
+import { accountKeys } from "../api";
 import { useAuthProof } from "./useAuthProof";
+import { useQueryClient } from "@tanstack/react-query";
 import { authApi } from "~~/services/api";
 import { useIdentityStore } from "~~/services/store";
 
@@ -14,6 +16,8 @@ export const useAuth = () => {
     setTokens,
     logout: storeLogout,
   } = useIdentityStore();
+
+  const queryClient = useQueryClient();
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +45,9 @@ export const useAuth = () => {
       // 3. Store tokens and identity
       setIdentity(proofResult.secret, proofResult.commitment);
       setTokens(data.accessToken, data.refreshToken);
+
+      // Invalidate me query to fetch latest account info
+      queryClient.invalidateQueries({ queryKey: accountKeys.me });
 
       return true;
     } catch (err: any) {

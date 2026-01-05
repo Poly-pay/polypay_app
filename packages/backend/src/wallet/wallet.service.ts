@@ -28,21 +28,21 @@ export class WalletService {
    * Create new wallet with signers
    */
   async create(dto: CreateWalletDto, creatorCommitment: string) {
-    // 1. Validate creator is in commitments list
-    if (!dto.commitments.includes(creatorCommitment)) {
+    // 1. Validate creator is in signers list
+    const commitments = dto.signers.map((s) => s.commitment);
+    if (!commitments.includes(creatorCommitment)) {
       throw new BadRequestException('Creator must be in signers list');
     }
 
     // 2. Validate threshold
-    if (dto.threshold > dto.commitments.length) {
+    if (dto.threshold > dto.signers.length) {
       throw new BadRequestException(
         'Threshold cannot be greater than number of signers',
       );
     }
-
     // 3. Deploy contract via relayer
     const { address, txHash } = await this.relayerService.deployWallet(
-      dto.commitments,
+      commitments,
       dto.threshold,
     );
 
@@ -50,15 +50,32 @@ export class WalletService {
 
     // 4. Create wallet + accounts in transaction
     const wallet = await this.prisma.$transaction(async (prisma) => {
-      // Upsert all accounts
+      // Upsert all accounts (update name only if null)
       const accounts = await Promise.all(
-        dto.commitments.map((commitment) =>
-          prisma.account.upsert({
-            where: { commitment },
-            create: { commitment },
-            update: {},
-          }),
-        ),
+        dto.signers.map(async (signer) => {
+          const existing = await prisma.account.findUnique({
+            where: { commitment: signer.commitment },
+          });
+
+          if (existing) {
+            // Update name only if current name is null
+            if (!existing.name && signer.name) {
+              return prisma.account.update({
+                where: { commitment: signer.commitment },
+                data: { name: signer.name },
+              });
+            }
+            return existing;
+          }
+
+          // Create new account
+          return prisma.account.create({
+            data: {
+              commitment: signer.commitment,
+              name: signer.name,
+            },
+          });
+        }),
       );
 
       // Create wallet
@@ -151,6 +168,7 @@ export class WalletService {
       createdAt: wallet.createdAt,
       signers: wallet.accounts.map((aw) => ({
         commitment: aw.account.commitment,
+        name: aw.account.name,
         isCreator: aw.isCreator,
       })),
     };
