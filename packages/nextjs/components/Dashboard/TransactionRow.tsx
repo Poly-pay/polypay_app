@@ -17,7 +17,7 @@ import {
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useWalletClient } from "wagmi";
 import { NATIVE_ETH, getTokenByAddress } from "~~/constants";
-import { useMetaMultiSigWallet } from "~~/hooks";
+import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
@@ -539,6 +539,8 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   });
   const [isExecutable, setIsExecutable] = useState(false);
 
+  const { data: walletThreshold } = useWalletThreshold();
+
   // ============ Handle Approve ============
   const handleApprove = async () => {
     if (!walletClient || !metaMultiSigWallet) {
@@ -698,8 +700,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       }
 
       try {
-        const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-        setIsExecutable(tx.approveCount >= Number(currentThreshold));
+        setIsExecutable(tx.approveCount >= Number(walletThreshold));
       } catch (error) {
         console.error("Failed to check threshold:", error);
         setIsExecutable(false);
@@ -707,7 +708,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     };
 
     checkExecutable();
-  }, [tx.status, tx.approveCount, metaMultiSigWallet]);
+  }, [tx.status, tx.approveCount, metaMultiSigWallet, walletThreshold]);
 
   return (
     <div className="w-full mb-2">
@@ -741,7 +742,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
           <MemberList
             members={tx.members}
             votedCount={tx.votedCount}
-            threshold={tx.threshold}
+            threshold={Number(walletThreshold)}
             totalSigners={tx.totalSigners}
           />
         </div>

@@ -1,8 +1,16 @@
 import { useMemo } from "react";
 import { METAMULTISIG_ABI } from "@polypay/shared";
+import { useQuery } from "@tanstack/react-query";
 import { getContract } from "viem";
 import { usePublicClient, useReadContract, useWalletClient } from "wagmi";
 import { useWalletStore } from "~~/services/store/useWalletStore";
+
+// Query keys
+export const walletContractKeys = {
+  all: ["walletContract"] as const,
+  commitments: (address: string) => [...walletContractKeys.all, "commitments", address] as const,
+  threshold: (address: string) => [...walletContractKeys.all, "threshold", address] as const,
+};
 
 export const useMetaMultiSigWallet = () => {
   const { currentWallet } = useWalletStore();
@@ -39,29 +47,43 @@ export const useMetaMultiSigWalletInfo = () => {
   };
 };
 
-export const useWalletThreshold = () => {
+export const useWalletCommitments = () => {
   const { currentWallet } = useWalletStore();
+  const publicClient = usePublicClient();
+  const address = currentWallet?.address || "";
 
-  return useReadContract({
-    address: currentWallet?.address as `0x${string}`,
-    abi: METAMULTISIG_ABI,
-    functionName: "signaturesRequired",
-    query: {
-      enabled: !!currentWallet?.address,
+  return useQuery({
+    queryKey: walletContractKeys.commitments(address),
+    queryFn: async () => {
+      if (!address || !publicClient) return [];
+      const result = await publicClient.readContract({
+        address: address as `0x${string}`,
+        abi: METAMULTISIG_ABI,
+        functionName: "getCommitments",
+      });
+      return result as bigint[];
     },
+    enabled: !!address && !!publicClient,
   });
 };
 
-export const useWalletCommitments = () => {
+export const useWalletThreshold = () => {
   const { currentWallet } = useWalletStore();
+  const publicClient = usePublicClient();
+  const address = currentWallet?.address || "";
 
-  return useReadContract({
-    address: currentWallet?.address as `0x${string}`,
-    abi: METAMULTISIG_ABI,
-    functionName: "getCommitments",
-    query: {
-      enabled: !!currentWallet?.address,
+  return useQuery({
+    queryKey: walletContractKeys.threshold(address),
+    queryFn: async () => {
+      if (!address || !publicClient) return 0n;
+      const result = await publicClient.readContract({
+        address: address as `0x${string}`,
+        abi: METAMULTISIG_ABI,
+        functionName: "signaturesRequired",
+      });
+      return result as bigint;
     },
+    enabled: !!address && !!publicClient,
   });
 };
 

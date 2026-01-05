@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { walletContractKeys } from "../app";
 import { useSocketEvent } from "../app/useSocketEvent";
 import {
   ApproveTransactionDto,
@@ -6,7 +7,6 @@ import {
   TX_CREATED_EVENT,
   TX_STATUS_EVENT,
   TX_VOTED_EVENT,
-  Transaction,
   TxCreatedEventData,
   TxStatus,
   TxStatusEventData,
@@ -168,11 +168,19 @@ export const useTransactionRealtime = (walletAddress: string | undefined) => {
     (data: TxStatusEventData) => {
       console.log("[Socket] TX status:", data);
       if (walletAddress) {
-        queryClient.setQueryData<Transaction[]>(transactionKeys.byWallet(walletAddress), old =>
-          old?.map(tx =>
-            tx.txId === data.txId ? { ...tx, status: data.status, txHash: data.txHash || tx.txHash } : tx,
-          ),
-        );
+        queryClient.invalidateQueries({
+          queryKey: transactionKeys.byWallet(walletAddress),
+        });
+
+        // Refetch contract data when tx executed
+        if (data.status === TxStatus.EXECUTED) {
+          queryClient.invalidateQueries({
+            queryKey: walletContractKeys.commitments(walletAddress),
+          });
+          queryClient.invalidateQueries({
+            queryKey: walletContractKeys.threshold(walletAddress),
+          });
+        }
       }
     },
     [queryClient, walletAddress],
@@ -183,9 +191,9 @@ export const useTransactionRealtime = (walletAddress: string | undefined) => {
     (data: TxVotedEventData) => {
       console.log("[Socket] TX voted:", data);
       if (walletAddress) {
-        queryClient.setQueryData<Transaction[]>(transactionKeys.byWallet(walletAddress), old =>
-          old?.map(tx => (tx.txId === data.txId ? { ...tx, votes: [...tx.votes, data.vote] } : tx)),
-        );
+        queryClient.invalidateQueries({
+          queryKey: transactionKeys.byWallet(walletAddress),
+        });
       }
     },
     [queryClient, walletAddress],

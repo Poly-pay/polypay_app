@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import ReceiveModal from "../modals/QRAddressReceiverModal";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface SuccessScreenProps {
@@ -13,7 +13,7 @@ interface SuccessScreenProps {
 }
 
 const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, walletAddress }) => {
-  const router = useRouter();
+  const router = useAppRouter();
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
 
   const handleCopyAddress = () => {
@@ -22,7 +22,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
   };
 
   const handleSeeWallet = () => {
-    router.push(`/dashboard`);
+    router.goToDashboard();
   };
 
   return (

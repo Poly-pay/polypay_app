@@ -1,7 +1,7 @@
 import {
-  ArrayMinSize,
   IsArray,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -23,7 +23,7 @@ export class CreateContactDto {
   address: string;
 
   @IsArray()
-  @ArrayMinSize(1, { message: "Contact must belong to at least one group" })
   @IsString({ each: true })
-  groupIds: string[];
+  @IsOptional()
+  groupIds?: string[];
 }

@@ -19,7 +19,6 @@ export class UpdateContactDto {
   address?: string;
 
   @IsArray()
-  @ArrayMinSize(1, { message: "Contact must belong to at least one group" })
   @IsString({ each: true })
   @IsOptional()
   groupIds?: string[];

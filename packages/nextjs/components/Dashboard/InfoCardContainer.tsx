@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Image from "next/image";
 import { useWalletClient } from "wagmi";
-import { useMetaMultiSigWallet, useModalApp } from "~~/hooks";
+import { useMetaMultiSigWallet, useModalApp, useWalletCommitments } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
 import { useWalletStore } from "~~/services/store";
 
@@ -11,7 +11,6 @@ type InfoCardContainerProps = unknown;
 
 const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   const { data: walletClient } = useWalletClient();
-  const [commitments, setCommitments] = useState<string[]>([]);
   const { openModal } = useModalApp();
 
   const metaMultiSigWallet = useMetaMultiSigWallet();
@@ -19,18 +18,9 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   const walletAddress = metaMultiSigWallet?.address || "";
 
   const { data: transactions } = usePendingTransactions(walletAddress);
+  const { data: walletCommitments } = useWalletCommitments();
 
   const { currentWallet } = useWalletStore();
-
-  useEffect(() => {
-    const fetchCommitments = async () => {
-      if (!metaMultiSigWallet) return;
-      const commitments = await metaMultiSigWallet?.read?.getCommitments();
-      setCommitments(commitments.map((c: bigint) => c.toString()));
-    };
-
-    fetchCommitments();
-  }, [walletAddress, metaMultiSigWallet]);
 
   return (
     <>
@@ -44,7 +34,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
           <div className="relative z-10 p-3 flex flex-col h-full justify-between">
             <span className="flex flex-row justify-between">
               <span className="text-white">Account</span>
-              {!(walletClient?.account && commitments.length > 0) ? null : (
+              {!(walletClient?.account && (walletCommitments?.length ?? 0) > 0) ? null : (
                 <span className="cursor-pointer" onClick={() => openModal("editAccount")}>
                   <Image
                     src="/misc/edit-icon.svg"
@@ -89,7 +79,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
               <span className="text-white">Signers List</span>
             </span>
             <span className="flex flex-row gap-1 items-center">
-              <span className="text-[35px] text-white">{commitments.length}</span>
+              <span className="text-[35px] text-white">{walletCommitments?.length ?? 0}</span>
             </span>
           </div>
         </span>
