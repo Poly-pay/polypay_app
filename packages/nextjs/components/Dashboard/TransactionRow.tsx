@@ -14,7 +14,7 @@ import {
   encodeUpdateThreshold,
   horizenTestnet,
 } from "@polypay/shared";
-import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
 import { useWalletClient } from "wagmi";
 import { NATIVE_ETH, getTokenByAddress } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
@@ -24,7 +24,6 @@ import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { formatAddress, formatAmount } from "~~/utils/format";
 import { notification } from "~~/utils/scaffold-eth";
 
-// ============ Types ============
 type TxType = "transfer" | "add_signer" | "remove_signer" | "set_threshold" | "batch";
 type VoteStatus = "approved" | "denied" | "waiting";
 type TxStatus = "pending" | "executed" | "failed";
@@ -51,46 +50,28 @@ interface TransactionRowData {
   nonce: number;
   status: TxStatus;
   txHash?: string;
-
-  // Transfer
   amount?: string;
   recipientAddress?: string;
   tokenAddress?: string;
-
-  // Add/Remove Signer
   signerCommitment?: string;
-
-  // Set Threshold
   oldThreshold?: number;
   newThreshold?: number;
-
-  // Batch
   batchData?: BatchTransfer[];
-
   contact?: {
     id: string;
     name: string;
     address: string;
   };
-
   totalSigners: number;
-
-  // Voting
   members: Member[];
   votedCount: number;
   threshold: number;
   approveCount: number;
-
-  // Current user vote
   myVoteStatus: VoteStatus | null;
-
-  // Wallet
   walletAddress: string;
 }
 
-// ============ Helper: Convert API Transaction to Row Data ============
 export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
-  // Map API type to UI type
   const typeMap: Record<ApiTxType, TxType> = {
     TRANSFER: "transfer",
     ADD_SIGNER: "add_signer",
@@ -99,14 +80,12 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     BATCH: "batch",
   };
 
-  // Map API status to UI status
   const statusMap: Record<ApiTxStatus, TxStatus> = {
     PENDING: "pending",
     EXECUTED: "executed",
     FAILED: "failed",
   };
 
-  // Build members from votes
   const members: Member[] = tx.votes.map(vote => ({
     commitment: vote.voterCommitment,
     isInitiator: vote.voterCommitment === tx.createdBy,
@@ -114,14 +93,11 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     voteStatus: vote.voteType === "APPROVE" ? "approved" : "denied",
   }));
 
-  // Find my vote
   const myVote = tx.votes.find(v => v.voterCommitment === myCommitment);
   const myVoteStatus: VoteStatus | null = myVote ? (myVote.voteType === "APPROVE" ? "approved" : "denied") : null;
 
-  // Calculate approve count
   const approveCount = tx.votes.filter(v => v.voteType === "APPROVE").length;
 
-  // Parse batchData if exists
   let batchData: BatchTransfer[] | undefined;
   if (tx.batchData) {
     try {
@@ -174,7 +150,6 @@ function AddressWithContact({ address, contactName }: { address: string; contact
   return <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">{formatAddress(address)}</span>;
 }
 
-// ============ Vote Badge Component ============
 function VoteBadge({ status }: { status: VoteStatus }) {
   if (status === "approved") {
     return <span className="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full">Approved</span>;
@@ -191,7 +166,6 @@ function VoteBadge({ status }: { status: VoteStatus }) {
   );
 }
 
-// ============ Status Badge Component ============
 function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) {
   if (status === "executed") {
     return (
@@ -214,7 +188,6 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
   return null;
 }
 
-// ============ Action Buttons Component ============
 function ActionButtons({
   onApprove,
   onDeny,
@@ -268,7 +241,7 @@ function ActionButtons({
     </div>
   );
 }
-// ============ Transaction Header (Purple) Component ============
+
 function TxHeader({ tx }: { tx: TransactionRowData }) {
   if (tx.type === "transfer") {
     return (
@@ -348,7 +321,6 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
             <span>{tx.batchData.length} transfers</span>
           </div>
         </div>
-        {/* Batch transfers list */}
         <div className="space-y-2 max-h-[200px] overflow-y-auto">
           {tx.batchData.map((transfer, index) => (
             <div key={index} className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg">
@@ -364,7 +336,6 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
               </div>
               <ArrowRight size={16} className="text-white/60" />
               <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                {" "}
                 {transfer.contactName ? (
                   <>
                     <span className="font-medium">{transfer.contactName}</span>
@@ -384,7 +355,6 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
   return null;
 }
 
-// ============ Member List Component ============
 function MemberList({
   members,
   votedCount,
@@ -398,7 +368,6 @@ function MemberList({
 }) {
   return (
     <div className="bg-white border border-t-0 rounded-b-lg">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <span className="font-semibold text-gray-800">Members</span>
         <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -417,7 +386,6 @@ function MemberList({
         </div>
       </div>
 
-      {/* Member Rows */}
       <div className="divide-y">
         {members.map((member, index) => (
           <div key={index} className="flex items-center justify-between px-4 py-3">
@@ -436,7 +404,6 @@ function MemberList({
   );
 }
 
-// ============ Transaction Type Label ============
 function getTxTypeLabel(type: TxType): string {
   switch (type) {
     case "transfer":
@@ -452,7 +419,6 @@ function getTxTypeLabel(type: TxType): string {
   }
 }
 
-// ============ Transaction Details (Middle) ============
 function TxDetails({ tx }: { tx: TransactionRowData }) {
   switch (tx.type) {
     case "transfer":
@@ -516,7 +482,6 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
   }
 }
 
-// ============ Main TransactionRow Component ============
 interface TransactionRowProps {
   tx: TransactionRowData;
   onSuccess?: () => void;
@@ -539,7 +504,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   });
   const [isExecutable, setIsExecutable] = useState(false);
 
-  // ============ Handle Approve ============
   const handleApprove = async () => {
     if (!walletClient || !metaMultiSigWallet) {
       throw new Error("Wallet not connected");
@@ -550,13 +514,11 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       return;
     }
 
-    // 1. Build callData based on tx type
     let callData: `0x${string}` = "0x";
     let to: `0x${string}` = tx.recipientAddress as `0x${string}`;
     let value = BigInt(tx.amount || "0");
 
     if (tx.type === "transfer") {
-      // Check if ERC20 transfer
       if (tx.tokenAddress && tx.tokenAddress !== NATIVE_ETH.address) {
         to = tx.tokenAddress as `0x${string}`;
         value = 0n;
@@ -577,7 +539,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
         const amounts = tx.batchData.map(item => BigInt(item.amount));
         const tokenAddresses = tx.batchData.map(item => item.tokenAddress || NATIVE_ETH.address);
 
-        // Check if any ERC20 token in batch
         const hasERC20 = tokenAddresses.some(addr => addr !== NATIVE_ETH.address);
 
         callData = hasERC20
@@ -586,7 +547,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       }
     }
 
-    // 2. Get txHash
     const txHash = (await metaMultiSigWallet.read.getTransactionHash([
       BigInt(tx.nonce),
       to,
@@ -596,10 +556,8 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
 
     setLoading(true);
     try {
-      // 1. Generate proof
       const proofData = await generateProof(txHash);
 
-      // 2. Submit to backend
       setLoadingState("Submitting to backend...");
       await approve({
         txId: tx.txId,
@@ -621,7 +579,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     }
   };
 
-  // ============ Handle Deny ============
   const handleDeny = async () => {
     setLoading(true);
     try {
@@ -649,7 +606,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     }
   };
 
-  // ============ Handle Execute ============
   const handleExecute = async (txId: number) => {
     setLoading(true);
     try {
@@ -669,7 +625,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     }
   };
 
-  // ============ Render Right Side ============
   const renderRightSide = () => {
     if (tx.status === "executed" || tx.status === "failed") {
       return <StatusBadge status={tx.status} txHash={tx.txHash} />;
@@ -710,42 +665,50 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   }, [tx.status, tx.approveCount, metaMultiSigWallet]);
 
   return (
-    <div className="w-full mb-2">
-      {/* Loading State */}
-      {loading && loadingState && (
-        <div className="mb-1 px-4 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg">{loadingState}</div>
+    <>
+      {loading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full mx-4">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-12 h-12 text-[#6D2EFF] animate-spin" />
+              <div className="text-center">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Processing Transaction</h3>
+                <p className="text-sm text-gray-600">{loadingState || "Please wait..."}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Collapsed Row */}
-      <div
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between p-4 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-      >
-        <div className="flex items-center gap-4">
-          {/* Nonce */}
-          {expanded ? (
-            <ChevronDown size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
-          ) : (
-            <ChevronRight size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
-          )}
-          <span className="font-medium text-[#888888] min-w-[100px]">{getTxTypeLabel(tx.type)}</span>
-          <TxDetails tx={tx} />
+      <div className="w-full mb-2">
+        <div
+          onClick={() => !loading && setExpanded(!expanded)}
+          className="flex items-center justify-between p-4 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-4">
+            {expanded ? (
+              <ChevronDown size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
+            ) : (
+              <ChevronRight size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
+            )}
+            <span className="font-medium text-[#888888] min-w-[100px]">{getTxTypeLabel(tx.type)}</span>
+            <TxDetails tx={tx} />
+          </div>
+          <div onClick={e => e.stopPropagation()}>{renderRightSide()}</div>
         </div>
-        <div onClick={e => e.stopPropagation()}>{renderRightSide()}</div>
+
+        {expanded && (
+          <div className="mt-1 mx-2">
+            <TxHeader tx={tx} />
+            <MemberList
+              members={tx.members}
+              votedCount={tx.votedCount}
+              threshold={tx.threshold}
+              totalSigners={tx.totalSigners}
+            />
+          </div>
+        )}
       </div>
-
-      {/* Expanded Content */}
-      {expanded && (
-        <div className="mt-1 mx-2">
-          <TxHeader tx={tx} />
-          <MemberList
-            members={tx.members}
-            votedCount={tx.votedCount}
-            threshold={tx.threshold}
-            totalSigners={tx.totalSigners}
-          />
-        </div>
-      )}
-    </div>
+    </>
   );
 }

@@ -44,6 +44,8 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const signers = commitmentsData ? commitmentsData.map((c: bigint) => c.toString()) : [];
   const accountName = currentWallet?.name ?? "Default";
 
+  const isAnyLoading = loading || isUpdatingWallet;
+
   const handleGenerateName = () => {
     const randomName = `Wallet-${Math.random().toString(36).substring(2, 8)}`;
     setEditName(randomName);
@@ -240,6 +242,14 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     notification.success("Copied to clipboard");
   };
 
+  const handleClose = () => {
+    if (isAnyLoading) {
+      notification.warning("Please wait for the current operation to complete");
+      return;
+    }
+    onClose();
+  };
+
   useEffect(() => {
     if (isOpen) {
       refetchThreshold();
@@ -255,7 +265,13 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   }, [isOpen, threshold, accountName]);
 
   return (
-    <ModalContainer isOpen={isOpen} onClose={onClose} className="sm:max-w-[600px] p-0" isCloseButton={false}>
+    <ModalContainer
+      isOpen={isOpen}
+      onClose={handleClose}
+      className="sm:max-w-[600px] p-0"
+      isCloseButton={false}
+      loadingTransaction={isAnyLoading}
+    >
       <div className="flex flex-col h-full bg-white rounded-lg">
         <div className="flex flex-row items-center justify-between p-3 m-1 border-b bg-[#EDEDED] rounded-xl">
           <div className="flex items-center gap-3">
@@ -278,9 +294,9 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           </div>
           <Button
             size="sm"
-            onClick={onClose}
+            onClick={handleClose}
             className="h-8 w-8 p-0 bg-white hover:bg-white/50 text-black cursor-pointer"
-            disabled={loading}
+            disabled={isAnyLoading}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -309,7 +325,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                   maxLength={30}
                   placeholder="Your account name"
                   className="w-full pr-16"
-                  disabled={loading || isUpdatingWallet}
+                  disabled={isAnyLoading}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
                   {editName.length}/30
@@ -320,7 +336,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 size="sm"
                 onClick={handleGenerateName}
                 className="h-10 w-10 p-0 bg-gray-200 hover:bg-gray-300 cursor-pointer"
-                disabled={loading || isUpdatingWallet}
+                disabled={isAnyLoading}
               >
                 <Repeat className="h-4 w-4 text-gray-600" />
               </Button>
@@ -329,7 +345,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             <Button
               onClick={handleUpdateName}
               className="w-full mt-3 bg-[#6D2EFF] hover:bg-[#5a25d9] cursor-pointer text-white"
-              disabled={loading || isUpdatingWallet || editName === accountName || !editName.trim()}
+              disabled={isAnyLoading || editName === accountName || !editName.trim()}
             >
               {isUpdatingWallet ? "Updating..." : "Update Name"}
             </Button>
@@ -351,7 +367,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                       size="sm"
                       onClick={() => copyToClipboard(signer)}
                       className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 bg-gray-200 hover:bg-gray-300 cursor-pointer"
-                      disabled={loading}
+                      disabled={isAnyLoading}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -368,7 +384,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                         })
                       }
                       className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 bg-gray-200 hover:bg-gray-300 cursor-pointer"
-                      disabled={loading || signers.length <= 1}
+                      disabled={isAnyLoading || signers.length <= 1}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -383,14 +399,14 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 value={newSignerCommitment}
                 onChange={e => setNewSignerCommitment(e.target.value)}
                 className="font-mono text-sm"
-                disabled={loading}
+                disabled={isAnyLoading}
               />
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={handleAddSigner}
                 className="w-full cursor-pointer bg-[#6D2EFF] text-white hover:bg-[#5a25d9]"
-                disabled={loading || !newSignerCommitment.trim()}
+                disabled={isAnyLoading || !newSignerCommitment.trim()}
               >
                 {loading ? "Processing..." : "Add New Signer"}
               </Button>
@@ -410,7 +426,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                   value={editThreshold}
                   onChange={e => setEditThreshold(Number(e.target.value))}
                   className="flex-1 text-center"
-                  disabled={loading}
+                  disabled={isAnyLoading}
                 />
                 <span className="text-sm text-gray-500 whitespace-nowrap">/ out of {signers.length} signers</span>
               </div>
@@ -418,7 +434,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               <Button
                 onClick={handleUpdateThreshold}
                 className="w-full bg-[#FF7CEB] hover:bg-[#e66dd4] cursor-pointer text-white"
-                disabled={loading || editThreshold === threshold}
+                disabled={isAnyLoading || editThreshold === threshold}
               >
                 {loading ? "Processing..." : "Update Threshold"}
               </Button>
