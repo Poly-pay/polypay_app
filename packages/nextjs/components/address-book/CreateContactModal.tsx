@@ -62,11 +62,6 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
       return;
     }
 
-    if (selectedGroupIds.length === 0) {
-      setError("Please select at least one group");
-      return;
-    }
-
     try {
       await createContact.mutateAsync({
         walletId,
@@ -206,7 +201,7 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
             <button
               type="submit"
               className="flex-[2] px-6 py-3 bg-[#FF7CEB] text-white font-medium rounded-xl hover:bg-[#f35ddd] transition-colors disabled:opacity-50 cursor-pointer"
-              disabled={createContact.isPending || groups.length === 0}
+              disabled={createContact.isPending}
             >
               {createContact.isPending ? <span className="loading loading-spinner loading-sm" /> : "Save contact"}
             </button>
