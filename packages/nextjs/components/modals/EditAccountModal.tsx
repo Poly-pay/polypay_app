@@ -72,7 +72,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const signerMap = useMemo(() => {
     if (!wallet?.signers) return {};
     return wallet.signers.reduce(
-      (acc, signer) => {
+      (acc: any, signer: any) => {
         acc[signer.commitment] = signer.name || null;
         return acc;
       },
@@ -108,7 +108,6 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleAddSigner = async (data: AddSignerFormData) => {
-    console.log(data);
     if (!metaMultiSigWallet) return;
 
     if (data.threshold < 1 || data.threshold > signers.length + 1) {
