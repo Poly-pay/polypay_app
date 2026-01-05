@@ -4679,6 +4679,7 @@ __metadata:
     qrcode.react: ~4.0.1
     react: ~19.0.0
     react-dom: ~19.0.0
+    react-hook-form: ^7.70.0
     react-hot-toast: ~2.4.0
     socket.io-client: ^4.8.3
     sonner: ^2.0.7
@@ -19630,6 +19631,15 @@ __metadata:
   peerDependencies:
     react: ^19.0.3
   checksum: b5f53f84f9a044f9d77cb363fd6a0990cda5b7b89649b59c298ced63176e36df37a9289047d596aadf8fd7182df6c1d4f5b3f78839058b692d325dcee17af790
+  languageName: node
+  linkType: hard
+
+"react-hook-form@npm:^7.70.0":
+  version: 7.70.0
+  resolution: "react-hook-form@npm:7.70.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17 || ^18 || ^19
+  checksum: cfa4b275bf24f3290ad50c9c3d93cb7397854b41647e03350ece8fc82eecbfe51019a1248a00dab99f7beae802d419ff71112d78607e34b08f210d53a51a0793
   languageName: node
   linkType: hard
 
