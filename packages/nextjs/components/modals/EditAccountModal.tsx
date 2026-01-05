@@ -71,6 +71,24 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       {} as Record<string, string | null>,
     );
   }, [wallet?.signers]);
+  
+  // Form for account name
+  const nameForm = useZodForm({
+    schema: editAccountNameSchema,
+    defaultValues: { name: "" },
+  });
+
+  // Form for add signer
+  const addSignerForm = useZodForm({
+    schema: addSignerSchema,
+    defaultValues: { signerCommitment: "", threshold: 1 },
+  });
+
+  // Form for threshold
+  const thresholdForm = useZodForm({
+    schema: updateThresholdSchema,
+    defaultValues: { threshold: 1 },
+  });
 
   const handleGenerateName = () => {
     const randomName = `Wallet-${Math.random().toString(36).substring(2, 8)}`;
