@@ -80,13 +80,12 @@ const SectionItem = ({
         onMouseLeave={() => setHoveredItem(null)}
       >
         <div className="flex flex-row items-center gap-3">
-          <div className="w-8 h-8 flex items-center justify-center">
+          <div className="w-6 h-6 flex items-center justify-center">
             <Image
               src={item.icon}
               alt={item.label}
-              className="scale-125"
-              width={32}
-              height={32}
+              width={24}
+              height={24}
               style={{
                 filter:
                   selectedItem === item.link || hoveredItem === item.link || pathname === item.link

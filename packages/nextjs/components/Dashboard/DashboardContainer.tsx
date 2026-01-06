@@ -51,7 +51,7 @@ export default function DashboardContainer() {
   );
 
   return (
-    <div className="flex flex-col gap-5 p-2 px-[130px] pt-7">
+    <div className="flex flex-col gap-5 p-2 lg:px-[100px] px-12 pt-7">
       <Header />
 
       {/* Loading State */}
