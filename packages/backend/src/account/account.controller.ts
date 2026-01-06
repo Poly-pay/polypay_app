@@ -86,9 +86,9 @@ export class AccountController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Get all wallets for current user',
+    summary: 'Get current user multi-signature wallets',
     description:
-      'Retrieve all multi-signature wallets that the current user is a member of.',
+      'Returns all multi-signature wallets where the authenticated user is a member, including their role (creator or participant) in each wallet.',
   })
   @ApiResponse({ status: 200, description: 'Wallets retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
