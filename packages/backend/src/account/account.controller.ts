@@ -1,4 +1,10 @@
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -25,10 +31,31 @@ export class AccountController {
    * POST /api/accounts
    */
   @Post()
-  @ApiOperation({ summary: 'Create a new account' })
-  @ApiBody({ type: CreateAccountDto })
+  @ApiOperation({
+    summary: 'Create a new account',
+    description:
+      'Register a new user account with a zero-knowledge commitment. This is the first step for new users.',
+  })
+  @ApiBody({
+    type: CreateAccountDto,
+    examples: {
+      example1: {
+        summary: 'Create new account',
+        value: {
+          commitment:
+            '0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890',
+          publicKey:
+            '0x04a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, description: 'Account created successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Account already exists',
+  })
   async create(@Body() dto: CreateAccountDto) {
     return this.accountService.create(dto);
   }
@@ -39,8 +66,13 @@ export class AccountController {
    */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get current user account' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get current user account',
+    description: 'Retrieve the authenticated user account details.',
+  })
   @ApiResponse({ status: 200, description: 'Account found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   @ApiResponse({ status: 404, description: 'Account not found' })
   async getMe(@CurrentUser() user: Account) {
     return this.accountService.findByCommitment(user.commitment);
@@ -52,8 +84,14 @@ export class AccountController {
    */
   @Get('me/wallets')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all wallets for current user' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get all wallets for current user',
+    description:
+      'Retrieve all multi-signature wallets that the current user is a member of.',
+  })
   @ApiResponse({ status: 200, description: 'Wallets retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   async getMyWallets(@CurrentUser() user: Account) {
     this.logger.log(`Fetching wallets for account: ${user.commitment}`);
     return this.accountService.getWallets(user.commitment);
@@ -65,9 +103,28 @@ export class AccountController {
    */
   @Patch('me')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Update current user account' })
-  @ApiBody({ type: UpdateAccountDto })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Update current user account',
+    description: 'Update the authenticated user account information.',
+  })
+  @ApiBody({
+    type: UpdateAccountDto,
+    examples: {
+      example1: {
+        summary: 'Update account metadata',
+        value: {
+          metadata: {
+            displayName: 'John Doe',
+            avatar: 'https://example.com/avatar.png',
+          },
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Account updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   @ApiResponse({ status: 404, description: 'Account not found' })
   async updateMe(@CurrentUser() user: Account, @Body() dto: UpdateAccountDto) {
     return this.accountService.update(user.commitment, dto);
@@ -79,8 +136,13 @@ export class AccountController {
    */
   @Get()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get all accounts' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get all accounts',
+    description: 'Retrieve a list of all registered accounts (admin use).',
+  })
   @ApiResponse({ status: 200, description: 'List of all accounts' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   async findAll() {
     return this.accountService.findAll();
   }
