@@ -51,12 +51,13 @@ export type CreateWalletFormData = z.infer<typeof createWalletSchema>;
 // ==================== Transfer ====================
 
 export const transferSchema = z.object({
-  recipient: validators.ethereumAddress,
-  amount: z.string().refine(val => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Amount must be greater than 0",
-  }),
-  token: validators.requiredString("Token"),
-  note: z.string().optional(),
+  recipient: z
+    .string()
+    .min(1, "Recipient address is required")
+    .refine(val => val.startsWith("0x") && val.length === 42, {
+      message: "Invalid address format",
+    }),
+  amount: z.string(),
 });
 export type TransferFormData = z.infer<typeof transferSchema>;
 
