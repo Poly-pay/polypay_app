@@ -146,9 +146,6 @@ export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate, o
               );
             })}
           </div>
-          {editGroupIds.length === 0 && (
-            <p className="text-red-500 text-xs mt-2">Contact must belong to at least one group</p>
-          )}
         </div>
       </div>
 

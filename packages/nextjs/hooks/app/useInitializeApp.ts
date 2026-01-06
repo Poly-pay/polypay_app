@@ -114,7 +114,7 @@ export const useInitializeApp = () => {
     return () => {
       abortControllerRef.current?.abort();
     };
-  }, [accessToken]);
+  }, [accessToken, isMounted]);
 
   return { isInitialized, isLoading };
 };

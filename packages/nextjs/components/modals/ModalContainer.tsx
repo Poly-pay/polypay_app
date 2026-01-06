@@ -16,6 +16,7 @@ interface ModalProps {
   isCloseButton?: boolean;
   className?: string;
   loadingTransaction?: boolean;
+  preventClose?: boolean;
 }
 
 export interface ModalRef {
@@ -35,11 +36,11 @@ const ModalContainer = forwardRef<ModalRef, ModalProps>(
       isCloseButton = true,
       className,
       loadingTransaction = false,
+      preventClose = false,
     },
     ref,
   ) => {
     const handleClose = () => {
-      if (loadingTransaction) return;
       onClose();
       onAfterClose?.();
     };
@@ -49,7 +50,13 @@ const ModalContainer = forwardRef<ModalRef, ModalProps>(
     }));
 
     const handleOpenChange = (open: boolean) => {
-      if (!open) handleClose();
+      // Prevent close if preventClose or loadingTransaction
+      if (!open && (preventClose || loadingTransaction)) {
+        return;
+      }
+      if (!open) {
+        handleClose();
+      }
     };
 
     return (

@@ -6,3 +6,4 @@ export * from "./useMobileDetection";
 export * from "./useModalApp";
 export * from "./useAuthProof";
 export * from "./useAuth";
+export * from "./useCommitmentGuard";

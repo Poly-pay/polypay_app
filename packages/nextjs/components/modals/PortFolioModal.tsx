@@ -2,7 +2,6 @@
 
 import React from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { Balance } from "../scaffold-eth";
 import { Button } from "../ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
@@ -11,6 +10,7 @@ import { Address } from "viem";
 import { NATIVE_ETH, SUPPORTED_TOKENS, Token } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 
 interface PortfolioModalProps {
@@ -35,7 +35,7 @@ function TokenBalanceRow({ token, balance, isLoading }: { token: Token; balance:
 export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
-  const router = useRouter();
+  const router = useAppRouter();
   const { openModal } = useModalApp();
   const [showBalance, setShowBalance] = React.useState(true);
 
@@ -88,7 +88,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
                   <Button
                     size="lg"
                     className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm flex items-center gap-1 cursor-pointer h-[38px] w-[108px]"
-                    onClick={() => router.push("/send")}
+                    onClick={() => router.goToTransfer()}
                   >
                     <MoveUp className="h-3 w-3" />
                     Transfer

@@ -38,6 +38,8 @@ describe('Transaction E2E', () => {
   let secretB: bigint;
   let commitmentA: string;
   let commitmentB: string;
+  let signerDtoA: any;
+  let signerDtoB: any;
   let tokensA: AuthTokens;
   let tokensB: AuthTokens;
 
@@ -58,6 +60,14 @@ describe('Transaction E2E', () => {
 
     commitmentA = commitmentABigInt.toString();
     commitmentB = commitmentBBigInt.toString();
+    signerDtoA = {
+      commitment: commitmentA,
+      name: 'Signer A',
+    };
+    signerDtoB = {
+      commitment: commitmentB,
+      name: 'Signer B',
+    };
 
     console.log('Test setup complete:');
     console.log('  Signer A address:', signerA.address);
@@ -89,7 +99,7 @@ describe('Transaction E2E', () => {
 
       const dataCreateWallet: CreateWalletDto = {
         name: 'Test Multi-Sig Wallet',
-        commitments: [commitmentA, commitmentB],
+        signers: [signerDtoA, signerDtoB],
         threshold: 2,
       };
 
