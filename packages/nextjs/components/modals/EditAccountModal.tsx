@@ -108,6 +108,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleAddSigner = async (data: AddSignerFormData) => {
+    console.log(data);
     if (!metaMultiSigWallet) return;
 
     if (data.threshold < 1 || data.threshold > signers.length + 1) {
