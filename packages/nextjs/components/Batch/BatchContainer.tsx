@@ -36,13 +36,13 @@ function Header({ transactionCount }: { transactionCount: number }) {
   return (
     <div className="flex w-full flex-col gap-2">
       <div className="flex gap-[5px] items-center justify-start w-full">
-        <div className="text-[#545454] text-6xl text-center font-bold uppercase">your</div>
+        <div className="text-[#545454] xl:text-6xl text-3xl text-center font-bold uppercase">your</div>
         <div className="h-[50px] relative rounded-full w-[100px] border-[6px] border-[#FF2323] border-solid flex items-center justify-center">
           <span className="text-[#FF2323] text-4xl text-center font-extrabold uppercase leading-none">
             {transactionCount ?? 0}
           </span>
         </div>
-        <div className="text-[#545454] text-6xl text-center font-bold uppercase">batch</div>
+        <div className="text-[#545454] xl:text-6xl text-3xl text-center font-bold uppercase">batch</div>
       </div>
       <div className="flex flex-col leading-none gap-1">
         <span className="text-text-secondary text-[16px]">

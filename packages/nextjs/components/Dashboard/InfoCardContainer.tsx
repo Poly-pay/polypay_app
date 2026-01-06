@@ -49,7 +49,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             <span className="flex flex-row gap-2 items-center">
               <Image src="/dashboard/circle-polypay-icon.svg" alt="Polypay Icon" width={30} height={30} />
               <Image src="/dashboard/polypay-text.svg" alt="Polypay text" width={130} height={130} />
-              <span className="text-black px-3 py-1 rounded-2xl bg-[#C2FFCA]  truncate max-w-[120px]">
+              <span className="text-black px-3 py-1 rounded-2xl bg-[#C2FFCA]  truncate max-w-44">
                 {currentWallet?.name ?? "Default"}
               </span>
             </span>

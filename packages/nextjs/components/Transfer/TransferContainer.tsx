@@ -212,12 +212,12 @@ export default function TransferContainer() {
       {/* Main content */}
       <div className="flex flex-col gap-[20px] items-center justify-center flex-1 px-4">
         {/* Title section */}
-        <div className="flex flex-col items-center justify-center pt-8">
-          <div className="text-[#545454] text-6xl text-center font-bold uppercase w-full">transfering</div>
+        <div className="flex flex-col items-center justify-center pt-8 relative z-50">
+          <div className="text-[#545454] xl:text-6xl text=3xl text-center font-bold uppercase w-full">transfering</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-[#545454] text-6xl text-center font-bold uppercase">t</div>
-            <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-[#545454] text-6xl text-center font-bold uppercase">anyone</div>
+            <div className="text-[#545454] xl:text-6xl text=3xl text-center font-bold uppercase">t</div>
+            <div className="xl:h-[48px] h-6 relative rounded-full xl:w-[125.07px] w-16 border-[4.648px] border-primary border-solid"></div>
+            <div className="text-[#545454] xl:text-6xl text=3xl text-center font-bold uppercase">anyone</div>
           </div>
         </div>
 
@@ -232,10 +232,16 @@ export default function TransferContainer() {
           <div className="relative mr-2">
             <div
               onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-              className="bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-0.5 rounded-full border border-[#e0e0e0] cursor-pointer hover:border-[#FF7CEB] transition-colors"
+              className="bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-1 rounded-full border border-[#e0e0e0] cursor-pointer hover:border-[#FF7CEB] transition-colors"
             >
-              <Image src={selectedToken.icon} alt={selectedToken.symbol} width={36} height={36} />
-              <span className="text-sm font-medium text-gray-700">{selectedToken.symbol}</span>
+              <Image
+                src={selectedToken.icon}
+                alt={selectedToken.symbol}
+                width={36}
+                height={36}
+                className="xl:h-9 xl:w-9 w-4 h-4"
+              />
+              <span className="xl:text-sm text-xs font-medium text-gray-700">{selectedToken.symbol}</span>
               <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -250,10 +256,16 @@ export default function TransferContainer() {
                       setSelectedToken(token);
                       setShowTokenDropdown(false);
                     }}
-                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer first:rounded-t-lg last:rounded-b-lg"
+                    className="flex items-center xl:gap-2 gap-1 px-3 py-2 hover:bg-gray-50 cursor-pointer first:rounded-t-lg last:rounded-b-lg"
                   >
-                    <Image src={token.icon} alt={token.symbol} width={24} height={24} />
-                    <span className="text-sm font-medium text-gray-700">{token.symbol}</span>
+                    <Image
+                      src={token.icon}
+                      alt={token.symbol}
+                      width={24}
+                      height={24}
+                      className="xl:w-6 xl:h-6 w-3 h-3"
+                    />
+                    <span className="xl:text-sm text-xs font-medium text-gray-700">{token.symbol}</span>
                   </div>
                 ))}
               </div>
@@ -272,10 +284,10 @@ export default function TransferContainer() {
                 setAmount(value);
               }
             }}
-            className="text-text-primary text-[44px] uppercase outline-none w-[150px]"
+            className="text-text-primary xl:text-[44px] text-sm uppercase outline-none w-[150px]"
             disabled={isLoading}
           />
-          <span className="text-[#545454] text-2xl font-medium">{selectedToken.symbol}</span>
+          <span className="text-[#545454] xl:text-2xl text-sm font-medium">{selectedToken.symbol}</span>
         </div>
 
         {/* Visual divider */}
@@ -300,7 +312,7 @@ export default function TransferContainer() {
                 placeholder="Enter recipient address (0x...)"
                 value={address}
                 onChange={e => setAddress(e.target.value)}
-                className="text-text-secondary text-[16px] outline-none placeholder:text-text-secondary flex-1 w-full"
+                className="text-text-secondary xl:text-base text-xs outline-none placeholder:text-text-secondary flex-1 w-full"
                 disabled={isLoading}
               />
               <ContactPicker
@@ -319,7 +331,7 @@ export default function TransferContainer() {
             disabled={isLoading || !amount || !address}
             className="bg-[#FF7CEB] flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-[#f35ddd] transition-colors"
           >
-            <span className="font-semibold text-[16px] text-center text-white tracking-[-0.16px]">
+            <span className="font-semibold xl:text-base text-xs text-center text-white tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Add to batch"}
             </span>
           </button>
@@ -328,7 +340,7 @@ export default function TransferContainer() {
             disabled={isLoading || !amount || !address}
             className="bg-[#FF7CEB] flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-[#f35ddd] transition-colors"
           >
-            <span className="font-semibold text-[16px] text-center text-white tracking-[-0.16px]">
+            <span className="font-semibold xl:text-base text-xs text-center text-white tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Transfer now"}
             </span>
           </button>
