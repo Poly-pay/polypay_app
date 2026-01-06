@@ -6,6 +6,7 @@ import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
 import WalletName from "./WalletName";
+import { useForm } from "react-hook-form";
 import { useCreateWallet } from "~~/hooks/api";
 import { useWalletStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
@@ -31,11 +32,17 @@ export default function NewWalletContainer() {
   const [currentStep, setCurrentStep] = useState(1);
   const [createdWalletAddress, setCreatedWalletAddress] = useState<string>("");
 
-  const [formData, setFormData] = useState<WalletFormData>({
-    name: "",
-    signers: [{ name: "", commitment: commitment || "" }],
-    threshold: 1,
+  const form = useForm<WalletFormData>({
+    defaultValues: {
+      name: "",
+      signers: [{ name: "", commitment: commitment || "" }],
+      threshold: 1,
+    },
+    mode: "onChange",
   });
+
+  const { watch, setValue } = form;
+  const formData = watch();
 
   const handleNextStep = () => {
     if (!commitment) {
@@ -49,18 +56,6 @@ export default function NewWalletContainer() {
     setCurrentStep(prev => prev - 1);
   };
 
-  const handleUpdateName = (name: string) => {
-    setFormData(prev => ({ ...prev, name }));
-  };
-
-  const handleUpdateSigners = (signers: Signer[]) => {
-    setFormData(prev => ({ ...prev, signers }));
-  };
-
-  const handleUpdateThreshold = (threshold: number) => {
-    setFormData(prev => ({ ...prev, threshold }));
-  };
-
   const handleCreateWallet = async () => {
     if (!commitment) {
       notification.error("You need to have an identity commitment to create a wallet.");
@@ -68,7 +63,15 @@ export default function NewWalletContainer() {
     }
 
     try {
-      const validSigners = formData.signers.filter(s => s?.name?.trim() !== "" && s.commitment.trim() !== "");
+      // Filter signers with valid commitment (name can be empty)
+      const validSigners = formData.signers.filter(s => s?.commitment?.trim() !== "");
+
+      // Ensure creator commitment is in the list
+      const hasCreator = validSigners.some(s => s.commitment === commitment);
+      if (!hasCreator) {
+        notification.error("Your commitment must be included in the signers list.");
+        return;
+      }
 
       const wallet = await createWallet({
         name: formData.name,
@@ -87,22 +90,16 @@ export default function NewWalletContainer() {
 
   useEffect(() => {
     if (commitment) {
-      setFormData(prev => {
-        // If the current commitment is not in the signers list, add it at the beginning
-        const hasMyCommitment = prev.signers.some(s => s.commitment === commitment);
-        if (!hasMyCommitment) {
-          return {
-            ...prev,
-            signers: [{ name: "", commitment }, ...prev.signers],
-          };
-        }
-        return prev;
-      });
+      const currentSigners = form.getValues("signers");
+      const hasMyCommitment = currentSigners.some(s => s.commitment === commitment);
+      if (!hasMyCommitment) {
+        setValue("signers", [{ name: "", commitment }, ...currentSigners]);
+      }
     }
-  }, [commitment]);
+  }, [commitment, form, setValue]);
 
   // Validation
-  const validSigners = formData.signers.filter(s => s?.name?.trim() !== "" && s.commitment.trim() !== "");
+  const validSigners = formData.signers.filter(s => s?.commitment?.trim() !== "");
   const isStep1Valid = formData.name.trim().length > 0;
   const isStep2Valid = validSigners.length > 0 && formData.threshold >= 1 && formData.threshold <= validSigners.length;
 
@@ -133,22 +130,9 @@ export default function NewWalletContainer() {
       <div className="flex-1 overflow-hidden relative flex flex-col rounded-lg bg-background border border-divider">
         {EarthBackground}
         {currentStep === 1 ? (
-          <WalletName
-            className="flex-1"
-            name={formData.name}
-            onUpdateName={handleUpdateName}
-            onNextStep={handleNextStep}
-            isValid={isStep1Valid}
-          />
+          <WalletName className="flex-1" form={form} onNextStep={handleNextStep} isValid={isStep1Valid} />
         ) : (
-          <SignersConfirmations
-            className="flex-1"
-            signers={formData.signers}
-            threshold={formData.threshold}
-            onUpdateSigners={handleUpdateSigners}
-            onUpdateThreshold={handleUpdateThreshold}
-            onGoBack={handleGoBack}
-          />
+          <SignersConfirmations className="flex-1" form={form} onGoBack={handleGoBack} />
         )}
       </div>
 

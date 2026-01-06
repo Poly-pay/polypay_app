@@ -1,20 +1,24 @@
 "use client";
 
 import React from "react";
+import { WalletFormData } from "./NewWalletContainer";
 import { ArrowRight, Repeat } from "lucide-react";
+import { UseFormReturn } from "react-hook-form";
 
 interface WalletNameProps {
   className?: string;
-  name: string;
-  onUpdateName: (name: string) => void;
+  form: UseFormReturn<WalletFormData>;
   onNextStep: () => void;
   isValid: boolean;
 }
 
-export default function WalletName({ className, name, onUpdateName, onNextStep, isValid }: WalletNameProps) {
+export default function WalletName({ className, form, onNextStep, isValid }: WalletNameProps) {
+  const { register, setValue, watch } = form;
+  const name = watch("name");
+
   const handleGenerateName = () => {
     const randomName = `Wallet-${Math.random().toString(36).substring(2, 8)}`;
-    onUpdateName(randomName);
+    setValue("name", randomName);
   };
 
   return (
@@ -49,12 +53,9 @@ export default function WalletName({ className, name, onUpdateName, onNextStep, 
           <div className="relative">
             <input
               type="text"
-              value={name}
-              onChange={e => {
-                if (e.target.value.length <= 30) {
-                  onUpdateName(e.target.value);
-                }
-              }}
+              {...register("name", {
+                maxLength: 30,
+              })}
               maxLength={30}
               placeholder="Your wallet name"
               className="w-[400px] h-[48px] flex-1 px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
