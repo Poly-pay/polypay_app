@@ -39,12 +39,12 @@ export const validators = {
    * Number validation with min/max
    */
   number: (min?: number, max?: number) => {
-    let schema = z
+    let schema: any = z
       .number()
       .catch(() => NaN)
-      .refine(val => !isNaN(val), { message: "Must be a number" });
-    if (min !== undefined) schema = schema.refine(val => val >= min, { message: `Must be at least ${min}` });
-    if (max !== undefined) schema = schema.refine(val => val <= max, { message: `Must be at most ${max}` });
+      .refine((val: number) => !isNaN(val), { message: "Must be a number" });
+    if (min !== undefined) schema = schema.refine((val: number) => val >= min, { message: `Must be at least ${min}` });
+    if (max !== undefined) schema = schema.refine((val: number) => val <= max, { message: `Must be at most ${max}` });
     return schema;
   },
 

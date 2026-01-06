@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AddressGroup } from "@polypay/shared";
 import { Search, X } from "lucide-react";
 import { useCreateContact } from "~~/hooks";
+import { useZodForm } from "~~/hooks/form";
+import { CreateContactFormData, createContactSchema } from "~~/lib/form";
 
 interface CreateContactModalProps {
   isOpen: boolean;
@@ -16,13 +18,23 @@ function getMemberCount(group: AddressGroup): number {
 }
 
 export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, groups }: CreateContactModalProps) {
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
 
   const createContact = useCreateContact();
+
+  const form = useZodForm({
+    schema: createContactSchema,
+    defaultValues: {
+      name: "",
+      address: "",
+      groupIds: [],
+      notes: "",
+    },
+  });
+
+  // Watch groupIds for selection
+  const selectedGroupIds = form.watch("groupIds");
 
   // Filter groups by search term
   const filteredGroups = useMemo(() => {
@@ -32,11 +44,9 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
   }, [groups, searchTerm]);
 
   const resetForm = () => {
-    setName("");
-    setAddress("");
+    form.reset();
     setSearchTerm("");
-    setSelectedGroupIds([]);
-    setError("");
+    setFormError("");
   };
 
   const handleClose = () => {
@@ -45,41 +55,37 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
   };
 
   const toggleGroup = (groupId: string) => {
-    setSelectedGroupIds(prev => (prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]));
+    const currentGroups = form.getValues("groupIds");
+    const newGroups = currentGroups.includes(groupId)
+      ? currentGroups.filter(id => id !== groupId)
+      : [...currentGroups, groupId];
+    form.setValue("groupIds", newGroups, { shouldValidate: true });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!name.trim()) {
-      setError("Name is required");
-      return;
-    }
-
-    if (!address.trim()) {
-      setError("Address is required");
-      return;
-    }
-
-    if (selectedGroupIds.length === 0) {
-      setError("Please select at least one group");
-      return;
-    }
+  const handleSubmit = async (data: CreateContactFormData) => {
+    setFormError("");
 
     try {
       await createContact.mutateAsync({
         walletId,
-        name: name.trim(),
-        address: address.trim(),
-        groupIds: selectedGroupIds,
+        name: data.name.trim(),
+        address: data.address.trim(),
+        groupIds: data.groupIds,
       });
       onSuccess?.();
       handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create contact");
+      setFormError(err instanceof Error ? err.message : "Failed to create contact");
     }
   };
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -103,26 +109,34 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
           <div className="p-5 space-y-5">
             {/* Contact Information */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Contact information</label>
               <div className="flex gap-3">
-                <input
-                  type="text"
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
-                  placeholder="Name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="flex-[2] px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-mono text-sm"
-                  placeholder="0xF1E2d3c4B5A67890FEDCBA98765432..."
-                  value={address}
-                  onChange={e => setAddress(e.target.value)}
-                />
+                <div className="flex-1">
+                  <input
+                    {...form.register("name")}
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                    placeholder="Name"
+                  />
+                  {form.formState.errors.name && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.name.message}</p>
+                  )}
+                </div>
+                <div className="flex-[2]">
+                  <input
+                    {...form.register("address")}
+                    type="text"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-mono text-sm"
+                    placeholder="0xF1E2d3c4B5A67890FEDCBA98765432..."
+                  />
+                  {form.formState.errors.address && (
+                    <p className="text-red-500 text-sm mt-1">{form.formState.errors.address.message}</p>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -184,12 +198,16 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
                   No groups available. Please create a group first.
                 </p>
               )}
+
+              {form.formState.errors.groupIds && (
+                <p className="text-red-500 text-sm mt-2">{form.formState.errors.groupIds.message}</p>
+              )}
             </div>
 
             {/* Error */}
-            {error && (
+            {formError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-                <span className="text-red-600 text-sm">{error}</span>
+                <span className="text-red-600 text-sm">{formError}</span>
               </div>
             )}
           </div>

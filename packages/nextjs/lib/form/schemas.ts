@@ -27,7 +27,8 @@ export type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const createContactSchema = z.object({
   name: validators.requiredString("Name").max(100, "Name too long"),
-  address: validators.ethereumAddress,
+  address: validators.requiredString("Address"),
+  groupIds: z.array(z.string()).min(1, "Please select at least one group"),
   notes: z.string().optional(),
 });
 export type CreateContactFormData = z.infer<typeof createContactSchema>;
