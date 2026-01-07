@@ -17,16 +17,22 @@ import {
   useWalletThreshold,
 } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
+import { useZodForm } from "~~/hooks/form";
+import {
+  AddSignerFormData,
+  EditAccountNameFormData,
+  UpdateThresholdFormData,
+  addSignerSchema,
+  editAccountNameSchema,
+  updateThresholdSchema,
+} from "~~/lib/form";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
 import { notification } from "~~/utils/scaffold-eth";
 
 const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
-  const [editThreshold, setEditThreshold] = useState(0);
-  const [newSignerCommitment, setNewSignerCommitment] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
-  const [editName, setEditName] = useState("");
   const { openModal } = useModalApp();
   const { commitment } = useIdentityStore();
   const { mutateAsync: updateWallet, isPending: isUpdatingWallet } = useUpdateWallet();
@@ -46,6 +52,23 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const signers = commitmentsData ? commitmentsData.map((c: bigint) => c.toString()) : [];
   const accountName = currentWallet?.name ?? "Default";
 
+  // Form for account name
+  const nameForm = useZodForm({
+    schema: editAccountNameSchema,
+    defaultValues: { name: "" },
+  });
+
+  // Form for add signer
+  const addSignerForm = useZodForm({
+    schema: addSignerSchema,
+    defaultValues: { signerCommitment: "", threshold: 1 },
+  });
+
+  // Form for threshold
+  const thresholdForm = useZodForm({
+    schema: updateThresholdSchema,
+    defaultValues: { threshold: 1 },
+  });
   const signerMap = useMemo(() => {
     if (!wallet?.signers) return {};
     return wallet.signers.reduce(
@@ -59,13 +82,13 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
   const handleGenerateName = () => {
     const randomName = `Wallet-${Math.random().toString(36).substring(2, 8)}`;
-    setEditName(randomName);
+    nameForm.setValue("name", randomName);
   };
 
-  const handleUpdateName = async () => {
-    if (!commitment || !editName.trim()) return;
+  const handleUpdateName = async (data: EditAccountNameFormData) => {
+    if (!commitment) return;
 
-    if (editName === accountName) {
+    if (data.name === accountName) {
       notification.warning("No changes to save");
       return;
     }
@@ -73,7 +96,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     try {
       const newWallet = await updateWallet({
         address: currentWallet?.address || "",
-        dto: { name: editName.trim() },
+        dto: { name: data.name.trim() },
       });
       setCurrentWallet(newWallet);
       notification.success("Account name updated!");
@@ -84,10 +107,11 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleAddSigner = async () => {
-    if (!metaMultiSigWallet || !newSignerCommitment.trim()) return;
+  const handleAddSigner = async (data: AddSignerFormData) => {
+    console.log(data);
+    if (!metaMultiSigWallet) return;
 
-    if (editThreshold < 1 || editThreshold > signers.length + 1) {
+    if (data.threshold < 1 || data.threshold > signers.length + 1) {
       notification.error("Invalid threshold value");
       return;
     }
@@ -96,7 +120,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     try {
       const { nonce } = await reserveNonce(metaMultiSigWallet.address);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const callData = encodeAddSigner(newSignerCommitment, editThreshold);
+      const callData = encodeAddSigner(data.signerCommitment, data.threshold);
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
         BigInt(nonce),
         metaMultiSigWallet.address,
@@ -113,8 +137,8 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: signers.length,
-        signerCommitment: newSignerCommitment.trim(),
-        newThreshold: editThreshold,
+        signerCommitment: data.signerCommitment.trim(),
+        newThreshold: data.threshold,
         proof,
         publicInputs,
         nullifier,
@@ -124,7 +148,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       await refetchThreshold();
 
       notification.success("Add signer transaction created!");
-      setNewSignerCommitment("");
+      addSignerForm.reset({ signerCommitment: "", threshold: data.threshold });
       onClose();
     } catch (error: any) {
       console.error("Failed to add signer:", error);
@@ -143,7 +167,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    let newThreshold = editThreshold;
+    let newThreshold = thresholdForm.getValues("threshold");
     if (newThreshold > signers.length - 1) {
       newThreshold = signers.length - 1;
     }
@@ -195,15 +219,15 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleUpdateThreshold = async () => {
+  const handleUpdateThreshold = async (data: UpdateThresholdFormData) => {
     if (!metaMultiSigWallet) return;
 
-    if (editThreshold < 1 || editThreshold > signers.length) {
+    if (data.threshold < 1 || data.threshold > signers.length) {
       notification.error("Invalid threshold value");
       return;
     }
 
-    if (editThreshold === threshold) {
+    if (data.threshold === threshold) {
       notification.warning("No changes to save");
       return;
     }
@@ -212,7 +236,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     try {
       const { nonce } = await reserveNonce(metaMultiSigWallet.address);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const callData = encodeUpdateThreshold(editThreshold);
+      const callData = encodeUpdateThreshold(data.threshold);
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
         BigInt(nonce),
         metaMultiSigWallet.address,
@@ -229,7 +253,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         totalSigners: signers.length,
-        newThreshold: editThreshold,
+        newThreshold: data.threshold,
         proof,
         publicInputs,
         nullifier,
@@ -262,10 +286,16 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      setEditThreshold(threshold);
-      setEditName(accountName || "");
+      nameForm.reset({ name: accountName || "" });
+      thresholdForm.reset({ threshold: threshold });
+      addSignerForm.reset({ signerCommitment: "", threshold: threshold });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, threshold, accountName]);
+
+  const watchedName = nameForm.watch("name");
+  const watchedThreshold = thresholdForm.watch("threshold");
+  const watchedSignerCommitment = addSignerForm.watch("signerCommitment");
 
   return (
     <ModalContainer isOpen={isOpen} onClose={onClose} className="sm:max-w-[600px] p-0" isCloseButton={false}>
@@ -304,7 +334,8 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         )}
 
         <div className="p-6 pt-3 space-y-6">
-          <div className="mb-6">
+          {/* Account Name Form */}
+          <form onSubmit={nameForm.handleSubmit(handleUpdateName)} className="mb-6">
             <div className="mb-4">
               <h3 className="font-semibold text-gray-900">ACCOUNT NAME</h3>
               <p className="text-sm text-gray-500 my-0">Give your account a name to easily identify it.</p>
@@ -312,24 +343,20 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             <div className="flex gap-2 items-center">
               <div className="relative flex-1">
                 <Input
+                  {...nameForm.register("name")}
                   type="text"
-                  value={editName}
-                  onChange={e => {
-                    if (e.target.value.length <= 30) {
-                      setEditName(e.target.value);
-                    }
-                  }}
                   maxLength={30}
                   placeholder="Your account name"
                   className="w-full pr-16"
                   disabled={loading || isUpdatingWallet}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                  {editName.length}/30
+                  {watchedName.length}/30
                 </span>
               </div>
 
               <Button
+                type="button"
                 size="sm"
                 onClick={handleGenerateName}
                 className="h-10 w-10 p-0 bg-gray-200 hover:bg-gray-300 cursor-pointer"
@@ -338,16 +365,20 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 <Repeat className="h-4 w-4 text-gray-600" />
               </Button>
             </div>
+            {nameForm.formState.errors.name && (
+              <p className="text-sm text-red-500 mt-1">{nameForm.formState.errors.name.message}</p>
+            )}
 
             <Button
-              onClick={handleUpdateName}
+              type="submit"
               className="w-full mt-3 bg-[#6D2EFF] hover:bg-[#5a25d9] cursor-pointer text-white"
-              disabled={loading || isUpdatingWallet || editName === accountName || !editName.trim()}
+              disabled={loading || isUpdatingWallet || watchedName === accountName || !watchedName.trim()}
             >
               {isUpdatingWallet ? "Updating..." : "Update Name"}
             </Button>
-          </div>
+          </form>
 
+          {/* Signers Section */}
           <div>
             <h3 className="font-semibold text-gray-900">WALLET SIGNERS</h3>
             <p className="text-sm text-gray-500 mb-4">
@@ -395,27 +426,34 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               ))}
             </div>
 
-            <div className="space-y-3 p-3 border border-dashed border-gray-300 rounded-lg">
+            {/* Add Signer Form */}
+            <form
+              onSubmit={addSignerForm.handleSubmit(handleAddSigner)}
+              className="space-y-3 p-3 border border-dashed border-gray-300 rounded-lg"
+            >
               <Input
+                {...addSignerForm.register("signerCommitment")}
                 placeholder="Enter new signer commitment"
-                value={newSignerCommitment}
-                onChange={e => setNewSignerCommitment(e.target.value)}
                 className="font-mono text-sm"
                 disabled={loading}
               />
+              {addSignerForm.formState.errors.signerCommitment && (
+                <p className="text-sm text-red-500">{addSignerForm.formState.errors.signerCommitment.message}</p>
+              )}
               <Button
+                type="submit"
                 variant="secondary"
                 size="sm"
-                onClick={handleAddSigner}
                 className="w-full cursor-pointer bg-[#6D2EFF] text-white hover:bg-[#5a25d9]"
-                disabled={loading || !newSignerCommitment.trim()}
+                disabled={loading || !watchedSignerCommitment.trim()}
               >
                 {loading ? "Processing..." : "Add New Signer"}
               </Button>
-            </div>
+            </form>
           </div>
 
-          <div>
+          {/* Threshold Form */}
+          <form onSubmit={thresholdForm.handleSubmit(handleUpdateThreshold)}>
             <h3 className="font-semibold text-gray-900 mb-2">THRESHOLD</h3>
             <p className="text-sm text-gray-500 mb-4">Minimum number of approvals required to execute a transaction.</p>
 
@@ -425,23 +463,25 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                   type="number"
                   min="1"
                   max={signers.length}
-                  value={editThreshold}
-                  onChange={e => setEditThreshold(Number(e.target.value))}
+                  {...thresholdForm.register("threshold", { valueAsNumber: true })}
                   className="flex-1 text-center"
                   disabled={loading}
                 />
                 <span className="text-sm text-gray-500 whitespace-nowrap">/ out of {signers.length} signers</span>
               </div>
+              {thresholdForm.formState.errors.threshold && (
+                <p className="text-sm text-red-500 w-full">{thresholdForm.formState.errors.threshold.message}</p>
+              )}
 
               <Button
-                onClick={handleUpdateThreshold}
+                type="submit"
                 className="w-full bg-[#FF7CEB] hover:bg-[#e66dd4] cursor-pointer text-white"
-                disabled={loading || editThreshold === threshold}
+                disabled={loading || watchedThreshold === threshold}
               >
                 {loading ? "Processing..." : "Update Threshold"}
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </ModalContainer>
