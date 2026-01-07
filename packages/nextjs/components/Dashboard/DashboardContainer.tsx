@@ -45,7 +45,7 @@ export default function DashboardContainer() {
   const emptyTransactionComponent = (
     <span className="flex flex-col gap-3 w-full items-center justify-center mt-10 text-text-secondary">
       <Image src="/common/empty-avatar.svg" alt="No transactions found" width={200} height={177} />
-      <span className="text-[#6D2EFF] font-bold text-[20px]">No transaction found</span>
+      <span className="text-violet-300 font-bold text-[20px]">No transaction found</span>
       <span>There is no transaction found in your account</span>
     </span>
   );

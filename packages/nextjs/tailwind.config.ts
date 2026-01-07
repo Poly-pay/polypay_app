@@ -1,0 +1,106 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./utils/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        main: {
+          pink: "var(--color-main-pink)",
+          violet: "var(--color-main-violet)",
+          "navy-blue": "var(--color-main-navy-blue)",
+          black: "var(--color-main-black)",
+          white: "var(--color-main-white)",
+        },
+        grey: {
+          0: "var(--color-grey-0)",
+          50: "var(--color-grey-50)",
+          100: "var(--color-grey-100)",
+          200: "var(--color-grey-200)",
+          300: "var(--color-grey-300)",
+          400: "var(--color-grey-400)",
+          500: "var(--color-grey-500)",
+          600: "var(--color-grey-600)",
+          700: "var(--color-grey-700)",
+          800: "var(--color-grey-800)",
+          850: "var(--color-grey-850)",
+          900: "var(--color-grey-900)",
+          950: "var(--color-grey-950)",
+          1000: "var(--color-grey-1000)",
+        },
+        red: {
+          50: "var(--color-red-50)",
+          100: "var(--color-red-100)",
+          200: "var(--color-red-200)",
+          300: "var(--color-red-300)",
+          400: "var(--color-red-400)",
+          500: "var(--color-red-500)",
+          600: "var(--color-red-600)",
+          700: "var(--color-red-700)",
+          800: "var(--color-red-800)",
+          900: "var(--color-red-900)",
+          950: "var(--color-red-950)",
+        },
+        green: {
+          50: "var(--color-green-50)",
+          100: "var(--color-green-100)",
+          150: "var(--color-green-150)",
+          200: "var(--color-green-200)",
+          300: "var(--color-green-300)",
+          400: "var(--color-green-400)",
+          500: "var(--color-green-500)",
+          600: "var(--color-green-600)",
+          700: "var(--color-green-700)",
+          800: "var(--color-green-800)",
+          900: "var(--color-green-900)",
+          950: "var(--color-green-950)",
+        },
+        pink: {
+          50: "var(--color-pink-50)",
+          100: "var(--color-pink-100)",
+          150: "var(--color-pink-150)",
+          200: "var(--color-pink-200)",
+          300: "var(--color-pink-300)",
+          350: "var(--color-pink-350)",
+          400: "var(--color-pink-400)",
+          450: "var(--color-pink-450)",
+          500: "var(--color-pink-500)",
+          600: "var(--color-pink-600)",
+          700: "var(--color-pink-700)",
+          800: "var(--color-pink-800)",
+          900: "var(--color-pink-900)",
+          950: "var(--color-pink-950)",
+        },
+        blue: {
+          100: "var(--color-blue-100)",
+          600: "var(--color-blue-600)",
+        },
+        violet: {
+          50: "var(--color-violet-50)",
+          300: "var(--color-violet-300)",
+        },
+        lime: {
+          50: "var(--color-lime-50)",
+          100: "var(--color-lime-100)",
+        },
+      },
+      boxShadow: {
+        center: "var(--shadow-center)",
+      },
+      animation: {
+        "pulse-fast": "var(--animate-pulse-fast)",
+      },
+      borderRadius: {
+        field: "var(--radius-field)",
+        box: "var(--radius-box)",
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;

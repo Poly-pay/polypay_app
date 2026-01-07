@@ -162,7 +162,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contact
                         {/* Checkbox */}
                         <div
                           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            isSelected ? "bg-[#FF7CEB] border-[#FF7CEB]" : "border-gray-300"
+                            isSelected ? "bg-pink-350 border-pink-350" : "border-gray-300"
                           }`}
                         >
                           {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -184,7 +184,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contact
                         </div>
 
                         {/* Address */}
-                        <span className="text-sm text-[#FF7CEB] font-medium flex-shrink-0">
+                        <span className="text-sm text-pink-350 font-medium flex-shrink-0">
                           {formatAddress(contact.address)}
                         </span>
                       </div>
@@ -215,7 +215,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contact
             </button>
             <button
               type="submit"
-              className="flex-[2] px-6 py-3 bg-[#FF7CEB] text-white font-medium rounded-xl hover:bg-[#f35ddd] transition-colors disabled:opacity-50 cursor-pointer"
+              className="flex-[2] px-6 py-3 bg-pink-350 text-white font-medium rounded-xl hover:bg-pink-450 transition-colors disabled:opacity-50 cursor-pointer"
               disabled={createGroup.isPending}
             >
               {createGroup.isPending ? <span className="loading loading-spinner loading-sm" /> : "Create group"}

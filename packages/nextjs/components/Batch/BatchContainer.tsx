@@ -19,7 +19,7 @@ function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () 
     <div
       onClick={onChange}
       className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${
-        checked ? "bg-[#0059ff] border-[#0059ff]" : "bg-white border-gray-300"
+        checked ? "bg-blue-600 border-blue-600" : "bg-white border-gray-300"
       }`}
     >
       {checked && (
@@ -36,13 +36,13 @@ function Header({ transactionCount }: { transactionCount: number }) {
   return (
     <div className="flex w-full flex-col gap-2">
       <div className="flex gap-[5px] items-center justify-start w-full">
-        <div className="text-[#545454] text-6xl text-center font-bold uppercase">your</div>
-        <div className="h-[50px] relative rounded-full w-[100px] border-[6px] border-[#FF2323] border-solid flex items-center justify-center">
-          <span className="text-[#FF2323] text-4xl text-center font-extrabold uppercase leading-none">
+        <div className="text-grey-900 text-6xl text-center font-bold uppercase">your</div>
+        <div className="h-[50px] relative rounded-full w-[100px] border-[6px] border-red-500 border-solid flex items-center justify-center">
+          <span className="text-red-500 text-4xl text-center font-extrabold uppercase leading-none">
             {transactionCount ?? 0}
           </span>
         </div>
-        <div className="text-[#545454] text-6xl text-center font-bold uppercase">batch</div>
+        <div className="text-grey-900 text-6xl text-center font-bold uppercase">batch</div>
       </div>
       <div className="flex flex-col leading-none gap-1">
         <span className="text-text-secondary text-[16px]">
@@ -99,7 +99,7 @@ function BatchTransactions({
       <div className="flex items-center gap-3">
         <button
           onClick={onSelectAll}
-          className="bg-[#0059ff] flex gap-2 items-center justify-center px-4 py-2 rounded-full cursor-pointer"
+          className="bg-blue-600 flex gap-2 items-center justify-center px-4 py-2 rounded-full cursor-pointer"
         >
           <span className="font-medium text-[14px] text-white tracking-[-0.42px]">Select all</span>
         </button>
@@ -116,7 +116,7 @@ function BatchTransactions({
             <div
               key={item.id}
               className={`grid grid-cols-[auto_auto_1fr_auto_1fr_auto] gap-3 items-center p-3 w-full cursor-pointer rounded transition-colors ${
-                isActive ? "bg-[#066eff]" : "bg-[#f7f7f7] hover:bg-[#efefef]"
+                isActive ? "bg-main-navy-blue" : "bg-grey-50 hover:bg-[#efefef]"
               }`}
               onClick={() => {
                 onSelectItem(item.id);
@@ -128,13 +128,13 @@ function BatchTransactions({
               </div>
 
               {/* Transaction Type */}
-              <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-[#363636]"}`}>
+              <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-grey-950"}`}>
                 Transfer
               </div>
 
               {/* Amount with Token */}
               <div
-                className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-[#363636]"}`}
+                className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-grey-950"}`}
               >
                 <Image
                   src={getTokenByAddress(item.tokenAddress).icon}
@@ -156,7 +156,7 @@ function BatchTransactions({
               </div>
 
               {/* Recipient */}
-              <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-[#363636]"}`}>
+              <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-grey-950"}`}>
                 To: [{" "}
                 {item.contact?.name ? (
                   <>
@@ -176,7 +176,7 @@ function BatchTransactions({
                 <button
                   onClick={() => onRemove(item.id)}
                   disabled={isRemoving}
-                  className="bg-gradient-to-b from-[#ff2323] to-[#ed1515] flex items-center justify-center px-5 py-1.5 rounded-[10px] shadow-[0px_2px_4px_-1px_rgba(255,0,4,0.5),0px_0px_0px_1px_#ff6668] cursor-pointer disabled:opacity-50"
+                  className="bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center px-5 py-1.5 rounded-[10px] shadow-[0px_2px_4px_-1px_rgba(255,0,4,0.5),0px_0px_0px_1px_#ff6668] cursor-pointer disabled:opacity-50"
                 >
                   <span className="font-medium text-[14px] text-center text-white tracking-[-0.42px]">Remove</span>
                 </button>

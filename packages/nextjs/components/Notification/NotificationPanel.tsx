@@ -31,7 +31,7 @@ export const NotificationPanel: React.FC = () => {
         <div className="flex flex-col h-full bg-gray-200 p-1 rounded-lg">
           {/* Header */}
           <div className="relative flex items-center p-4 bg-white rounded-t-lg gap-2">
-            <span className="text-xl font-semibold text-[#1B1B1B]">Notifications</span>
+            <span className="text-xl font-semibold text-grey-850">Notifications</span>
 
             <div className="flex items-center gap-2 mr-3 cursor-pointer">
               {Number(unreadCount) > 0 && (
