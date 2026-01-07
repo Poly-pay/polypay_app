@@ -24,6 +24,7 @@ export const useCreateWallet = () => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
       queryClient.setQueryData(walletKeys.byAddress(data.address), data);
       queryClient.invalidateQueries({ queryKey: accountKeys.meWallets });
+      queryClient.invalidateQueries({ queryKey: accountKeys.me });
     },
   });
 };

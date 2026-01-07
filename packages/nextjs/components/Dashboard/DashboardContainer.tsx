@@ -1,12 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
 import { TransactionRow, convertToRowData } from "./TransactionRow";
-import { useMetaMultiSigWallet } from "~~/hooks";
-import { useTransactionRealtime, useTransactions } from "~~/hooks/api/useTransaction";
+import { useInfiniteScroll, useMetaMultiSigWallet } from "~~/hooks";
+import { useTransactionRealtime, useTransactionsInfinite } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store";
 
 export interface WalletData {
@@ -30,13 +30,22 @@ function Header() {
 
 export default function DashboardContainer() {
   const { commitment } = useIdentityStore();
-
   const metaMultiSigWallet = useMetaMultiSigWallet();
-
   const walletAddress = metaMultiSigWallet?.address || "";
 
-  const { data: transactions, isLoading, refetch } = useTransactions(walletAddress);
+  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
+    useTransactionsInfinite(walletAddress);
+
   useTransactionRealtime(walletAddress);
+
+  const { ref } = useInfiniteScroll({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
+
+  // Memoize flattened transactions to avoid re-computing on every render
+  const transactions = useMemo(() => data?.pages.flatMap(page => page.data) ?? [], [data?.pages]);
 
   const handleSuccess = () => {
     refetch();
@@ -61,11 +70,17 @@ export default function DashboardContainer() {
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
-      ) : transactions && transactions.length > 0 ? (
+      ) : transactions.length > 0 ? (
         <div className="flex flex-col gap-2">
           {transactions.map((tx: any) => (
             <TransactionRow key={tx.id} tx={convertToRowData(tx, commitment ?? "")} onSuccess={handleSuccess} />
           ))}
+
+          {/* Infinite scroll trigger */}
+          <div ref={ref} className="py-4 text-center">
+            {isFetchingNextPage && <span className="text-text-secondary">Loading more...</span>}
+            {!hasNextPage && <span className="text-text-secondary text-sm">No more transactions</span>}
+          </div>
         </div>
       ) : (
         emptyTransactionComponent

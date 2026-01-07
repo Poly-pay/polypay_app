@@ -23,6 +23,8 @@ import {
   CreateTransactionDto,
   ApproveTransactionDto,
   DenyTransactionDto,
+  DEFAULT_PAGE_SIZE,
+  MAX_PAGE_SIZE,
 } from '@polypay/shared';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
@@ -85,9 +87,9 @@ export class TransactionController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Get all transactions for a wallet',
+    summary: 'Get all transactions for a wallet with pagination',
     description:
-      'Retrieve all transactions for a specific wallet. Optionally filter by status (PENDING, APPROVED, REJECTED, EXECUTED).',
+      'Retrieve all transactions for a specific wallet. Optionally filter by status (PENDING, EXECUTED, FAILED).',
   })
   @ApiQuery({
     name: 'walletAddress',
@@ -103,15 +105,37 @@ export class TransactionController {
   })
   @ApiResponse({ status: 200, description: 'List of transactions' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Cursor for pagination (transaction ID)',
+  })
+  @ApiResponse({ status: 200, description: 'Paginated list of transactions' })
   async getTransactions(
     @CurrentUser() user: Account,
     @Query('walletAddress') walletAddress: string,
     @Query('status') status?: string,
+    @Query('limit') limitParam?: string,
+    @Query('cursor') cursor?: string,
   ) {
+    const limit = Math.min(
+      parseInt(limitParam || String(DEFAULT_PAGE_SIZE), 10) ||
+        DEFAULT_PAGE_SIZE,
+      MAX_PAGE_SIZE,
+    );
+
     return this.transactionService.getTransactions(
       walletAddress,
       user.commitment,
       status,
+      limit,
+      cursor,
     );
   }
 
