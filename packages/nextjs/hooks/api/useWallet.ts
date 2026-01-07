@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useAppRouter } from "../app/useRouteApp";
 import { accountKeys } from "./useAccount";
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import { UpdateWalletDto, WALLET_CREATED_EVENT, WalletCreatedEventData } from "@polypay/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountApi, walletApi } from "~~/services/api";
@@ -8,7 +9,6 @@ import { socketManager } from "~~/services/socket/socketManager";
 import { useWalletStore } from "~~/services/store";
 import { handleError } from "~~/utils/errorHandler";
 import { notification } from "~~/utils/scaffold-eth/notification";
-import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 
 export const walletKeys = {
   all: ["wallets"] as const,

@@ -5,7 +5,15 @@ import Image from "next/image";
 import { Transaction, TxStatus, TxType, VoteType, horizenTestnet } from "@polypay/shared";
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { getTokenByAddress } from "~~/constants";
-import { BatchTransfer, Member, TransactionRowData, useMetaMultiSigWallet, useTransactionVote, useWalletThreshold, VoteStatus } from "~~/hooks";
+import {
+  BatchTransfer,
+  Member,
+  TransactionRowData,
+  VoteStatus,
+  useMetaMultiSigWallet,
+  useTransactionVote,
+  useWalletThreshold,
+} from "~~/hooks";
 import { formatAddress, formatAmount } from "~~/utils/format";
 
 // ============ Helper: Convert API Transaction to Row Data ============
@@ -18,7 +26,11 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   }));
 
   const myVote = tx.votes.find(v => v.voterCommitment === myCommitment);
-  const myVoteStatus: VoteStatus | null = myVote ? (myVote.voteType === VoteType.APPROVE ? "approved" : "denied") : null;
+  const myVoteStatus: VoteStatus | null = myVote
+    ? myVote.voteType === VoteType.APPROVE
+      ? "approved"
+      : "denied"
+    : null;
 
   // Calculate approve count
   const approveCount = tx.votes.filter(v => v.voteType === "APPROVE").length;

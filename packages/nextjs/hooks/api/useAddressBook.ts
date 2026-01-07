@@ -1,7 +1,7 @@
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import { UpdateAddressGroupDto, UpdateContactDto } from "@polypay/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addressBookApi } from "~~/services/api";
-import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 
 export const addressBookKeys = {
   all: ["addressBook"] as const,

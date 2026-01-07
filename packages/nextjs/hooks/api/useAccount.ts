@@ -1,7 +1,7 @@
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import { UpdateAccountDto } from "@polypay/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountApi } from "~~/services/api";
-import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 
 export const accountKeys = {
   all: ["accounts"] as const,

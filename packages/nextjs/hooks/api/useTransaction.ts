@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { walletContractKeys } from "../app";
 import { useSocketEvent } from "../app/useSocketEvent";
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import {
   ApproveTransactionDto,
   DenyTransactionDto,
@@ -14,7 +15,6 @@ import {
 } from "@polypay/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { transactionApi } from "~~/services/api";
-import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 
 // ============ Query Keys ============
 

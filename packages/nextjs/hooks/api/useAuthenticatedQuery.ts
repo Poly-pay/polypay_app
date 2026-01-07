@@ -1,9 +1,5 @@
+import { QueryKey, UseQueryOptions, useQuery } from "@tanstack/react-query";
 import { useIdentityStore } from "~~/services/store";
-import {
-  useQuery,
-  UseQueryOptions,
-  QueryKey,
-} from "@tanstack/react-query";
 
 /**
  * Wrapper for useQuery that only runs when user is authenticated
