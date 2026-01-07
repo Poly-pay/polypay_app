@@ -87,9 +87,9 @@ export class TransactionController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Get all transactions for a wallet with pagination',
+    summary: 'Get transactions for a multisig wallet with pagination',
     description:
-      'Retrieve all transactions for a specific wallet. Optionally filter by status (PENDING, EXECUTED, FAILED).',
+      'Retrieve all transactions for a specific multisig wallet. Optionally filter by status (PENDING, EXECUTED, FAILED).',
   })
   @ApiQuery({
     name: 'walletAddress',
