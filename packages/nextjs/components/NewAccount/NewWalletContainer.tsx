@@ -6,7 +6,6 @@ import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
 import WalletName from "./WalletName";
-import { useForm } from "react-hook-form";
 import { useCreateWallet } from "~~/hooks/api";
 import { useZodForm } from "~~/hooks/form";
 import { CreateWalletFormData, createWalletSchema } from "~~/lib/form";
