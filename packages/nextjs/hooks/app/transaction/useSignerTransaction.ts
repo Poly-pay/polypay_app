@@ -60,7 +60,6 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       type,
       walletAddress: metaMultiSigWallet.address,
       threshold: Number(currentThreshold),
-      totalSigners: signers.length,
       proof,
       publicInputs,
       nullifier,

@@ -28,11 +28,6 @@ export class CreateTransactionDto {
   @Min(1)
   threshold: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(1)
-  totalSigners: number;
-
   // TRANSFER
   @IsOptional()
   @IsString()

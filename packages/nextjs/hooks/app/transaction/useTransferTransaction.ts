@@ -47,7 +47,6 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       // 2. Get current threshold and commitments
       setLoadingState("Preparing transaction...");
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const commitments = await metaMultiSigWallet.read.getCommitments();
 
       // 3. Parse amount based on token type
       const valueInSmallestUnit = isNativeETH
@@ -86,7 +85,6 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
         type: TxType.TRANSFER,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
-        totalSigners: commitments?.length || 0,
         to: recipient,
         value: valueInSmallestUnit,
         tokenAddress: isNativeETH ? undefined : token.address,

@@ -53,7 +53,6 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       // 2. Get current threshold and commitments
       setLoadingState("Preparing batch transaction...");
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const commitments = await metaMultiSigWallet.read.getCommitments();
 
       // 3. Prepare batch data
       const recipients = selectedBatchItems.map(item => item.recipient as `0x${string}`);
@@ -86,7 +85,6 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
         type: TxType.BATCH,
         walletAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
-        totalSigners: commitments?.length || 0,
         to: metaMultiSigWallet.address,
         value: "0",
         proof: Array.from(proof),
