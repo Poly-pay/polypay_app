@@ -2,13 +2,13 @@
 
 import React from "react";
 import Image from "next/image";
-import { Signer } from "./NewWalletContainer";
+import { ISigner } from "~~/types/form/wallet";
 
 interface StatusContainerProps {
   className?: string;
   walletName: string;
   currentStep: number;
-  signers: Signer[];
+  signers: ISigner[];
   threshold: number;
   onCreateWallet: () => void;
   loading: boolean;

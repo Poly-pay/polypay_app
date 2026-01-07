@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Contact } from "@polypay/shared";
 import { Search, X } from "lucide-react";
 import { useCreateGroup } from "~~/hooks";
+import { useZodForm } from "~~/hooks/form";
+import { CreateGroupFormData, createGroupSchema } from "~~/lib/form";
 
 interface CreateGroupModalProps {
   isOpen: boolean;
@@ -38,12 +40,19 @@ function getContactGroups(contact: Contact): string {
 }
 
 export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contacts }: CreateGroupModalProps) {
-  const [name, setName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
 
   const createGroup = useCreateGroup();
+
+  const form = useZodForm({
+    schema: createGroupSchema,
+    defaultValues: {
+      name: "",
+      description: "",
+    },
+  });
 
   // Filter contacts by search term
   const filteredContacts = useMemo(() => {
@@ -55,10 +64,10 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contact
   }, [contacts, searchTerm]);
 
   const resetForm = () => {
-    setName("");
+    form.reset();
     setSearchTerm("");
     setSelectedContactIds([]);
-    setError("");
+    setFormError("");
   };
 
   const handleClose = () => {
@@ -72,27 +81,29 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contact
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!name.trim()) {
-      setError("Group name is required");
-      return;
-    }
+  const handleSubmit = async (data: CreateGroupFormData) => {
+    setFormError("");
 
     try {
       await createGroup.mutateAsync({
         walletId,
-        name: name.trim(),
+        name: data.name.trim(),
         contactIds: selectedContactIds.length > 0 ? selectedContactIds : undefined,
       });
       onSuccess?.();
       handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create group");
+      setFormError(err instanceof Error ? err.message : "Failed to create group");
     }
   };
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -116,18 +127,20 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contact
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
           <div className="p-5 space-y-5">
             {/* Group Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Group name</label>
               <input
+                {...form.register("name")}
                 type="text"
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
                 placeholder="Enter group name"
-                value={name}
-                onChange={e => setName(e.target.value)}
               />
+              {form.formState.errors.name && (
+                <p className="text-red-500 text-sm mt-1">{form.formState.errors.name.message}</p>
+              )}
             </div>
 
             {/* Choose Contact */}
@@ -197,9 +210,9 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contact
             )}
 
             {/* Error */}
-            {error && (
+            {formError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-                <span className="text-red-600 text-sm">{error}</span>
+                <span className="text-red-600 text-sm">{formError}</span>
               </div>
             )}
           </div>

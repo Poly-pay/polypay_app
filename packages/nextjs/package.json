@@ -19,6 +19,7 @@
   "dependencies": {
     "@aztec/bb.js": "0.84.0",
     "@heroicons/react": "~2.1.5",
+    "@hookform/resolvers": "^5.2.2",
     "@noir-lang/noir_js": "1.0.0-beta.6",
     "@polypay/shared": "1.0.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -46,7 +47,9 @@
     "qrcode.react": "~4.0.1",
     "react": "~19.0.0",
     "react-dom": "~19.0.0",
+    "react-hook-form": "^7.70.0",
     "react-hot-toast": "~2.4.0",
+    "react-intersection-observer": "^10.0.0",
     "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",

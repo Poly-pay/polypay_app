@@ -10,11 +10,13 @@ import { useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
 import { useMe, useUpdateMe } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
 export default function AccountSidebar() {
+  const appRouter = useAppRouter();
   const { data: walletClient } = useWalletClient();
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
@@ -184,6 +186,7 @@ export default function AccountSidebar() {
                 logout();
                 clearCurrentWallet();
                 disconnect();
+                appRouter.goToDashboardNewWallet();
               }}
             />
           </span>

@@ -2,157 +2,59 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { TxType, encodeERC20Transfer } from "@polypay/shared";
 import { parseEther } from "viem";
-import { useWalletClient } from "wagmi";
 import { ContactPicker } from "~~/components/address-book/ContactPicker";
 import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "~~/constants";
-import { useMetaMultiSigWallet } from "~~/hooks";
+import { useTransferTransaction } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
-import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
-import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
+import { useZodForm } from "~~/hooks/form";
+import { TransferFormData, transferSchema } from "~~/lib/form";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function TransferContainer() {
-  const [amount, setAmount] = useState("");
-  const [address, setAddress] = useState("");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState("");
-
   const [selectedToken, setSelectedToken] = useState<Token>(NATIVE_ETH);
   const [showTokenDropdown, setShowTokenDropdown] = useState(false);
 
   const { currentWallet: selectedWallet } = useWalletStore();
-
-  const { data: walletClient } = useWalletClient();
-  const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { mutateAsync: createTransaction } = useCreateTransaction();
-  const { mutateAsync: reserveNonce } = useReserveNonce();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
-  const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
+
+  const form = useZodForm({
+    schema: transferSchema,
+    defaultValues: {
+      recipient: "",
+      amount: "",
+    },
   });
 
-  const handleTransfer = async () => {
-    // Validate inputs
-    if (!amount || !address) {
-      notification.error("Please enter amount and address");
-      return;
-    }
-
-    if (!walletClient || !metaMultiSigWallet) {
-      notification.error("Wallet not connected");
-      return;
-    }
-
-    // Validate address format
-    if (!address.startsWith("0x") || address.length !== 42) {
-      notification.error("Invalid address format");
-      return;
-    }
-
-    // Validate amount
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      notification.error("Invalid amount");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // 1. Reserve nonce from backend
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-
-      // 2. Get current threshold and commitments
-      setLoadingState("Preparing transaction...");
-      const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const valueInSmallestUnit = isNativeETH
-        ? parseEther(amount).toString()
-        : parseTokenAmount(amount, selectedToken.decimals);
-      const commitments = await metaMultiSigWallet.read.getCommitments();
-
-      // 3. Calculate txHash (different for ETH vs ERC20)
-      let txHash: `0x${string}`;
-
-      if (isNativeETH) {
-        // ETH: to = recipient, value = amount, data = 0x
-        txHash = (await metaMultiSigWallet.read.getTransactionHash([
-          BigInt(nonce),
-          address as `0x${string}`,
-          BigInt(valueInSmallestUnit),
-          "0x" as `0x${string}`,
-        ])) as `0x${string}`;
-      } else {
-        // ERC20: to = tokenAddress, value = 0, data = transfer(recipient, amount)
-        const encodedData = encodeERC20Transfer(address, BigInt(valueInSmallestUnit));
-        txHash = (await metaMultiSigWallet.read.getTransactionHash([
-          BigInt(nonce),
-          selectedToken.address as `0x${string}`,
-          0n,
-          encodedData as `0x${string}`,
-        ])) as `0x${string}`;
-      }
-
-      // 4. Generate proof
-      const { proof, publicInputs, nullifier } = await generateProof(txHash);
-
-      // 5. Submit to backend
-      setLoadingState("Submitting to backend...");
-      const result = await createTransaction({
-        nonce,
-        type: TxType.TRANSFER,
-        walletAddress: metaMultiSigWallet.address,
-        threshold: Number(currentThreshold),
-        totalSigners: commitments?.length || 0,
-        to: address,
-        value: valueInSmallestUnit,
-        tokenAddress: isNativeETH ? undefined : selectedToken.address,
-        contactId: selectedContactId || undefined,
-        proof: Array.from(proof),
-        publicInputs,
-        nullifier: nullifier.toString(),
-      });
-
-      if (result) {
-        notification.success("Transfer transaction created! Waiting for approvals.");
-      }
-
-      // Reset form
-      setAmount("");
-      setAddress("");
+  const { transfer, isLoading, loadingState } = useTransferTransaction({
+    onSuccess: () => {
+      form.reset();
       setSelectedContactId(null);
-    } catch (error: any) {
-      console.error("Transfer error:", error);
-      notification.error(error.message || "Failed to create transfer");
-    } finally {
-      setIsLoading(false);
-      setLoadingState("");
-    }
+    },
+  });
+
+  const isNativeETH = selectedToken.address === NATIVE_ETH.address;
+
+  const handleTransfer = async (data: TransferFormData) => {
+    await transfer({
+      recipient: data.recipient,
+      amount: data.amount,
+      token: selectedToken,
+      contactId: selectedContactId,
+    });
   };
 
   const handleAddToBatch = async () => {
-    // Validate inputs
-    if (!amount || !address) {
-      notification.error("Please enter amount and address");
+    // Validate form first
+    const isValid = await form.trigger();
+    if (!isValid) {
       return;
     }
 
-    // Validate address format
-    if (!address.startsWith("0x") || address.length !== 42) {
-      notification.error("Invalid address format");
-      return;
-    }
-
-    // Validate amount
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      notification.error("Invalid amount");
-      return;
-    }
+    const data = form.getValues();
 
     // Validate commitment
     if (!commitment) {
@@ -162,11 +64,11 @@ export default function TransferContainer() {
 
     try {
       const valueInSmallestUnit = isNativeETH
-        ? parseEther(amount).toString()
-        : parseTokenAmount(amount, selectedToken.decimals);
+        ? parseEther(data.amount).toString()
+        : parseTokenAmount(data.amount, selectedToken.decimals);
 
       await createBatchItem({
-        recipient: address,
+        recipient: data.recipient,
         amount: valueInSmallestUnit,
         tokenAddress: isNativeETH ? undefined : selectedToken.address,
         contactId: selectedContactId || undefined,
@@ -182,8 +84,7 @@ export default function TransferContainer() {
       );
 
       // Reset form
-      setAmount("");
-      setAddress("");
+      form.reset();
       setSelectedContactId(null);
     } catch (error: any) {
       console.error("Add to batch error:", error);
@@ -192,12 +93,13 @@ export default function TransferContainer() {
   };
 
   const handleContactSelect = (selectedAddress: string, name: string, contactId: string) => {
-    setAddress(selectedAddress);
+    form.setValue("recipient", selectedAddress, { shouldValidate: true });
     setSelectedContactId(contactId);
     notification.info(`Selected: ${name}`);
   };
 
-  const isNativeETH = selectedToken.address === NATIVE_ETH.address;
+  const watchedRecipient = form.watch("recipient");
+  const watchedAmount = form.watch("amount");
 
   return (
     <div className="overflow-hidden relative w-full h-full flex flex-col rounded-lg">
@@ -261,20 +163,25 @@ export default function TransferContainer() {
           </div>
 
           {/* Amount input */}
-          <input
-            type="text"
-            value={amount}
-            placeholder="0.00"
-            onChange={e => {
-              // Only allow numbers and decimal point
-              const value = e.target.value;
-              if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                setAmount(value);
-              }
-            }}
-            className="text-text-primary text-[44px] uppercase outline-none w-[150px]"
-            disabled={isLoading}
-          />
+          <div className="flex flex-col items-center">
+            <input
+              {...form.register("amount")}
+              type="text"
+              placeholder="0.00"
+              onChange={e => {
+                // Only allow numbers and decimal point
+                const value = e.target.value;
+                if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                  form.setValue("amount", value, { shouldValidate: true });
+                }
+              }}
+              className="text-text-primary text-[44px] uppercase outline-none w-[150px]"
+              disabled={isLoading}
+            />
+            {form.formState.errors.amount && (
+              <p className="text-red-500 text-xs mt-1">{form.formState.errors.amount.message}</p>
+            )}
+          </div>
           <span className="text-grey-900 text-2xl font-medium">{selectedToken.symbol}</span>
         </div>
 
@@ -296,10 +203,9 @@ export default function TransferContainer() {
           <div className="flex gap-2.5 items-center justify-center w-full">
             <div className="bg-white grow min-h-px min-w-px relative rounded-[16px] border border-grey-200 shadow-[0px_0px_10.3px_0px_rgba(135,151,255,0.14),0px_0px_89.5px_0px_rgba(0,0,0,0.05)] p-3 justify-between flex-row flex">
               <input
+                {...form.register("recipient")}
                 type="text"
                 placeholder="Enter recipient address (0x...)"
-                value={address}
-                onChange={e => setAddress(e.target.value)}
                 className="text-text-secondary text-[16px] outline-none placeholder:text-text-secondary flex-1 w-full"
                 disabled={isLoading}
               />
@@ -310,13 +216,16 @@ export default function TransferContainer() {
               />
             </div>
           </div>
+          {form.formState.errors.recipient && (
+            <p className="text-red-500 text-sm">{form.formState.errors.recipient.message}</p>
+          )}
         </div>
 
         {/* Action buttons */}
         <div className="flex gap-2 items-center justify-center w-full max-w-xs">
           <button
             onClick={handleAddToBatch}
-            disabled={isLoading || !amount || !address}
+            disabled={isLoading || !watchedAmount || !watchedRecipient}
             className="bg-pink-350 flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
             <span className="font-semibold text-[16px] text-center text-white tracking-[-0.16px]">
@@ -324,8 +233,8 @@ export default function TransferContainer() {
             </span>
           </button>
           <button
-            onClick={handleTransfer}
-            disabled={isLoading || !amount || !address}
+            onClick={form.handleSubmit(handleTransfer)}
+            disabled={isLoading || !watchedAmount || !watchedRecipient}
             className="bg-pink-350 flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
             <span className="font-semibold text-[16px] text-center text-white tracking-[-0.16px]">

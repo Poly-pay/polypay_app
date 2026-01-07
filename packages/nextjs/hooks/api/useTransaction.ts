@@ -1,19 +1,23 @@
 import { useCallback } from "react";
 import { walletContractKeys } from "../app";
 import { useSocketEvent } from "../app/useSocketEvent";
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import {
   ApproveTransactionDto,
-  DenyTransactionDto,
+  DEFAULT_PAGE_SIZE,
+  PaginatedResponse,
   TX_CREATED_EVENT,
   TX_STATUS_EVENT,
   TX_VOTED_EVENT,
+  Transaction,
   TxCreatedEventData,
   TxStatus,
   TxStatusEventData,
   TxVotedEventData,
 } from "@polypay/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { transactionApi } from "~~/services/api";
+import { useIdentityStore } from "~~/services/store";
 
 // ============ Query Keys ============
 
@@ -44,15 +48,24 @@ export const useCreateTransaction = () => {
 };
 
 /**
- * Get all transactions for a wallet
+ * Infinite scroll hook for transactions
  */
-export const useTransactions = (walletAddress: string, status?: TxStatus) => {
-  return useQuery({
+export const useTransactionsInfinite = (walletAddress: string, status?: TxStatus) => {
+  const { accessToken } = useIdentityStore();
+
+  return useInfiniteQuery({
     queryKey: status
-      ? transactionKeys.byWalletAndStatus(walletAddress, status)
-      : transactionKeys.byWallet(walletAddress),
-    queryFn: () => transactionApi.getAll(walletAddress, status),
-    enabled: !!walletAddress,
+      ? [...transactionKeys.byWalletAndStatus(walletAddress, status), "infinite"]
+      : [...transactionKeys.byWallet(walletAddress), "infinite"],
+    queryFn: ({ pageParam }) =>
+      transactionApi.getAll(walletAddress, status, {
+        limit: DEFAULT_PAGE_SIZE,
+        cursor: pageParam,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: PaginatedResponse<Transaction>) =>
+      lastPage.hasMore ? lastPage.nextCursor : undefined,
+    enabled: !!accessToken && !!walletAddress,
   });
 };
 
@@ -60,7 +73,7 @@ export const useTransactions = (walletAddress: string, status?: TxStatus) => {
  * Get single transaction by txId
  */
 export const useTransaction = (txId: number) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: transactionKeys.byTxId(txId),
     queryFn: () => transactionApi.getById(txId),
     enabled: txId > 0,
@@ -89,7 +102,7 @@ export const useDenyTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ txId, dto }: { txId: number; dto: DenyTransactionDto }) => transactionApi.deny(txId, dto),
+    mutationFn: ({ txId }: { txId: number }) => transactionApi.deny(txId),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
@@ -142,7 +155,7 @@ export const useReserveNonce = () => {
  * Get pending transactions for a wallet
  */
 export const usePendingTransactions = (walletAddress: string) => {
-  return useTransactions(walletAddress, TxStatus.PENDING);
+  return useTransactionsInfinite(walletAddress, TxStatus.PENDING);
 };
 
 /**

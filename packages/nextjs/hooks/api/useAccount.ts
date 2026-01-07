@@ -1,5 +1,6 @@
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import { UpdateAccountDto } from "@polypay/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountApi } from "~~/services/api";
 
 export const accountKeys = {
@@ -21,14 +22,14 @@ export const useCreateAccount = () => {
 };
 
 export const useMe = () => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: accountKeys.me,
     queryFn: () => accountApi.getMe(),
   });
 };
 
 export const useMyWallets = () => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: accountKeys.meWallets,
     queryFn: () => accountApi.getMyWallets(),
   });

@@ -2,111 +2,22 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import {
-  TxStatus as ApiTxStatus,
-  TxType as ApiTxType,
-  Transaction,
-  encodeAddSigner,
-  encodeBatchTransfer,
-  encodeBatchTransferMulti,
-  encodeERC20Transfer,
-  encodeRemoveSigner,
-  encodeUpdateThreshold,
-  horizenTestnet,
-} from "@polypay/shared";
+import { Transaction, TxStatus, TxType, VoteType, horizenTestnet } from "@polypay/shared";
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
-import { useWalletClient } from "wagmi";
-import { NATIVE_ETH, getTokenByAddress } from "~~/constants";
-import { useMetaMultiSigWallet, useWalletThreshold } from "~~/hooks";
-import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
-import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
-import { useIdentityStore } from "~~/services/store/useIdentityStore";
+import { getTokenByAddress } from "~~/constants";
+import {
+  BatchTransfer,
+  Member,
+  TransactionRowData,
+  VoteStatus,
+  useTransactionVote,
+  useWalletCommitments,
+  useWalletThreshold,
+} from "~~/hooks";
 import { formatAddress, formatAmount } from "~~/utils/format";
-import { notification } from "~~/utils/scaffold-eth";
-
-// ============ Types ============
-type TxType = "transfer" | "add_signer" | "remove_signer" | "set_threshold" | "batch";
-type VoteStatus = "approved" | "denied" | "waiting";
-type TxStatus = "pending" | "executed" | "failed";
-
-interface Member {
-  commitment: string;
-  isInitiator: boolean;
-  isMe: boolean;
-  voteStatus: VoteStatus;
-}
-
-interface BatchTransfer {
-  recipient: string;
-  amount: string;
-  contactId?: string;
-  contactName?: string;
-  tokenAddress?: string;
-}
-
-interface TransactionRowData {
-  id: string;
-  txId: number;
-  type: TxType;
-  nonce: number;
-  status: TxStatus;
-  txHash?: string;
-
-  // Transfer
-  amount?: string;
-  recipientAddress?: string;
-  tokenAddress?: string;
-
-  // Add/Remove Signer
-  signerCommitment?: string;
-
-  // Set Threshold
-  oldThreshold?: number;
-  newThreshold?: number;
-
-  // Batch
-  batchData?: BatchTransfer[];
-
-  contact?: {
-    id: string;
-    name: string;
-    address: string;
-  };
-
-  totalSigners: number;
-
-  // Voting
-  members: Member[];
-  votedCount: number;
-  threshold: number;
-  approveCount: number;
-
-  // Current user vote
-  myVoteStatus: VoteStatus | null;
-
-  // Wallet
-  walletAddress: string;
-}
 
 // ============ Helper: Convert API Transaction to Row Data ============
 export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
-  // Map API type to UI type
-  const typeMap: Record<ApiTxType, TxType> = {
-    TRANSFER: "transfer",
-    ADD_SIGNER: "add_signer",
-    REMOVE_SIGNER: "remove_signer",
-    SET_THRESHOLD: "set_threshold",
-    BATCH: "batch",
-  };
-
-  // Map API status to UI status
-  const statusMap: Record<ApiTxStatus, TxStatus> = {
-    PENDING: "pending",
-    EXECUTED: "executed",
-    FAILED: "failed",
-  };
-
-  // Build members from votes
   const members: Member[] = tx.votes.map(vote => ({
     commitment: vote.voterCommitment,
     isInitiator: vote.voterCommitment === tx.createdBy,
@@ -114,9 +25,12 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     voteStatus: vote.voteType === "APPROVE" ? "approved" : "denied",
   }));
 
-  // Find my vote
   const myVote = tx.votes.find(v => v.voterCommitment === myCommitment);
-  const myVoteStatus: VoteStatus | null = myVote ? (myVote.voteType === "APPROVE" ? "approved" : "denied") : null;
+  const myVoteStatus: VoteStatus | null = myVote
+    ? myVote.voteType === VoteType.APPROVE
+      ? "approved"
+      : "denied"
+    : null;
 
   // Calculate approve count
   const approveCount = tx.votes.filter(v => v.voteType === "APPROVE").length;
@@ -134,8 +48,8 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   return {
     id: tx.id,
     txId: tx.txId,
-    type: typeMap[tx.type],
-    status: statusMap[tx.status],
+    type: tx.type,
+    status: tx.status,
     nonce: tx.nonce,
     txHash: tx.txHash || undefined,
     amount: tx.value || undefined,
@@ -145,7 +59,6 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
     batchData,
-    totalSigners: tx.totalSigners,
     members,
     votedCount: tx.votes.length,
     threshold: tx.threshold,
@@ -179,11 +92,9 @@ function VoteBadge({ status }: { status: VoteStatus }) {
   if (status === "approved") {
     return <span className="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full">Approved</span>;
   }
-
   if (status === "denied") {
     return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Denied</span>;
   }
-
   return (
     <span className="px-3 py-1 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-full">
       Waiting for confirm...
@@ -193,7 +104,7 @@ function VoteBadge({ status }: { status: VoteStatus }) {
 
 // ============ Status Badge Component ============
 function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) {
-  if (status === "executed") {
+  if (status === TxStatus.EXECUTED) {
     return (
       <a
         href={txHash ? `${horizenTestnet.blockExplorers.default.url}/tx/${txHash}` : "#"}
@@ -206,11 +117,9 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
       </a>
     );
   }
-
-  if (status === "failed") {
+  if (status === TxStatus.FAILED) {
     return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Failed</span>;
   }
-
   return null;
 }
 
@@ -268,9 +177,10 @@ function ActionButtons({
     </div>
   );
 }
-// ============ Transaction Header (Purple) Component ============
+
+// ============ Transaction Display Components ============
 function TxHeader({ tx }: { tx: TransactionRowData }) {
-  if (tx.type === "transfer") {
+  if (tx.type === TxType.TRANSFER) {
     return (
       <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <h3 className="text-lg font-semibold mb-2">Transfer</h3>
@@ -300,7 +210,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
     );
   }
 
-  if (tx.type === "add_signer") {
+  if (tx.type === TxType.ADD_SIGNER) {
     return (
       <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <h3 className="text-lg font-semibold mb-4">Add Signer</h3>
@@ -313,7 +223,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
     );
   }
 
-  if (tx.type === "remove_signer") {
+  if (tx.type === TxType.REMOVE_SIGNER) {
     return (
       <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <h3 className="text-lg font-semibold mb-2">Remove Signer</h3>
@@ -326,7 +236,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
     );
   }
 
-  if (tx.type === "set_threshold") {
+  if (tx.type === TxType.SET_THRESHOLD) {
     return (
       <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <h3 className="text-lg font-semibold mb-2">Set Threshold</h3>
@@ -339,7 +249,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
     );
   }
 
-  if (tx.type === "batch" && tx.batchData) {
+  if (tx.type === TxType.BATCH && tx.batchData) {
     return (
       <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <div className="flex items-center justify-between mb-3">
@@ -348,7 +258,6 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
             <span>{tx.batchData.length} transfers</span>
           </div>
         </div>
-        {/* Batch transfers list */}
         <div className="space-y-2 max-h-[200px] overflow-y-auto">
           {tx.batchData.map((transfer, index) => (
             <div key={index} className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg">
@@ -364,7 +273,6 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
               </div>
               <ArrowRight size={16} className="text-white/60" />
               <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                {" "}
                 {transfer.contactName ? (
                   <>
                     <span className="font-medium">{transfer.contactName}</span>
@@ -384,7 +292,6 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
   return null;
 }
 
-// ============ Member List Component ============
 function MemberList({
   members,
   votedCount,
@@ -436,26 +343,24 @@ function MemberList({
   );
 }
 
-// ============ Transaction Type Label ============
 function getTxTypeLabel(type: TxType): string {
   switch (type) {
-    case "transfer":
+    case TxType.TRANSFER:
       return "Transfer";
-    case "add_signer":
+    case TxType.ADD_SIGNER:
       return "Add Signer";
-    case "remove_signer":
+    case TxType.REMOVE_SIGNER:
       return "Remove Signer";
-    case "set_threshold":
+    case TxType.SET_THRESHOLD:
       return "Threshold";
-    case "batch":
+    case TxType.BATCH:
       return "Batch";
   }
 }
 
-// ============ Transaction Details (Middle) ============
 function TxDetails({ tx }: { tx: TransactionRowData }) {
   switch (tx.type) {
-    case "transfer":
+    case TxType.TRANSFER:
       return (
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -472,7 +377,8 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
         </div>
       );
 
-    case "add_signer":
+    case TxType.ADD_SIGNER:
+    case TxType.REMOVE_SIGNER:
       return (
         <div className="flex items-center gap-2">
           <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
@@ -481,16 +387,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
         </div>
       );
 
-    case "remove_signer":
-      return (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
-            {tx.signerCommitment?.slice(0, 8)}...{tx.signerCommitment?.slice(-6)}
-          </span>
-        </div>
-      );
-
-    case "set_threshold":
+    case TxType.SET_THRESHOLD:
       return (
         <div className="flex items-center gap-3">
           <span className="font-semibold text-gray-800">{tx.oldThreshold}</span>
@@ -499,7 +396,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
         </div>
       );
 
-    case "batch":
+    case TxType.BATCH:
       if (!tx.batchData || tx.batchData.length === 0) {
         return <span className="text-gray-500">No transfers</span>;
       }
@@ -508,172 +405,43 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
           <span className="text-sm text-grey-1000 bg-grey-100 px-3 py-1 rounded-3xl">
             {tx.batchData.length} transfer{tx.batchData.length > 1 ? "s" : ""}
           </span>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{tx.batchData.length} transfers</span>
-          </div>
         </div>
       );
   }
 }
 
-// ============ Main TransactionRow Component ============
+// ============ Main Component ============
 interface TransactionRowProps {
   tx: TransactionRowData;
   onSuccess?: () => void;
 }
 
 export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
-  const { commitment } = useIdentityStore();
   const [expanded, setExpanded] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState("");
-
-  const { data: walletClient } = useWalletClient();
-  const metaMultiSigWallet = useMetaMultiSigWallet();
-
-  const { mutateAsync: approve } = useApproveTransaction();
-  const { mutateAsync: deny } = useDenyTransaction();
-  const { mutateAsync: executeOnChain } = useExecuteTransaction();
-  const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
-  });
   const [isExecutable, setIsExecutable] = useState(false);
 
   const { data: walletThreshold } = useWalletThreshold();
+  const { data: commitmentsData } = useWalletCommitments();
 
-  // ============ Handle Approve ============
+  // Get totalSigners realtime from wallet commitments
+  const totalSigners = commitmentsData?.length || 0;
+
+  const { approve, deny, execute, isLoading: loading, loadingState } = useTransactionVote({ onSuccess });
+
   const handleApprove = async () => {
-    if (!walletClient || !metaMultiSigWallet) {
-      throw new Error("Wallet not connected");
-    }
-
-    if (!commitment) {
-      notification.error("No commitment found");
-      return;
-    }
-
-    // 1. Build callData based on tx type
-    let callData: `0x${string}` = "0x";
-    let to: `0x${string}` = tx.recipientAddress as `0x${string}`;
-    let value = BigInt(tx.amount || "0");
-
-    if (tx.type === "transfer") {
-      // Check if ERC20 transfer
-      if (tx.tokenAddress && tx.tokenAddress !== NATIVE_ETH.address) {
-        to = tx.tokenAddress as `0x${string}`;
-        value = 0n;
-        callData = encodeERC20Transfer(tx.recipientAddress!, BigInt(tx.amount || "0")) as `0x${string}`;
-      }
-    } else {
-      to = tx.walletAddress as `0x${string}`;
-      value = 0n;
-
-      if (tx.type === "add_signer") {
-        callData = encodeAddSigner(tx.signerCommitment!, tx.newThreshold!);
-      } else if (tx.type === "remove_signer") {
-        callData = encodeRemoveSigner(tx.signerCommitment!, tx.newThreshold!);
-      } else if (tx.type === "set_threshold") {
-        callData = encodeUpdateThreshold(tx.newThreshold!);
-      } else if (tx.type === "batch" && tx.batchData) {
-        const recipients = tx.batchData.map(item => item.recipient as `0x${string}`);
-        const amounts = tx.batchData.map(item => BigInt(item.amount));
-        const tokenAddresses = tx.batchData.map(item => item.tokenAddress || NATIVE_ETH.address);
-
-        // Check if any ERC20 token in batch
-        const hasERC20 = tokenAddresses.some(addr => addr !== NATIVE_ETH.address);
-
-        callData = hasERC20
-          ? encodeBatchTransferMulti(recipients, amounts, tokenAddresses)
-          : encodeBatchTransfer(recipients, amounts);
-      }
-    }
-
-    // 2. Get txHash
-    const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-      BigInt(tx.nonce),
-      to,
-      value,
-      callData,
-    ])) as `0x${string}`;
-
-    setLoading(true);
-    try {
-      // 1. Generate proof
-      const proofData = await generateProof(txHash);
-
-      // 2. Submit to backend
-      setLoadingState("Submitting to backend...");
-      await approve({
-        txId: tx.txId,
-        dto: {
-          proof: proofData.proof,
-          publicInputs: proofData.publicInputs,
-          nullifier: proofData.nullifier,
-        },
-      });
-
-      notification.success("Vote submitted!");
-      onSuccess?.();
-    } catch (error: any) {
-      console.error("Approve error:", error);
-      notification.error(error.message || "Failed to approve");
-    } finally {
-      setLoading(false);
-      setLoadingState("");
-    }
+    await approve(tx);
   };
 
-  // ============ Handle Deny ============
   const handleDeny = async () => {
-    setLoading(true);
-    try {
-      if (!commitment) {
-        notification.error("No commitment found");
-        return;
-      }
-
-      setLoadingState("Submitting deny vote...");
-      await deny({
-        txId: tx.txId,
-        dto: {
-          totalSigners: tx.totalSigners,
-        },
-      });
-
-      notification.success("Deny vote submitted!");
-      onSuccess?.();
-    } catch (error: any) {
-      console.error("Deny error:", error);
-      notification.error(error.message || "Failed to deny");
-    } finally {
-      setLoading(false);
-      setLoadingState("");
-    }
+    await deny(tx);
   };
 
-  // ============ Handle Execute ============
   const handleExecute = async (txId: number) => {
-    setLoading(true);
-    try {
-      setLoadingState("Executing on-chain...");
-
-      const result = await executeOnChain(txId);
-
-      console.log("Transaction executed:", result.txHash);
-      notification.success("Transaction executed successfully!");
-      onSuccess?.();
-    } catch (error: any) {
-      console.error("Execute error:", error);
-      notification.error(error.message || "Failed to execute");
-    } finally {
-      setLoading(false);
-      setLoadingState("");
-    }
+    await execute(txId);
   };
 
-  // ============ Render Right Side ============
   const renderRightSide = () => {
-    if (tx.status === "executed" || tx.status === "failed") {
+    if (tx.status === TxStatus.EXECUTED || tx.status === TxStatus.FAILED) {
       return <StatusBadge status={tx.status} txHash={tx.txHash} />;
     }
 
@@ -694,7 +462,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
 
   useEffect(() => {
     const checkExecutable = async () => {
-      if (tx.status !== "pending" || !metaMultiSigWallet) {
+      if (tx.status !== TxStatus.PENDING) {
         setIsExecutable(false);
         return;
       }
@@ -708,7 +476,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     };
 
     checkExecutable();
-  }, [tx.status, tx.approveCount, metaMultiSigWallet, walletThreshold]);
+  }, [tx.status, tx.approveCount, walletThreshold]);
 
   return (
     <div className="w-full mb-2">
@@ -723,7 +491,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
         className="flex items-center justify-between p-4 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-4">
-          {/* Nonce */}
           {expanded ? (
             <ChevronDown size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
           ) : (
@@ -743,7 +510,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
             members={tx.members}
             votedCount={tx.votedCount}
             threshold={Number(walletThreshold)}
-            totalSigners={tx.totalSigners}
+            totalSigners={totalSigners}
           />
         </div>
       )}

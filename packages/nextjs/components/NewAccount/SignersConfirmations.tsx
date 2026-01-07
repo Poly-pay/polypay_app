@@ -1,43 +1,38 @@
 "use client";
 
 import React from "react";
-import { Signer } from "./NewWalletContainer";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import { UseFormReturn, useFieldArray } from "react-hook-form";
+import { IWalletFormData } from "~~/types/form/wallet";
 
 interface SignersConfirmationsProps {
   className?: string;
-  signers: Signer[];
-  threshold: number;
-  onUpdateSigners: (signers: Signer[]) => void;
-  onUpdateThreshold: (threshold: number) => void;
+  form: UseFormReturn<IWalletFormData>;
   onGoBack: () => void;
 }
 
-const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({
-  className,
-  signers,
-  threshold,
-  onUpdateSigners,
-  onUpdateThreshold,
-  onGoBack,
-}) => {
-  const handleSignerChange = (index: number, field: keyof Signer, value: string) => {
-    const newSigners = [...signers];
-    newSigners[index] = { ...newSigners[index], [field]: value };
-    onUpdateSigners(newSigners);
-  };
+const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, form, onGoBack }) => {
+  const { register, watch, setValue } = form;
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "signers",
+  });
+
+  const signers = watch("signers");
+  const threshold = watch("threshold");
+
   const handleAddSigner = () => {
-    onUpdateSigners([...signers, { name: "", commitment: "" }]);
+    append({ name: "", commitment: "" });
   };
 
   const handleRemoveSigner = (index: number) => {
-    if (signers.length <= 1) return;
-    const newSigners = signers.filter((_, i) => i !== index);
-    onUpdateSigners(newSigners);
+    if (fields.length <= 1) return;
+    remove(index);
 
-    const validCount = newSigners.filter(s => s?.name?.trim() !== "" && s.commitment.trim() !== "").length;
+    const newSigners = signers.filter((_, i) => i !== index);
+    const validCount = newSigners.filter(s => s?.commitment?.trim() !== "").length;
     if (threshold > validCount && validCount > 0) {
-      onUpdateThreshold(validCount);
+      setValue("threshold", validCount);
     }
   };
 
@@ -70,23 +65,21 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({
             transactions as team members.
           </span>
 
-          {signers.map((signer, index) => (
-            <div key={index} className="flex gap-2 items-center">
+          {fields.map((field, index) => (
+            <div key={field.id} className="flex gap-2 items-center">
               <input
                 type="text"
-                value={signer.name}
-                onChange={e => handleSignerChange(index, "name", e.target.value)}
+                {...register(`signers.${index}.name`)}
                 placeholder="Signer Name"
                 className="w-[150px] h-[48px] px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
               />
               <input
                 type="text"
-                value={signer.commitment}
-                onChange={e => handleSignerChange(index, "commitment", e.target.value)}
+                {...register(`signers.${index}.commitment`)}
                 placeholder="Signer commitment"
                 className="w-[300px] h-[48px] flex-1 px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
               />
-              {signers.length > 1 && (
+              {fields.length > 1 && (
                 <Trash2 className="h-4 w-4 cursor-pointer" onClick={() => handleRemoveSigner(index)} />
               )}
             </div>
@@ -112,20 +105,20 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({
             <input
               className="w-[220px] h-[48px] flex-1 px-4 py-3 mr-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
               placeholder="Enter threshold number"
-              onChange={e => {
-                const value = Number(e.target.value);
-                const maxValue = signers.filter(s => s?.name?.trim() !== "" && s.commitment.trim() !== "").length || 1;
+              {...register("threshold", {
+                valueAsNumber: true,
+                onChange: e => {
+                  const value = Number(e.target.value);
+                  const maxValue = signers.filter(s => s?.commitment?.trim() !== "").length || 1;
 
-                if (value < 1) {
-                  onUpdateThreshold(1);
-                } else if (value > maxValue) {
-                  onUpdateThreshold(maxValue);
-                } else {
-                  onUpdateThreshold(value);
-                }
-              }}
+                  if (value < 1) {
+                    setValue("threshold", 1);
+                  } else if (value > maxValue) {
+                    setValue("threshold", maxValue);
+                  }
+                },
+              })}
               type="number"
-              defaultValue={1}
               max={signers.length}
             />
             <span className="text-gray-600 text-[16px]">/ out of {signers.length} signers</span>
