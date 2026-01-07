@@ -2,15 +2,11 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { TxType, encodeERC20Transfer } from "@polypay/shared";
 import { parseEther } from "viem";
-import { useWalletClient } from "wagmi";
 import { ContactPicker } from "~~/components/address-book/ContactPicker";
 import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "~~/constants";
-import { useMetaMultiSigWallet } from "~~/hooks";
+import { useTransferTransaction } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
-import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
-import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useZodForm } from "~~/hooks/form";
 import { TransferFormData, transferSchema } from "~~/lib/form";
 import { useIdentityStore, useWalletStore } from "~~/services/store";
@@ -18,23 +14,12 @@ import { notification } from "~~/utils/scaffold-eth";
 
 export default function TransferContainer() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState("");
-
   const [selectedToken, setSelectedToken] = useState<Token>(NATIVE_ETH);
   const [showTokenDropdown, setShowTokenDropdown] = useState(false);
 
   const { currentWallet: selectedWallet } = useWalletStore();
-
-  const { data: walletClient } = useWalletClient();
-  const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { mutateAsync: createTransaction } = useCreateTransaction();
-  const { mutateAsync: reserveNonce } = useReserveNonce();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
-  const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
-  });
 
   const form = useZodForm({
     schema: transferSchema,
@@ -44,84 +29,22 @@ export default function TransferContainer() {
     },
   });
 
+  const { transfer, isLoading, loadingState } = useTransferTransaction({
+    onSuccess: () => {
+      form.reset();
+      setSelectedContactId(null);
+    },
+  });
+
   const isNativeETH = selectedToken.address === NATIVE_ETH.address;
 
   const handleTransfer = async (data: TransferFormData) => {
-    if (!walletClient || !metaMultiSigWallet) {
-      notification.error("Wallet not connected");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // 1. Reserve nonce from backend
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-
-      // 2. Get current threshold and commitments
-      setLoadingState("Preparing transaction...");
-      const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const valueInSmallestUnit = isNativeETH
-        ? parseEther(data.amount).toString()
-        : parseTokenAmount(data.amount, selectedToken.decimals);
-      const commitments = await metaMultiSigWallet.read.getCommitments();
-
-      // 3. Calculate txHash (different for ETH vs ERC20)
-      let txHash: `0x${string}`;
-
-      if (isNativeETH) {
-        // ETH: to = recipient, value = amount, data = 0x
-        txHash = (await metaMultiSigWallet.read.getTransactionHash([
-          BigInt(nonce),
-          data.recipient as `0x${string}`,
-          BigInt(valueInSmallestUnit),
-          "0x" as `0x${string}`,
-        ])) as `0x${string}`;
-      } else {
-        // ERC20: to = tokenAddress, value = 0, data = transfer(recipient, amount)
-        const encodedData = encodeERC20Transfer(data.recipient, BigInt(valueInSmallestUnit));
-        txHash = (await metaMultiSigWallet.read.getTransactionHash([
-          BigInt(nonce),
-          selectedToken.address as `0x${string}`,
-          0n,
-          encodedData as `0x${string}`,
-        ])) as `0x${string}`;
-      }
-
-      // 4. Generate proof
-      const { proof, publicInputs, nullifier } = await generateProof(txHash);
-
-      // 5. Submit to backend
-      setLoadingState("Submitting to backend...");
-      const result = await createTransaction({
-        nonce,
-        type: TxType.TRANSFER,
-        walletAddress: metaMultiSigWallet.address,
-        threshold: Number(currentThreshold),
-        totalSigners: commitments?.length || 0,
-        to: data.recipient,
-        value: valueInSmallestUnit,
-        tokenAddress: isNativeETH ? undefined : selectedToken.address,
-        contactId: selectedContactId || undefined,
-        proof: Array.from(proof),
-        publicInputs,
-        nullifier: nullifier.toString(),
-      });
-
-      if (result) {
-        notification.success("Transfer transaction created! Waiting for approvals.");
-      }
-
-      // Reset form
-      form.reset();
-      setSelectedContactId(null);
-    } catch (error: any) {
-      console.error("Transfer error:", error);
-      notification.error(error.message || "Failed to create transfer");
-    } finally {
-      setIsLoading(false);
-      setLoadingState("");
-    }
+    await transfer({
+      recipient: data.recipient,
+      amount: data.amount,
+      token: selectedToken,
+      contactId: selectedContactId,
+    });
   };
 
   const handleAddToBatch = async () => {

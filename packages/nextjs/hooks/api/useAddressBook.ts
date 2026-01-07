@@ -1,5 +1,6 @@
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import { UpdateAddressGroupDto, UpdateContactDto } from "@polypay/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addressBookApi } from "~~/services/api";
 
 export const addressBookKeys = {
@@ -11,7 +12,7 @@ export const addressBookKeys = {
 };
 
 export const useGroups = (walletId: string | null) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: addressBookKeys.groups(walletId || ""),
     queryFn: () => addressBookApi.groups.getAll(walletId!),
     enabled: !!walletId,
@@ -19,7 +20,7 @@ export const useGroups = (walletId: string | null) => {
 };
 
 export const useGroup = (id: string | null) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: addressBookKeys.group(id || ""),
     queryFn: () => addressBookApi.groups.getById(id!),
     enabled: !!id,
@@ -69,7 +70,7 @@ export const useDeleteGroup = (walletId: string) => {
 };
 
 export const useContacts = (walletId: string | null, groupId?: string) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: addressBookKeys.contacts(walletId || "", groupId),
     queryFn: () => addressBookApi.contacts.getAll(walletId!, groupId),
     enabled: !!walletId,
@@ -81,7 +82,7 @@ export const useContacts = (walletId: string | null, groupId?: string) => {
 };
 
 export const useContact = (id: string | null) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: addressBookKeys.contact(id || ""),
     queryFn: () => addressBookApi.contacts.getById(id!),
     enabled: !!id,
