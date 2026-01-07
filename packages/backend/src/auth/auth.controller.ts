@@ -27,14 +27,8 @@ export class AuthController {
         value: {
           commitment:
             '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-          proof: {
-            a: ['0x123...', '0x456...'],
-            b: [
-              ['0x789...', '0xabc...'],
-              ['0xdef...', '0x012...'],
-            ],
-            c: ['0x345...', '0x678...'],
-          },
+          proof: [47, 5, 66, 187, 'etc...'],
+          publicInputs: ['0x084c2de....'],
         },
       },
     },

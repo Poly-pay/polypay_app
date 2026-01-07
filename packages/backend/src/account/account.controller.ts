@@ -44,8 +44,7 @@ export class AccountController {
         value: {
           commitment:
             '0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890',
-          publicKey:
-            '0x04a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890',
+          name: 'John Doe',
         },
       },
     },
@@ -112,12 +111,9 @@ export class AccountController {
     type: UpdateAccountDto,
     examples: {
       example1: {
-        summary: 'Update account metadata',
+        summary: 'Update account name',
         value: {
-          metadata: {
-            displayName: 'John Doe',
-            avatar: 'https://example.com/avatar.png',
-          },
+          name: 'John Doe',
         },
       },
     },

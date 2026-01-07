@@ -48,21 +48,9 @@ export class WalletController {
           address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
           threshold: 2,
           name: 'Team Treasury',
-          memberCommitments: [
-            '0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890',
-            '0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890ab',
-            '0x3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890abcd',
-          ],
-        },
-      },
-      example2: {
-        summary: '1-of-1 personal wallet',
-        value: {
-          address: '0x8ba1f109551bD432803012645Ac136ddd64DBA72',
-          threshold: 1,
-          name: 'My Personal Wallet',
-          memberCommitments: [
-            '0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890',
+          signers: [
+            '18712425590517920354542306734510523399880577119526949113387807668582286743210',
+            '29312425590517920354542306734510523399880577119526949113387807668582286743210',
           ],
         },
       },
@@ -127,16 +115,6 @@ export class WalletController {
         summary: 'Update wallet name',
         value: {
           name: 'Updated Team Treasury',
-        },
-      },
-      example2: {
-        summary: 'Update wallet metadata',
-        value: {
-          name: 'Marketing Budget Wallet',
-          metadata: {
-            description: 'Wallet for marketing expenses',
-            category: 'operational',
-          },
         },
       },
     },

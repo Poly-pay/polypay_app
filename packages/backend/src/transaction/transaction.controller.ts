@@ -57,14 +57,7 @@ export class TransactionController {
           value: '0',
           data: '0xa9059cbb0000000000000000000000008ba1f109551bd432803012645ac136ddd64dba720000000000000000000000000000000000000000000000000000000005f5e100',
           nonce: 1,
-          proof: {
-            a: ['0x123...', '0x456...'],
-            b: [
-              ['0x789...', '0xabc...'],
-              ['0xdef...', '0x012...'],
-            ],
-            c: ['0x345...', '0x678...'],
-          },
+          proof: [47, 5, 66, 187, 'etc...'],
           publicSignals: ['0x111...', '0x222...', '0x333...'],
         },
       },
@@ -76,14 +69,7 @@ export class TransactionController {
           value: '1000000000000000000',
           data: '0x',
           nonce: 2,
-          proof: {
-            a: ['0x123...', '0x456...'],
-            b: [
-              ['0x789...', '0xabc...'],
-              ['0xdef...', '0x012...'],
-            ],
-            c: ['0x345...', '0x678...'],
-          },
+          proof: [47, 5, 66, 187, 'etc...'],
           publicSignals: ['0x111...', '0x222...', '0x333...'],
         },
       },
@@ -121,7 +107,7 @@ export class TransactionController {
     name: 'status',
     required: false,
     description: 'Transaction status filter',
-    enum: ['PENDING', 'APPROVED', 'REJECTED', 'EXECUTED'],
+    enum: ['PENDING', 'EXECUTED', 'FAILED'],
   })
   @ApiResponse({ status: 200, description: 'List of transactions' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
@@ -191,14 +177,7 @@ export class TransactionController {
       example1: {
         summary: 'Approve transaction',
         value: {
-          proof: {
-            a: ['0x123...', '0x456...'],
-            b: [
-              ['0x789...', '0xabc...'],
-              ['0xdef...', '0x012...'],
-            ],
-            c: ['0x345...', '0x678...'],
-          },
+          proof: [47, 5, 66, 187, 'etc...'],
           publicSignals: ['0x111...', '0x222...', '0x333...'],
         },
       },
@@ -240,17 +219,6 @@ export class TransactionController {
     type: 'number',
     description: 'Transaction ID (auto-incrementing integer)',
     example: 123,
-  })
-  @ApiBody({
-    type: DenyTransactionDto,
-    examples: {
-      example1: {
-        summary: 'Reject transaction',
-        value: {
-          reason: 'Insufficient justification for this expense',
-        },
-      },
-    },
   })
   @ApiResponse({ status: 200, description: 'Transaction denied successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })

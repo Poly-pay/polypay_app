@@ -284,8 +284,6 @@ Real-time notifications are available via WebSocket at:
 ws://localhost:4000
 ```
 
-See [Events Gateway documentation](../events-gateway.md) for details.
-
 ## OpenAPI Specification
 
 The full OpenAPI 3.0 specification is available at:
@@ -309,7 +307,6 @@ curl -X POST http://localhost:4000/api/accounts \
   -H "Content-Type: application/json" \
   -d '{
     "commitment": "0x1234567890abcdef...",
-    "publicKey": "0xabcdef1234567890..."
   }'
 ```
 
@@ -351,7 +348,6 @@ curl -X POST http://localhost:4000/api/auth/refresh \
 
 ## Additional Resources
 
-- [Backend README](../../packages/backend/README.md) - Backend setup and development
 - [Getting Started](./getting-started.md) - Project setup guide
 - [Architecture](../architecture.md) - System architecture overview
 - [Zero-Knowledge Implementation](../zero-knowledge-implementation.md) - ZK proof details
