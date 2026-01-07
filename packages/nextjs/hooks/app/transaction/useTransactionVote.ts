@@ -57,7 +57,6 @@ export interface TransactionRowData {
     name: string;
     address: string;
   };
-  totalSigners: number;
   members: Member[];
   votedCount: number;
   threshold: number;
@@ -187,9 +186,6 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       setLoadingState("Submitting deny vote...");
       await denyApi({
         txId: tx.txId,
-        dto: {
-          totalSigners: tx.totalSigners,
-        },
       });
 
       notification.success("Deny vote submitted!");

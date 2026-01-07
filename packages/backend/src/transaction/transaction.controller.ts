@@ -22,7 +22,6 @@ import { TransactionService } from './transaction.service';
 import {
   CreateTransactionDto,
   ApproveTransactionDto,
-  DenyTransactionDto,
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
 } from '@polypay/shared';
@@ -87,9 +86,9 @@ export class TransactionController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Get all transactions for a wallet with pagination',
+    summary: 'Get transactions for a multisig wallet with pagination',
     description:
-      'Retrieve all transactions for a specific wallet. Optionally filter by status (PENDING, EXECUTED, FAILED).',
+      'Retrieve all transactions for a specific multisig wallet. Optionally filter by status (PENDING, EXECUTED, FAILED).',
   })
   @ApiQuery({
     name: 'walletAddress',
@@ -236,6 +235,7 @@ export class TransactionController {
     description: 'Transaction ID (auto-incrementing integer)',
     example: 123,
   })
+  @ApiParam({ name: 'txId', type: 'number', description: 'Transaction ID' })
   @ApiResponse({ status: 200, description: 'Transaction denied successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   @ApiResponse({
@@ -246,9 +246,8 @@ export class TransactionController {
   async deny(
     @CurrentUser() user: Account,
     @Param('txId', ParseIntPipe) txId: number,
-    @Body() dto: DenyTransactionDto,
   ) {
-    return this.transactionService.deny(txId, dto, user.commitment);
+    return this.transactionService.deny(txId, user.commitment);
   }
 
   /**

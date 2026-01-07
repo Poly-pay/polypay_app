@@ -10,7 +10,6 @@ import { ZkVerifyService } from '@/zkverify/zkverify.service';
 import {
   CreateTransactionDto,
   ApproveTransactionDto,
-  DenyTransactionDto,
   TxType,
   encodeAddSigner,
   encodeRemoveSigner,
@@ -94,8 +93,6 @@ export class TransactionService {
       );
     }
 
-    const totalSigners = wallet.accounts.length;
-
     // Create batch data
     let batchData: string | null = null;
 
@@ -159,7 +156,6 @@ export class TransactionService {
           createdBy: userCommitment,
           status: 'PENDING',
           batchData,
-          totalSigners,
         },
       });
 
@@ -322,7 +318,7 @@ export class TransactionService {
   /**
    * Deny transaction
    */
-  async deny(txId: number, dto: DenyTransactionDto, userCommitment: string) {
+  async deny(txId: number, userCommitment: string) {
     // 1. Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -366,7 +362,7 @@ export class TransactionService {
     this.logger.log(`Vote DENY added for txId: ${txId}`);
 
     // 4. Check if transaction should fail
-    await this.checkIfFailed(txId, dto.totalSigners);
+    await this.checkIfFailed(txId);
 
     const updatedTx = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -839,7 +835,7 @@ export class TransactionService {
     data: string;
   } {
     switch (transaction.type) {
-      case 'TRANSFER':
+      case TxType.TRANSFER:
         // ERC20 transfer
         if (transaction?.tokenAddress) {
           return {
@@ -858,7 +854,7 @@ export class TransactionService {
           data: '0x',
         };
 
-      case 'ADD_SIGNER':
+      case TxType.ADD_SIGNER:
         return {
           to: transaction.walletAddress,
           value: '0',
@@ -868,7 +864,7 @@ export class TransactionService {
           ),
         };
 
-      case 'REMOVE_SIGNER':
+      case TxType.REMOVE_SIGNER:
         return {
           to: transaction.walletAddress,
           value: '0',
@@ -878,14 +874,14 @@ export class TransactionService {
           ),
         };
 
-      case 'SET_THRESHOLD':
+      case TxType.SET_THRESHOLD:
         return {
           to: transaction.walletAddress,
           value: '0',
           data: encodeUpdateThreshold(transaction.newThreshold),
         };
 
-      case 'BATCH':
+      case TxType.BATCH:
         const batchData = JSON.parse(transaction.batchData || '[]');
         const recipients = batchData.map((item: any) => item.recipient);
         const amounts = batchData.map((item: any) => BigInt(item.amount));
@@ -921,13 +917,25 @@ export class TransactionService {
     }
   }
 
-  private async checkIfFailed(txId: number, totalSigners: number) {
+  /**
+   * Check if transaction should be marked as FAILED
+   * Query totalSigners realtime from wallet.accounts
+   */
+  private async checkIfFailed(txId: number) {
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
-      include: { votes: true },
+      include: {
+        votes: true,
+        wallet: {
+          include: { accounts: true },
+        },
+      },
     });
 
     if (!transaction) return;
+
+    // Get totalSigners realtime
+    const totalSigners = transaction.wallet.accounts.length;
 
     const approveCount = transaction.votes.filter(
       (v) => v.voteType === VoteType.APPROVE,

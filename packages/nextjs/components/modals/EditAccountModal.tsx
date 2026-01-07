@@ -64,7 +64,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const signerMap = useMemo(() => {
     if (!wallet?.signers) return {};
     return wallet.signers.reduce(
-      (acc: any, signer: any) => {
+      (acc, signer) => {
         acc[signer.commitment] = signer.name || null;
         return acc;
       },

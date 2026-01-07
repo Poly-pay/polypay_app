@@ -10,8 +10,8 @@ import {
   Member,
   TransactionRowData,
   VoteStatus,
-  useMetaMultiSigWallet,
   useTransactionVote,
+  useWalletCommitments,
   useWalletThreshold,
 } from "~~/hooks";
 import { formatAddress, formatAmount } from "~~/utils/format";
@@ -59,7 +59,6 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
     batchData,
-    totalSigners: tx.totalSigners,
     members,
     votedCount: tx.votes.length,
     threshold: tx.threshold,
@@ -421,8 +420,11 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [isExecutable, setIsExecutable] = useState(false);
 
-  const metaMultiSigWallet = useMetaMultiSigWallet();
   const { data: walletThreshold } = useWalletThreshold();
+  const { data: commitmentsData } = useWalletCommitments();
+
+  // Get totalSigners realtime from wallet commitments
+  const totalSigners = commitmentsData?.length || 0;
 
   const { approve, deny, execute, isLoading: loading, loadingState } = useTransactionVote({ onSuccess });
 
@@ -460,7 +462,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
 
   useEffect(() => {
     const checkExecutable = async () => {
-      if (tx.status !== TxStatus.PENDING || !metaMultiSigWallet) {
+      if (tx.status !== TxStatus.PENDING) {
         setIsExecutable(false);
         return;
       }
@@ -474,7 +476,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     };
 
     checkExecutable();
-  }, [tx.status, tx.approveCount, metaMultiSigWallet, walletThreshold]);
+  }, [tx.status, tx.approveCount, walletThreshold]);
 
   return (
     <div className="w-full mb-2">
@@ -508,7 +510,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
             members={tx.members}
             votedCount={tx.votedCount}
             threshold={Number(walletThreshold)}
-            totalSigners={tx.totalSigners}
+            totalSigners={totalSigners}
           />
         </div>
       )}

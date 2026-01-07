@@ -19,7 +19,6 @@ export interface Transaction {
   batchData?: string;
   createdBy: string;
   threshold: number;
-  totalSigners: number;
   txHash?: string;
   executedAt?: string;
   createdAt: string;
