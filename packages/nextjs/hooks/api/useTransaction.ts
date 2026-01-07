@@ -12,8 +12,9 @@ import {
   TxStatusEventData,
   TxVotedEventData,
 } from "@polypay/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { transactionApi } from "~~/services/api";
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 
 // ============ Query Keys ============
 
@@ -47,7 +48,7 @@ export const useCreateTransaction = () => {
  * Get all transactions for a wallet
  */
 export const useTransactions = (walletAddress: string, status?: TxStatus) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: status
       ? transactionKeys.byWalletAndStatus(walletAddress, status)
       : transactionKeys.byWallet(walletAddress),
@@ -60,7 +61,7 @@ export const useTransactions = (walletAddress: string, status?: TxStatus) => {
  * Get single transaction by txId
  */
 export const useTransaction = (txId: number) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: transactionKeys.byTxId(txId),
     queryFn: () => transactionApi.getById(txId),
     enabled: txId > 0,

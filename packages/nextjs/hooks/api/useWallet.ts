@@ -1,14 +1,14 @@
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAppRouter } from "../app/useRouteApp";
 import { accountKeys } from "./useAccount";
 import { UpdateWalletDto, WALLET_CREATED_EVENT, WalletCreatedEventData } from "@polypay/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountApi, walletApi } from "~~/services/api";
 import { socketManager } from "~~/services/socket/socketManager";
 import { useWalletStore } from "~~/services/store";
 import { handleError } from "~~/utils/errorHandler";
 import { notification } from "~~/utils/scaffold-eth/notification";
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 
 export const walletKeys = {
   all: ["wallets"] as const,
@@ -29,7 +29,7 @@ export const useCreateWallet = () => {
 };
 
 export const useWallet = (address: string) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: walletKeys.byAddress(address),
     queryFn: () => walletApi.getByAddress(address),
     enabled: !!address,

@@ -1,6 +1,7 @@
 import { UpdateBatchItemDto } from "@polypay/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { batchItemApi } from "~~/services/api";
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 
 export const batchItemKeys = {
   all: ["batchItems"] as const,
@@ -20,7 +21,7 @@ export const useCreateBatchItem = () => {
 };
 
 export const useMyBatchItems = () => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: batchItemKeys.me,
     queryFn: () => batchItemApi.getMyBatchItems(),
   });
