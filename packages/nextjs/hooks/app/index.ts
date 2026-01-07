@@ -11,3 +11,4 @@ export * from "./transaction/useSignerTransaction";
 export * from "./transaction/useTransferTransaction";
 export * from "./transaction/useBatchTransaction";
 export * from "./transaction/useTransactionVote";
+export * from "./useInfiniteScroll";

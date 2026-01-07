@@ -27,6 +27,8 @@ import {
   VoteType,
   ProofStatus,
   TxStatusEventData,
+  PaginatedResponse,
+  DEFAULT_PAGE_SIZE,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -422,13 +424,15 @@ export class TransactionService {
   }
 
   /**
-   * Get all transactions for a wallet
+   * Get transactions for a wallet with cursor-based pagination
    */
   async getTransactions(
     walletAddress: string,
     userCommitment: string,
     status?: string,
-  ) {
+    limit: number = DEFAULT_PAGE_SIZE,
+    cursor?: string,
+  ): Promise<PaginatedResponse<any>> {
     // Check if user is a member of the wallet
     if (userCommitment) {
       const membership = await this.prisma.accountWallet.findFirst({
@@ -442,12 +446,14 @@ export class TransactionService {
         throw new ForbiddenException('You are not a member of this wallet');
       }
     }
+
     const where: any = { walletAddress };
     if (status) {
       where.status = status;
     }
 
-    return this.prisma.transaction.findMany({
+    // Fetch limit + 1 to check if there are more items
+    const transactions = await this.prisma.transaction.findMany({
       where,
       include: {
         votes: {
@@ -456,9 +462,29 @@ export class TransactionService {
         contact: true,
       },
       orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor && {
+        cursor: { id: cursor },
+        skip: 1,
+      }),
     });
-  }
 
+    // Check if there are more items
+    const hasMore = transactions.length > limit;
+
+    // Remove extra item if exists
+    const data = hasMore ? transactions.slice(0, limit) : transactions;
+
+    // Get next cursor from last item
+    const nextCursor =
+      hasMore && data.length > 0 ? data[data.length - 1].id : null;
+
+    return {
+      data,
+      nextCursor,
+      hasMore,
+    };
+  }
   /**
    * Get execution data for smart contract
    */

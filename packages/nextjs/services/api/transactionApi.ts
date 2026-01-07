@@ -1,5 +1,5 @@
 import { apiClient } from "./apiClient";
-import { API_ENDPOINTS } from "@polypay/shared";
+import { API_ENDPOINTS, PaginatedResponse, PaginationParams } from "@polypay/shared";
 import {
   ApproveTransactionDto,
   CreateTransactionDto,
@@ -23,8 +23,29 @@ export const transactionApi = {
     return data;
   },
 
-  getAll: async (walletAddress: string, status?: TxStatus): Promise<Transaction[]> => {
-    const { data } = await apiClient.get<Transaction[]>(API_ENDPOINTS.transactions.byWallet(walletAddress, status));
+  getAll: async (
+    walletAddress: string,
+    status?: TxStatus,
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResponse<Transaction>> => {
+    const params = new URLSearchParams();
+    params.append("walletAddress", walletAddress);
+
+    if (status) {
+      params.append("status", status);
+    }
+
+    if (pagination?.limit) {
+      params.append("limit", String(pagination.limit));
+    }
+
+    if (pagination?.cursor) {
+      params.append("cursor", pagination.cursor);
+    }
+
+    const { data } = await apiClient.get<PaginatedResponse<Transaction>>(
+      `${API_ENDPOINTS.transactions.base}?${params.toString()}`,
+    );
     return data;
   },
 
