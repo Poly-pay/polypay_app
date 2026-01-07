@@ -2,11 +2,8 @@
 
 import React from "react";
 import Image from "next/image";
+import { ISigner } from "~~/types/form/wallet";
 
-interface ISigner {
-  commitment: string;
-  name?: string;
-}
 interface StatusContainerProps {
   className?: string;
   walletName: string;

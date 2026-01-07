@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { WalletFormData } from "./NewWalletContainer";
 import { ArrowRight, Repeat } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
+import { IWalletFormData } from "~~/types/form/wallet";
 
 interface WalletNameProps {
   className?: string;
-  form: UseFormReturn<WalletFormData>;
+  form: UseFormReturn<IWalletFormData>;
   onNextStep: () => void;
   isValid: boolean;
 }
