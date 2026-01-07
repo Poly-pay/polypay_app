@@ -1,35 +1,12 @@
 import { validators } from "./validation";
 import { z } from "zod";
 
-// ==================== Authentication ====================
-
-export const loginSchema = z.object({
-  email: validators.email,
-  password: z.string().min(1, "Password is required"),
-  rememberMe: z.boolean().optional(),
-});
-export type LoginFormData = z.infer<typeof loginSchema>;
-
-export const registerSchema = z
-  .object({
-    name: validators.requiredString("Name"),
-    email: validators.email,
-    password: validators.password,
-    confirmPassword: z.string(),
-  })
-  .refine(data => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-export type RegisterFormData = z.infer<typeof registerSchema>;
-
 // ==================== Contact / Address Book ====================
 
 export const createContactSchema = z.object({
   name: validators.requiredString("Name").max(100, "Name too long"),
   address: validators.requiredString("Address"),
-  groupIds: z.array(z.string()).min(1, "Please select at least one group"),
-  notes: z.string().optional(),
+  groupIds: z.array(z.string()).optional(),
 });
 export type CreateContactFormData = z.infer<typeof createContactSchema>;
 
@@ -41,9 +18,14 @@ export type CreateGroupFormData = z.infer<typeof createGroupSchema>;
 
 // ==================== Wallet ====================
 
+const signerSchema = z.object({
+  commitment: z.string().min(1, "Signer commitment is required"),
+  name: z.string().optional(),
+});
+
 export const createWalletSchema = z.object({
   name: validators.requiredString("Wallet name").max(50, "Name too long"),
-  signers: z.array(validators.ethereumAddress).min(1, "At least one signer required"),
+  signers: z.array(signerSchema).min(1, "At least one signer required"),
   threshold: z.number().min(1, "Threshold must be at least 1"),
 });
 export type CreateWalletFormData = z.infer<typeof createWalletSchema>;
@@ -60,44 +42,6 @@ export const transferSchema = z.object({
   amount: z.string(),
 });
 export type TransferFormData = z.infer<typeof transferSchema>;
-
-// ==================== Batch ====================
-
-export const batchItemSchema = z.object({
-  recipient: validators.ethereumAddress,
-  amount: z.string().refine(val => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Amount must be greater than 0",
-  }),
-  token: validators.requiredString("Token"),
-});
-export type BatchItemFormData = z.infer<typeof batchItemSchema>;
-
-export const batchTransactionSchema = z.object({
-  name: z.string().optional(),
-  items: z.array(batchItemSchema).min(1, "At least one transaction required"),
-});
-export type BatchTransactionFormData = z.infer<typeof batchTransactionSchema>;
-
-// ==================== Profile / Settings ====================
-
-export const updateProfileSchema = z.object({
-  name: validators.requiredString("Name"),
-  email: validators.email,
-  bio: z.string().max(500, "Bio too long").optional(),
-});
-export type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;
-
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password required"),
-    newPassword: validators.password,
-    confirmNewPassword: z.string(),
-  })
-  .refine(data => data.newPassword === data.confirmNewPassword, {
-    message: "Passwords don't match",
-    path: ["confirmNewPassword"],
-  });
-export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 // ==================== Edit Account ====================
 

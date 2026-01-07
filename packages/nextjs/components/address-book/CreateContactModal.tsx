@@ -29,7 +29,6 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
       name: "",
       address: "",
       groupIds: [],
-      notes: "",
     },
   });
 
@@ -43,6 +42,9 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
     return groups.filter(group => group.name.toLowerCase().includes(term));
   }, [groups, searchTerm]);
 
+  // Ensure selectedGroupIds is always an array
+  const safeSelectedGroupIds = selectedGroupIds || [];
+
   const resetForm = () => {
     form.reset();
     setSearchTerm("");
@@ -55,7 +57,7 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
   };
 
   const toggleGroup = (groupId: string) => {
-    const currentGroups = form.getValues("groupIds");
+    const currentGroups = form.getValues("groupIds") || [];
     const newGroups = currentGroups.includes(groupId)
       ? currentGroups.filter(id => id !== groupId)
       : [...currentGroups, groupId];
@@ -70,7 +72,7 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
         walletId,
         name: data.name.trim(),
         address: data.address.trim(),
-        groupIds: data.groupIds,
+        groupIds: data.groupIds || [],
       });
       onSuccess?.();
       handleClose();
@@ -160,7 +162,7 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
               {groups.length > 0 ? (
                 <div className="max-h-64 overflow-y-auto space-y-1">
                   {filteredGroups.map(group => {
-                    const isSelected = selectedGroupIds.includes(group.id);
+                    const isSelected = safeSelectedGroupIds.includes(group.id);
                     const memberCount = getMemberCount(group);
 
                     return (

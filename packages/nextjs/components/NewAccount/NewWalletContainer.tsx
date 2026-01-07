@@ -6,22 +6,12 @@ import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
 import WalletName from "./WalletName";
-import { useForm } from "react-hook-form";
 import { useCreateWallet } from "~~/hooks/api";
+import { useZodForm } from "~~/hooks/form";
+import { CreateWalletFormData, createWalletSchema } from "~~/lib/form";
 import { useWalletStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
-
-export interface Signer {
-  commitment: string;
-  name?: string;
-}
-
-export interface WalletFormData {
-  name: string;
-  signers: Signer[];
-  threshold: number;
-}
 
 export default function NewWalletContainer() {
   const { commitment } = useIdentityStore();
@@ -32,17 +22,17 @@ export default function NewWalletContainer() {
   const [currentStep, setCurrentStep] = useState(1);
   const [createdWalletAddress, setCreatedWalletAddress] = useState<string>("");
 
-  const form = useForm<WalletFormData>({
+  const form = useZodForm({
+    schema: createWalletSchema,
     defaultValues: {
       name: "",
       signers: [{ name: "", commitment: commitment || "" }],
       threshold: 1,
     },
-    mode: "onChange",
   });
 
   const { watch, setValue } = form;
-  const formData = watch();
+  const formData = watch() as CreateWalletFormData;
 
   const handleNextStep = () => {
     if (!commitment) {
@@ -64,10 +54,12 @@ export default function NewWalletContainer() {
 
     try {
       // Filter signers with valid commitment (name can be empty)
-      const validSigners = formData.signers.filter(s => s?.commitment?.trim() !== "");
+      const validSigners = formData.signers.filter(
+        (s: { commitment: string; name?: string }) => s?.commitment?.trim() !== "",
+      );
 
       // Ensure creator commitment is in the list
-      const hasCreator = validSigners.some(s => s.commitment === commitment);
+      const hasCreator = validSigners.some((s: { commitment: string; name?: string }) => s.commitment === commitment);
       if (!hasCreator) {
         notification.error("Your commitment must be included in the signers list.");
         return;
@@ -91,7 +83,9 @@ export default function NewWalletContainer() {
   useEffect(() => {
     if (commitment) {
       const currentSigners = form.getValues("signers");
-      const hasMyCommitment = currentSigners.some(s => s.commitment === commitment);
+      const hasMyCommitment = currentSigners.some(
+        (s: { commitment: string; name?: string }) => s.commitment === commitment,
+      );
       if (!hasMyCommitment) {
         setValue("signers", [{ name: "", commitment }, ...currentSigners]);
       }
@@ -99,7 +93,9 @@ export default function NewWalletContainer() {
   }, [commitment, form, setValue]);
 
   // Validation
-  const validSigners = formData.signers.filter(s => s?.commitment?.trim() !== "");
+  const validSigners = formData.signers.filter(
+    (s: { commitment: string; name?: string }) => s?.commitment?.trim() !== "",
+  );
   const isStep1Valid = formData.name.trim().length > 0;
   const isStep2Valid = validSigners.length > 0 && formData.threshold >= 1 && formData.threshold <= validSigners.length;
 
