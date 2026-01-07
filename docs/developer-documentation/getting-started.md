@@ -80,6 +80,7 @@ yarn start:frontend
 | `RELAYER_ZKVERIFY_API_KEY` | API key from zkVerify          |
 | `NEXT_PUBLIC_API_URL`      | Backend API URL                |
 
+
 ### User Workflow
 
 1. **Connect Wallet**: Connect your Ethereum wallet
@@ -88,3 +89,30 @@ yarn start:frontend
 4. **Propose Transaction**: Create transfer and generate ZK proof
 5. **Sign**: Other signers approve with their ZK proofs
 6. **Execute**: When threshold reached, execute the transaction
+
+### Interacting with the Backend API
+
+PolyPay provides multiple ways to interact with the backend:
+
+#### Swagger UI (Recommended for Development)
+
+The easiest way to explore and test the API is through the interactive Swagger documentation:
+
+```
+http://localhost:4000/api/swagger
+```
+
+**Features**:
+- Interactive API explorer with "Try it out" functionality
+- Complete endpoint documentation with request/response schemas
+- Built-in authentication support (JWT tokens persist across requests)
+- Organized by feature tags (accounts, wallets, transactions, etc.)
+
+**How to use**:
+1. Start the backend: `yarn start:backend`
+2. Open `http://localhost:4000/api/swagger` in your browser
+3. Click "Authorize" to add your JWT token
+4. Test any endpoint by clicking "Try it out" and "Execute"
+
+
+

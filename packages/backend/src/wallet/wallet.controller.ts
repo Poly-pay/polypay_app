@@ -4,6 +4,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -32,10 +33,32 @@ export class WalletController {
    */
   @Post()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Create a new wallet' })
-  @ApiBody({ type: CreateWalletDto })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Create a new multi-signature wallet',
+    description:
+      'Deploy a new multi-signature wallet on-chain. The creator is automatically added as a member.',
+  })
+  @ApiBody({
+    type: CreateWalletDto,
+    examples: {
+      example1: {
+        summary: '2-of-3 multisig wallet',
+        value: {
+          address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
+          threshold: 2,
+          name: 'Team Treasury',
+          signers: [
+            '18712425590517920354542306734510523399880577119526949113387807668582286743210',
+            '29312425590517920354542306734510523399880577119526949113387807668582286743210',
+          ],
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, description: 'Wallet created successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   async create(@CurrentUser() user: Account, @Body() dto: CreateWalletDto) {
     return this.walletService.create(dto, user.commitment);
   }
@@ -46,9 +69,23 @@ export class WalletController {
    */
   @Get(':address')
   @UseGuards(JwtAuthGuard, WalletMemberGuard)
-  @ApiOperation({ summary: 'Get wallet by address' })
-  @ApiParam({ name: 'address', description: 'Wallet address' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get wallet details by address',
+    description:
+      'Retrieve detailed information about a wallet including members, threshold, and transaction history. Only wallet members can access this.',
+  })
+  @ApiParam({
+    name: 'address',
+    description: 'Wallet contract address (0x...)',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
   @ApiResponse({ status: 200, description: 'Wallet found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not a wallet member',
+  })
   @ApiResponse({ status: 404, description: 'Wallet not found' })
   async findByAddress(@Param('address') address: string) {
     return this.walletService.findByAddress(address);
@@ -60,10 +97,35 @@ export class WalletController {
    */
   @Patch(':address')
   @UseGuards(JwtAuthGuard, WalletMemberGuard)
-  @ApiOperation({ summary: 'Update wallet information' })
-  @ApiParam({ name: 'address', description: 'Wallet address' })
-  @ApiBody({ type: UpdateWalletDto })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Update wallet information',
+    description:
+      'Update wallet metadata such as name or description. Only wallet members can update.',
+  })
+  @ApiParam({
+    name: 'address',
+    description: 'Wallet contract address (0x...)',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  @ApiBody({
+    type: UpdateWalletDto,
+    examples: {
+      example1: {
+        summary: 'Update wallet name',
+        value: {
+          name: 'Updated Team Treasury',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Wallet updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Not a wallet member',
+  })
   @ApiResponse({ status: 404, description: 'Wallet not found' })
   async update(
     @Param('address') address: string,
