@@ -1,22 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import Image from "next/image";
 import ModalContainer from "../modals/ModalContainer";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold, horizenTestnet } from "@polypay/shared";
+import { horizenTestnet } from "@polypay/shared";
 import { Copy, Repeat, Trash2, X } from "lucide-react";
-import {
-  useGenerateProof,
-  useMetaMultiSigWallet,
-  useModalApp,
-  useUpdateWallet,
-  useWallet,
-  useWalletCommitments,
-  useWalletThreshold,
-} from "~~/hooks";
-import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
+import { useMetaMultiSigWallet, useModalApp, useSignerTransaction, useUpdateWallet, useWallet } from "~~/hooks";
 import { useZodForm } from "~~/hooks/form";
 import {
   AddSignerFormData,
@@ -31,25 +22,25 @@ import { ModalProps } from "~~/types/modal";
 import { notification } from "~~/utils/scaffold-eth";
 
 const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
-  const [loading, setLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState("");
   const { openModal } = useModalApp();
   const { commitment } = useIdentityStore();
   const { mutateAsync: updateWallet, isPending: isUpdatingWallet } = useUpdateWallet();
   const { currentWallet, setCurrentWallet } = useWalletStore();
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
-  });
-  const { mutateAsync: createTransaction } = useCreateTransaction();
-  const { mutateAsync: reserveNonce } = useReserveNonce();
   const { data: wallet } = useWallet(metaMultiSigWallet?.address || "");
 
-  const { data: thresholdData, refetch: refetchThreshold } = useWalletThreshold();
-  const { data: commitmentsData, refetch: refetchCommitments } = useWalletCommitments();
+  const {
+    addSigner,
+    removeSigner,
+    updateThreshold,
+    isLoading: loading,
+    loadingState,
+    signers,
+    threshold,
+    refetchCommitments,
+    refetchThreshold,
+  } = useSignerTransaction({ onSuccess: onClose });
 
-  const threshold = Number(thresholdData ?? 0);
-  const signers = commitmentsData ? commitmentsData.map((c: bigint) => c.toString()) : [];
   const accountName = currentWallet?.name ?? "Default";
 
   // Form for account name
@@ -69,6 +60,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     schema: updateThresholdSchema,
     defaultValues: { threshold: 1 },
   });
+
   const signerMap = useMemo(() => {
     if (!wallet?.signers) return {};
     return wallet.signers.reduce(
@@ -108,168 +100,17 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleAddSigner = async (data: AddSignerFormData) => {
-    console.log(data);
-    if (!metaMultiSigWallet) return;
-
-    if (data.threshold < 1 || data.threshold > signers.length + 1) {
-      notification.error("Invalid threshold value");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-      const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const callData = encodeAddSigner(data.signerCommitment, data.threshold);
-      const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        BigInt(nonce),
-        metaMultiSigWallet.address,
-        0n,
-        callData,
-      ])) as `0x${string}`;
-
-      const { proof, publicInputs, nullifier } = await generateProof(txHash);
-
-      setLoadingState("Submitting to backend...");
-      await createTransaction({
-        nonce: nonce,
-        type: TxType.ADD_SIGNER,
-        walletAddress: metaMultiSigWallet.address,
-        threshold: Number(currentThreshold),
-        totalSigners: signers.length,
-        signerCommitment: data.signerCommitment.trim(),
-        newThreshold: data.threshold,
-        proof,
-        publicInputs,
-        nullifier,
-      });
-
-      await refetchCommitments();
-      await refetchThreshold();
-
-      notification.success("Add signer transaction created!");
-      addSignerForm.reset({ signerCommitment: "", threshold: data.threshold });
-      onClose();
-    } catch (error: any) {
-      console.error("Failed to add signer:", error);
-      notification.error(error.message || "Failed to add signer");
-    } finally {
-      setLoading(false);
-      setLoadingState("");
-    }
+    await addSigner(data.signerCommitment, data.threshold);
+    addSignerForm.reset({ signerCommitment: "", threshold: data.threshold });
   };
 
   const handleRemoveSigner = async (signerCommitment: string) => {
-    if (!metaMultiSigWallet) return;
-
-    if (signers.length <= 1) {
-      notification.error("Cannot remove last signer");
-      return;
-    }
-
-    let newThreshold = thresholdForm.getValues("threshold");
-    if (newThreshold > signers.length - 1) {
-      newThreshold = signers.length - 1;
-    }
-
-    if (newThreshold < 1 || newThreshold > signers.length - 1) {
-      notification.error("Invalid threshold value for removal");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-      const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const callData = encodeRemoveSigner(signerCommitment, newThreshold);
-      const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        BigInt(nonce),
-        metaMultiSigWallet.address,
-        0n,
-        callData,
-      ])) as `0x${string}`;
-
-      const { proof, publicInputs, nullifier } = await generateProof(txHash);
-
-      setLoadingState("Submitting to backend...");
-      await createTransaction({
-        nonce: nonce,
-        type: TxType.REMOVE_SIGNER,
-        walletAddress: metaMultiSigWallet.address,
-        threshold: Number(currentThreshold),
-        totalSigners: signers.length,
-        signerCommitment: signerCommitment,
-        newThreshold: newThreshold,
-        proof,
-        publicInputs,
-        nullifier,
-      });
-
-      await refetchCommitments();
-      await refetchThreshold();
-
-      notification.success("Remove signer transaction created!");
-      onClose();
-    } catch (error: any) {
-      console.error("Failed to remove signer:", error);
-      notification.error(error.message || "Failed to remove signer");
-    } finally {
-      setLoading(false);
-      setLoadingState("");
-    }
+    const currentThreshold = thresholdForm.getValues("threshold");
+    await removeSigner(signerCommitment, currentThreshold);
   };
 
   const handleUpdateThreshold = async (data: UpdateThresholdFormData) => {
-    if (!metaMultiSigWallet) return;
-
-    if (data.threshold < 1 || data.threshold > signers.length) {
-      notification.error("Invalid threshold value");
-      return;
-    }
-
-    if (data.threshold === threshold) {
-      notification.warning("No changes to save");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-      const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const callData = encodeUpdateThreshold(data.threshold);
-      const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        BigInt(nonce),
-        metaMultiSigWallet.address,
-        0n,
-        callData,
-      ])) as `0x${string}`;
-
-      const { proof, publicInputs, nullifier } = await generateProof(txHash);
-
-      setLoadingState("Submitting to backend...");
-      await createTransaction({
-        nonce: nonce,
-        type: TxType.SET_THRESHOLD,
-        walletAddress: metaMultiSigWallet.address,
-        threshold: Number(currentThreshold),
-        totalSigners: signers.length,
-        newThreshold: data.threshold,
-        proof,
-        publicInputs,
-        nullifier,
-      });
-
-      await refetchThreshold();
-
-      notification.success("Update threshold transaction created!");
-      onClose();
-    } catch (error: any) {
-      console.error("Failed to update threshold:", error);
-      notification.error(error.message || "Failed to update threshold");
-    } finally {
-      setLoading(false);
-      setLoadingState("");
-    }
+    await updateThreshold(data.threshold);
   };
 
   const copyToClipboard = (text: string) => {
