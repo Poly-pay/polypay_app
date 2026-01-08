@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet, useModalApp, useWalletCommitments } from "~~/hooks";
@@ -17,10 +17,13 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
 
   const walletAddress = metaMultiSigWallet?.address || "";
 
-  const { data: transactions } = usePendingTransactions(walletAddress);
+  const { data } = usePendingTransactions(walletAddress);
   const { data: walletCommitments } = useWalletCommitments();
 
   const { currentWallet } = useWalletStore();
+
+  // Memoize flattened transactions to avoid re-computing on every render
+  const transactions = useMemo(() => data?.pages.flatMap(page => page.data) ?? [], [data?.pages]);
 
   return (
     <>

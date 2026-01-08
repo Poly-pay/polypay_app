@@ -32,6 +32,13 @@ export const SUPPORTED_TOKENS: Token[] = [
     decimals: 6,
     icon: "/token/usdt.svg",
   },
+  {
+    address: "0xFac500d99a2e696e4781D6960A1fDD0189A0c85a",
+    symbol: "DAI",
+    name: "Dai Stablecoin",
+    decimals: 18,
+    icon: "/token/dai.svg",
+  },
 ];
 
 // Helper: Get token by address

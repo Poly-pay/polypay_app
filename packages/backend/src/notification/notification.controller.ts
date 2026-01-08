@@ -14,11 +14,13 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { NotificationService } from './notification.service';
 import { SendCommitmentDto } from '@polypay/shared';
 
 @ApiTags('notifications')
+@ApiBearerAuth('JWT-auth')
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}

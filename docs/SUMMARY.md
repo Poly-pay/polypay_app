@@ -8,4 +8,5 @@
 - [Architecture](architecture.md)
 - [Developer Documentation](developer-documentation/README.md)
   - [Getting Started](developer-documentation/getting-started.md)
+  - [API Documentation](developer-documentation/api-documentation.md)
   - [Circuit Code Walkthrough](developer-documentation/circuit-code-walkthrough.md)

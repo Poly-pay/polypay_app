@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAppRouter } from "../app/useRouteApp";
 import { accountKeys } from "./useAccount";
+import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import { UpdateWalletDto, WALLET_CREATED_EVENT, WalletCreatedEventData } from "@polypay/shared";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { accountApi, walletApi } from "~~/services/api";
 import { socketManager } from "~~/services/socket/socketManager";
 import { useWalletStore } from "~~/services/store";
@@ -24,12 +24,13 @@ export const useCreateWallet = () => {
       queryClient.invalidateQueries({ queryKey: walletKeys.all });
       queryClient.setQueryData(walletKeys.byAddress(data.address), data);
       queryClient.invalidateQueries({ queryKey: accountKeys.meWallets });
+      queryClient.invalidateQueries({ queryKey: accountKeys.me });
     },
   });
 };
 
 export const useWallet = (address: string) => {
-  return useQuery({
+  return useAuthenticatedQuery({
     queryKey: walletKeys.byAddress(address),
     queryFn: () => walletApi.getByAddress(address),
     enabled: !!address,

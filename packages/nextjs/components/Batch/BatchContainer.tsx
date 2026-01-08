@@ -3,15 +3,11 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import TransactionSummary from "./TransactionSummary";
-import { BatchItem, TxType, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
-import { useWalletClient } from "wagmi";
-import { NATIVE_ETH, getTokenByAddress } from "~~/constants/token";
-import { useMetaMultiSigWallet } from "~~/hooks";
-import { useCreateTransaction, useDeleteBatchItem, useMyBatchItems, useReserveNonce } from "~~/hooks/api";
-import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
-import { useIdentityStore } from "~~/services/store";
+import { BatchItem } from "@polypay/shared";
+import { getTokenByAddress } from "~~/constants/token";
+import { useBatchTransaction } from "~~/hooks";
+import { useDeleteBatchItem, useMyBatchItems } from "~~/hooks/api";
 import { formatAddress, formatAmount } from "~~/utils/format";
-import { notification } from "~~/utils/scaffold-eth";
 
 // ==================== Custom Checkbox ====================
 function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -146,14 +142,7 @@ function BatchTransactions({
               </div>
 
               {/* Arrow */}
-              <div className="flex items-center justify-center w-16">
-                {/* <img
-                  src="/arrow/thin-long-arrow-right.svg"
-                  alt="arrow"
-                  className="w-full h-full"
-                  style={isActive ? { filter: "invert(1) brightness(1000%)" } : {}}
-                /> */}
-              </div>
+              <div className="flex items-center justify-center w-16"></div>
 
               {/* Recipient */}
               <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-[#363636]"}`}>
@@ -192,24 +181,21 @@ function BatchTransactions({
 // ==================== Main Container ====================
 export default function BatchContainer() {
   const { mutateAsync: deleteBatchItem, isPending: isRemoving } = useDeleteBatchItem();
-  const { data: walletClient } = useWalletClient();
-  const { secret, commitment: myCommitment } = useIdentityStore();
   const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useMyBatchItems();
-  const metaMultiSigWallet = useMetaMultiSigWallet();
-
-  const { mutateAsync: createTransaction } = useCreateTransaction();
-  const { mutateAsync: reserveNonce } = useReserveNonce();
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [isExiting] = useState(false);
-  const [isProposing, setIsProposing] = useState(false);
 
-  // State cho loading message
-  const [loadingState, setLoadingState] = useState("");
-
-  const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
+  const {
+    proposeBatch,
+    isLoading: isProposing,
+    loadingState,
+  } = useBatchTransaction({
+    onSuccess: async () => {
+      setSelectedItems(new Set());
+      await refetchBatchItems();
+    },
   });
 
   // Select all handler
@@ -251,90 +237,8 @@ export default function BatchContainer() {
 
   // Propose batch transaction handler
   const handleProposeBatch = async () => {
-    if (selectedItems.size === 0) return;
-
-    // Validate wallet connection
-    if (!walletClient || !metaMultiSigWallet) {
-      notification.error("Wallet not connected");
-      return;
-    }
-
-    if (!secret || !myCommitment) {
-      notification.error("No identity found. Please create identity first.");
-      return;
-    }
-
-    setIsProposing(true);
-
-    try {
-      // Get selected batch items
-      const selectedBatchItems = batchItems.filter(item => selectedItems.has(item.id));
-      const selectedIds = selectedBatchItems.map(item => item.id);
-
-      // 1. Reserve nonce from backend
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
-
-      // 2. Get current threshold and commitments
-      setLoadingState("Preparing batch transaction...");
-      const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
-      const commitments = await metaMultiSigWallet.read.getCommitments();
-
-      // Encode batch transfer call data
-      const recipients = selectedBatchItems.map(item => item.recipient as `0x${string}`);
-      const amounts: bigint[] = selectedBatchItems.map(item => BigInt(item.amount));
-      const tokenAddresses = selectedBatchItems.map(item => item.tokenAddress || NATIVE_ETH.address);
-
-      // Check if any ERC20 token in batch
-      const hasERC20 = tokenAddresses.some(addr => addr !== NATIVE_ETH.address);
-
-      // Encode function call based on token types
-      const batchTransferData = hasERC20
-        ? encodeBatchTransferMulti(recipients, amounts, tokenAddresses)
-        : encodeBatchTransfer(recipients, amounts);
-
-      // 3. Calculate txHash (to = wallet itself, value = totalValue, data = batchTransfer call)
-      const txHash = (await metaMultiSigWallet.read.getTransactionHash([
-        BigInt(nonce),
-        metaMultiSigWallet.address, // to = self
-        0n, // value = 0 for batch, actual value is sum of amounts in data
-        batchTransferData,
-      ])) as `0x${string}`;
-
-      // 4. Generate proof
-      const { proof, publicInputs, nullifier } = await generateProof(txHash);
-
-      // 5. Submit to backend
-      setLoadingState("Submitting to backend...");
-      const result = await createTransaction({
-        nonce,
-        type: TxType.BATCH,
-        walletAddress: metaMultiSigWallet.address,
-        threshold: Number(currentThreshold),
-        totalSigners: commitments?.length || 0,
-        // For BATCH: to = wallet, value = 0
-        to: metaMultiSigWallet.address,
-        value: "0",
-        proof: Array.from(proof),
-        publicInputs,
-        nullifier: nullifier.toString(),
-        // Batch specific
-        batchItemIds: selectedIds,
-      });
-
-      if (result) {
-        notification.success("Batch transaction created! Waiting for approvals.");
-        // Clear selection after successful proposal
-        setSelectedItems(new Set());
-        // Refetch batch items to update UI
-        await refetchBatchItems();
-      }
-    } catch (error: any) {
-      console.error("Propose batch error:", error);
-      notification.error(error.message || "Failed to propose batch");
-    } finally {
-      setIsProposing(false);
-      setLoadingState("");
-    }
+    const selectedBatchItems = batchItems.filter(item => selectedItems.has(item.id));
+    await proposeBatch(selectedBatchItems);
   };
 
   // Get selected batch items for summary
@@ -347,7 +251,6 @@ export default function BatchContainer() {
         {/* Shopping Bag Icon */}
         <div className="flex flex-row h-[100px] w-full justify-between">
           <div className="w-full relative">
-            {/* <img src="/misc/shopping-bag.svg" alt="batch" className="w-[150px]" /> */}
             <div className="absolute -bottom-5 left-0 right-0 h-30 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
           </div>
         </div>

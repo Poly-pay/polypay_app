@@ -52,6 +52,9 @@ COPY --from=deps /app/packages/backend/node_modules ./packages/backend/node_modu
 COPY packages/shared ./packages/shared
 COPY packages/backend ./packages/backend
 
+# Copy generated prisma client from deps stage
+COPY --from=deps /app/packages/backend/src/generated ./packages/backend/src/generated
+
 # Build shared first, then backend
 RUN yarn workspace @polypay/shared build && \
     yarn workspace @polypay/backend build

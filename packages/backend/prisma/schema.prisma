@@ -85,7 +85,6 @@ model Transaction {
   // Metadata
   createdBy    String // commitment initial
   threshold    Int // approval threshold at the time of creation
-  totalSigners Int // total signers at the time of creation
 
   // Execution
   txHash     String?

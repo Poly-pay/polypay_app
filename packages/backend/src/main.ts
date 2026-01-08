@@ -35,14 +35,50 @@ async function bootstrap() {
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('PolyPay API')
-    .setDescription('API documentation for PolyPay application')
-    .setVersion('1.0')
-    .addTag('accounts', 'Account management endpoints')
-    .addTag('wallets', 'Wallet management endpoints')
-    .addTag('transactions', 'Transaction management endpoints')
-    .addTag('batch-items', 'Batch item management endpoints')
-    .addTag('address-book', 'Address book management endpoints')
-    .addTag('notifications', 'Notification management endpoints')
+    .setDescription(
+      'Privacy-preserving payroll API with zero-knowledge proofs and multi-signature wallet support.\n\n' +
+        '## Features\n' +
+        '- **Zero-Knowledge Privacy**: Private multi-signature approvals using Noir circuits\n' +
+        '- **Multi-signature Wallets**: Secure transaction voting and approval system\n' +
+        '- **Real-time Updates**: WebSocket support for live notifications\n' +
+        '- **JWT Authentication**: Secure token-based authentication\n\n' +
+        '## Getting Started\n' +
+        '1. Authenticate via `/api/auth/login` to get your JWT token\n' +
+        '2. Click the "Authorize" button and enter your token\n' +
+        '3. Explore and test endpoints organized by feature tags below\n\n' +
+        '## Resources\n' +
+        '- **Documentation**: https://q3labs.gitbook.io/polypay\n' +
+        '- **GitHub**: https://github.com/Poly-pay/polypay_app\n' +
+        '- **Support**: Create an issue on GitHub',
+    )
+    .setVersion('1.0.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('auth', 'Authentication endpoints - Login and token refresh')
+    .addTag(
+      'accounts',
+      'Account management - User accounts with ZK commitments',
+    )
+    .addTag('wallets', 'Wallet operations - Multi-signature wallet management')
+    .addTag(
+      'transactions',
+      'Transaction management - Create, vote, and execute transactions',
+    )
+    .addTag('batch-items', 'Batch processing - Manage batch transaction items')
+    .addTag('address-book', 'Address book - Contact and group management')
+    .addTag(
+      'notifications',
+      'Notification system - Real-time notifications and updates',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

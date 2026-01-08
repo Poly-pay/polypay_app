@@ -18,6 +18,7 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AddressBookService } from './address-book.service';
 import {
@@ -33,6 +34,7 @@ import { ContactAccessGuard } from '@/auth/guards/contact-access.guard';
 import { Account } from '@/generated/prisma/client';
 
 @ApiTags('address-book')
+@ApiBearerAuth('JWT-auth')
 @Controller('address-book')
 export class AddressBookController {
   private readonly logger = new Logger(AddressBookController.name);

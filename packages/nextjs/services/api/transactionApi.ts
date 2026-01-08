@@ -1,14 +1,6 @@
 import { apiClient } from "./apiClient";
-import { API_ENDPOINTS } from "@polypay/shared";
-import {
-  ApproveTransactionDto,
-  CreateTransactionDto,
-  DenyTransactionDto,
-  Transaction,
-  TxStatus,
-  TxType,
-  VoteType,
-} from "@polypay/shared";
+import { API_ENDPOINTS, PaginatedResponse, PaginationParams } from "@polypay/shared";
+import { ApproveTransactionDto, CreateTransactionDto, Transaction, TxStatus, TxType, VoteType } from "@polypay/shared";
 
 export const transactionApi = {
   create: async (
@@ -23,8 +15,29 @@ export const transactionApi = {
     return data;
   },
 
-  getAll: async (walletAddress: string, status?: TxStatus): Promise<Transaction[]> => {
-    const { data } = await apiClient.get<Transaction[]>(API_ENDPOINTS.transactions.byWallet(walletAddress, status));
+  getAll: async (
+    walletAddress: string,
+    status?: TxStatus,
+    pagination?: PaginationParams,
+  ): Promise<PaginatedResponse<Transaction>> => {
+    const params = new URLSearchParams();
+    params.append("walletAddress", walletAddress);
+
+    if (status) {
+      params.append("status", status);
+    }
+
+    if (pagination?.limit) {
+      params.append("limit", String(pagination.limit));
+    }
+
+    if (pagination?.cursor) {
+      params.append("cursor", pagination.cursor);
+    }
+
+    const { data } = await apiClient.get<PaginatedResponse<Transaction>>(
+      `${API_ENDPOINTS.transactions.base}?${params.toString()}`,
+    );
     return data;
   },
 
@@ -50,14 +63,13 @@ export const transactionApi = {
 
   deny: async (
     txId: number,
-    dto: DenyTransactionDto,
   ): Promise<{
     txId: number;
     voteType: VoteType;
     status: TxStatus;
     denyCount: number;
   }> => {
-    const { data } = await apiClient.post(API_ENDPOINTS.transactions.deny(txId), dto);
+    const { data } = await apiClient.post(API_ENDPOINTS.transactions.deny(txId));
     return data;
   },
 
