@@ -1,0 +1,43 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "packages/backend/**"
+      - "packages/shared/**"
+      - "docker/backend.Dockerfile"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: producting
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auth to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}
+
+      - name: Build and push image
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -f docker/backend.Dockerfile \
+            -t ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_BACKEND_IMAGE }}:${{ github.sha }} \
+            -t ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_BACKEND_IMAGE }}:latest \
+            .
+
+          docker push ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_BACKEND_IMAGE }}:${{ github.sha }}
+          docker push ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_BACKEND_IMAGE }}:latest
