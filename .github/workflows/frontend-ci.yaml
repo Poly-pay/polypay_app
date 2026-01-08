@@ -1,0 +1,46 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'packages/nextjs/**'
+      - 'packages/shared/**'
+      - 'docker/frontend.Dockerfile'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: producting
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auth to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}
+
+      - name: Build and push image
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            --build-arg NEXT_PUBLIC_ALCHEMY_API_KEY=${{ secrets.NEXT_PUBLIC_ALCHEMY_API_KEY }} \
+            --build-arg NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=${{ secrets.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID }} \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
+            -f docker/frontend.Dockerfile \
+            -t ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_FRONTEND_IMAGE }}:${{ github.sha }} \
+            -t ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_FRONTEND_IMAGE }}:latest \
+            .
+
+          docker push ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_FRONTEND_IMAGE }}:${{ github.sha }}
+          docker push ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_FRONTEND_IMAGE }}:latest
