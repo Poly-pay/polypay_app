@@ -6,7 +6,7 @@ import {
   MaxLength,
 } from "class-validator";
 
-export class CreateAddressGroupDto {
+export class CreateContactGroupDto {
   @IsNotEmpty()
   @IsString()
   accountId: string;

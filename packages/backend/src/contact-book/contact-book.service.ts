@@ -1,3 +1,4 @@
+import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 import { PrismaService } from '@/database/prisma.service';
 import { Prisma } from '@/generated/prisma/client';
 import {
@@ -9,15 +10,15 @@ import {
   Logger,
 } from '@nestjs/common';
 import {
-  CreateAddressGroupDto,
-  UpdateAddressGroupDto,
+  CreateContactGroupDto,
+  UpdateContactGroupDto,
   CreateContactDto,
   UpdateContactDto,
 } from '@polypay/shared';
 
 @Injectable()
-export class AddressBookService {
-  private readonly logger = new Logger(AddressBookService.name);
+export class ContactBookService {
+  private readonly logger = new Logger(ContactBookService.name);
   constructor(private prisma: PrismaService) {}
 
   // Helper to handle Prisma unique constraint errors
@@ -41,37 +42,37 @@ export class AddressBookService {
     throw error;
   }
 
-  // ============ ADDRESS GROUP ============
+  // ============ CONTACT GROUP ============
 
-  async createGroup(dto: CreateAddressGroupDto, userCommitment: string) {
-    // Check if user is a member of the wallet
-    const membership = await this.prisma.accountWallet.findFirst({
+  async createGroup(dto: CreateContactGroupDto, userCommitment: string) {
+    // Check if user is a signer of the account
+    const membership = await this.prisma.accountSigner.findFirst({
       where: {
-        wallet: { id: dto.walletId },
-        account: { commitment: userCommitment },
+        account: { id: dto.accountId },
+        user: { commitment: userCommitment },
       },
     });
 
     if (!membership) {
-      throw new ForbiddenException('You are not a member of this wallet');
+      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
     }
 
     if (dto.contactIds?.length) {
       const contacts = await this.prisma.contact.findMany({
-        where: { id: { in: dto.contactIds }, walletId: dto.walletId },
+        where: { id: { in: dto.contactIds }, accountId: dto.accountId },
       });
 
       if (contacts.length !== dto.contactIds.length) {
         throw new BadRequestException(
-          'One or more contacts not found or belong to different wallet',
+          'One or more contacts not found or belong to different account',
         );
       }
     }
 
     try {
-      return await this.prisma.addressGroup.create({
+      return await this.prisma.contactGroup.create({
         data: {
-          walletId: dto.walletId,
+          accountId: dto.accountId,
           name: dto.name,
           contacts: dto.contactIds?.length
             ? { create: dto.contactIds.map((contactId) => ({ contactId })) }
@@ -86,21 +87,21 @@ export class AddressBookService {
     }
   }
 
-  async getGroups(walletId: string, userCommitment: string) {
-    // Check if user is a member of the wallet
-    const membership = await this.prisma.accountWallet.findFirst({
+  async getGroups(accountId: string, userCommitment: string) {
+    // Check if user is a signer of the account
+    const membership = await this.prisma.accountSigner.findFirst({
       where: {
-        wallet: { id: walletId },
-        account: { commitment: userCommitment },
+        account: { id: accountId },
+        user: { commitment: userCommitment },
       },
     });
 
     if (!membership) {
-      throw new ForbiddenException('You are not a member of this wallet');
+      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
     }
 
-    return this.prisma.addressGroup.findMany({
-      where: { walletId },
+    return this.prisma.contactGroup.findMany({
+      where: { accountId },
       include: {
         contacts: { include: { contact: true } },
       },
@@ -109,7 +110,7 @@ export class AddressBookService {
   }
 
   async getGroup(id: string) {
-    const group = await this.prisma.addressGroup.findUnique({
+    const group = await this.prisma.contactGroup.findUnique({
       where: { id },
       include: {
         contacts: { include: { contact: true } },
@@ -123,26 +124,26 @@ export class AddressBookService {
     return group;
   }
 
-  async updateGroup(id: string, dto: UpdateAddressGroupDto) {
-    const group = await this.prisma.addressGroup.findUnique({ where: { id } });
+  async updateGroup(id: string, dto: UpdateContactGroupDto) {
+    const group = await this.prisma.contactGroup.findUnique({ where: { id } });
     if (!group) {
       throw new NotFoundException('Group not found');
     }
 
     if (dto.contactIds?.length) {
       const contacts = await this.prisma.contact.findMany({
-        where: { id: { in: dto.contactIds }, walletId: group.walletId },
+        where: { id: { in: dto.contactIds }, accountId: group.accountId },
       });
 
       if (contacts.length !== dto.contactIds.length) {
         throw new BadRequestException(
-          'One or more contacts not found or belong to different wallet',
+          'One or more contacts not found or belong to different account',
         );
       }
     }
 
     try {
-      return await this.prisma.addressGroup.update({
+      return await this.prisma.contactGroup.update({
         where: { id },
         data: {
           name: dto.name,
@@ -163,43 +164,43 @@ export class AddressBookService {
   }
 
   async deleteGroup(id: string) {
-    const group = await this.prisma.addressGroup.findUnique({ where: { id } });
+    const group = await this.prisma.contactGroup.findUnique({ where: { id } });
     if (!group) {
       throw new NotFoundException('Group not found');
     }
 
-    return this.prisma.addressGroup.delete({ where: { id } });
+    return this.prisma.contactGroup.delete({ where: { id } });
   }
 
   // ============ CONTACT ============
 
   async createContact(dto: CreateContactDto, userCommitment: string) {
-    // Check if user is a member of the wallet
-    const membership = await this.prisma.accountWallet.findFirst({
+    // Check if user is a signer of the account
+    const membership = await this.prisma.accountSigner.findFirst({
       where: {
-        wallet: { id: dto.walletId },
-        account: { commitment: userCommitment },
+        account: { id: dto.accountId },
+        user: { commitment: userCommitment },
       },
     });
 
     if (!membership) {
-      throw new ForbiddenException('You are not a member of this wallet');
+      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
     }
 
-    const groups = await this.prisma.addressGroup.findMany({
-      where: { id: { in: dto.groupIds }, walletId: dto.walletId },
+    const groups = await this.prisma.contactGroup.findMany({
+      where: { id: { in: dto.groupIds }, accountId: dto.accountId },
     });
 
     if (groups.length !== dto.groupIds.length) {
       throw new BadRequestException(
-        'One or more groups not found or belong to different wallet',
+        'One or more groups not found or belong to different account',
       );
     }
 
     try {
       return await this.prisma.contact.create({
         data: {
-          walletId: dto.walletId,
+          accountId: dto.accountId,
           name: dto.name,
           address: dto.address,
           groups: {
@@ -216,27 +217,27 @@ export class AddressBookService {
   }
 
   async getContacts(
-    walletId: string,
+    accountId: string,
     userCommitment?: string,
     groupId?: string,
   ) {
-    // Check if user is a member of the wallet
+    // Check if user is a signer of the account
     if (userCommitment) {
-      const membership = await this.prisma.accountWallet.findFirst({
+      const membership = await this.prisma.accountSigner.findFirst({
         where: {
-          wallet: { id: walletId },
-          account: { commitment: userCommitment },
+          account: { id: accountId },
+          user: { commitment: userCommitment },
         },
       });
 
       if (!membership) {
-        throw new ForbiddenException('You are not a member of this wallet');
+        throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
       }
     }
 
     return this.prisma.contact.findMany({
       where: {
-        walletId,
+        accountId,
         ...(groupId && {
           groups: { some: { groupId } },
         }),
@@ -270,13 +271,13 @@ export class AddressBookService {
     }
 
     if (dto.groupIds?.length) {
-      const groups = await this.prisma.addressGroup.findMany({
-        where: { id: { in: dto.groupIds }, walletId: contact.walletId },
+      const groups = await this.prisma.contactGroup.findMany({
+        where: { id: { in: dto.groupIds }, accountId: contact.accountId },
       });
 
       if (groups.length !== dto.groupIds.length) {
         throw new BadRequestException(
-          'One or more groups not found or belong to different wallet',
+          'One or more groups not found or belong to different account',
         );
       }
     }

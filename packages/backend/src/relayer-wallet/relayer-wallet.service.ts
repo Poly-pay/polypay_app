@@ -14,7 +14,7 @@ import {
 } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
-import { waitForReceiptWithRetry } from '@/common/constants/utils/retry';
+import { waitForReceiptWithRetry } from '@/common/utils/retry';
 
 @Injectable()
 export class RelayerService {
@@ -53,7 +53,7 @@ export class RelayerService {
   /**
    * Deploy MetaMultiSigWallet contract
    */
-  async deployWallet(
+  async deployAccount(
     commitments: string[],
     threshold: number,
   ): Promise<{ address: string; txHash: string }> {
@@ -95,7 +95,7 @@ export class RelayerService {
    * Execute transaction on MetaMultiSigWallet
    */
   async executeTransaction(
-    walletAddress: string,
+    accountAddress: string,
     nonce: number,
     to: string,
     value: string,
@@ -110,9 +110,9 @@ export class RelayerService {
       index: number;
     }[],
   ): Promise<{ txHash: string }> {
-    // 1. Check wallet ETH balance
+    // 1. Check account ETH balance
     const balance = await this.publicClient.getBalance({
-      address: walletAddress as `0x${string}`,
+      address: accountAddress as `0x${string}`,
     });
 
     // Calculate required ETH balance
@@ -225,7 +225,7 @@ export class RelayerService {
     // Check ETH balance
     if (requiredBalance > 0n && balance < requiredBalance) {
       throw new Error(
-        `Insufficient wallet ETH balance. Required: ${requiredBalance.toString()} wei, Available: ${balance.toString()} wei`,
+        `Insufficient account ETH balance. Required: ${requiredBalance.toString()} wei, Available: ${balance.toString()} wei`,
       );
     }
 
@@ -249,7 +249,7 @@ export class RelayerService {
           },
         ],
         functionName: 'balanceOf',
-        args: [walletAddress as `0x${string}`],
+        args: [accountAddress as `0x${string}`],
       });
 
       if (tokenBalance < requiredAmount) {
@@ -284,7 +284,7 @@ export class RelayerService {
 
     // 3. Estimate gas
     const gasEstimate = await this.publicClient.estimateContractGas({
-      address: walletAddress as `0x${string}`,
+      address: accountAddress as `0x${string}`,
       abi: METAMULTISIG_ABI,
       functionName: 'execute',
       args,
@@ -295,7 +295,7 @@ export class RelayerService {
 
     // 4. Execute
     const txHash = await this.walletClient.writeContract({
-      address: walletAddress as `0x${string}`,
+      address: accountAddress as `0x${string}`,
       abi: METAMULTISIG_ABI,
       functionName: 'execute',
       args,

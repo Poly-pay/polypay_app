@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
+import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 
 @Injectable()
 export class ContactAccessGuard implements CanActivate {
@@ -24,26 +25,26 @@ export class ContactAccessGuard implements CanActivate {
       throw new ForbiddenException('Contact ID not provided');
     }
 
-    // Find contact and its wallet
+    // Find contact and its account
     const contact = await this.prisma.contact.findUnique({
       where: { id: contactId },
-      include: { wallet: true },
+      include: { account: true },
     });
 
     if (!contact) {
       throw new NotFoundException('Contact not found');
     }
 
-    // Check if user is a member of the wallet
-    const membership = await this.prisma.accountWallet.findFirst({
+    // Check if user is a member of the account
+    const membership = await this.prisma.accountSigner.findFirst({
       where: {
-        wallet: { id: contact.walletId },
-        account: { commitment: userCommitment },
+        account: { id: contact.accountId },
+        user: { commitment: userCommitment },
       },
     });
 
     if (!membership) {
-      throw new ForbiddenException('You are not a member of this wallet');
+      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
     }
 
     return true;

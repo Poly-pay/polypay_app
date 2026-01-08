@@ -10,20 +10,20 @@ export const API_ENDPOINTS = {
     meAccounts: "/api/users/me/accounts",
   },
 
-  addressBook: {
+  contactBook: {
     groups: {
-      base: "/api/address-book/groups",
-      byId: (id: string) => `/api/address-book/groups/${id}`,
+      base: "/api/contact-book/groups",
+      byId: (id: string) => `/api/contact-book/groups/${id}`,
       byAccount: (accountId: string) =>
-        `/api/address-book/groups?accountId=${accountId}`,
+        `/api/contact-book/groups?accountId=${accountId}`,
     },
     contacts: {
-      base: "/api/address-book/contacts",
-      byId: (id: string) => `/api/address-book/contacts/${id}`,
+      base: "/api/contact-book/contacts",
+      byId: (id: string) => `/api/contact-book/contacts/${id}`,
       byAccount: (accountId: string, groupId?: string) => {
         const params = new URLSearchParams({ accountId });
         if (groupId) params.append("groupId", groupId);
-        return `/api/address-book/contacts?${params}`;
+        return `/api/contact-book/contacts?${params}`;
       },
     },
   },

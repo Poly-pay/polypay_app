@@ -13,7 +13,7 @@ export interface Transaction {
   tokenAddress?: string;
   contactId?: string;
   contact?: Contact;
-  walletAddress: string;
+  accountAddress: string;
   signerCommitment?: string;
   newThreshold?: number;
   batchData?: string;

@@ -27,7 +27,7 @@ export class BatchItemOwnerGuard implements CanActivate {
     // Find batch item
     const batchItem = await this.prisma.batchItem.findUnique({
       where: { id: batchItemId },
-      include: { account: true },
+      include: { user: true },
     });
 
     if (!batchItem) {
@@ -35,7 +35,7 @@ export class BatchItemOwnerGuard implements CanActivate {
     }
 
     // Check if user owns this batch item
-    if (batchItem.account.commitment !== userCommitment) {
+    if (batchItem.user.commitment !== userCommitment) {
       throw new ForbiddenException('You do not own this batch item');
     }
 

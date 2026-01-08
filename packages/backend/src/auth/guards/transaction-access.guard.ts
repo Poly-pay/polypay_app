@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
+import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 
 @Injectable()
 export class TransactionAccessGuard implements CanActivate {
@@ -27,7 +28,7 @@ export class TransactionAccessGuard implements CanActivate {
     // Find transaction and its wallet
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
-      include: { wallet: true },
+      include: { account: true },
     });
 
     if (!transaction) {
@@ -35,15 +36,15 @@ export class TransactionAccessGuard implements CanActivate {
     }
 
     // Check if user is a member of the wallet
-    const membership = await this.prisma.accountWallet.findFirst({
+    const membership = await this.prisma.accountSigner.findFirst({
       where: {
-        wallet: { address: transaction.wallet.address },
-        account: { commitment: userCommitment },
+        account: { address: transaction.account.address },
+        user: { commitment: userCommitment },
       },
     });
 
     if (!membership) {
-      throw new ForbiddenException('You are not a member of this wallet');
+      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
     }
 
     return true;

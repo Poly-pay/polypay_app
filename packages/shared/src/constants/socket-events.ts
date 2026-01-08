@@ -8,3 +8,5 @@ export const TX_VOTED_EVENT = "tx:voted";
 
 // Account
 export const ACCOUNT_CREATED_EVENT = "account:created";
+
+export const JOIN_ACCOUNT_ROOM = "join:account";

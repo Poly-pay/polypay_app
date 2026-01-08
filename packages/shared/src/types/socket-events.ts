@@ -4,7 +4,7 @@ import { Vote } from "./vote";
 export interface TxCreatedEventData {
   txId: number;
   type: TxType;
-  walletAddress: string;
+  accountAddress: string;
 }
 
 export interface TxStatusEventData {

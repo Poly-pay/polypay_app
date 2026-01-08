@@ -7,7 +7,7 @@ import {
   getHttpServer,
   getTestApp,
 } from '../setup';
-import { getSignerA, getSignerB } from '../fixtures/test-accounts';
+import { getSignerA, getSignerB } from '../fixtures/test-users';
 import { createTestSigner, TestSigner } from '../utils/signer.util';
 import {
   generateSecret,
@@ -15,15 +15,15 @@ import {
   generateTestProof,
 } from '../utils/proof.util';
 import {
-  depositToWallet,
+  depositToAccount,
   getTransactionHash,
-  getWalletBalance,
+  getAccountBalance,
 } from '../utils/contract.util';
 import { getPrismaService } from '../utils/cleanup.util';
 import { loginUser, getAuthHeader, AuthTokens } from '../utils/auth.util';
 import {
   API_ENDPOINTS,
-  CreateWalletDto,
+  CreateAccountDto,
   TxStatus,
   TxType,
 } from '@polypay/shared';
@@ -91,39 +91,39 @@ describe('Transaction E2E', () => {
   });
 
   describe('Full transaction flow', () => {
-    it('should complete full flow: create wallet → create tx → approve → execute', async () => {
+    it('should complete full flow: create account → create tx → approve → execute', async () => {
       const server = getHttpServer();
 
-      // ============ STEP 1: Create Wallet ============
-      console.log('\n--- Step 1: Create Wallet ---');
+      // ============ STEP 1: Create Account ============
+      console.log('\n--- Step 1: Create Account ---');
 
-      const dataCreateWallet: CreateWalletDto = {
-        name: 'Test Multi-Sig Wallet',
+      const dataCreateAccount: CreateAccountDto = {
+        name: 'Test Multi-Sig Account',
         signers: [signerDtoA, signerDtoB],
         threshold: 2,
       };
 
-      const walletResponse = await request(server)
-        .post(API_ENDPOINTS.wallets.base)
+      const accountResponse = await request(server)
+        .post(API_ENDPOINTS.accounts.base)
         .set(getAuthHeader(tokensA.accessToken))
-        .send(dataCreateWallet)
+        .send(dataCreateAccount)
         .expect(201);
 
-      expect(walletResponse.body).toHaveProperty('address');
+      expect(accountResponse.body).toHaveProperty('address');
 
-      const walletAddress = walletResponse.body.address as `0x${string}`;
-      console.log('Wallet created:');
-      console.log('  Address:', walletAddress);
+      const accountAddress = accountResponse.body.address as `0x${string}`;
+      console.log('Account created:');
+      console.log('  Address:', accountAddress);
 
-      // ============ STEP 2: Deposit ETH to Wallet ============
-      console.log('\n--- Step 2: Deposit ETH to Wallet ---');
+      // ============ STEP 2: Deposit ETH to Account ============
+      console.log('\n--- Step 2: Deposit ETH to Account ---');
 
-      const balanceBefore = await getWalletBalance(walletAddress);
+      const balanceBefore = await getAccountBalance(accountAddress);
       console.log('  Balance before:', formatEther(balanceBefore), 'ETH');
 
-      await depositToWallet(signerA, walletAddress, '0.001');
+      await depositToAccount(signerA, accountAddress, '0.001');
 
-      const balanceAfter = await getWalletBalance(walletAddress);
+      const balanceAfter = await getAccountBalance(accountAddress);
       console.log('  Balance after:', formatEther(balanceAfter), 'ETH');
 
       expect(balanceAfter).toBeGreaterThan(balanceBefore);
@@ -135,7 +135,7 @@ describe('Transaction E2E', () => {
       const reserveNonceResponse = await request(server)
         .post(API_ENDPOINTS.transactions.reserveNonce)
         .set(getAuthHeader(tokensA.accessToken))
-        .send({ walletAddress })
+        .send({ accountAddress })
         .expect(201);
 
       const nonce = reserveNonceResponse.body.nonce;
@@ -149,7 +149,7 @@ describe('Transaction E2E', () => {
 
       // 3.3 Get txHash from contract
       const txHash = await getTransactionHash(
-        walletAddress,
+        accountAddress,
         BigInt(nonce),
         recipient,
         value,
@@ -169,11 +169,10 @@ describe('Transaction E2E', () => {
         .send({
           nonce: nonce,
           type: TxType.TRANSFER,
-          walletAddress: walletAddress,
+          accountAddress: accountAddress,
           to: recipient,
           value: value.toString(),
           threshold: 2,
-          totalSigners: 2,
           creatorCommitment: commitmentA,
           proof: proofA.proof,
           publicInputs: proofA.publicInputs,
@@ -197,7 +196,7 @@ describe('Transaction E2E', () => {
 
       // 4.2 Get txHash for approve
       const txHashForApprove = await getTransactionHash(
-        walletAddress,
+        accountAddress,
         BigInt(getTxResponse.body.nonce),
         getTxResponse.body.to as `0x${string}`,
         BigInt(getTxResponse.body.value),

@@ -1,6 +1,6 @@
 import { IsArray, IsOptional, IsString, MaxLength } from "class-validator";
 
-export class UpdateAddressGroupDto {
+export class UpdateContactGroupDto {
   @IsOptional()
   @IsString()
   @MaxLength(50)

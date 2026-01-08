@@ -29,22 +29,22 @@ export class NotificationService {
       throw new BadRequestException('Cannot send commitment to yourself');
     }
 
-    // Find sender account
-    const sender = await this.prisma.account.findUnique({
+    // Find sender user
+    const sender = await this.prisma.user.findUnique({
       where: { commitment: senderCommitment },
     });
 
     if (!sender) {
-      throw new NotFoundException('Sender account not found');
+      throw new NotFoundException('Sender user not found');
     }
 
-    // Find recipient account
-    const recipient = await this.prisma.account.findUnique({
+    // Find recipient user
+    const recipient = await this.prisma.user.findUnique({
       where: { commitment: recipientCommitment },
     });
 
     if (!recipient) {
-      throw new NotFoundException('Recipient account not found');
+      throw new NotFoundException('Recipient user not found');
     }
 
     // Create notification
@@ -74,16 +74,16 @@ export class NotificationService {
   }
 
   async getByRecipient(commitment: string) {
-    const account = await this.prisma.account.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { commitment },
     });
 
-    if (!account) {
-      throw new NotFoundException('Account not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
     return this.prisma.notification.findMany({
-      where: { recipientId: account.id },
+      where: { recipientId: user.id },
       include: { sender: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -105,17 +105,17 @@ export class NotificationService {
   }
 
   async markAllAsRead(commitment: string) {
-    const account = await this.prisma.account.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { commitment },
     });
 
-    if (!account) {
-      throw new NotFoundException('Account not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
     return this.prisma.notification.updateMany({
       where: {
-        recipientId: account.id,
+        recipientId: user.id,
         read: false,
       },
       data: { read: true },
@@ -123,17 +123,17 @@ export class NotificationService {
   }
 
   async getUnreadCount(commitment: string) {
-    const account = await this.prisma.account.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { commitment },
     });
 
-    if (!account) {
+    if (!user) {
       return 0;
     }
 
     return this.prisma.notification.count({
       where: {
-        recipientId: account.id,
+        recipientId: user.id,
         read: false,
       },
     });

@@ -1,7 +1,7 @@
 import { createPublicClient, http, type Hex, parseEther } from 'viem';
 import { horizenTestnet, METAMULTISIG_ABI } from '@polypay/shared';
 import { TestSigner } from './signer.util';
-import { waitForReceiptWithRetry } from '@/common/constants/utils/retry';
+import { waitForReceiptWithRetry } from '@/common/utils/retry';
 
 /**
  * Create public client for reading contract
@@ -15,7 +15,7 @@ export function createTestPublicClient() {
 
 /**
  * Get transaction hash from contract
- * @param walletAddress - Wallet contract address
+ * @param accountAddress - Account contract address
  * @param nonce - Transaction nonce
  * @param to - Recipient address
  * @param value - Value in wei
@@ -23,7 +23,7 @@ export function createTestPublicClient() {
  * @returns Transaction hash
  */
 export async function getTransactionHash(
-  walletAddress: `0x${string}`,
+  accountAddress: `0x${string}`,
   nonce: bigint,
   to: `0x${string}`,
   value: bigint,
@@ -32,7 +32,7 @@ export async function getTransactionHash(
   const publicClient = createTestPublicClient();
 
   const txHash = await publicClient.readContract({
-    address: walletAddress,
+    address: accountAddress,
     abi: METAMULTISIG_ABI,
     functionName: 'getTransactionHash',
     args: [nonce, to, value, data],
@@ -42,20 +42,20 @@ export async function getTransactionHash(
 }
 
 /**
- * Deposit ETH to multisig wallet
+ * Deposit ETH to multisig account
  * @param signer - Test signer who will send ETH
- * @param walletAddress - Multisig wallet address
+ * @param accountAddress - Multisig account address
  * @param amount - Amount in ETH (e.g., "0.01")
  * @returns Transaction hash
  */
-export async function depositToWallet(
+export async function depositToAccount(
   signer: TestSigner,
-  walletAddress: `0x${string}`,
+  accountAddress: `0x${string}`,
   amount: string,
 ): Promise<Hex> {
   const hash = await signer.walletClient.sendTransaction({
     account: signer.account,
-    to: walletAddress,
+    to: accountAddress,
     value: parseEther(amount),
   } as any);
 
@@ -67,13 +67,13 @@ export async function depositToWallet(
 }
 
 /**
- * Get wallet ETH balance
- * @param walletAddress - Wallet address
+ * Get account ETH balance
+ * @param accountAddress - Account address
  * @returns Balance in wei
  */
-export async function getWalletBalance(
-  walletAddress: `0x${string}`,
+export async function getAccountBalance(
+  accountAddress: `0x${string}`,
 ): Promise<bigint> {
   const publicClient = createTestPublicClient();
-  return await publicClient.getBalance({ address: walletAddress });
+  return await publicClient.getBalance({ address: accountAddress });
 }
