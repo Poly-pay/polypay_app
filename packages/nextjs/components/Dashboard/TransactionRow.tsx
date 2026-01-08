@@ -419,12 +419,25 @@ interface TransactionRowProps {
 export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [isExecutable, setIsExecutable] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
 
   const { data: walletThreshold } = useWalletThreshold();
   const { data: commitmentsData } = useWalletCommitments();
 
   // Get totalSigners realtime from wallet commitments
   const totalSigners = commitmentsData?.length || 0;
+
+  useEffect(() => {
+    if (expanded) {
+      setShouldRender(true);
+    }
+  }, [expanded]);
+
+  const handleAnimationEnd = () => {
+    if (!expanded) {
+      setShouldRender(false);
+    }
+  };
 
   const { approve, deny, execute, isLoading: loading, loadingState } = useTransactionVote({ onSuccess });
 
@@ -503,15 +516,20 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       </div>
 
       {/* Expanded Content */}
-      {expanded && (
-        <div className="mt-1 mx-2">
-          <TxHeader tx={tx} />
-          <MemberList
-            members={tx.members}
-            votedCount={tx.votedCount}
-            threshold={Number(walletThreshold)}
-            totalSigners={totalSigners}
-          />
+      {shouldRender && (
+        <div
+          className={`overflow-hidden ${expanded ? "animate-expand" : "animate-collapse"} mt-1`}
+          onAnimationEnd={handleAnimationEnd}
+        >
+          <div className="mx-2">
+            <TxHeader tx={tx} />
+            <MemberList
+              members={tx.members}
+              votedCount={tx.votedCount}
+              threshold={Number(walletThreshold)}
+              totalSigners={totalSigners}
+            />
+          </div>
         </div>
       )}
     </div>

@@ -28,18 +28,19 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <InitializeApp>
-        <div className="h-screen">
+        <div className="h-screen grid grid-cols-12 overflow-hidden">
           {/* Sidebar fixed */}
-          <aside className="fixed top-0 left-0 h-screen w-[300px] z-50 p-2">
+          <aside className="xl:col-span-2 col-span-1 max-h-screen">
             <Sidebar />
           </aside>
-
           {/* Main content */}
-          <main className="ml-[300px] p-2 h-screen">
-            <div className="flex flex-col gap-2 w-full h-full">
+          <main className="xl:col-span-10 col-span-11 py-3 pr-3">
+            <section className="flex flex-col gap-2 h-full max-h-screen">
               <Title />
-              <div className="flex flex-col w-full flex-1 rounded-lg bg-white overflow-auto">{children}</div>
-            </div>
+              <div className="flex-1 content h-full rounded-lg bg-white overflow-auto animate-height-smooth">
+                {children}
+              </div>
+            </section>
           </main>
         </div>
         <Toaster />

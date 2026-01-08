@@ -53,7 +53,7 @@ export default function AccountSidebar() {
 
   if (!walletClient?.account) {
     return (
-      <div className="flex flex-col p-3 pb-6">
+      <div className="flex flex-col">
         <span className="flex flex-col gap-1 bg-white p-3 rounded-lg">
           <Image src="/logo/polypay-icon.svg" width={24} height={24} alt="logo" />
           <span className="font-bold">Welcome to Polypay</span>
@@ -65,15 +65,15 @@ export default function AccountSidebar() {
   }
 
   return (
-    <div className="flex flex-col p-3 pb-6">
-      <span className="flex flex-col gap-1 bg-white px-1 py-2 rounded-lg">
-        <span className="flex flex-row justify-between">
+    <section className="flex flex-col">
+      <div className="flex flex-col gap-1 bg-white px-1 py-2 rounded-lg">
+        <div className="flex gap-2">
           {/* Left side */}
-          <span className="w-[200px] h-full flex flex-col justify-between">
-            <span className="flex flex-row bg-[#F6F3FF] rounded-lg p-1 gap-2">
+          <div className="h-full w-full flex flex-col justify-between">
+            <div className="flex flex-row bg-[#F6F3FF] rounded-lg p-1 gap-2">
               <Image src="/sidebar/avatar.svg" width={70} height={70} alt="Avatar" />
-              <span className="flex flex-col w-full justify-between">
-                <span className="flex flex-row items-center gap-2">
+              <div className="xl:flex hidden flex-col w-full justify-between">
+                <div className="flex flex-row items-center gap-2">
                   {isEditingName ? (
                     <>
                       <input
@@ -103,7 +103,7 @@ export default function AccountSidebar() {
                       />
                     </>
                   )}
-                </span>
+                </div>
                 <Balance address={walletClient?.account?.address as Address} className="min-h-0 h-auto text-[14px]" />
                 <span className="flex flex-row items-center gap-2">
                   <Image src="/sidebar/fox.svg" width={14} height={14} alt="Fox" />
@@ -121,24 +121,24 @@ export default function AccountSidebar() {
                     className="cursor-pointer"
                   />
                 </span>
-              </span>
-            </span>
-            <span>
-              <span>Commitment</span>
-              <span
-                className={`block bg-[#1E1E1E] p-2 text-white font-semibold text-center text-[14px] rounded-[8px] 
+              </div>
+            </div>
+            <div className="xl:block hidden">
+              <span className="text-sm">Commitment</span>
+              <div
+                className={`block bg-[#1E1E1E] p-2 text-white font-semibold text-center text-[14px] rounded-[8px]
                 ${!commitment && "cursor-pointer hover:bg-gray-800"}`}
               >
                 {commitment ? (
-                  <span className="flex flex-row justify-between items-center">
-                    <span className="flex flex-row gap-2">
+                  <div className="flex flex-row justify-between items-center">
+                    <div className="flex flex-row gap-2">
                       <Image src={`/logo/polypay-icon.svg`} width={10} height={10} alt="Polypay Icon" />
                       <ShinyText
                         text={`${commitment?.slice(0, 6)}...${commitment?.slice(-4)}`}
                         disabled={false}
                         speed={3}
                       />
-                    </span>
+                    </div>
                     <Copy
                       onClick={e => {
                         e.stopPropagation();
@@ -149,15 +149,15 @@ export default function AccountSidebar() {
                       height={14}
                       className="cursor-pointer"
                     />
-                  </span>
+                  </div>
                 ) : (
                   <span onClick={() => openModal("generateCommitment")}>Generate your commitment</span>
                 )}
-              </span>
-            </span>
-          </span>
+              </div>
+            </div>
+          </div>
           {/* Right side */}
-          <span className="flex flex-col gap-2">
+          <div className="xl:flex hidden flex-col gap-2">
             <Image
               src="/sidebar/qrcode.svg"
               width={36}
@@ -189,9 +189,9 @@ export default function AccountSidebar() {
                 appRouter.goToDashboardNewWallet();
               }}
             />
-          </span>
-        </span>
-      </span>
-    </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

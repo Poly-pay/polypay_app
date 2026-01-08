@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url(animation.css);
 /*
   ---break---
 */
@@ -119,4 +120,31 @@
 
 .link:hover {
   opacity: 80%;
+}
+
+.content {
+  max-height: calc(100vh - 48px - 32px);
+  scrollbar-gutter: stable;
+}
+
+.content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: #333333;
+}
+
+.content {
+  scrollbar-width: thin;
+  scrollbar-color: #bbbbbb transparent;
 }

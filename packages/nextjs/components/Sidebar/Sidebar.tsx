@@ -64,7 +64,7 @@ const SectionItem = ({
     return (
       <div
         key={item.label}
-        className={`group flex flex-row items-center gap-3 px-2 py-2 rounded-[12px] cursor-pointer justify-between capitalize ${
+        className={`flex xl:w-full w-fit items-center gap-2 p-2 rounded-xl cursor-pointer justify-between capitalize ${
           selectedItem === item.link || pathname === item.link
             ? "bg-white text-black font-semibold"
             : "hover:bg-white hover:text-black"
@@ -95,7 +95,7 @@ const SectionItem = ({
             />
           </div>
           <span
-            className={`${
+            className={`xl:inline hidden ${
               selectedItem === item.link || pathname === item.link
                 ? "font-semibold text-black"
                 : "font-normal text-text-primary group-hover:font-semibold group-hover:text-black font-barlow"
@@ -111,9 +111,9 @@ const SectionItem = ({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col">
-        <span className="text-lg text-text-primary text-[#ADADAD]">{label}</span>
+        <span className="text-text-primary text-[#ADADAD] xl:inline hidden">{label}</span>
       </div>
-      <div className="flex flex-col gap-0.5">{menuItems.map(item => itemComponent(item))}</div>
+      <div className="flex flex-col gap-0.5 items-center">{menuItems.map(item => itemComponent(item))}</div>
       {showDivider && <div className="w-full h-[1px] my-1 bg-gray-300" />}
     </div>
   );
@@ -129,13 +129,19 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="bg-background relative rounded-lg h-screen min-w-[300px] max-w-[310px] justify-between flex flex-col z-30 border border-[#EDEDED] py-1">
-      <div className="p-3">
+    <div className="bg-background h-full relative rounded-lg  justify-between flex flex-col z-30 border border-[#EDEDED] p-3">
+      <div>
         {/* Header */}
         <div className="flex flex-row items-center gap-3" onClick={() => router.push("/")}>
           <Image src="/logo/polypay-icon.svg" alt="logo" className="w-8 h-8 cursor-pointer" width={32} height={32} />
-          <Image src="/logo/polypay-text.svg" alt="logo" className="cursor-pointer" width={68} height={68} />
-          <div className="flex flex-row items-center justify-center rounded-full px-3 py-1 bg-divider">
+          <Image
+            src="/logo/polypay-text.svg"
+            alt="logo"
+            className="cursor-pointer xl:inline hidden"
+            width={68}
+            height={68}
+          />
+          <div className="xl:flex hidden flex-row items-center justify-center rounded-full px-3 py-1 bg-divider">
             <span className="text-sm font-normal text-[#B5009A] px-3 py-1 bg-[#FF7CEB33] rounded-full">Beta</span>
           </div>
         </div>
