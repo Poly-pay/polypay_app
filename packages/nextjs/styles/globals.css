@@ -124,7 +124,7 @@
 
 .content {
   max-height: calc(100vh - 48px - 32px);
-  scrollbar-gutter: stable;
+  /* scrollbar-gutter: stable; */
 }
 
 .content::-webkit-scrollbar {
