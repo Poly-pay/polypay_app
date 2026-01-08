@@ -83,7 +83,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       const result = await createTransaction({
         nonce,
         type: TxType.TRANSFER,
-        walletAddress: metaMultiSigWallet.address,
+        accountAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         to: recipient,
         value: valueInSmallestUnit,

@@ -1,26 +1,26 @@
 import { useEffect, useState } from "react";
-import { AddressGroup, Contact, UpdateContactDto } from "@polypay/shared";
+import { Contact, ContactGroup, UpdateContactDto } from "@polypay/shared";
 import { Check, Copy, Trash2 } from "lucide-react";
 import { useUpdateContact } from "~~/hooks";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface ContactDetailProps {
   contact: Contact | null;
-  groups: AddressGroup[];
-  walletId: string;
+  groups: ContactGroup[];
+  accountId: string;
   onDelete: (contact: Contact) => void;
   onUpdate: () => void;
   onSuccess?: () => void;
 }
 
-export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate, onSuccess }: ContactDetailProps) {
+export function ContactDetail({ contact, groups, accountId, onDelete, onUpdate, onSuccess }: ContactDetailProps) {
   const [editName, setEditName] = useState("");
   const [editAddress, setEditAddress] = useState("");
   const [editGroupIds, setEditGroupIds] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const updateContact = useUpdateContact(walletId);
+  const updateContact = useUpdateContact(accountId);
 
   useEffect(() => {
     if (contact) {

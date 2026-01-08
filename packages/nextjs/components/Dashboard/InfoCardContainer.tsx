@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet, useModalApp, useWalletCommitments } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
-import { useWalletStore } from "~~/services/store";
+import { useAccountStore } from "~~/services/store";
 
 type InfoCardContainerProps = unknown;
 
@@ -15,12 +15,12 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
 
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
-  const walletAddress = metaMultiSigWallet?.address || "";
+  const accountAddress = metaMultiSigWallet?.address || "";
 
-  const { data } = usePendingTransactions(walletAddress);
+  const { data } = usePendingTransactions(accountAddress);
   const { data: walletCommitments } = useWalletCommitments();
 
-  const { currentWallet } = useWalletStore();
+  const { currentAccount } = useAccountStore();
 
   // Memoize flattened transactions to avoid re-computing on every render
   const transactions = useMemo(() => data?.pages.flatMap(page => page.data) ?? [], [data?.pages]);
@@ -52,7 +52,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             <span className="flex flex-row gap-2 items-center">
               <Image src="/dashboard/circle-polypay-icon.svg" alt="Polypay Icon" width={30} height={30} />
               <Image src="/dashboard/polypay-text.svg" alt="Polypay text" width={130} height={130} />
-              <span className="text-black px-3 py-1 rounded-2xl bg-lime-50">{currentWallet?.name ?? "Default"}</span>
+              <span className="text-black px-3 py-1 rounded-2xl bg-lime-50">{currentAccount?.name ?? "Default"}</span>
             </span>
           </div>
         </span>

@@ -4,12 +4,12 @@ import React from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { PortfolioModal } from "../modals/PortFolioModal";
-import { useMyWallets } from "~~/hooks";
+import { useMyAccounts } from "~~/hooks";
 
 const Title: React.FC = () => {
   const pathname = usePathname();
-  const { data: wallets } = useMyWallets();
-  const hasMultisigWallet = wallets && wallets.length > 0;
+  const { data: accounts } = useMyAccounts();
+  const hasMultisigAccount = accounts && accounts.length > 0;
   let title;
 
   switch (pathname) {
@@ -19,23 +19,14 @@ const Title: React.FC = () => {
     case "/dashboard/new-account":
       title = "Create New Account";
       break;
-    case "/address-book":
-      title = "Address Book";
+    case "/contact-book":
+      title = "Contact Book";
       break;
-    case "/ai-assistant":
-      title = "AI Assistant";
-      break;
-    case "/send":
+    case "/transfer":
       title = "Transfer";
-      break;
-    case "/swap":
-      title = "Swap Token";
       break;
     case "/batch":
       title = "Your Batch";
-      break;
-    case "/transactions":
-      title = "Transactions";
       break;
   }
 
@@ -49,8 +40,8 @@ const Title: React.FC = () => {
         </div>
       </div>
 
-      {/* Portfolio - Only show if account has multisig wallet */}
-      {hasMultisigWallet && (
+      {/* Portfolio - Only show if user has multisig account */}
+      {hasMultisigAccount && (
         <PortfolioModal>
           <div className="flex flex-row gap-2 w-[200px] justify-center items-center bg-white rounded-lg cursor-pointer">
             <Image src="/misc/coin-icon.gif" alt="portfolio" className="w-8 h-8" width={32} height={32} />

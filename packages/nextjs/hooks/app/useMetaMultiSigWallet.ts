@@ -3,35 +3,35 @@ import { METAMULTISIG_ABI } from "@polypay/shared";
 import { useQuery } from "@tanstack/react-query";
 import { getContract } from "viem";
 import { usePublicClient, useReadContract, useWalletClient } from "wagmi";
-import { useWalletStore } from "~~/services/store/useWalletStore";
+import { useAccountStore } from "~~/services/store/useAccountStore";
 
 // Query keys
-export const walletContractKeys = {
-  all: ["walletContract"] as const,
-  commitments: (address: string) => [...walletContractKeys.all, "commitments", address] as const,
-  threshold: (address: string) => [...walletContractKeys.all, "threshold", address] as const,
+export const accountContractKeys = {
+  all: ["accountContract"] as const,
+  commitments: (address: string) => [...accountContractKeys.all, "commitments", address] as const,
+  threshold: (address: string) => [...accountContractKeys.all, "threshold", address] as const,
 };
 
 export const useMetaMultiSigWallet = () => {
-  const { currentWallet } = useWalletStore();
+  const { currentAccount } = useAccountStore();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
   const contract = useMemo(() => {
     // Require walletClient for write operations
-    if (!currentWallet?.address || !publicClient || !walletClient) {
+    if (!currentAccount?.address || !publicClient || !walletClient) {
       return null;
     }
 
     return getContract({
-      address: currentWallet.address as `0x${string}`,
+      address: currentAccount.address as `0x${string}`,
       abi: METAMULTISIG_ABI,
       client: {
         public: publicClient,
         wallet: walletClient,
       },
     });
-  }, [currentWallet?.address, publicClient, walletClient]);
+  }, [currentAccount?.address, publicClient, walletClient]);
 
   return contract;
 };
@@ -39,21 +39,21 @@ export const useMetaMultiSigWallet = () => {
 // ============ Contract Info Hook ============
 
 export const useMetaMultiSigWalletInfo = () => {
-  const { currentWallet } = useWalletStore();
+  const { currentAccount } = useAccountStore();
 
   return {
-    address: currentWallet?.address as `0x${string}` | undefined,
+    address: currentAccount?.address as `0x${string}` | undefined,
     abi: METAMULTISIG_ABI,
   };
 };
 
 export const useWalletCommitments = () => {
-  const { currentWallet } = useWalletStore();
+  const { currentAccount } = useAccountStore();
   const publicClient = usePublicClient();
-  const address = currentWallet?.address || "";
+  const address = currentAccount?.address || "";
 
   return useQuery({
-    queryKey: walletContractKeys.commitments(address),
+    queryKey: accountContractKeys.commitments(address),
     queryFn: async () => {
       if (!address || !publicClient) return [];
       const result = await publicClient.readContract({
@@ -68,12 +68,12 @@ export const useWalletCommitments = () => {
 };
 
 export const useWalletThreshold = () => {
-  const { currentWallet } = useWalletStore();
+  const { currentAccount } = useAccountStore();
   const publicClient = usePublicClient();
-  const address = currentWallet?.address || "";
+  const address = currentAccount?.address || "";
 
   return useQuery({
-    queryKey: walletContractKeys.threshold(address),
+    queryKey: accountContractKeys.threshold(address),
     queryFn: async () => {
       if (!address || !publicClient) return 0n;
       const result = await publicClient.readContract({
@@ -88,14 +88,14 @@ export const useWalletThreshold = () => {
 };
 
 export const useWalletSignersCount = () => {
-  const { currentWallet } = useWalletStore();
+  const { currentAccount } = useAccountStore();
 
   return useReadContract({
-    address: currentWallet?.address as `0x${string}`,
+    address: currentAccount?.address as `0x${string}`,
     abi: METAMULTISIG_ABI,
     functionName: "getSignersCount",
     query: {
-      enabled: !!currentWallet?.address,
+      enabled: !!currentAccount?.address,
     },
   });
 };

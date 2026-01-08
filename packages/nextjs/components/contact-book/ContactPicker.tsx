@@ -4,19 +4,19 @@ import { BookUser, Search, X } from "lucide-react";
 import { useContacts, useGroups } from "~~/hooks";
 
 interface ContactPickerProps {
-  walletId: string | null;
+  accountId: string | null;
   onSelect: (address: string, name: string, contactId: string) => void;
   disabled?: boolean;
 }
 
-export function ContactPicker({ walletId, onSelect, disabled }: ContactPickerProps) {
+export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  const { data: groups = [] } = useGroups(walletId);
-  const { data: contacts = [], isLoading } = useContacts(walletId, selectedGroupId || undefined);
+  const { data: groups = [] } = useGroups(accountId);
+  const { data: contacts = [], isLoading } = useContacts(accountId, selectedGroupId || undefined);
 
   // Close picker when clicking outside
   useEffect(() => {
@@ -52,7 +52,7 @@ export function ContactPicker({ walletId, onSelect, disabled }: ContactPickerPro
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  if (!walletId) return null;
+  if (!accountId) return null;
 
   return (
     <div className="relative" ref={pickerRef}>
@@ -144,8 +144,8 @@ export function ContactPicker({ walletId, onSelect, disabled }: ContactPickerPro
 
           {/* Footer link */}
           <div className="p-2 border-t border-gray-100">
-            <a href="/address-book" className="block text-center text-xs text-primary hover:underline py-1">
-              Manage Address Book →
+            <a href="/contact-book" className="block text-center text-xs text-primary hover:underline py-1">
+              Manage Contact Book →
             </a>
           </div>
         </div>

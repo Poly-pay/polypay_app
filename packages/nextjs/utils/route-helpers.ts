@@ -33,8 +33,8 @@ export function isRouteComingSoon(routeKey: RouteKey, subrouteKey?: string): boo
 }
 
 export const getDashboardPath = () => Routes.DASHBOARD.path;
-export const getNewWalletPath = () => Routes.DASHBOARD.subroutes.NEW_WALLET.path;
-export const getAddressBookPath = () => Routes.ADDRESS_BOOK.path;
+export const getNewAccountPath = () => Routes.DASHBOARD.subroutes.NEW_ACCOUNT.path;
+export const getContactBookPath = () => Routes.CONTACT_BOOK.path;
 export const getTransferPath = () => Routes.TRANSFER.path;
 export const getBatchPath = () => Routes.BATCH.path;
 export const getMobilePath = () => Routes.MOBILE.path;

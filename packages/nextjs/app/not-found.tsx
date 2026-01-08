@@ -27,13 +27,9 @@ export default function NotFound() {
 
           <span
             className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[1]"
-            onClick={router.goToAddressBook}
+            onClick={router.goToContactBook}
           >
-            Address Book
-          </span>
-
-          <span className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[2]">
-            AI Assistant
+            Contact Book
           </span>
 
           <span
@@ -41,10 +37,6 @@ export default function NotFound() {
             onClick={router.goToTransfer}
           >
             Transfer
-          </span>
-
-          <span className="cursor-pointer px-[32px] py-[16px] border-[2px] border-white w[450px] h[46px] rounded-[20px] font-bold uppercase text-black bg-white/40 backdrop-blur-sm z-[4]">
-            Swap
           </span>
 
           <span

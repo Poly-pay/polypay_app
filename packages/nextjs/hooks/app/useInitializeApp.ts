@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import Routes from "~~/configs/routes.config";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
-import { accountApi } from "~~/services/api";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
+import { userApi } from "~~/services/api";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { ErrorCode, handleError, parseError } from "~~/utils/errorHandler";
 
 export const useInitializeApp = () => {
   const router = useAppRouter();
   const { logout, accessToken } = useIdentityStore();
-  const { currentWallet, setCurrentWallet, clearCurrentWallet } = useWalletStore();
+  const { currentAccount, setCurrentAccount, clearCurrentAccount } = useAccountStore();
 
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,45 +35,45 @@ export const useInitializeApp = () => {
 
       // Case 1: No accessToken - clear state and redirect
       if (!accessToken) {
-        clearCurrentWallet();
+        clearCurrentAccount();
         setIsLoading(false);
         setIsInitialized(true);
 
-        // Redirect to new-wallet if on dashboard
+        // Redirect to new-account if on dashboard
         if (router.pathname === Routes.DASHBOARD.path) {
-          router.goToDashboardNewWallet();
+          router.goToDashboardNewAccount();
         }
         return;
       }
 
-      // Case 2: Has commitment, fetch wallets
+      // Case 2: Has commitment, fetch accounts
       try {
-        const wallets = await accountApi.getMyWallets();
+        const accounts = await userApi.getMyAccounts();
 
         // Check if request was aborted
         if (abortControllerRef.current?.signal.aborted) {
           return;
         }
 
-        if (wallets && wallets.length > 0) {
-          // Has wallets
-          const isCurrentWalletValid = currentWallet && wallets.some(w => w.address === currentWallet.address);
+        if (accounts && accounts.length > 0) {
+          // Has accounts
+          const isCurrentAccountValid = currentAccount && accounts.some(a => a.address === currentAccount.address);
 
-          if (!isCurrentWalletValid) {
-            setCurrentWallet(wallets[0]);
+          if (!isCurrentAccountValid) {
+            setCurrentAccount(accounts[0]);
           }
 
-          // Redirect from new-wallet to dashboard
-          if (router.pathname === Routes.DASHBOARD.subroutes.NEW_WALLET.path) {
+          // Redirect from new-account to dashboard
+          if (router.pathname === Routes.DASHBOARD.subroutes.NEW_ACCOUNT.path) {
             router.goToDashboard();
           }
         } else {
-          // No wallets
-          clearCurrentWallet();
+          // No accounts
+          clearCurrentAccount();
 
-          // Redirect to new-wallet if on dashboard
+          // Redirect to new-account if on dashboard
           if (router.pathname === Routes.DASHBOARD.path) {
-            router.goToDashboardNewWallet();
+            router.goToDashboardNewAccount();
           }
         }
       } catch (error: any) {
@@ -88,13 +88,13 @@ export const useInitializeApp = () => {
         if (appError.code === ErrorCode.UNAUTHORIZED) {
           // Token expired, logout user
           logout();
-          clearCurrentWallet();
+          clearCurrentAccount();
           router.goToDashboard();
         } else if (appError.code === ErrorCode.NOT_FOUND) {
-          // Treat as no wallets
-          clearCurrentWallet();
+          // Treat as no accounts
+          clearCurrentAccount();
           if (router.pathname === Routes.DASHBOARD.path) {
-            router.goToDashboardNewWallet();
+            router.goToDashboardNewAccount();
           }
         } else {
           // Other errors, show notification

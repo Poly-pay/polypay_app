@@ -9,7 +9,7 @@ interface CreateGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  walletId: string;
+  accountId: string;
   contacts: Contact[];
 }
 
@@ -39,7 +39,7 @@ function getContactGroups(contact: Contact): string {
     .join(", ");
 }
 
-export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contacts }: CreateGroupModalProps) {
+export function CreateGroupModal({ isOpen, onClose, onSuccess, accountId, contacts }: CreateGroupModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [formError, setFormError] = useState("");
@@ -86,7 +86,7 @@ export function CreateGroupModal({ isOpen, onClose, onSuccess, walletId, contact
 
     try {
       await createGroup.mutateAsync({
-        walletId,
+        accountId,
         name: data.name.trim(),
         contactIds: selectedContactIds.length > 0 ? selectedContactIds : undefined,
       });

@@ -8,7 +8,10 @@ import { PrismaService } from '@/database/prisma.service';
 import { CreateAccountDto, UpdateAccountDto } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { EventsService } from '@/events/events.service';
-import { ACCOUNT_CREATED_EVENT, AccountCreatedEventData } from '@polypay/shared';
+import {
+  ACCOUNT_CREATED_EVENT,
+  AccountCreatedEventData,
+} from '@polypay/shared';
 
 @Injectable()
 export class AccountService {

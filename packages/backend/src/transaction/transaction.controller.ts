@@ -392,6 +392,9 @@ export class TransactionController {
     @CurrentUser() user: User,
     @Body('accountAddress') accountAddress: string,
   ) {
-    return this.transactionService.reserveNonce(accountAddress, user.commitment);
+    return this.transactionService.reserveNonce(
+      accountAddress,
+      user.commitment,
+    );
   }
 }

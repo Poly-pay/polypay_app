@@ -62,7 +62,7 @@ export interface TransactionRowData {
   threshold: number;
   approveCount: number;
   myVoteStatus: VoteStatus | null;
-  walletAddress: string;
+  accountAddress: string;
 }
 
 /**
@@ -85,8 +85,8 @@ function buildTransactionParams(tx: TransactionRowData): {
       callData = encodeERC20Transfer(tx.recipientAddress!, BigInt(tx.amount || "0")) as `0x${string}`;
     }
   } else {
-    // For non-transfer types, to = wallet address
-    to = tx.walletAddress as `0x${string}`;
+    // For non-transfer types, to = account address
+    to = tx.accountAddress as `0x${string}`;
     value = 0n;
 
     if (tx.type === TxType.ADD_SIGNER) {

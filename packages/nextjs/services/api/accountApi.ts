@@ -1,5 +1,6 @@
 import { apiClient } from "./apiClient";
-import { API_ENDPOINTS, Account, CreateAccountDto, UpdateAccountDto, Wallet } from "@polypay/shared";
+import { API_ENDPOINTS } from "@polypay/shared";
+import { Account, CreateAccountDto, UpdateAccountDto } from "@polypay/shared";
 
 export const accountApi = {
   create: async (dto: CreateAccountDto): Promise<Account> => {
@@ -7,18 +8,13 @@ export const accountApi = {
     return data;
   },
 
-  getMe: async (): Promise<Account> => {
-    const { data } = await apiClient.get<Account>(API_ENDPOINTS.accounts.me);
+  getByAddress: async (address: string): Promise<Account> => {
+    const { data } = await apiClient.get<Account>(API_ENDPOINTS.accounts.byAddress(address));
     return data;
   },
 
-  getMyWallets: async (): Promise<Wallet[]> => {
-    const { data } = await apiClient.get<Wallet[]>(API_ENDPOINTS.accounts.meWallets);
-    return data;
-  },
-
-  updateMe: async (dto: UpdateAccountDto): Promise<Account> => {
-    const { data } = await apiClient.patch<Account>(API_ENDPOINTS.accounts.me, dto);
+  update: async (address: string, dto: UpdateAccountDto): Promise<Account> => {
+    const { data } = await apiClient.patch<Account>(API_ENDPOINTS.accounts.byAddress(address), dto);
     return data;
   },
 };

@@ -5,25 +5,18 @@ const Routes = {
     title: "Dashboard",
     icon: "/sidebar/dashboard.svg",
     subroutes: {
-      NEW_WALLET: {
-        path: "/dashboard/new-wallet",
-        name: "new-wallet",
-        title: "New Wallet",
+      NEW_ACCOUNT: {
+        path: "/dashboard/new-account",
+        name: "new-account",
+        title: "New Account",
       },
     },
   },
-  ADDRESS_BOOK: {
-    path: "/address-book",
-    name: "address-book",
-    title: "Address Book",
-    icon: "/sidebar/address-book.svg",
-  },
-  AI_ASSISTANT: {
-    path: "/ai-assistant",
-    name: "ai-assistant",
-    title: "AI Assistant",
-    icon: "/sidebar/ai-assistant.svg",
-    coming: true,
+  CONTACT_BOOK: {
+    path: "/contact-book",
+    name: "contact-book",
+    title: "Contact Book",
+    icon: "/sidebar/contact-book.svg",
   },
   TRANSFER: {
     path: "/transfer",
@@ -31,36 +24,16 @@ const Routes = {
     title: "Transfer",
     icon: "/sidebar/transfer.svg",
   },
-  SWAP: {
-    path: "/swap",
-    name: "swap",
-    title: "Swap",
-    icon: "/sidebar/swap.svg",
-    coming: true,
-  },
   BATCH: {
     path: "/batch",
     name: "batch",
     title: "Batch",
     icon: "/sidebar/batch.svg",
   },
-  TRANSACTIONS: {
-    path: "/transactions",
-    name: "transactions",
-    title: "Transactions",
-    icon: "/sidebar/transaction.svg",
-    coming: true,
-  },
   MOBILE: {
     path: "/mobile",
     name: "mobile",
     title: "Mobile",
-  },
-  VETKEYS: {
-    path: "/vetkeys",
-    name: "vetkeys",
-    title: "VetKeys",
-    coming: true,
   },
 } as const;
 

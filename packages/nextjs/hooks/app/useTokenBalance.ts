@@ -11,7 +11,7 @@ const ERC20_ABI = [
   },
 ] as const;
 
-export function useTokenBalances(walletAddress: string | undefined) {
+export function useTokenBalances(accountAddress: string | undefined) {
   // Filter out native ETH
   const erc20Tokens = SUPPORTED_TOKENS.filter(token => token.address !== NATIVE_ETH.address);
 
@@ -19,13 +19,13 @@ export function useTokenBalances(walletAddress: string | undefined) {
     address: token.address as `0x${string}`,
     abi: ERC20_ABI,
     functionName: "balanceOf" as const,
-    args: walletAddress ? [walletAddress as `0x${string}`] : undefined,
+    args: accountAddress ? [accountAddress as `0x${string}`] : undefined,
   }));
 
   const { data, isLoading, refetch } = useReadContracts({
     contracts,
     query: {
-      enabled: !!walletAddress,
+      enabled: !!accountAddress,
     },
   });
 

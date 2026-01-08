@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AddressGroup } from "@polypay/shared";
+import { ContactGroup } from "@polypay/shared";
 import { Search, X } from "lucide-react";
 import { useCreateContact } from "~~/hooks";
 import { useZodForm } from "~~/hooks/form";
@@ -9,15 +9,15 @@ interface CreateContactModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  walletId: string;
-  groups: AddressGroup[];
+  accountId: string;
+  groups: ContactGroup[];
 }
 
-function getMemberCount(group: AddressGroup): number {
+function getMemberCount(group: ContactGroup): number {
   return group.contacts?.length || 0;
 }
 
-export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, groups }: CreateContactModalProps) {
+export function CreateContactModal({ isOpen, onClose, onSuccess, accountId, groups }: CreateContactModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [formError, setFormError] = useState("");
 
@@ -69,7 +69,7 @@ export function CreateContactModal({ isOpen, onClose, onSuccess, walletId, group
 
     try {
       await createContact.mutateAsync({
-        walletId,
+        accountId,
         name: data.name.trim(),
         address: data.address.trim(),
         groupIds: data.groupIds || [],

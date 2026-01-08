@@ -10,12 +10,12 @@ interface DeleteConfirmModalProps {
     id: string;
     name: string;
   } | null;
-  walletId: string;
+  accountId: string;
 }
 
-export function DeleteConfirmModal({ isOpen, onClose, onSuccess, target, walletId }: DeleteConfirmModalProps) {
-  const deleteGroup = useDeleteGroup(walletId);
-  const deleteContact = useDeleteContact(walletId);
+export function DeleteConfirmModal({ isOpen, onClose, onSuccess, target, accountId }: DeleteConfirmModalProps) {
+  const deleteGroup = useDeleteGroup(accountId);
+  const deleteContact = useDeleteContact(accountId);
 
   const isPending = deleteGroup.isPending || deleteContact.isPending;
 

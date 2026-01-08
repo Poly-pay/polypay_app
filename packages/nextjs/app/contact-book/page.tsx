@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Contact } from "@polypay/shared";
+import { Contact, ContactGroup } from "@polypay/shared";
 import { Search } from "lucide-react";
-import { ContactDetail } from "~~/components/address-book/ContactDetail";
-import { ContactList } from "~~/components/address-book/ContactList";
-import { CreateContactModal } from "~~/components/address-book/CreateContactModal";
-import { CreateGroupModal } from "~~/components/address-book/CreateGroupModal";
-import { DeleteConfirmModal } from "~~/components/address-book/DeleteConfirmModal";
+import { ContactDetail } from "~~/components/contact-book/ContactDetail";
+import { ContactList } from "~~/components/contact-book/ContactList";
+import { CreateContactModal } from "~~/components/contact-book/CreateContactModal";
+import { CreateGroupModal } from "~~/components/contact-book/CreateGroupModal";
+import { DeleteConfirmModal } from "~~/components/contact-book/DeleteConfirmModal";
 import { useContacts, useGroups } from "~~/hooks";
-import { useWalletStore } from "~~/services/store";
+import { useAccountStore } from "~~/services/store";
 
 export default function AddressBookPage() {
-  const { currentWallet: selectedWallet } = useWalletStore();
-  const walletId = selectedWallet?.id || null;
+  const { currentAccount: selectedAccount } = useAccountStore();
+  const accountId = selectedAccount?.id || null;
 
   // State
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -28,12 +28,12 @@ export default function AddressBookPage() {
   } | null>(null);
 
   // Queries
-  const { data: groups = [], refetch: refetchGroups } = useGroups(walletId);
+  const { data: groups = [], refetch: refetchGroups } = useGroups(accountId);
   const {
     data: contacts = [],
     isLoading: isLoadingContacts,
     refetch: refetchContacts,
-  } = useContacts(walletId, selectedGroupId || undefined);
+  } = useContacts(accountId, selectedGroupId || undefined);
 
   // Auto sync selectedContact when contacts data updates
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function AddressBookPage() {
 
   // Filter contacts by search
   const filteredContacts = contacts.filter(
-    contact =>
+    (contact: Contact) =>
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.address.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -80,10 +80,10 @@ export default function AddressBookPage() {
     setDeleteTarget(null);
   };
 
-  if (!walletId) {
+  if (!accountId) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <p className="text-gray-500">Please select a wallet first</p>
+        <p className="text-gray-500">Please select an account first</p>
       </div>
     );
   }
@@ -93,7 +93,7 @@ export default function AddressBookPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">Address Book</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Contact Book</h1>
 
           {/* Search */}
           <div className="relative">
@@ -143,7 +143,7 @@ export default function AddressBookPage() {
         >
           All
         </button>
-        {groups.map(group => (
+        {groups.map((group: ContactGroup) => (
           <button
             key={group.id}
             onClick={() => handleSelectGroup(group.id)}
@@ -174,7 +174,7 @@ export default function AddressBookPage() {
             <ContactDetail
               contact={selectedContact}
               groups={groups}
-              walletId={walletId}
+              accountId={accountId}
               onDelete={handleDeleteContact}
               onUpdate={() => setSelectedContact(null)}
               onSuccess={async () => {
@@ -193,7 +193,7 @@ export default function AddressBookPage() {
           refetchGroups();
           refetchContacts();
         }}
-        walletId={walletId}
+        accountId={accountId}
         contacts={contacts}
       />
 
@@ -201,7 +201,7 @@ export default function AddressBookPage() {
         isOpen={isCreateContactOpen}
         onClose={() => setIsCreateContactOpen(false)}
         onSuccess={refetchContacts}
-        walletId={walletId}
+        accountId={accountId}
         groups={groups}
       />
 
@@ -210,7 +210,7 @@ export default function AddressBookPage() {
         onClose={() => setDeleteTarget(null)}
         onSuccess={handleDeleteSuccess}
         target={deleteTarget}
-        walletId={walletId}
+        accountId={accountId}
       />
     </div>
   );

@@ -48,10 +48,7 @@ export class ContactBookController {
   @ApiBody({ type: CreateContactGroupDto })
   @ApiResponse({ status: 201, description: 'Group created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  createGroup(
-    @CurrentUser() user: User,
-    @Body() dto: CreateContactGroupDto,
-  ) {
+  createGroup(@CurrentUser() user: User, @Body() dto: CreateContactGroupDto) {
     return this.contactBookService.createGroup(dto, user.commitment);
   }
 

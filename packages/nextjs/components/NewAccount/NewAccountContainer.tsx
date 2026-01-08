@@ -2,25 +2,25 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import WalletName from "./AccountName";
 import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
-import WalletName from "./WalletName";
-import { useCreateWallet } from "~~/hooks/api";
+import { useCreateAccount } from "~~/hooks/api";
 import { useZodForm } from "~~/hooks/form";
 import { CreateWalletFormData, createWalletSchema } from "~~/lib/form";
-import { useWalletStore } from "~~/services/store";
+import { useAccountStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
 
-export default function NewWalletContainer() {
+export default function NewAccountContainer() {
   const { commitment } = useIdentityStore();
-  const { setCurrentWallet } = useWalletStore();
+  const { setCurrentAccount } = useAccountStore();
 
-  const { mutateAsync: createWallet, isPending: isCreating } = useCreateWallet();
+  const { mutateAsync: createAccount, isPending: isCreating } = useCreateAccount();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [createdWalletAddress, setCreatedWalletAddress] = useState<string>("");
+  const [createdAccountAddress, setCreatedAccountAddress] = useState<string>("");
 
   const form = useZodForm({
     schema: createWalletSchema,
@@ -65,18 +65,18 @@ export default function NewWalletContainer() {
         return;
       }
 
-      const wallet = await createWallet({
+      const account = await createAccount({
         name: formData.name,
         signers: validSigners,
         threshold: formData.threshold,
       });
 
-      setCurrentWallet(wallet);
-      setCreatedWalletAddress(wallet.address);
+      setCurrentAccount(account);
+      setCreatedAccountAddress(account.address);
       setCurrentStep(3);
     } catch (err: any) {
-      notification.error("Failed to create wallet: " + (err?.message || err.toString()));
-      console.error("Failed to create wallet:", err);
+      notification.error("Failed to create account: " + (err?.message || err.toString()));
+      console.error("Failed to create account:", err);
     }
   };
 
@@ -115,7 +115,7 @@ export default function NewWalletContainer() {
       <div className="flex flex-row gap-1 w-full h-full bg-app-background">
         <div className="flex-1 overflow-hidden relative flex flex-col rounded-lg bg-background border border-divider">
           {EarthBackground}
-          <SuccessScreen className="w-full" walletName={formData.name} walletAddress={createdWalletAddress} />
+          <SuccessScreen className="w-full" accountName={formData.name} accountAddress={createdAccountAddress} />
         </div>
       </div>
     );

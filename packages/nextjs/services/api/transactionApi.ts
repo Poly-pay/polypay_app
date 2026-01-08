@@ -16,12 +16,12 @@ export const transactionApi = {
   },
 
   getAll: async (
-    walletAddress: string,
+    accountAddress: string,
     status?: TxStatus,
     pagination?: PaginationParams,
   ): Promise<PaginatedResponse<Transaction>> => {
     const params = new URLSearchParams();
-    params.append("walletAddress", walletAddress);
+    params.append("accountAddress", accountAddress);
 
     if (status) {
       params.append("status", status);
@@ -89,8 +89,8 @@ export const transactionApi = {
     return data;
   },
 
-  reserveNonce: async (walletAddress: string): Promise<{ nonce: number; expiresAt: string }> => {
-    const { data } = await apiClient.post(API_ENDPOINTS.transactions.reserveNonce, { walletAddress });
+  reserveNonce: async (accountAddress: string): Promise<{ nonce: number; expiresAt: string }> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.transactions.reserveNonce, { accountAddress });
     return data;
   },
 };

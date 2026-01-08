@@ -1,7 +1,7 @@
 import { validators } from "./validation";
 import { z } from "zod";
 
-// ==================== Contact / Address Book ====================
+// ==================== Contact Book ====================
 
 export const createContactSchema = z.object({
   name: validators.requiredString("Name").max(100, "Name too long"),

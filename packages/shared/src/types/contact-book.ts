@@ -10,7 +10,7 @@ export interface Contact {
   accountId: string;
   name: string;
   address: string;
-  groups: ContactGroup[];
+  groups: ContactGroupEntry[];
   createdAt: string;
   updatedAt: string;
 }
@@ -19,7 +19,7 @@ export interface ContactGroup {
   id: string;
   accountId: string;
   name: string;
-  contacts: ContactGroup[];
+  contacts: ContactGroupEntry[];
   createdAt: string;
   updatedAt: string;
 }

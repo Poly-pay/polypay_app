@@ -8,17 +8,17 @@ import { notification } from "~~/utils/scaffold-eth";
 
 interface SuccessScreenProps {
   className?: string;
-  walletName: string;
-  walletAddress: string;
+  accountName: string;
+  accountAddress: string;
 }
 
-const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, walletAddress }) => {
+const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, accountName, accountAddress }) => {
   const router = useAppRouter();
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(walletAddress);
-    notification.success("Wallet address copied to clipboard!");
+    navigator.clipboard.writeText(accountAddress);
+    notification.success("Account address copied to clipboard!");
   };
 
   const handleSeeWallet = () => {
@@ -56,7 +56,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
 
         <div className="bg-gray-50 rounded-2xl p-8 w-full max-w-lg border-[1px] border-gray-200 shadow-sm">
           <div className="text-center">
-            <h3 className="text-grey-900 text-[32px] font-medium mb-4">{walletName}</h3>
+            <h3 className="text-grey-900 text-[32px] font-medium mb-4">{accountName}</h3>
             <span className="block border-b-[1px] border-gray-200 w-full "></span>
 
             <div
@@ -64,7 +64,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
               onClick={handleCopyAddress}
               title="Click to copy"
             >
-              {walletAddress}
+              {accountAddress}
             </div>
 
             <span className="block border-b-[1px] border-gray-200 w-full mb-4 "></span>
@@ -87,7 +87,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
         </div>
       </div>
 
-      <ReceiveModal isOpen={isReceiveModalOpen} onClose={() => setIsReceiveModalOpen(false)} address={walletAddress} />
+      <ReceiveModal isOpen={isReceiveModalOpen} onClose={() => setIsReceiveModalOpen(false)} address={accountAddress} />
     </div>
   );
 };

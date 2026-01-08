@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { walletContractKeys } from "../app";
+import { accountContractKeys } from "../app";
 import { useSocketEvent } from "../app/useSocketEvent";
 import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import {
@@ -23,9 +23,9 @@ import { useIdentityStore } from "~~/services/store";
 
 export const transactionKeys = {
   all: ["transactions"] as const,
-  byWallet: (walletAddress: string) => [...transactionKeys.all, walletAddress] as const,
-  byWalletAndStatus: (walletAddress: string, status: TxStatus) =>
-    [...transactionKeys.all, walletAddress, status] as const,
+  byAccount: (accountAddress: string) => [...transactionKeys.all, accountAddress] as const,
+  byAccountAndStatus: (accountAddress: string, status: TxStatus) =>
+    [...transactionKeys.all, accountAddress, status] as const,
   byTxId: (txId: number) => [...transactionKeys.all, "detail", txId] as const,
 };
 
@@ -41,7 +41,7 @@ export const useCreateTransaction = () => {
     mutationFn: transactionApi.create,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: transactionKeys.byWallet(variables.walletAddress),
+        queryKey: transactionKeys.byAccount(variables.accountAddress),
       });
     },
   });
@@ -50,22 +50,22 @@ export const useCreateTransaction = () => {
 /**
  * Infinite scroll hook for transactions
  */
-export const useTransactionsInfinite = (walletAddress: string, status?: TxStatus) => {
+export const useTransactionsInfinite = (accountAddress: string, status?: TxStatus) => {
   const { accessToken } = useIdentityStore();
 
   return useInfiniteQuery({
     queryKey: status
-      ? [...transactionKeys.byWalletAndStatus(walletAddress, status), "infinite"]
-      : [...transactionKeys.byWallet(walletAddress), "infinite"],
+      ? [...transactionKeys.byAccountAndStatus(accountAddress, status), "infinite"]
+      : [...transactionKeys.byAccount(accountAddress), "infinite"],
     queryFn: ({ pageParam }) =>
-      transactionApi.getAll(walletAddress, status, {
+      transactionApi.getAll(accountAddress, status, {
         limit: DEFAULT_PAGE_SIZE,
         cursor: pageParam,
       }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: PaginatedResponse<Transaction>) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
-    enabled: !!accessToken && !!walletAddress,
+    enabled: !!accessToken && !!accountAddress,
   });
 };
 
@@ -152,64 +152,64 @@ export const useReserveNonce = () => {
 // ============ Utility Hooks ============
 
 /**
- * Get pending transactions for a wallet
+ * Get pending transactions for an account
  */
-export const usePendingTransactions = (walletAddress: string) => {
-  return useTransactionsInfinite(walletAddress, TxStatus.PENDING);
+export const usePendingTransactions = (accountAddress: string) => {
+  return useTransactionsInfinite(accountAddress, TxStatus.PENDING);
 };
 
 /**
  * Listen for realtime transaction updates
  * Use this in components that display transaction list
  */
-export const useTransactionRealtime = (walletAddress: string | undefined) => {
+export const useTransactionRealtime = (accountAddress: string | undefined) => {
   const queryClient = useQueryClient();
 
   // Handle new transaction created
   const handleTxCreated = useCallback(
     (data: TxCreatedEventData) => {
       console.log("[Socket] TX created:", data);
-      if (walletAddress) {
-        queryClient.invalidateQueries({ queryKey: transactionKeys.byWallet(walletAddress) });
+      if (accountAddress) {
+        queryClient.invalidateQueries({ queryKey: transactionKeys.byAccount(accountAddress) });
       }
     },
-    [queryClient, walletAddress],
+    [queryClient, accountAddress],
   );
 
   // Handle transaction status change
   const handleTxStatus = useCallback(
     (data: TxStatusEventData) => {
       console.log("[Socket] TX status:", data);
-      if (walletAddress) {
+      if (accountAddress) {
         queryClient.invalidateQueries({
-          queryKey: transactionKeys.byWallet(walletAddress),
+          queryKey: transactionKeys.byAccount(accountAddress),
         });
 
         // Refetch contract data when tx executed
         if (data.status === TxStatus.EXECUTED) {
           queryClient.invalidateQueries({
-            queryKey: walletContractKeys.commitments(walletAddress),
+            queryKey: accountContractKeys.commitments(accountAddress),
           });
           queryClient.invalidateQueries({
-            queryKey: walletContractKeys.threshold(walletAddress),
+            queryKey: accountContractKeys.threshold(accountAddress),
           });
         }
       }
     },
-    [queryClient, walletAddress],
+    [queryClient, accountAddress],
   );
 
   // Handle transaction voted
   const handleTxVoted = useCallback(
     (data: TxVotedEventData) => {
       console.log("[Socket] TX voted:", data);
-      if (walletAddress) {
+      if (accountAddress) {
         queryClient.invalidateQueries({
-          queryKey: transactionKeys.byWallet(walletAddress),
+          queryKey: transactionKeys.byAccount(accountAddress),
         });
       }
     },
-    [queryClient, walletAddress],
+    [queryClient, accountAddress],
   );
 
   // Subscribe to socket events
