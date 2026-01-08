@@ -9,7 +9,7 @@ import {
 export class CreateAddressGroupDto {
   @IsNotEmpty()
   @IsString()
-  walletId: string;
+  accountId: string;
 
   @IsNotEmpty()
   @IsString()

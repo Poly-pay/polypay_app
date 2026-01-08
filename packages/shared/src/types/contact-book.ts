@@ -1,13 +1,13 @@
-export interface ContactGroup {
+export interface ContactGroupEntry {
   contactId: string;
   groupId: string;
   contact?: Contact;
-  group?: AddressGroup;
+  group?: ContactGroup;
 }
 
 export interface Contact {
   id: string;
-  walletId: string;
+  accountId: string;
   name: string;
   address: string;
   groups: ContactGroup[];
@@ -15,9 +15,9 @@ export interface Contact {
   updatedAt: string;
 }
 
-export interface AddressGroup {
+export interface ContactGroup {
   id: string;
-  walletId: string;
+  accountId: string;
   name: string;
   contacts: ContactGroup[];
   createdAt: string;

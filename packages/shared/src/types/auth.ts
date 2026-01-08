@@ -5,11 +5,11 @@ export interface AuthTokens {
 
 export interface AuthUser {
   commitment: string;
-  accountId: string;
+  userId: string;
 }
 
 export interface LoginResponse {
-  account: {
+  user: {
     id: string;
     commitment: string;
     createdAt: string;

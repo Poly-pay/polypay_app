@@ -1,4 +1,4 @@
-export { CreateAddressGroupDto } from "./create-group.dto";
-export { UpdateAddressGroupDto } from "./update-group.dto";
-export { CreateContactDto } from "./create-contact.dto";
-export { UpdateContactDto } from "./update-contact.dto";
+export * from "./create-group.dto";
+export * from "./update-group.dto";
+export * from "./create-contact.dto";
+export * from "./update-contact.dto";

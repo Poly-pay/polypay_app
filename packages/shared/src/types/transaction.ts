@@ -1,5 +1,5 @@
 import { TxType, TxStatus } from "../enums";
-import { Contact } from "./address-book";
+import { Contact } from "./contact-book";
 import { Vote } from "./vote";
 
 export interface Transaction {

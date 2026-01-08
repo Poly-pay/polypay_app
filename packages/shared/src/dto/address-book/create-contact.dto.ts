@@ -10,7 +10,7 @@ import {
 export class CreateContactDto {
   @IsString()
   @IsNotEmpty()
-  walletId: string;
+  accountId: string;
 
   @IsNotEmpty()
   @IsString()

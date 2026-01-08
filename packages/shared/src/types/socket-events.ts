@@ -20,8 +20,8 @@ export interface TxVotedEventData {
   vote: Vote;
 }
 
-export interface WalletCreatedEventData {
-  walletAddress: string;
+export interface AccountCreatedEventData {
+  accountAddress: string;
   name: string;
   threshold: number;
   signerCount: number;

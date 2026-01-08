@@ -21,7 +21,7 @@ export class CreateTransactionDto {
 
   @IsNotEmpty()
   @IsString()
-  walletAddress: string;
+  accountAddress: string;
 
   @IsNotEmpty()
   @IsNumber()
