@@ -115,11 +115,11 @@ export default function TransferContainer() {
       <div className="flex flex-col gap-[20px] items-center justify-center flex-1 px-4">
         {/* Title section */}
         <div className="flex flex-col items-center justify-center pt-8 relative z-50">
-          <div className="text-[#545454] xl:text-6xl text=3xl text-center font-bold uppercase w-full">transfering</div>
+          <div className="text-grey-900 xl:text-6xl text=3xl text-center font-bold uppercase w-full">transfering</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-[#545454] xl:text-6xl text=3xl text-center font-bold uppercase">t</div>
+            <div className="text-grey-900 xl:text-6xl text=3xl text-center font-bold uppercase">t</div>
             <div className="xl:h-[48px] h-6 relative rounded-full xl:w-[125.07px] w-16 border-[4.648px] border-primary border-solid"></div>
-            <div className="text-[#545454] xl:text-6xl text=3xl text-center font-bold uppercase">anyone</div>
+            <div className="text-grey-900 xl:text-6xl text=3xl text-center font-bold uppercase">anyone</div>
           </div>
         </div>
 
@@ -134,7 +134,7 @@ export default function TransferContainer() {
           <div className="relative mr-2">
             <div
               onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-              className="bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-1 rounded-full border border-[#e0e0e0] cursor-pointer hover:border-[#FF7CEB] transition-colors"
+              className="bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-1 rounded-full border border-grey-200 cursor-pointer hover:border-[#FF7CEB] transition-colors"
             >
               <Image
                 src={selectedToken.icon}
@@ -150,7 +150,7 @@ export default function TransferContainer() {
             </div>
 
             {showTokenDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-[#e0e0e0] shadow-lg z-10 min-w-[140px]">
+              <div className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-grey-200 shadow-lg z-10 min-w-[140px]">
                 {SUPPORTED_TOKENS.map(token => (
                   <div
                     key={token.address}
@@ -194,7 +194,7 @@ export default function TransferContainer() {
               <p className="text-red-500 text-xs mt-1">{form.formState.errors.amount.message}</p>
             )}
           </div>
-          <span className="text-[#545454] text-2xl font-medium">{selectedToken.symbol}</span>
+          <span className="text-grey-900 text-2xl font-medium">{selectedToken.symbol}</span>
         </div>
 
         {/* Visual divider */}
@@ -204,8 +204,8 @@ export default function TransferContainer() {
               <div className="absolute left-1/2 top-0 w-0.5 h-full border-l border-dashed border-gray-300 transform -translate-x-1/2" />
               <div className="absolute left-0 top-1/2 w-full h-0.5 border-t border-dashed border-gray-300 transform -translate-y-1/2" />
             </div>
-            <div className="absolute bg-[#fff] rounded-[32.842px] w-8 h-8 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-[1px] border-dashed border-[#FF7CEB] shadow-[0_0_20px_rgba(255,124,235,0.5)]">
-              <div className="text-text-secondary text-[14px] text-center text-[#676767]">To</div>
+            <div className="absolute bg-white rounded-[32.842px] w-8 h-8 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-[1px] border-dashed border-pink-350 shadow-[0_0_20px_rgba(255,124,235,0.5)]">
+              <div className="text-text-secondary text-[14px] text-center text-grey-800">To</div>
             </div>
           </div>
         </div>
@@ -213,7 +213,7 @@ export default function TransferContainer() {
         {/* Address input */}
         <div className="flex flex-col gap-[5px] items-center justify-start w-full max-w-xl">
           <div className="flex gap-2.5 items-center justify-center w-full">
-            <div className="bg-white grow min-h-px min-w-px relative rounded-[16px] border border-[#e0e0e0] shadow-[0px_0px_10.3px_0px_rgba(135,151,255,0.14),0px_0px_89.5px_0px_rgba(0,0,0,0.05)] p-3 justify-between flex-row flex">
+            <div className="bg-white grow min-h-px min-w-px relative rounded-[16px] border border-grey-200 shadow-[0px_0px_10.3px_0px_rgba(135,151,255,0.14),0px_0px_89.5px_0px_rgba(0,0,0,0.05)] p-3 justify-between flex-row flex">
               <input
                 {...form.register("recipient")}
                 type="text"
@@ -238,7 +238,7 @@ export default function TransferContainer() {
           <button
             onClick={handleAddToBatch}
             disabled={isLoading || !watchedAmount || !watchedRecipient}
-            className="bg-[#FF7CEB] flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-[#f35ddd] transition-colors"
+            className="bg-pink-350 flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
             <span className="font-semibold xl:text-base text-xs text-center text-white tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Add to batch"}
@@ -247,7 +247,7 @@ export default function TransferContainer() {
           <button
             onClick={form.handleSubmit(handleTransfer)}
             disabled={isLoading || !watchedAmount || !watchedRecipient}
-            className="bg-[#FF7CEB] flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-[#f35ddd] transition-colors"
+            className="bg-pink-350 flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
             <span className="font-semibold xl:text-base text-xs text-center text-white tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Transfer now"}

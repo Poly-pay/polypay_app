@@ -111,7 +111,7 @@ const SectionItem = ({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col">
-        <span className="text-text-primary text-[#ADADAD] xl:inline hidden">{label}</span>
+        <span className="text-lg text-text-primary text-grey-450">{label}</span>
       </div>
       <div className="flex flex-col gap-0.5 items-center">{menuItems.map(item => itemComponent(item))}</div>
       {showDivider && <div className="w-full h-[1px] my-1 bg-gray-300" />}
@@ -129,7 +129,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="bg-background h-full relative rounded-lg  justify-between flex flex-col z-30 border border-[#EDEDED] p-3">
+    <div className="bg-background h-full relative rounded-lg  justify-between flex flex-col z-30 border border-grey-100 p-3">
       <div>
         {/* Header */}
         <div className="flex flex-row items-center gap-3" onClick={() => router.push("/")}>

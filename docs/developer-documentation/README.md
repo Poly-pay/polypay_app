@@ -7,6 +7,7 @@ Technical documentation for developers who want to understand, contribute to, or
 This section covers:
 
 - [Getting Started](getting-started.md) - Prerequisites, setup, and running the project locally
+- [Database Connection Guide](database-connection-guide.md) - How to connect and query the PostgreSQL database
 - [Circuit Code Walkthrough](circuit-code-walkthrough.md) - Detailed explanation of the Noir ZK circuit
 
 ## Tech Stack

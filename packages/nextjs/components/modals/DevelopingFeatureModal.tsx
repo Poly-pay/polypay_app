@@ -52,7 +52,7 @@ const DevelopingFeatureModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="p-4">
-          <Button onClick={onClose} className="w-full gb-[#FF7CEB] text-white rounded-lg py-3 cursor-pointer">
+          <Button onClick={onClose} className="w-full gb-pink-350 text-white rounded-lg py-3 cursor-pointer">
             Got it
           </Button>
         </div>

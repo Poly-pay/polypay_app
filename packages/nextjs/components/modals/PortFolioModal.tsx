@@ -23,7 +23,7 @@ function TokenBalanceRow({ token, balance, isLoading }: { token: Token; balance:
       <span className="flex flex-row">
         <Image src={token.icon} alt={token.symbol} width={35} height={35} className="inline-block mr-2 mb-1" />
         <span className="flex flex-col">
-          <span className="text-[#1B1B1B] font-semibold">{token.symbol}</span>
+          <span className="text-grey-850 font-semibold">{token.symbol}</span>
           <span className="text/sub-600">Ethereum</span>
         </span>
       </span>
@@ -72,7 +72,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
               <div className="relative z-10 mb-3">
                 <div className="text-3xl">
                   {showBalance ? (
-                    <span className="flex flex-row items-center text-[#1E1E1E]">
+                    <span className="flex flex-row items-center text-grey-1000">
                       <Image src="/token/eth.svg" alt="ETH" width={24} height={24} className="inline-block mr-2 mb-1" />
                       <Balance address={metaMultiSigWallet?.address as Address} className="min-h-0 h-auto text-black" />
                     </span>
@@ -108,7 +108,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
 
           {/* Token Assets */}
           <div className="bg-white p-3 rounded-2xl h-full">
-            <span className="text-[24px] text[#1B1B1B] font-semibold">My Assets</span>
+            <span className="text-[24px] text-grey-850 font-semibold">My Assets</span>
             <div className="mt-3">
               {SUPPORTED_TOKENS.filter(token => token.address !== NATIVE_ETH.address).map(token => (
                 <TokenBalanceRow

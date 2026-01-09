@@ -42,12 +42,12 @@ const QRAddressReceiverModal: React.FC<QRAddressReceiverModalProps> = ({ isOpen,
               height: 64,
               excavate: true,
             }}
-            className="border-[#FF7CEB] border-8 rounded-3xl cursor-pointer"
+            className="border-pink-350 border-8 rounded-3xl cursor-pointer"
             onClick={handleCopy}
           />
           <div className="w-full space-y-3">
             <div className="flex items-center justify-between gap-2 p-3 bg-gray-200 rounded-2xl border">
-              <div className="flex-1 font-mono text-md text-[#1E1E1E] font-semibold break-all">{address}</div>
+              <div className="flex-1 font-mono text-md text-grey-1000 font-semibold break-all">{address}</div>
               <span className="text-white bg-black px-3 py-1 rounded-3xl cursor-pointer" onClick={handleCopy}>
                 Copy
               </span>

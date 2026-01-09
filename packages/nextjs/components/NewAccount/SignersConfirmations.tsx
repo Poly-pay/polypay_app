@@ -44,11 +44,11 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
       <div className="flex flex-col gap-[20px] items-center justify-center flex-1 px-4 relative z-10 overflow-auto">
         {/* Title */}
         <div className="flex flex-col items-center justify-center pb-4">
-          <div className="text-[#1E1E1E] text-6xl text-center font-bold uppercase w-full">create new</div>
+          <div className="text-grey-1000 text-6xl text-center font-bold uppercase w-full">create new</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-[#1E1E1E] text-6xl text-center font-bold uppercase">wa</div>
+            <div className="text-grey-1000 text-6xl text-center font-bold uppercase">wa</div>
             <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-[#1E1E1E] text-6xl text-center font-bold uppercase">et</div>
+            <div className="text-grey-1000 text-6xl text-center font-bold uppercase">et</div>
           </div>
         </div>
 
@@ -87,7 +87,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
 
           <button
             onClick={handleAddSigner}
-            className="flex items-center gap-2 text-white bg-[#6D2EFF] hover:bg-[#6D2EFF]/80 px-3 py-1 rounded-[8px] transition-colors w-fit cursor-pointer"
+            className="flex items-center gap-2 text-white bg-violet-300 hover:bg-violet-300/80 px-3 py-1 rounded-[8px] transition-colors w-fit cursor-pointer"
           >
             <span className="text-xl">+</span>
             <span className="text-[14px] font-medium">New Signer</span>

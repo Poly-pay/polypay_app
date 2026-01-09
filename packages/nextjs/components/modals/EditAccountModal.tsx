@@ -141,7 +141,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   return (
     <ModalContainer isOpen={isOpen} onClose={onClose} className="sm:max-w-[600px] p-0" isCloseButton={false}>
       <div className="flex flex-col h-full bg-white rounded-lg">
-        <div className="flex flex-row items-center justify-between p-3 m-1 border-b bg-[#EDEDED] rounded-xl">
+        <div className="flex flex-row items-center justify-between p-3 m-1 border-b bg-grey-100 rounded-xl">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-gray-200 flex items-center justify-center">
               <Image src="/common/edit-wallet.svg" alt="Edit wallet" width={40} height={40} />
@@ -211,9 +211,9 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             )}
 
             <Button
-              type="submit"
-              className="w-full mt-3 bg-[#6D2EFF] hover:bg-[#5a25d9] cursor-pointer text-white"
+              className="w-full mt-3 bg-violet-300 hover:bg-[#5a25d9] cursor-pointer text-white"
               disabled={loading || isUpdatingWallet || watchedName === accountName || !watchedName.trim()}
+              type="submit"
             >
               {isUpdatingWallet ? "Updating..." : "Update Name"}
             </Button>
@@ -285,7 +285,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 type="submit"
                 variant="secondary"
                 size="sm"
-                className="w-full cursor-pointer bg-[#6D2EFF] text-white hover:bg-[#5a25d9]"
+                className="w-full cursor-pointer bg-violet-300 text-white hover:bg-[#5a25d9]"
                 disabled={loading || !watchedSignerCommitment.trim()}
               >
                 {loading ? "Processing..." : "Add New Signer"}
@@ -316,7 +316,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
               <Button
                 type="submit"
-                className="w-full bg-[#FF7CEB] hover:bg-[#e66dd4] cursor-pointer text-white"
+                className="w-full bg-pink-350 hover:bg-[#e66dd4] cursor-pointer text-white"
                 disabled={loading || watchedThreshold === threshold}
               >
                 {loading ? "Processing..." : "Update Threshold"}

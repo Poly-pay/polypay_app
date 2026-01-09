@@ -78,13 +78,13 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
 function AddressWithContact({ address, contactName }: { address: string; contactName?: string }) {
   if (contactName) {
     return (
-      <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+      <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
         <span className="font-medium">{contactName}</span>
         <span className="text-gray-500 ml-1">({formatAddress(address)})</span>
       </span>
     );
   }
-  return <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">{formatAddress(address)}</span>;
+  return <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">{formatAddress(address)}</span>;
 }
 
 // ============ Vote Badge Component ============
@@ -170,7 +170,7 @@ function ActionButtons({
           onApprove();
         }}
         disabled={loading}
-        className="px-6 py-2 text-sm font-medium text-white bg-[#FF7CEB] rounded-full hover:bg-[#f35ddd] transition-colors cursor-pointer disabled:opacity-50"
+        className="px-6 py-2 text-sm font-medium text-white bg-pink-350 rounded-full hover:bg-pink-450 transition-colors cursor-pointer disabled:opacity-50"
       >
         {loading ? "Processing..." : "Approve"}
       </button>
@@ -182,7 +182,7 @@ function ActionButtons({
 function TxHeader({ tx }: { tx: TransactionRowData }) {
   if (tx.type === TxType.TRANSFER) {
     return (
-      <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
+      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <h3 className="text-lg font-semibold mb-2">Transfer</h3>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
@@ -212,10 +212,10 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 
   if (tx.type === TxType.ADD_SIGNER) {
     return (
-      <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
+      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <h3 className="text-lg font-semibold mb-4">Add Signer</h3>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+          <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
             {tx.signerCommitment?.slice(0, 10)}...{tx.signerCommitment?.slice(-8)}
           </span>
         </div>
@@ -225,10 +225,10 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 
   if (tx.type === TxType.REMOVE_SIGNER) {
     return (
-      <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
+      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <h3 className="text-lg font-semibold mb-2">Remove Signer</h3>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+          <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
             {tx.signerCommitment?.slice(0, 10)}...{tx.signerCommitment?.slice(-8)}
           </span>
         </div>
@@ -238,7 +238,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 
   if (tx.type === TxType.SET_THRESHOLD) {
     return (
-      <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
+      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <h3 className="text-lg font-semibold mb-2">Set Threshold</h3>
         <div className="flex items-center gap-3">
           <span className="text-2xl font-bold">{tx.oldThreshold}</span>
@@ -251,7 +251,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 
   if (tx.type === TxType.BATCH && tx.batchData) {
     return (
-      <div className="bg-[#6D2EFF] text-white p-4 rounded-t-lg">
+      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold">Batch Transfer</h3>
           <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-sm">
@@ -381,7 +381,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
     case TxType.REMOVE_SIGNER:
       return (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-5 py-1 rounded-3xl">
+          <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
             {tx.signerCommitment?.slice(0, 8)}...{tx.signerCommitment?.slice(-6)}
           </span>
         </div>
@@ -402,7 +402,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
       }
       return (
         <div className="flex items-center gap-3">
-          <span className="text-sm text-[#1E1E1E] bg-[#EDEDED] px-3 py-1 rounded-3xl">
+          <span className="text-sm text-grey-1000 bg-grey-100 px-3 py-1 rounded-3xl">
             {tx.batchData.length} transfer{tx.batchData.length > 1 ? "s" : ""}
           </span>
         </div>
@@ -509,7 +509,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
           ) : (
             <ChevronRight size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
           )}
-          <span className="font-medium text-[#888888] min-w-[100px]">{getTxTypeLabel(tx.type)}</span>
+          <span className="font-medium text-grey-600 min-w-[100px]">{getTxTypeLabel(tx.type)}</span>
           <TxDetails tx={tx} />
         </div>
         <div onClick={e => e.stopPropagation()}>{renderRightSide()}</div>

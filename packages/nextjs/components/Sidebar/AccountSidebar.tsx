@@ -126,7 +126,7 @@ export default function AccountSidebar() {
             <div className="xl:block hidden">
               <span className="text-sm">Commitment</span>
               <div
-                className={`block bg-[#1E1E1E] p-2 text-white font-semibold text-center text-[14px] rounded-[8px]
+                className={`block bg-grey-1000 p-2 text-white font-semibold text-center text-[14px] rounded-lg
                 ${!commitment && "cursor-pointer hover:bg-gray-800"}`}
               >
                 {commitment ? (

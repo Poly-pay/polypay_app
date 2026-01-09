@@ -31,7 +31,7 @@ export default function NewWalletContainer() {
     },
   });
 
-  const { watch, setValue } = form;
+  const { watch } = form;
   const formData = watch() as CreateWalletFormData;
 
   const handleNextStep = () => {
@@ -80,17 +80,18 @@ export default function NewWalletContainer() {
     }
   };
 
+  // Reset form when commitment changes (user switches account)
   useEffect(() => {
     if (commitment) {
-      const currentSigners = form.getValues("signers");
-      const hasMyCommitment = currentSigners.some(
-        (s: { commitment: string; name?: string }) => s.commitment === commitment,
-      );
-      if (!hasMyCommitment) {
-        setValue("signers", [{ name: "", commitment }, ...currentSigners]);
-      }
+      form.reset({
+        name: "",
+        signers: [{ name: "", commitment }],
+        threshold: 1,
+      });
+      // Reset to step 1 when account changes
+      setCurrentStep(1);
     }
-  }, [commitment, form, setValue]);
+  }, [commitment, form]);
 
   // Validation
   const validSigners = formData.signers.filter(
@@ -121,7 +122,7 @@ export default function NewWalletContainer() {
   }
 
   return (
-    <div className="flex flex-row gap-1 w-full h-full bg-[#EDEDED]">
+    <div className="flex flex-row gap-1 w-full h-full bg-grey-100">
       {/* Shared Earth background */}
       <div className="flex-1 overflow-hidden relative flex flex-col rounded-lg bg-background border border-divider">
         {EarthBackground}

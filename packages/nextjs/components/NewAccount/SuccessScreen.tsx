@@ -31,12 +31,12 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
     >
       <div className="flex flex-col gap-[20px] items-center justify-center flex-1 px-4 relative z-10">
         <div className="flex flex-col items-center justify-center pb-8">
-          <div className="text-[#1E1E1E] text-6xl text-center font-semibold uppercase w-full">successfully</div>
-          <div className="text-[#1E1E1E] text-6xl text-center font-semibold uppercase w-full">created</div>
+          <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">successfully</div>
+          <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">created</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-[#1E1E1E] text-6xl text-center font-semibold uppercase">wa</div>
+            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">wa</div>
             <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-[#1E1E1E] text-6xl text-center font-semibold uppercase">et</div>
+            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">et</div>
           </div>
         </div>
 
@@ -56,11 +56,11 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
 
         <div className="bg-gray-50 rounded-2xl p-8 w-full max-w-lg border-[1px] border-gray-200 shadow-sm">
           <div className="text-center">
-            <h3 className="text-[#545454] text-[32px] font-medium mb-4">{walletName}</h3>
+            <h3 className="text-grey-900 text-[32px] font-medium mb-4">{walletName}</h3>
             <span className="block border-b-[1px] border-gray-200 w-full "></span>
 
             <div
-              className="text-[24px] text-[#6D2EFF] leading-relaxed break-all px-2 cursor-pointer hover:bg-gray-200 rounded py-2 transition-colors font-repetition"
+              className="text-[24px] text-violet-300 leading-relaxed break-all px-2 cursor-pointer hover:bg-gray-200 rounded py-2 transition-colors font-repetition"
               onClick={handleCopyAddress}
               title="Click to copy"
             >
@@ -72,7 +72,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
             <div className="flex gap-4 items-center justify-center w-full">
               <button
                 onClick={handleSeeWallet}
-                className="flex-1 bg-[#1E1E1E] flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
+                className="flex-1 bg-grey-1000 flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
               >
                 <span className="font-semibold text-[16px] text-center text-white">See your wallet</span>
               </button>

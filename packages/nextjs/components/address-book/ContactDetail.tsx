@@ -89,7 +89,7 @@ export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate, o
   }
 
   return (
-    <div className="bg-[#EDEDED] rounded-2xl border border-gray-100 overflow-hidden">
+    <div className="bg-grey-100 rounded-2xl border border-gray-100 overflow-hidden">
       {/* Header */}
       <div className="p-5 border-b border-gray-100">
         <h2 className="font-bold text-sm tracking-wide uppercase text-gray-500">Edit Contact</h2>
@@ -161,7 +161,7 @@ export function ContactDetail({ contact, groups, walletId, onDelete, onUpdate, o
         <button
           onClick={handleSave}
           disabled={updateContact.isPending || !hasChanges || editGroupIds.length === 0}
-          className="flex-1 px-4 py-3 bg-[#FF7CEB] text-white font-medium rounded-xl hover:bg-[#f35ddd] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="flex-1 px-4 py-3 bg-pink-350 text-white font-medium rounded-xl hover:bg-pink-450 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {updateContact.isPending ? <span className="loading loading-spinner loading-sm" /> : "Save changes"}
         </button>
