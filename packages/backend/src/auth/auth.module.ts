@@ -8,6 +8,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
+import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { CONFIG_KEYS } from '@/config/config.keys';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, AnalyticsLoggerService],
   exports: [AuthService],
 })
 export class AuthModule {}
