@@ -20,7 +20,7 @@ The easiest and most interactive way to explore and test the API.
 - Interactive endpoint testing with "Try it out" buttons
 - Complete schema documentation for requests and responses
 - Built-in authentication with JWT token persistence
-- Organized by feature tags (auth, accounts, wallets, etc.)
+- Organized by feature tags (auth, users, accounts, etc.)
 - Real-time request/response examples
 
 **How to Use**:
@@ -77,7 +77,7 @@ curl -X POST http://localhost:4000/api/auth/login \
 
 **Example - Get Account (Authenticated)**:
 ```bash
-curl -X GET http://localhost:4000/api/accounts/me \
+curl -X GET http://localhost:4000/api/users/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -100,7 +100,7 @@ http POST http://localhost:4000/api/auth/login \
 
 **Example - Get Account**:
 ```bash
-http GET http://localhost:4000/api/accounts/me \
+http GET http://localhost:4000/api/users/me \
   Authorization:"Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -121,24 +121,23 @@ http://localhost:4000/api
 | POST | `/auth/login` | Login with ZK proof | No |
 | POST | `/auth/refresh` | Refresh access token | No |
 
-#### Accounts (`/api/accounts`)
+#### Accounts (`/api/users`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/accounts` | Create new account | No |
-| GET | `/accounts/me` | Get current user account | Yes |
-| GET | `/accounts/me/wallets` | Get user's wallets | Yes |
-| PATCH | `/accounts/me` | Update current account | Yes |
-| GET | `/accounts` | List all accounts | Yes |
+| POST | `/users` | Create new user | No |
+| GET | `/users/me` | Get current user | Yes |
+| GET | `/users/me/accounts` | Get user's accounts | Yes |
+| PATCH | `/users/me` | Update current user | Yes |
 
-#### Wallets (`/api/wallets`)
+#### Wallets (`/api/accounts`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/wallets` | Create new wallet | Yes |
-| GET | `/wallets/:address` | Get wallet details | Yes |
-| PATCH | `/wallets/:address` | Update wallet | Yes |
-| POST | `/wallets/:address/join` | Join existing wallet | Yes |
+| POST | `/accounts` | Create new account | Yes |
+| GET | `/accounts/:address` | Get account details | Yes |
+| PATCH | `/accounts/:address` | Update account | Yes |
+
 
 #### Transactions (`/api/transactions`)
 
@@ -158,25 +157,18 @@ http://localhost:4000/api
 | POST | `/batch-items` | Create batch item | Yes |
 | GET | `/batch-items` | List batch items | Yes |
 
-#### Address Book (`/api/address-book`)
+#### Address Book (`/api/contact-book`)
 
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/address-book/groups` | Create address group | Yes |
-| GET | `/address-book/groups` | List groups | Yes |
-| PATCH | `/address-book/groups/:id` | Update group | Yes |
-| DELETE | `/address-book/groups/:id` | Delete group | Yes |
-| POST | `/address-book/contacts` | Add contact | Yes |
-| GET | `/address-book/contacts` | List contacts | Yes |
-| PATCH | `/address-book/contacts/:id` | Update contact | Yes |
-| DELETE | `/address-book/contacts/:id` | Delete contact | Yes |
-
-#### Notifications (`/api/notifications`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/notifications` | List notifications | Yes |
-| PATCH | `/notifications/:id/read` | Mark as read | Yes |
+| POST | `/contact-book/groups` | Create address group | Yes |
+| GET | `/contact-book/groups` | List groups | Yes |
+| PATCH | `/contact-book/groups/:id` | Update group | Yes |
+| DELETE | `/contact-book/groups/:id` | Delete group | Yes |
+| POST | `/contact-book/contacts` | Add contact | Yes |
+| GET | `/contact-book/contacts` | List contacts | Yes |
+| PATCH | `/contact-book/contacts/:id` | Update contact | Yes |
+| DELETE | `/contact-book/contacts/:id` | Delete contact | Yes |
 
 ## Authentication
 
@@ -303,7 +295,7 @@ Use this for:
 ### 1. Create Account
 
 ```bash
-curl -X POST http://localhost:4000/api/accounts \
+curl -X POST http://localhost:4000/api/users \
   -H "Content-Type: application/json" \
   -d '{
     "commitment": "0x1234567890abcdef...",
@@ -332,7 +324,7 @@ curl -X POST http://localhost:4000/api/auth/login \
 ### 3. Access Protected Endpoint
 
 ```bash
-curl -X GET http://localhost:4000/api/accounts/me \
+curl -X GET http://localhost:4000/api/users/me \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 

@@ -85,7 +85,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Get current user multisig accounts',
+    summary: 'Get multisig accounts for current user',
     description:
       'Returns all multisig accounts where the authenticated user is a signer, including their role (creator or participant) in each account.',
   })

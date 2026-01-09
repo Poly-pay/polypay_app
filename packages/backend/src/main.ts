@@ -36,10 +36,10 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('PolyPay API')
     .setDescription(
-      'Privacy-preserving payroll API with zero-knowledge proofs and multi-signature wallet support.\n\n' +
+      'Privacy-preserving payroll API with zero-knowledge proofs and multi-signature accounts support.\n\n' +
         '## Features\n' +
         '- **Zero-Knowledge Privacy**: Private multi-signature approvals using Noir circuits\n' +
-        '- **Multi-signature Wallets**: Secure transaction voting and approval system\n' +
+        '- **Multi-signature Accounts**: Secure transaction voting and approval system\n' +
         '- **Real-time Updates**: WebSocket support for live notifications\n' +
         '- **JWT Authentication**: Secure token-based authentication\n\n' +
         '## Getting Started\n' +
@@ -65,16 +65,16 @@ async function bootstrap() {
     )
     .addTag('auth', 'Authentication endpoints - Login and token refresh')
     .addTag(
-      'accounts',
-      'Account management - User accounts with ZK commitments',
+      'users',
+      'User management - User accounts with ZK commitments',
     )
-    .addTag('wallets', 'Wallet operations - Multi-signature wallet management')
+    .addTag('accounts', 'Account operations - Multi-signature account management')
     .addTag(
       'transactions',
       'Transaction management - Create, vote, and execute transactions',
     )
     .addTag('batch-items', 'Batch processing - Manage batch transaction items')
-    .addTag('address-book', 'Address book - Contact and group management')
+    .addTag('contact-book', 'Contact book - Contact and group management')
     .addTag(
       'notifications',
       'Notification system - Real-time notifications and updates',
