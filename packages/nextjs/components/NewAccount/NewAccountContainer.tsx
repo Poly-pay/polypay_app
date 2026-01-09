@@ -31,7 +31,7 @@ export default function NewAccountContainer() {
     },
   });
 
-  const { watch, setValue } = form;
+  const { watch } = form;
   const formData = watch() as CreateAccountFormData;
 
   const handleNextStep = () => {
