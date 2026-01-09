@@ -3,11 +3,11 @@
 import React from "react";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { UseFormReturn, useFieldArray } from "react-hook-form";
-import { IWalletFormData } from "~~/types/form/wallet";
+import { IAccountFormData } from "~~/types/form/account";
 
 interface SignersConfirmationsProps {
   className?: string;
-  form: UseFormReturn<IWalletFormData>;
+  form: UseFormReturn<IAccountFormData>;
   onGoBack: () => void;
 }
 
@@ -46,9 +46,9 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
         <div className="flex flex-col items-center justify-center pb-4">
           <div className="text-grey-1000 text-6xl text-center font-bold uppercase w-full">create new</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-grey-1000 text-6xl text-center font-bold uppercase">wa</div>
+            <div className="text-grey-1000 text-6xl text-center font-bold uppercase">acc</div>
             <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-grey-1000 text-6xl text-center font-bold uppercase">et</div>
+            <div className="text-grey-1000 text-6xl text-center font-bold uppercase">unt</div>
           </div>
         </div>
 

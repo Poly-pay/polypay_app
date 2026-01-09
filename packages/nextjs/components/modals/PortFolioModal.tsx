@@ -58,7 +58,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
               {/* Close button */}
               <div className="flex flex-column justify-between items-start mb-1 relative z-10 gap-1">
                 <div className="text-sm font-medium flex gap-2 items-center">
-                  <span className="text-black">Wallet balance</span>{" "}
+                  <span className="text-black">Account balance</span>{" "}
                   <Eye color="black" width={16} height={16} className="cursor-pointer" onClick={toggleShowBalance} />
                 </div>
                 <SheetTrigger asChild>

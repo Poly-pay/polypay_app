@@ -93,7 +93,7 @@ export function ContactDetail({ contact, groups, accountId, onDelete, onUpdate, 
       {/* Header */}
       <div className="p-5 border-b border-gray-100">
         <h2 className="font-bold text-sm tracking-wide uppercase text-gray-500">Edit Contact</h2>
-        <p className="text-xs text-gray-400 mt-1">Update names, category for each wallet address in your list</p>
+        <p className="text-xs text-gray-400 mt-1">Update names, category for each account address in your list</p>
       </div>
 
       {/* Content */}

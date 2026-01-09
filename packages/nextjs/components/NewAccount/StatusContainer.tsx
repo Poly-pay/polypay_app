@@ -2,26 +2,26 @@
 
 import React from "react";
 import Image from "next/image";
-import { ISigner } from "~~/types/form/wallet";
+import { ISigner } from "~~/types/form/account";
 
 interface StatusContainerProps {
   className?: string;
-  walletName: string;
+  accountName: string;
   currentStep: number;
   signers: ISigner[];
   threshold: number;
-  onCreateWallet: () => void;
+  onCreateAccount: () => void;
   loading: boolean;
   isFormValid: boolean;
 }
 
 const StatusContainer: React.FC<StatusContainerProps> = ({
   className,
-  walletName,
+  accountName,
   currentStep,
   signers,
   threshold,
-  onCreateWallet,
+  onCreateAccount,
   loading,
   isFormValid,
 }) => {
@@ -51,17 +51,17 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
           </div>
         </div>
 
-        {/* Wallet Name Card */}
+        {/* Account Name Card */}
         <div className="bg-[url('/common/bg-main.png')] bg-no-repeat bg-cover rounded-2xl w-full flex flex-col items-center justify-center relative h-[200px] gap-2 overflow-hidden p-3">
           <Image
-            src="/new-wallet/wallet-avatar.svg"
-            alt="Wallet"
+            src="/new-account/account-avatar.svg"
+            alt="Account"
             className="w-50 h-50 opacity-80"
             width={200}
             height={200}
           />
           <span className="text-white text-[22px] py-1 font-semibold px-4 text-center w-[80%] rounded-lg bg-[#00000078]">
-            {walletName || "Your wallet name"}
+            {accountName || "Your account name"}
           </span>
         </div>
 
@@ -77,7 +77,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
             {currentStep === 1 ? (
               // Step 1 - Placeholder
               <div className="flex flex-col gap-3 items-center justify-center h-full">
-                <Image src="/new-wallet/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
+                <Image src="/new-account/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
                 <span className="text-grey-1000 text-[14px]">Setup on next step</span>
               </div>
             ) : (
@@ -125,7 +125,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
       {/* Create Button */}
       <div className="bg-gray-50 w-full px-5 py-4 border-t border-gray-200">
         <button
-          onClick={onCreateWallet}
+          onClick={onCreateAccount}
           disabled={currentStep < 2 || loading || !isFormValid}
           className={`flex items-center justify-center px-5 py-3 rounded-xl w-full transition-all ${
             currentStep >= 2 && isFormValid && !loading
@@ -134,7 +134,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
           }`}
         >
           <span className="flex items-center gap-3 font-semibold text-[16px] text-white">
-            {loading ? "Creating your wallet..." : "Create your wallet"}
+            {loading ? "Creating your account..." : "Create your account"}
             {loading && (
               <div className="animate-spin h-6 w-6 rounded-full border-2 border-white border-t-transparent" />
             )}

@@ -21,7 +21,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, accountName, a
     notification.success("Account address copied to clipboard!");
   };
 
-  const handleSeeWallet = () => {
+  const handleSeeAccount = () => {
     router.goToDashboard();
   };
 
@@ -34,9 +34,9 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, accountName, a
           <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">successfully</div>
           <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">created</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">wa</div>
+            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">acc</div>
             <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">et</div>
+            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">unt</div>
           </div>
         </div>
 
@@ -46,7 +46,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, accountName, a
             <div className="absolute left-0 top-1/2 w-full h-0.5 border-t border-dashed border-gray-300 transform -translate-y-1/2" />
           </div>
           <Image
-            src="/new-wallet/apple.svg"
+            src="/new-account/apple.svg"
             alt="Success Icon"
             width={75}
             height={75}
@@ -71,16 +71,16 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, accountName, a
 
             <div className="flex gap-4 items-center justify-center w-full">
               <button
-                onClick={handleSeeWallet}
+                onClick={handleSeeAccount}
                 className="flex-1 bg-grey-1000 flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
               >
-                <span className="font-semibold text-[16px] text-center text-white">See your wallet</span>
+                <span className="font-semibold text-[16px] text-center text-white">See your account</span>
               </button>
               <button
                 onClick={() => setIsReceiveModalOpen(true)}
                 className="flex-1 bg-primary flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
               >
-                <span className="font-semibold text-[16px] text-center text-white">Fund your wallet</span>
+                <span className="font-semibold text-[16px] text-center text-white">Fund your account</span>
               </button>
             </div>
           </div>

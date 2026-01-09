@@ -2,16 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import WalletName from "./AccountName";
 import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
 import { useCreateAccount } from "~~/hooks/api";
 import { useZodForm } from "~~/hooks/form";
-import { CreateWalletFormData, createWalletSchema } from "~~/lib/form";
+import { CreateAccountFormData, createAccountSchema } from "~~/lib/form";
 import { useAccountStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
+import AccountName from "./AccountName";
 
 export default function NewAccountContainer() {
   const { commitment } = useIdentityStore();
@@ -23,7 +23,7 @@ export default function NewAccountContainer() {
   const [createdAccountAddress, setCreatedAccountAddress] = useState<string>("");
 
   const form = useZodForm({
-    schema: createWalletSchema,
+    schema: createAccountSchema,
     defaultValues: {
       name: "",
       signers: [{ name: "", commitment: commitment || "" }],
@@ -31,12 +31,12 @@ export default function NewAccountContainer() {
     },
   });
 
-  const { watch } = form;
-  const formData = watch() as CreateWalletFormData;
+  const { watch, setValue } = form;
+  const formData = watch() as CreateAccountFormData;
 
   const handleNextStep = () => {
     if (!commitment) {
-      notification.error("You need to have an identity commitment to create a wallet.");
+      notification.error("You need to have an identity commitment to create an account.");
       return;
     }
     setCurrentStep(prev => prev + 1);
@@ -46,9 +46,9 @@ export default function NewAccountContainer() {
     setCurrentStep(prev => prev - 1);
   };
 
-  const handleCreateWallet = async () => {
+  const handleCreateAccount = async () => {
     if (!commitment) {
-      notification.error("You need to have an identity commitment to create a wallet.");
+      notification.error("You need to have an identity commitment to create an account.");
       return;
     }
 
@@ -103,7 +103,7 @@ export default function NewAccountContainer() {
   const EarthBackground = (
     <div className="w-full relative z-0">
       <div className="absolute -top-50 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
-        <Image src="/new-wallet/earth.svg" alt="Globe" className="w-full h-full" width={780} height={736} />
+        <Image src="/new-account/earth.svg" alt="Globe" className="w-full h-full" width={780} height={736} />
       </div>
       <div className="absolute top-10 left-0 right-0 h-[400px] w-full bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
     </div>
@@ -127,7 +127,7 @@ export default function NewAccountContainer() {
       <div className="flex-1 overflow-hidden relative flex flex-col rounded-lg bg-background border border-divider">
         {EarthBackground}
         {currentStep === 1 ? (
-          <WalletName className="flex-1" form={form} onNextStep={handleNextStep} isValid={isStep1Valid} />
+          <AccountName className="flex-1" form={form} onNextStep={handleNextStep} isValid={isStep1Valid} />
         ) : (
           <SignersConfirmations className="flex-1" form={form} onGoBack={handleGoBack} />
         )}
@@ -135,11 +135,11 @@ export default function NewAccountContainer() {
 
       <StatusContainer
         className="w-[400px]"
-        walletName={formData.name}
+        accountName={formData.name}
         currentStep={currentStep}
         signers={validSigners}
         threshold={formData.threshold}
-        onCreateWallet={handleCreateWallet}
+        onCreateAccount={handleCreateAccount}
         loading={isCreating}
         isFormValid={currentStep === 1 ? isStep1Valid : isStep2Valid}
       />

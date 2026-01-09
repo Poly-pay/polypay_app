@@ -23,8 +23,8 @@ const QRAddressReceiverModal: React.FC<QRAddressReceiverModalProps> = ({ isOpen,
       <div className="flex flex-col p-5 pb-0">
         <div className="w-full mb-3">
           <div className="flex items-center justify-center">
-            <div className="font-semibold text-white text-[24px] w-[420px] text-center">
-              Scan the QR code or copy your wallet address to receive tokens securely
+            <div className="font-semibold text-white text-[24px] w-[440px] text-center">
+              Scan the QR code or copy your account address to receive tokens securely
             </div>
           </div>
         </div>
