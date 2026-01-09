@@ -126,7 +126,7 @@ export default function AccountSidebar() {
             <span>
               <span>Commitment</span>
               <span
-                className={`block bg-[#1E1E1E] p-2 text-white font-semibold text-center text-[14px] rounded-[8px] 
+                className={`block bg-grey-1000 p-2 text-white font-semibold text-center text-[14px] rounded-[8px] 
                 ${!commitment && "cursor-pointer hover:bg-gray-800"}`}
               >
                 {commitment ? (

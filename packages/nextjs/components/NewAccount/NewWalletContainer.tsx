@@ -121,7 +121,7 @@ export default function NewWalletContainer() {
   }
 
   return (
-    <div className="flex flex-row gap-1 w-full h-full bg-[#EDEDED]">
+    <div className="flex flex-row gap-1 w-full h-full bg-grey-100">
       {/* Shared Earth background */}
       <div className="flex-1 overflow-hidden relative flex flex-col rounded-lg bg-background border border-divider">
         {EarthBackground}

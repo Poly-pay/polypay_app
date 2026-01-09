@@ -28,7 +28,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   return (
     <>
       <span className="flex flex-row gap-5 w-full justify-between">
-        <span className="relative flex-1 h-[150px] block bg-gradient-to-r from-[#FF7CEB] to-[#FFACF2] rounded-xl overflow-hidden">
+        <span className="relative flex-1 h-[150px] block bg-gradient-to-r from-pink-350 to-pink-150 rounded-xl overflow-hidden">
           <span
             className="absolute right-0 top-0 h-full w-auto bg-[url('/dashboard/bg-account.svg')] bg-no-repeat bg-right bg-contain opacity-30"
             style={{ width: "70%" }}
@@ -52,11 +52,11 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             <span className="flex flex-row gap-2 items-center">
               <Image src="/dashboard/circle-polypay-icon.svg" alt="Polypay Icon" width={30} height={30} />
               <Image src="/dashboard/polypay-text.svg" alt="Polypay text" width={130} height={130} />
-              <span className="text-black px-3 py-1 rounded-2xl bg-[#C2FFCA] ">{currentWallet?.name ?? "Default"}</span>
+              <span className="text-black px-3 py-1 rounded-2xl bg-lime-50">{currentWallet?.name ?? "Default"}</span>
             </span>
           </div>
         </span>
-        <span className="relative flex-1 h-[150px] block bg-gradient-to-r from-[#CEEFE8] to-[#9DCFF0] rounded-xl overflow-hidden">
+        <span className="relative flex-1 h-[150px] block bg-gradient-to-r from-green-150 to-blue-100 rounded-xl overflow-hidden">
           <span
             className="absolute right-0 top-0 h-full w-auto bg-[url('/dashboard/bg-pending-tx.svg')] bg-no-repeat bg-right bg-contain"
             style={{ width: "70%" }}
@@ -71,7 +71,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             </span>
           </div>
         </span>
-        <span className="relative flex-1 h-[150px] block bg-gradient-to-r from-[#BBB4F7] to-[#6D2EFF] rounded-xl overflow-hidden">
+        <span className="relative flex-1 h-[150px] block bg-gradient-to-r from-violet-50 to-violet-300 rounded-xl overflow-hidden">
           <span
             className="absolute right-0 top-0 h-full w-auto bg-[url('/dashboard/bg-signer-list.svg')] bg-no-repeat bg-right bg-contain opacity-30"
             style={{ width: "70%" }}

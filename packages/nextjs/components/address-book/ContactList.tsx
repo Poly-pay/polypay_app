@@ -63,7 +63,7 @@ export function ContactList({ contacts, isLoading, selectedContactId, onSelectCo
             onClick={() => onSelectContact(contact)}
             className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all ${
               isSelected
-                ? "bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-[#FF7CEB]"
+                ? "bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-pink-350"
                 : "bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm"
             }`}
           >
@@ -100,7 +100,7 @@ export function ContactList({ contacts, isLoading, selectedContactId, onSelectCo
             )}
 
             {/* Selected Indicator */}
-            {isSelected && <div className="w-2 h-2 rounded-full bg-[#FF7CEB] flex-shrink-0" />}
+            {isSelected && <div className="w-2 h-2 rounded-full bg-pink-350 flex-shrink-0" />}
           </div>
         );
       })}

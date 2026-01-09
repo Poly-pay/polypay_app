@@ -50,7 +50,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
 
         <div className="flex flex-col">
           <span className="text-sm text-gray-500">Someone sent you a commitment</span>
-          <span className="font-mono text-sm text-[#1B1B1B]">{truncatedCommitment}</span>
+          <span className="font-mono text-sm text-grey-850">{truncatedCommitment}</span>
         </div>
       </div>
 

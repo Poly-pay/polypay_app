@@ -35,7 +35,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
           {/* Step 1 */}
           <div
             className={`h-8 rounded-full flex items-center justify-center transition-all border-white border-[2px] shaddow-[#5A5A5A40] shadow-lg ${
-              currentStep === 1 ? "bg-[#6D2EFF] w-24 " : "bg-green-500 w-8"
+              currentStep === 1 ? "bg-violet-300 w-24 " : "bg-green-500 w-8"
             }`}
           >
             <span className="text-white font-bold text-[16px]">{currentStep > 1 ? "✓" : "1"}</span>
@@ -44,7 +44,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
           {/* Step 2 */}
           <div
             className={`h-8 rounded-full flex items-center justify-center transition-all border-white border-[2px] shaddow-[#5A5A5A40] shadow-lg ${
-              currentStep === 2 ? "bg-[#6D2EFF] w-24" : "bg-gray-200 w-8"
+              currentStep === 2 ? "bg-violet-300 w-24" : "bg-gray-200 w-8"
             }`}
           >
             <span className={`text-[16px] ${currentStep === 2 ? "text-white" : "text-gray-400"}`}>2</span>
@@ -68,7 +68,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
         {/* Signers Info Section */}
         <div className="bg-gray-50 rounded-xl w-full border border-gray-200 flex flex-col flex-1 overflow-hidden">
           <div className="p-4 border-b border-gray-200">
-            <span className="text-[#1E1E1E] text-[16px] font-semibold">
+            <span className="text-grey-1000 text-[16px] font-semibold">
               {currentStep === 1 ? "2. Signers & Confirmations" : `2. Signers & Confirmations (${signers.length})`}
             </span>
           </div>
@@ -78,7 +78,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
               // Step 1 - Placeholder
               <div className="flex flex-col gap-3 items-center justify-center h-full">
                 <Image src="/new-wallet/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
-                <span className="text-[#1E1E1E] text-[14px]">Setup on next step</span>
+                <span className="text-grey-1000 text-[14px]">Setup on next step</span>
               </div>
             ) : (
               // Step 2 - Show signers

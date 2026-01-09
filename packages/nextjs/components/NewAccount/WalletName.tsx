@@ -29,11 +29,11 @@ export default function WalletName({ className, form, onNextStep, isValid }: Wal
       <div className="flex flex-col gap-[20px] items-center justify-center flex-1 px-4 relative z-10">
         {/* Title */}
         <div className="flex flex-col items-center justify-center pb-8">
-          <div className="text-[#1E1E1E] text-6xl text-center font-semibold uppercase w-full">create new</div>
+          <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">create new</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-[#1E1E1E] text-6xl text-center font-semibold uppercase">wa</div>
+            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">wa</div>
             <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-[#1E1E1E] text-6xl text-center font-semibold uppercase">et</div>
+            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">et</div>
           </div>
         </div>
 

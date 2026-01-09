@@ -125,7 +125,7 @@ export default function AddressBookPage() {
             New group
           </button>
           <button
-            className="px-4 py-2 bg-[#FF7CEB] text-white rounded-lg font-medium hover:bg-[#f35ddd] transition-colors cursor-pointer"
+            className="px-4 py-2 bg-pink-350 text-white rounded-lg font-medium hover:bg-pink-450 transition-colors cursor-pointer"
             onClick={() => setIsCreateContactOpen(true)}
           >
             New contact

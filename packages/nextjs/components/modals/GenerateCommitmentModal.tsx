@@ -88,7 +88,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         <div className="p-4">
           {commitment ? (
             <Button
-              className="w-full bg-[#1E1E1E] hover:bg-[#1E1E1E]/80 text-white rounded-lg py-3 cursor-pointer transition-all duration-200"
+              className="w-full bg-grey-1000 hover:bg-grey-1000/80 text-white rounded-lg py-3 cursor-pointer transition-all duration-200"
               onClick={handleClose}
             >
               Continue using app
@@ -97,7 +97,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             <Button
               onClick={handleGenerateAndLogin}
               disabled={isLoading}
-              className="w-full bg-[#FF7CEB] text-white rounded-lg py-3 cursor-pointer"
+              className="w-full bg-pink-350 text-white rounded-lg py-3 cursor-pointer"
             >
               {isLoading ? "Generating & Logging in..." : "Generate & Login"}
             </Button>
