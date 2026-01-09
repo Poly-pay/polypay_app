@@ -3,16 +3,11 @@ name: Backend CI
 on:
   push:
     branches:
-      - "main"
-    paths:
-      - "packages/backend/**"
-      - "packages/shared/**"
-      - "docker/backend.Dockerfile"
-
+      - 'main'
+    
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    environment: producting
 
     permissions:
       contents: read
@@ -21,23 +16,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Auth to GCP
-        uses: google-github-actions/auth@v2
+      - uses: 'google-github-actions/auth@v3'
         with:
-          workload_identity_provider: ${{ secrets.GCP_WIF }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: 'projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ vars.GCP_WIF_POOL }}/providers/${{ vars.GCP_WIF_PROVIDER }}'
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
       - name: Configure Docker
-        run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}
+        run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}-docker.pkg.dev
 
       - name: Build and push image
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_IMAGE }}
         run: |
           docker build \
             --platform linux/amd64 \
-            -f docker/backend.Dockerfile \
-            -t ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_BACKEND_IMAGE }}:${{ github.sha }} \
-            -t ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_BACKEND_IMAGE }}:latest \
+            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
             .
 
-          docker push ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_BACKEND_IMAGE }}:${{ github.sha }}
-          docker push ${{ vars.GCP_LOCATION }}/${{ vars.GCP_PROJECT }}/${{ vars.GCP_REPOSITORY }}/${{ vars.GCP_BACKEND_IMAGE }}:latest
+          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA}
