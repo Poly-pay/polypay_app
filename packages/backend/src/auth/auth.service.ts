@@ -10,6 +10,7 @@ import { LoginDto, RefreshDto } from '@polypay/shared';
 import { PrismaService } from '@/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
+import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly zkVerifyService: ZkVerifyService,
     private readonly configService: ConfigService,
+    private readonly analyticsLogger: AnalyticsLoggerService,
   ) {}
 
   /**
@@ -62,7 +64,12 @@ export class AuthService {
       });
     }
 
-    // 3. Generate tokens
+    // 3. Analytics logging (isolated - NOT stored in database)
+    if (dto.walletAddress) {
+      this.analyticsLogger.logLogin(dto.walletAddress);
+    }
+
+    // 4. Generate tokens
     const tokens = this.generateTokens(commitment);
 
     this.logger.log(`Login successful for commitment: ${commitment}`);
