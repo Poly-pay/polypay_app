@@ -32,7 +32,7 @@ export const Balance = ({ address }: BalanceProps) => {
 
   return (
     <>
-      <div className="font-bold text-[16px]">
+      <div className="font-bold text-sm">
         <span>{formattedBalance.toFixed(4)}</span>
         <span className="text-[0.8em] font-bold ml-1">{targetNetwork.nativeCurrency.symbol}</span>
       </div>

@@ -20,9 +20,7 @@ export interface WalletData {
 function Header() {
   return (
     <div className="flex flex-col items-start justify-between w-full">
-      <div className="text-[55.78px] text-text-primary capitalize leading-none">
-        <p>Dashboard</p>
-      </div>
+      <p className="xl:text-[55.78px] text-3xl  capitalize">Dashboard</p>
       <InfoCardContainer />
     </div>
   );
@@ -60,7 +58,7 @@ export default function DashboardContainer() {
   );
 
   return (
-    <div className="flex flex-col gap-5 p-2 px-[130px] pt-7">
+    <div className="flex flex-col gap-5 p-2 lg:px-[100px] px-12 pt-7">
       <Header />
 
       {/* Loading State */}

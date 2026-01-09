@@ -24,3 +24,5 @@ dist
 
 # docker
 /docker/.env
+
+.claude
