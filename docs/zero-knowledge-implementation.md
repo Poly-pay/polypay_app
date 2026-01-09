@@ -10,7 +10,7 @@ Imagine you want to enter a bar that requires you to be 18+.
 
 ### How PolyPay Uses This
 
-In a traditional multisig wallet:
+In a traditional multisig account:
 - Everyone sees WHO signed each transaction
 - Signer addresses are public on blockchain
 

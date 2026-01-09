@@ -1,7 +1,7 @@
 import { validators } from "./validation";
 import { z } from "zod";
 
-// ==================== Contact / Address Book ====================
+// ==================== Contact Book ====================
 
 export const createContactSchema = z.object({
   name: validators.requiredString("Name").max(100, "Name too long"),
@@ -16,19 +16,19 @@ export const createGroupSchema = z.object({
 });
 export type CreateGroupFormData = z.infer<typeof createGroupSchema>;
 
-// ==================== Wallet ====================
+// ==================== Account ====================
 
 const signerSchema = z.object({
   commitment: z.string().min(1, "Signer commitment is required"),
   name: z.string().optional(),
 });
 
-export const createWalletSchema = z.object({
-  name: validators.requiredString("Wallet name").max(50, "Name too long"),
+export const createAccountSchema = z.object({
+  name: validators.requiredString("Account name").max(50, "Name too long"),
   signers: z.array(signerSchema).min(1, "At least one signer required"),
   threshold: z.number().min(1, "Threshold must be at least 1"),
 });
-export type CreateWalletFormData = z.infer<typeof createWalletSchema>;
+export type CreateAccountFormData = z.infer<typeof createAccountSchema>;
 
 // ==================== Transfer ====================
 

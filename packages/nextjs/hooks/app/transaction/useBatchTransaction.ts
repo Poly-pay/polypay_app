@@ -83,7 +83,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       const result = await createTransaction({
         nonce,
         type: TxType.BATCH,
-        walletAddress: metaMultiSigWallet.address,
+        accountAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         to: metaMultiSigWallet.address,
         value: "0",

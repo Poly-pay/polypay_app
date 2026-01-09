@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { horizenTestnet } from "@polypay/shared";
 import { Copy, Repeat, Trash2, X } from "lucide-react";
-import { useMetaMultiSigWallet, useModalApp, useSignerTransaction, useUpdateWallet, useWallet } from "~~/hooks";
+import { useAccount, useMetaMultiSigWallet, useModalApp, useSignerTransaction, useUpdateAccount } from "~~/hooks";
 import { useZodForm } from "~~/hooks/form";
 import {
   AddSignerFormData,
@@ -17,17 +17,17 @@ import {
   editAccountNameSchema,
   updateThresholdSchema,
 } from "~~/lib/form";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
 import { notification } from "~~/utils/scaffold-eth";
 
 const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const { openModal } = useModalApp();
   const { commitment } = useIdentityStore();
-  const { mutateAsync: updateWallet, isPending: isUpdatingWallet } = useUpdateWallet();
-  const { currentWallet, setCurrentWallet } = useWalletStore();
+  const { mutateAsync: updateAccount, isPending: isUpdatingAccount } = useUpdateAccount();
+  const { currentAccount, setCurrentAccount } = useAccountStore();
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { data: wallet } = useWallet(metaMultiSigWallet?.address || "");
+  const { data: account } = useAccount(metaMultiSigWallet?.address || "");
 
   const {
     addSigner,
@@ -41,7 +41,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     refetchThreshold,
   } = useSignerTransaction({ onSuccess: onClose });
 
-  const accountName = currentWallet?.name ?? "Default";
+  const accountName = currentAccount?.name ?? "Default";
 
   // Form for account name
   const nameForm = useZodForm({
@@ -62,18 +62,18 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   });
 
   const signerMap = useMemo(() => {
-    if (!wallet?.signers) return {};
-    return wallet.signers.reduce(
+    if (!account?.signers) return {};
+    return account.signers.reduce(
       (acc, signer) => {
         acc[signer.commitment] = signer.name || null;
         return acc;
       },
       {} as Record<string, string | null>,
     );
-  }, [wallet?.signers]);
+  }, [account?.signers]);
 
   const handleGenerateName = () => {
-    const randomName = `Wallet-${Math.random().toString(36).substring(2, 8)}`;
+    const randomName = `Account-${Math.random().toString(36).substring(2, 8)}`;
     nameForm.setValue("name", randomName);
   };
 
@@ -86,11 +86,11 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     }
 
     try {
-      const newWallet = await updateWallet({
-        address: currentWallet?.address || "",
+      const newAccount = await updateAccount({
+        address: currentAccount?.address || "",
         dto: { name: data.name.trim() },
       });
-      setCurrentWallet(newWallet);
+      setCurrentAccount(newAccount);
       notification.success("Account name updated!");
       onClose();
     } catch (error: any) {
@@ -144,10 +144,10 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         <div className="flex flex-row items-center justify-between p-3 m-1 border-b bg-grey-100 rounded-xl">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-gray-200 flex items-center justify-center">
-              <Image src="/common/edit-wallet.svg" alt="Edit wallet" width={40} height={40} />
+              <Image src="/common/edit-account.svg" alt="Edit account" width={40} height={40} />
             </div>
             <span className="flex flex-col">
-              <span className="text-lg font-semibold text-black">EDIT YOUR WALLET</span>
+              <span className="text-lg font-semibold text-black">EDIT YOUR ACCOUNT</span>
               <span
                 className="text-sm cursor-pointer"
                 onClick={() => copyToClipboard(metaMultiSigWallet?.address ?? "")}
@@ -189,7 +189,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                   maxLength={30}
                   placeholder="Your account name"
                   className="w-full pr-16"
-                  disabled={loading || isUpdatingWallet}
+                  disabled={loading || isUpdatingAccount}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
                   {watchedName.length}/30
@@ -201,7 +201,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 size="sm"
                 onClick={handleGenerateName}
                 className="h-10 w-10 p-0 bg-gray-200 hover:bg-gray-300 cursor-pointer"
-                disabled={loading || isUpdatingWallet}
+                disabled={loading || isUpdatingAccount}
               >
                 <Repeat className="h-4 w-4 text-gray-600" />
               </Button>
@@ -212,16 +212,16 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
             <Button
               className="w-full mt-3 bg-violet-300 hover:bg-[#5a25d9] cursor-pointer text-white"
-              disabled={loading || isUpdatingWallet || watchedName === accountName || !watchedName.trim()}
               type="submit"
+              disabled={loading || isUpdatingAccount || watchedName === accountName || !watchedName.trim()}
             >
-              {isUpdatingWallet ? "Updating..." : "Update Name"}
+              {isUpdatingAccount ? "Updating..." : "Update Name"}
             </Button>
           </form>
 
           {/* Signers Section */}
           <div>
-            <h3 className="font-semibold text-gray-900">WALLET SIGNERS</h3>
+            <h3 className="font-semibold text-gray-900">ACCOUNT SIGNERS</h3>
             <p className="text-sm text-gray-500 mb-4">
               Commitments added to the signers list below will be able to approve transactions. Each signer is
               identified by their commitment (hash of secret).

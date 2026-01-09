@@ -28,7 +28,7 @@ import {
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { TransactionAccessGuard } from '@/auth/guards/transaction-access.guard';
-import { Account } from '@/generated/prisma/client';
+import { User } from '@/generated/prisma/client';
 
 @ApiTags('transactions')
 @Controller('transactions')
@@ -45,7 +45,7 @@ export class TransactionController {
   @ApiOperation({
     summary: 'Create a new transaction with auto-approval',
     description:
-      'Propose a new transaction in a multi-signature wallet. The transaction is automatically approved by the creator and requires additional approvals from other members.',
+      'Propose a new transaction in a multisig account. The transaction is automatically approved by the creator and requires additional approvals from other signers.',
   })
   @ApiBody({
     type: CreateTransactionDto,
@@ -60,10 +60,9 @@ export class TransactionController {
           publicInputs: ['0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1'],
           threshold: 1,
           to: '0x8ba1f109551bD432803012645Ac136ddd64DBA72',
-          totalSingers: 2,
           type: 'TRANSFER',
           value: '0',
-          walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
+          accountAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1',
         },
       },
     },
@@ -72,28 +71,28 @@ export class TransactionController {
   @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   async createTransaction(
-    @CurrentUser() user: Account,
+    @CurrentUser() user: User,
     @Body() dto: CreateTransactionDto,
   ) {
     return this.transactionService.createTransaction(dto, user.commitment);
   }
 
   /**
-   * Get all transactions for a wallet
-   * GET /api/transactions?walletAddress=xxx&status=PENDING
+   * Get all transactions for an account
+   * GET /api/transactions?accountAddress=xxx&status=PENDING
    */
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Get transactions for a multisig wallet with pagination',
+    summary: 'Get transactions for a multisig account with pagination',
     description:
-      'Retrieve all transactions for a specific multisig wallet. Optionally filter by status (PENDING, EXECUTED, FAILED).',
+      'Retrieve all transactions for a specific multisig account. Optionally filter by status (PENDING, EXECUTED, FAILED).',
   })
   @ApiQuery({
-    name: 'walletAddress',
+    name: 'accountAddress',
     required: true,
-    description: 'Wallet contract address',
+    description: 'Account contract address',
     example: '0x1234567890abcdef1234567890abcdef12345678',
   })
   @ApiQuery({
@@ -102,8 +101,6 @@ export class TransactionController {
     description: 'Transaction status filter',
     enum: ['PENDING', 'EXECUTED', 'FAILED'],
   })
-  @ApiResponse({ status: 200, description: 'List of transactions' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   @ApiQuery({
     name: 'limit',
     required: false,
@@ -116,9 +113,10 @@ export class TransactionController {
     description: 'Cursor for pagination (transaction ID)',
   })
   @ApiResponse({ status: 200, description: 'Paginated list of transactions' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   async getTransactions(
-    @CurrentUser() user: Account,
-    @Query('walletAddress') walletAddress: string,
+    @CurrentUser() user: User,
+    @Query('accountAddress') accountAddress: string,
     @Query('status') status?: string,
     @Query('limit') limitParam?: string,
     @Query('cursor') cursor?: string,
@@ -130,7 +128,7 @@ export class TransactionController {
     );
 
     return this.transactionService.getTransactions(
-      walletAddress,
+      accountAddress,
       user.commitment,
       status,
       limit,
@@ -161,7 +159,7 @@ export class TransactionController {
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Not a wallet member',
+    description: 'Forbidden - Not an account signer',
   })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   async getTransaction(@Param('txId', ParseIntPipe) txId: number) {
@@ -206,11 +204,11 @@ export class TransactionController {
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Not a wallet member or already voted',
+    description: 'Forbidden - Not an account signer or already voted',
   })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   async approve(
-    @CurrentUser() user: Account,
+    @CurrentUser() user: User,
     @Param('txId', ParseIntPipe) txId: number,
     @Body() dto: ApproveTransactionDto,
   ) {
@@ -227,7 +225,7 @@ export class TransactionController {
   @ApiOperation({
     summary: 'Deny/Reject a transaction',
     description:
-      'Submit a rejection vote for a pending transaction. Wallet members can reject transactions they disagree with. Use txId (integer) as the identifier.',
+      'Submit a rejection vote for a pending transaction. Account signers can reject transactions they disagree with. Use txId (integer) as the identifier.',
   })
   @ApiParam({
     name: 'txId',
@@ -235,98 +233,18 @@ export class TransactionController {
     description: 'Transaction ID (auto-incrementing integer)',
     example: 123,
   })
-  @ApiParam({ name: 'txId', type: 'number', description: 'Transaction ID' })
   @ApiResponse({ status: 200, description: 'Transaction denied successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Not a wallet member or already voted',
+    description: 'Forbidden - Not an account signer or already voted',
   })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   async deny(
-    @CurrentUser() user: Account,
+    @CurrentUser() user: User,
     @Param('txId', ParseIntPipe) txId: number,
   ) {
     return this.transactionService.deny(txId, user.commitment);
-  }
-
-  /**
-   * Get execution data (proofs for smart contract)
-   * GET /api/transactions/:txId/execute
-   */
-  @Get(':txId/execute')
-  @UseGuards(JwtAuthGuard, TransactionAccessGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Get execution data for transaction',
-    description:
-      'Retrieve the aggregated zero-knowledge proofs and data needed to execute the transaction on-chain. Use txId (integer) as the identifier.',
-  })
-  @ApiParam({
-    name: 'txId',
-    type: 'number',
-    description: 'Transaction ID (auto-incrementing integer)',
-    example: 123,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Execution data retrieved successfully',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not a wallet member',
-  })
-  @ApiResponse({ status: 404, description: 'Transaction not found' })
-  async getExecutionData(@Param('txId', ParseIntPipe) txId: number) {
-    return this.transactionService.getExecutionData(txId);
-  }
-
-  /**
-   * Mark transaction as executed
-   * PATCH /api/transactions/:txId/executed
-   */
-  @Patch(':txId/executed')
-  @UseGuards(JwtAuthGuard, TransactionAccessGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Mark transaction as executed',
-    description:
-      'Update transaction status to executed after on-chain confirmation. Use txId (integer) as the identifier.',
-  })
-  @ApiParam({
-    name: 'txId',
-    type: 'number',
-    description: 'Transaction ID (auto-incrementing integer)',
-    example: 123,
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        txHash: {
-          type: 'string',
-          example: '0xabcdef1234567890...',
-          description: 'On-chain transaction hash',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Transaction marked as executed',
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Not a wallet member',
-  })
-  @ApiResponse({ status: 404, description: 'Transaction not found' })
-  async markExecuted(
-    @Param('txId', ParseIntPipe) txId: number,
-    @Body('txHash') txHash: string,
-  ) {
-    return this.transactionService.markExecuted(txId, txHash);
   }
 
   /**
@@ -358,7 +276,7 @@ export class TransactionController {
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Not a wallet member',
+    description: 'Forbidden - Not an account signer',
   })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   async executeOnChain(@Param('txId', ParseIntPipe) txId: number) {
@@ -375,16 +293,16 @@ export class TransactionController {
   @ApiOperation({
     summary: 'Reserve a nonce for new transaction',
     description:
-      'Reserve the next available nonce for a wallet to prevent nonce conflicts when creating transactions.',
+      'Reserve the next available nonce for an account to prevent nonce conflicts when creating transactions.',
   })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        walletAddress: {
+        accountAddress: {
           type: 'string',
           example: '0x1234567890abcdef1234567890abcdef12345678',
-          description: 'Wallet contract address',
+          description: 'Account contract address',
         },
       },
     },
@@ -392,9 +310,12 @@ export class TransactionController {
   @ApiResponse({ status: 201, description: 'Nonce reserved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   async reserveNonce(
-    @CurrentUser() user: Account,
-    @Body('walletAddress') walletAddress: string,
+    @CurrentUser() user: User,
+    @Body('accountAddress') accountAddress: string,
   ) {
-    return this.transactionService.reserveNonce(walletAddress, user.commitment);
+    return this.transactionService.reserveNonce(
+      accountAddress,
+      user.commitment,
+    );
   }
 }

@@ -7,10 +7,15 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
-import { getCommitmentRoom, getWalletRoom } from '@polypay/shared';
+import {
+  getCommitmentRoom,
+  getAccountRoom,
+  JOIN_ACCOUNT_ROOM,
+  ROOM_PREFIX,
+} from '@polypay/shared';
 
 interface ConnectionQuery {
-  walletAddress?: string;
+  accountAddress?: string;
   commitment?: string;
 }
 
@@ -26,7 +31,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(EventsGateway.name);
 
   handleConnection(client: Socket) {
-    const { walletAddress, commitment } = client.handshake
+    const { accountAddress, commitment } = client.handshake
       .query as ConnectionQuery;
 
     // Join commitment room for personal notifications
@@ -36,11 +41,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.logger.log(`Client ${client.id} joined ${commitmentRoom}`);
     }
 
-    // Join wallet room if provided
-    if (walletAddress) {
-      const walletRoom = getWalletRoom(walletAddress);
-      client.join(walletRoom);
-      this.logger.log(`Client ${client.id} joined ${walletRoom}`);
+    // Join account room if provided
+    if (accountAddress) {
+      const accountRoom = getAccountRoom(accountAddress);
+      client.join(accountRoom);
+      this.logger.log(`Client ${client.id} joined ${accountRoom}`);
     }
   }
 
@@ -48,19 +53,19 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.logger.log(`Client ${client.id} disconnected`);
   }
 
-  @SubscribeMessage('join:wallet')
-  handleJoinWallet(client: Socket, walletAddress: string): void {
-    // Leave all existing wallet rooms
+  @SubscribeMessage(JOIN_ACCOUNT_ROOM)
+  handleJoinAccount(client: Socket, accountAddress: string): void {
+    // Leave all existing account rooms
     client.rooms.forEach((room) => {
-      if (room.startsWith('wallet:')) {
+      if (room.startsWith(`${ROOM_PREFIX.ACCOUNT}:`)) {
         client.leave(room);
         this.logger.log(`Client ${client.id} left ${room}`);
       }
     });
 
-    // Join new wallet room
-    const walletRoom = getWalletRoom(walletAddress);
-    client.join(walletRoom);
-    this.logger.log(`Client ${client.id} joined ${walletRoom}`);
+    // Join new account room
+    const accountRoom = getAccountRoom(accountAddress);
+    client.join(accountRoom);
+    this.logger.log(`Client ${client.id} joined ${accountRoom}`);
   }
 }

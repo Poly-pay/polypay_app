@@ -85,7 +85,7 @@ yarn start:frontend
 
 1. **Connect Wallet**: Connect your Ethereum wallet
 2. **Generate Identity**: Sign a message to create your secret
-3. **Create/Join Wallet**: Deploy new multisig or join existing one
+3. **Create/Join Account**: Deploy new multisig or join existing one
 4. **Propose Transaction**: Create transfer and generate ZK proof
 5. **Sign**: Other signers approve with their ZK proofs
 6. **Execute**: When threshold reached, execute the transaction
@@ -106,7 +106,7 @@ http://localhost:4000/api/swagger
 - Interactive API explorer with "Try it out" functionality
 - Complete endpoint documentation with request/response schemas
 - Built-in authentication support (JWT tokens persist across requests)
-- Organized by feature tags (accounts, wallets, transactions, etc.)
+- Organized by feature tags (accounts, users, transactions, etc.)
 
 **How to use**:
 1. Start the backend: `yarn start:backend`

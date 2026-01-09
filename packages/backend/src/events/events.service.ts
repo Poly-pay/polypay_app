@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventsGateway } from './events.gateway';
-import { getCommitmentRoom, getWalletRoom } from '@polypay/shared';
+import { getCommitmentRoom, getAccountRoom } from '@polypay/shared';
 
 @Injectable()
 export class EventsService {
@@ -24,10 +24,10 @@ export class EventsService {
   }
 
   /**
-   * Emit event to all users in a wallet
+   * Emit event to all users in a account
    */
-  emitToWallet(walletAddress: string, event: string, data: unknown): void {
-    const room = getWalletRoom(walletAddress);
+  emitToAccount(accountAddress: string, event: string, data: unknown): void {
+    const room = getAccountRoom(accountAddress);
     this.eventsGateway.server.to(room).emit(event, data);
   }
 }

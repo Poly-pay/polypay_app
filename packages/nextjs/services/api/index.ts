@@ -1,7 +1,7 @@
 export { apiClient, handleApiError } from "./apiClient";
-export { walletApi } from "./walletApi";
 export { accountApi } from "./accountApi";
-export { addressBookApi } from "./addressBookApi";
+export { userApi } from "./userApi";
+export { contactBookApi } from "./contactBookApi";
 export { batchItemApi } from "./batchItemApi";
 export { transactionApi } from "./transactionApi";
 export { notificationApi } from "./notificationApi";

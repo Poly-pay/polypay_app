@@ -105,8 +105,8 @@ export function useAppRouter() {
   const push = useCallback((path: string) => router.push(path), [router]);
 
   const goToDashboard = useCallback(() => router.push(Routes.DASHBOARD.path), [router]);
-  const goToDashboardNewWallet = useCallback(() => router.push(Routes.DASHBOARD.subroutes.NEW_WALLET.path), [router]);
-  const goToAddressBook = useCallback(() => router.push(Routes.ADDRESS_BOOK.path), [router]);
+  const goToDashboardNewAccount = useCallback(() => router.push(Routes.DASHBOARD.subroutes.NEW_ACCOUNT.path), [router]);
+  const goToContactBook = useCallback(() => router.push(Routes.CONTACT_BOOK.path), [router]);
   const goToTransfer = useCallback(() => router.push(Routes.TRANSFER.path), [router]);
   const goToBatch = useCallback(() => router.push(Routes.BATCH.path), [router]);
   const goToMobile = useCallback(() => router.push(Routes.MOBILE.path), [router]);
@@ -118,8 +118,8 @@ export function useAppRouter() {
     refresh,
     push,
     goToDashboard,
-    goToDashboardNewWallet,
-    goToAddressBook,
+    goToDashboardNewAccount,
+    goToContactBook,
     goToTransfer,
     goToBatch,
     goToMobile,

@@ -12,13 +12,10 @@ export const NEW_SUB_ACCOUNT_SIDEBAR_OFFSET = 567;
 
 const SIDEBAR_LINKS = {
   DASHBOARD: "/dashboard",
-  ADDRESS_BOOK: "/address-book",
-  AI_ASSISTANT: "/ai-assistant",
+  CONTACT_BOOK: "/contact-book",
   TRANSFER: "/transfer",
-  SWAP: "/swap",
   TRANSACTIONS: "/transactions",
   BATCH: "/batch",
-  VETKEYS: "/vetkeys",
 };
 
 const sectionItems = [
@@ -26,7 +23,7 @@ const sectionItems = [
     label: "Quick Access",
     menuItems: [
       { icon: "/sidebar/dashboard.svg", label: "dashboard", link: SIDEBAR_LINKS.DASHBOARD },
-      { icon: "/sidebar/address-book.svg", label: "address book", link: SIDEBAR_LINKS.ADDRESS_BOOK },
+      { icon: "/sidebar/contact-book.svg", label: "contact book", link: SIDEBAR_LINKS.CONTACT_BOOK },
     ],
   },
   {
@@ -46,7 +43,6 @@ const SectionItem = ({
   selectedItem,
   openModal,
 }: {
-  walletAddress?: string;
   label: string;
   menuItems: { icon: string; label: string; transactionsCount?: number; link: string }[];
   showDivider?: boolean;

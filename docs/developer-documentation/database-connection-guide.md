@@ -32,17 +32,17 @@ PolyPay uses **PostgreSQL 16** as its database, managed by **Prisma ORM**.
 
 The database contains 12 tables:
 
-- `Account` - User accounts with commitment-based identity
-- `Wallet` - Multi-signature wallets
-- `AccountWallet` - Many-to-many relationship between accounts and wallets
-- `Transaction` - Transaction records (TRANSFER, BATCH, ADD_SIGNER, etc.)
-- `Vote` - ZK proof votes for transactions
-- `BatchItem` - Items in batch payments
+- `users` - User accounts with commitment-based identity
+- `accounts` - Multi-signature accounts
+- `account_signers` - Many-to-many relationship between users and accounts
+- `transactions` - Transaction records (TRANSFER, BATCH, ADD_SIGNER, etc.)
+- `votes` - ZK proof votes for transactions
+- `batch_items` - Items in batch payments
 - `contacts` - Saved recipient addresses
-- `address_groups` - Contact groups
-- `contact_groups` - Many-to-many relationship between contacts and groups
-- `Notification` - User notifications
-- `ReservedNonce` - Temporary nonce reservations (2-min TTL)
+- `contact_groups` - Contact groups
+- `contact_group_entries` - Many-to-many relationship between contacts and groups
+- `notifications` - User notifications
+- `reserved_nonces` - Temporary nonce reservations (2-min TTL)
 - `_prisma_migrations` - Migration history
 
 ---
@@ -98,20 +98,20 @@ Once connected to the database, you can run these queries:
 **Expected Output:**
 ```
                  List of relations
- Schema |        Name        | Type  |    Owner
---------+--------------------+-------+--------------
- public | Account            | table | polypay_user
- public | AccountWallet      | table | polypay_user
- public | BatchItem          | table | polypay_user
- public | Notification       | table | polypay_user
- public | ReservedNonce      | table | polypay_user
- public | Transaction        | table | polypay_user
- public | Vote               | table | polypay_user
- public | Wallet             | table | polypay_user
- public | _prisma_migrations | table | polypay_user
- public | address_groups     | table | polypay_user
- public | contact_groups     | table | polypay_user
- public | contacts           | table | polypay_user
+ Schema |         Name          | Type  |    Owner     
+--------+-----------------------+-------+--------------
+ public | _prisma_migrations    | table | polypay_user
+ public | account_signers       | table | polypay_user
+ public | accounts              | table | polypay_user
+ public | batch_items           | table | polypay_user
+ public | contact_group_entries | table | polypay_user
+ public | contact_groups        | table | polypay_user
+ public | contacts              | table | polypay_user
+ public | notifications         | table | polypay_user
+ public | reserved_nonces       | table | polypay_user
+ public | transactions          | table | polypay_user
+ public | users                 | table | polypay_user
+ public | votes                 | table | polypay_user
 (12 rows)
 ```
 
@@ -119,31 +119,31 @@ Once connected to the database, you can run these queries:
 
 ```sql
 SELECT
-    'Accounts' as table_name,
+    'users' as table_name,
     COUNT(*) as row_count
-FROM "Account"
+FROM "users"
 UNION ALL
-SELECT 'Wallets', COUNT(*) FROM "Wallet"
+SELECT 'accounts', COUNT(*) FROM "accounts"
 UNION ALL
-SELECT 'Transactions', COUNT(*) FROM "Transaction"
+SELECT 'transactions', COUNT(*) FROM "transactions"
 UNION ALL
-SELECT 'Votes', COUNT(*) FROM "Vote"
+SELECT 'votes', COUNT(*) FROM "votes"
 UNION ALL
-SELECT 'BatchItems', COUNT(*) FROM "BatchItem"
+SELECT 'batch_items', COUNT(*) FROM "batch_items"
 UNION ALL
-SELECT 'Contacts', COUNT(*) FROM "contacts";
+SELECT 'contacts', COUNT(*) FROM "contacts";
 ```
 
 **Sample Output:**
 ```
- table_name   | row_count
+  table_name  | row_count 
 --------------+-----------
- Accounts     |         7
- Wallets      |         7
- Transactions |         4
- Votes        |         4
- BatchItems   |         0
- Contacts     |         3
+ users        |         2
+ accounts     |         1
+ transactions |         1
+ votes        |         1
+ batch_items  |         0
+ contacts     |         1
 ```
 
 ---
@@ -280,7 +280,7 @@ postgresql://polypay_user:polypay_password@localhost:5433/polypay_multisig_db
 
 **Select all:**
 ```sql
-SELECT * FROM "Account";
+SELECT * FROM "users";
 ```
 
 **Sample Output:**
@@ -299,27 +299,27 @@ SELECT * FROM "Account";
 
 **Select specific columns:**
 ```sql
-SELECT id, name, "createdAt" FROM "Account";
+SELECT id, name, "createdAt" FROM "users";
 ```
 
 **Filter results:**
 ```sql
-SELECT * FROM "Transaction" WHERE status = 'PENDING';
+SELECT * FROM "transactions" WHERE status = 'PENDING';
 ```
 
 **Order results:**
 ```sql
-SELECT * FROM "Transaction" ORDER BY "createdAt" DESC;
+SELECT * FROM "transactions" ORDER BY "createdAt" DESC;
 ```
 
 **Limit results:**
 ```sql
-SELECT * FROM "Account" LIMIT 10;
+SELECT * FROM "users" LIMIT 10;
 ```
 
 **Count rows:**
 ```sql
-SELECT COUNT(*) FROM "Wallet";
+SELECT COUNT(*) FROM "accounts";
 ```
 
 ---

@@ -22,8 +22,6 @@
       "@/*": ["src/*"],
       "@/config/*": ["src/config/*"],
       "@/database/*": ["src/database/*"],
-      "@/icp/*": ["src/icp/*"],
-      "@/wallet/*": ["src/wallet/*"],
       "@/common/*": ["src/common/*"],
       "@polypay/shared": ["../shared/dist"],
       "@polypay/shared/*": ["../shared/dist/*"]

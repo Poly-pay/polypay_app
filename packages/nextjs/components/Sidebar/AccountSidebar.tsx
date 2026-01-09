@@ -12,7 +12,7 @@ import { useMe, useUpdateMe } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
 
 export default function AccountSidebar() {
@@ -23,7 +23,7 @@ export default function AccountSidebar() {
 
   const { openModal } = useModalApp();
   const { commitment, logout } = useIdentityStore();
-  const { clearCurrentWallet } = useWalletStore();
+  const { clearCurrentAccount } = useAccountStore();
 
   const { data: me } = useMe();
   const { mutate: updateMe } = useUpdateMe();
@@ -184,9 +184,9 @@ export default function AccountSidebar() {
               className="cursor-pointer"
               onClick={() => {
                 logout();
-                clearCurrentWallet();
+                clearCurrentAccount();
                 disconnect();
-                appRouter.goToDashboardNewWallet();
+                appRouter.goToDashboardNewAccount();
               }}
             />
           </div>

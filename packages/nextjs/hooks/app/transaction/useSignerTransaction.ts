@@ -58,7 +58,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
     await createTransaction({
       nonce,
       type,
-      walletAddress: metaMultiSigWallet.address,
+      accountAddress: metaMultiSigWallet.address,
       threshold: Number(currentThreshold),
       proof,
       publicInputs,

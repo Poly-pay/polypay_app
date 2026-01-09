@@ -29,12 +29,12 @@ function Header() {
 export default function DashboardContainer() {
   const { commitment } = useIdentityStore();
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const walletAddress = metaMultiSigWallet?.address || "";
+  const accountAddress = metaMultiSigWallet?.address || "";
 
   const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
-    useTransactionsInfinite(walletAddress);
+    useTransactionsInfinite(accountAddress);
 
-  useTransactionRealtime(walletAddress);
+  useTransactionRealtime(accountAddress);
 
   const { ref } = useInfiniteScroll({
     hasNextPage,

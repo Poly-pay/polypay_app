@@ -38,11 +38,11 @@ In addition to ZK proofs, PolyPay uses a **relayer wallet** to enhance privacy f
 
 When signers call the smart contract directly, their wallet address is recorded as `msg.sender` on-chain. This partially reveals signer identity.
 
-PolyPay's backend uses a dedicated relayer wallet to deploy wallets and execute transactions on behalf of users. Signers only submit ZK proofs to the backend (off-chain), and the relayer interacts with the blockchain.
+PolyPay's backend uses a dedicated relayer wallet to deploy accounts and execute transactions on behalf of users. Signers only submit ZK proofs to the backend (off-chain), and the relayer interacts with the blockchain.
 
 | Action              | Without Relayer          | With Relayer         |
 | ------------------- | ------------------------ | -------------------- |
-| Deploy wallet       | Creator address exposed  | Only relayer visible |
+| Deploy account      | Creator address exposed  | Only relayer visible |
 | Execute transaction | Executor address exposed | Only relayer visible |
 
 This creates **complete EOA anonymity**: no signer's Ethereum address ever appears on-chain.

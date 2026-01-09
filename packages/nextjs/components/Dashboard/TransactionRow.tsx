@@ -64,7 +64,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     threshold: tx.threshold,
     approveCount,
     myVoteStatus,
-    walletAddress: tx.walletAddress,
+    accountAddress: tx.accountAddress,
     contact: tx.contact
       ? {
           id: tx.contact.id,

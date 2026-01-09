@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { parseEther } from "viem";
-import { ContactPicker } from "~~/components/address-book/ContactPicker";
+import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "~~/constants";
 import { useTransferTransaction } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
 import { useZodForm } from "~~/hooks/form";
 import { TransferFormData, transferSchema } from "~~/lib/form";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function TransferContainer() {
@@ -17,7 +17,7 @@ export default function TransferContainer() {
   const [selectedToken, setSelectedToken] = useState<Token>(NATIVE_ETH);
   const [showTokenDropdown, setShowTokenDropdown] = useState(false);
 
-  const { currentWallet: selectedWallet } = useWalletStore();
+  const { currentAccount: selectedAccount } = useAccountStore();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
 
@@ -222,7 +222,7 @@ export default function TransferContainer() {
                 disabled={isLoading}
               />
               <ContactPicker
-                walletId={selectedWallet?.id || null}
+                accountId={selectedAccount?.id || null}
                 onSelect={handleContactSelect}
                 disabled={isLoading}
               />

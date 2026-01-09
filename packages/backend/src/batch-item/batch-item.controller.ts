@@ -21,7 +21,7 @@ import { CreateBatchItemDto, UpdateBatchItemDto } from '@polypay/shared';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { BatchItemOwnerGuard } from '@/auth/guards/batch-item-owner.guard';
-import { Account } from '@/generated/prisma/client';
+import { User } from '@/generated/prisma/client';
 
 @ApiTags('batch-items')
 @ApiBearerAuth('JWT-auth')
@@ -39,7 +39,7 @@ export class BatchItemController {
   @ApiBody({ type: CreateBatchItemDto })
   @ApiResponse({ status: 201, description: 'Batch item created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  async create(@CurrentUser() user: Account, @Body() dto: CreateBatchItemDto) {
+  async create(@CurrentUser() user: User, @Body() dto: CreateBatchItemDto) {
     return this.batchItemService.create(dto, user.commitment);
   }
 
@@ -51,7 +51,7 @@ export class BatchItemController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get my batch items' })
   @ApiResponse({ status: 200, description: 'List of batch items' })
-  async getMyBatchItems(@CurrentUser() user: Account) {
+  async getMyBatchItems(@CurrentUser() user: User) {
     return this.batchItemService.findByCommitment(user.commitment);
   }
 
@@ -92,7 +92,7 @@ export class BatchItemController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Clear all my batch items' })
   @ApiResponse({ status: 200, description: 'Batch items cleared successfully' })
-  async clearMyBatchItems(@CurrentUser() user: Account) {
+  async clearMyBatchItems(@CurrentUser() user: User) {
     return this.batchItemService.clearByCommitment(user.commitment);
   }
 }

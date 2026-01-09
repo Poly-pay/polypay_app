@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { socketManager } from "~~/services/socket/socketManager";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
 
 /**
  * Hook to manage socket connection based on identity and current wallet
  */
 export function useSocketConnection(): void {
-  const { currentWallet } = useWalletStore();
+  const { currentAccount } = useAccountStore();
   const { commitment } = useIdentityStore();
 
   useEffect(() => {
@@ -17,11 +17,11 @@ export function useSocketConnection(): void {
 
     socketManager.connect({
       commitment,
-      walletAddress: currentWallet?.address,
+      accountAddress: currentAccount?.address,
     });
 
     return () => {
       socketManager.disconnect();
     };
-  }, [commitment, currentWallet?.address]);
+  }, [commitment, currentAccount?.address]);
 }
