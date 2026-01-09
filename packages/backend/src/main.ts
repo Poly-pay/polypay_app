@@ -64,11 +64,11 @@ async function bootstrap() {
       'JWT-auth',
     )
     .addTag('auth', 'Authentication endpoints - Login and token refresh')
+    .addTag('users', 'User management - User accounts with ZK commitments')
     .addTag(
-      'users',
-      'User management - User accounts with ZK commitments',
+      'accounts',
+      'Account operations - Multi-signature account management',
     )
-    .addTag('accounts', 'Account operations - Multi-signature account management')
     .addTag(
       'transactions',
       'Transaction management - Create, vote, and execute transactions',
