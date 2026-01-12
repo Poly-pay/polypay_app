@@ -3,11 +3,16 @@ name: Backend CI
 on:
   push:
     branches:
-      - 'main'
+      - 'ci'
+    paths:
+      - 'packages/backend/**'
+      - 'packages/shared/**'
+      - 'docker/backend.Dockerfile'
     
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: prod
 
     permissions:
       contents: read
@@ -30,10 +35,11 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_IMAGE }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_IMAGE }}
         run: |
           docker build \
             --platform linux/amd64 \
+            -f docker/backend.Dockerfile \
             -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
             .
 
