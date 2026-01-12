@@ -29,7 +29,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     <ModalContainer
       isOpen={isOpen}
       onClose={handleClose}
-      preventClose={!commitment}
+      // preventClose={!commitment}
       className="sm:max-w-[500px] p-0"
       isCloseButton={false}
     >

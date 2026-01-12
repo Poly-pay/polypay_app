@@ -48,8 +48,9 @@ export class CreateTransactionDto {
 
   // ADD_SIGNER / REMOVE_SIGNER
   @IsOptional()
-  @IsString()
-  signerCommitment?: string;
+  @IsArray()
+  @IsString({ each: true })
+  signerCommitments?: string[];
 
   // SET_THRESHOLD / ADD_SIGNER / REMOVE_SIGNER
   @IsOptional()

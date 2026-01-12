@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TxType, encodeAddSigner, encodeRemoveSigner, encodeUpdateThreshold } from "@polypay/shared";
+import { TxType, encodeAddSigners, encodeRemoveSigners, encodeUpdateThreshold } from "@polypay/shared";
 import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { notification } from "~~/utils/scaffold-eth";
@@ -78,9 +78,9 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
 
     setIsLoading(true);
     try {
-      const callData = encodeAddSigner(signerCommitment, newThreshold);
+      const callData = encodeAddSigners([signerCommitment], newThreshold);
       await executeSignerTransaction(TxType.ADD_SIGNER, callData, {
-        signerCommitment: signerCommitment.trim(),
+        signerCommitments: [signerCommitment.trim()],
         newThreshold,
       });
 
@@ -113,9 +113,9 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
 
     setIsLoading(true);
     try {
-      const callData = encodeRemoveSigner(signerCommitment, adjustedThreshold);
+      const callData = encodeRemoveSigners([signerCommitment], adjustedThreshold);
       await executeSignerTransaction(TxType.REMOVE_SIGNER, callData, {
-        signerCommitment,
+        signerCommitments: [signerCommitment.trim()],
         newThreshold: adjustedThreshold,
       });
 
