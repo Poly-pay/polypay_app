@@ -488,15 +488,7 @@ export class TransactionService {
   /**
    * Get execution data for smart contract
    */
-  async getExecutionData(txId: number) {
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { txId },
-    });
-
-    if (!transaction) {
-      throw new NotFoundException(`Transaction ${txId} not found`);
-    }
-
+  async getExecutionData(txId: number, transaction: Transaction) {
     // Aggregate all pending proofs (poll until all aggregated)
     await this.aggregateProofs(txId);
 
@@ -504,8 +496,8 @@ export class TransactionService {
     const approveVotes = await this.prisma.vote.findMany({
       where: {
         txId,
-        voteType: 'APPROVE',
-        proofStatus: 'AGGREGATED',
+        voteType: VoteType.APPROVE,
+        proofStatus: ProofStatus.AGGREGATED,
       },
     });
 
@@ -731,8 +723,24 @@ export class TransactionService {
    * Execute transaction on-chain via relayer
    */
   async executeOnChain(txId: number) {
+    // Check transaction exists
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { txId },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException(`Transaction ${txId} not found`);
+    }
+
+    // Mark as EXECUTING
+    await this.updateStatusAndEmit(
+      txId,
+      transaction.accountAddress,
+      TxStatus.EXECUTING,
+    );
+
     // 1. Get execution data
-    const executionData = await this.getExecutionData(txId);
+    const executionData = await this.getExecutionData(txId, transaction);
 
     try {
       // 2. Execute via relayer (includes balance check + receipt verification)
@@ -751,6 +759,13 @@ export class TransactionService {
       return { txId, txHash, status: 'EXECUTED' };
     } catch (error) {
       this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
+
+      // Revert to PENDING on failure
+      await this.updateStatusAndEmit(
+        txId,
+        executionData.accountAddress,
+        TxStatus.PENDING,
+      );
 
       // Parse error message for user-friendly response
       if (error.message?.includes('Insufficient wallet balance')) {
@@ -871,6 +886,25 @@ export class TransactionService {
         }
         break;
     }
+  }
+
+  private async updateStatusAndEmit(
+    txId: number,
+    accountAddress: string,
+    status: TxStatus,
+    txHash?: string,
+  ) {
+    await this.prisma.transaction.update({
+      where: { txId },
+      data: { status },
+    });
+
+    const eventData: TxStatusEventData = { txId, status, txHash };
+    this.eventsService.emitToAccount(
+      accountAddress,
+      TX_STATUS_EVENT,
+      eventData,
+    );
   }
 
   private buildExecuteParams(transaction: Transaction): {

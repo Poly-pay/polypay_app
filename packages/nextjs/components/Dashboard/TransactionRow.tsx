@@ -130,24 +130,26 @@ function ActionButtons({
   onExecute,
   loading,
   isExecutable,
+  isExecuting,
 }: {
   onApprove: () => void;
   onDeny: () => void;
   onExecute: () => void;
   loading: boolean;
   isExecutable: boolean;
+  isExecuting: boolean;
 }) {
-  if (isExecutable) {
+  if (isExecutable || isExecuting) {
     return (
       <button
         onClick={e => {
           e.stopPropagation();
           onExecute();
         }}
-        disabled={loading}
-        className="px-6 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-full hover:bg-blue-200 transition-colors cursor-pointer disabled:opacity-50"
+        disabled={loading || isExecuting}
+        className="px-6 py-2 text-sm font-medium text-blue-700 bg-blue-200 rounded-full hover:bg-blue-100 transition-colors cursor-pointer disabled:opacity-50"
       >
-        {loading ? "Executing..." : "Execute"}
+        {loading || isExecuting ? "Executing..." : "Execute"}
       </button>
     );
   }
@@ -458,14 +460,15 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       return <StatusBadge status={tx.status} txHash={tx.txHash} />;
     }
 
-    if (tx.myVoteStatus === null || isExecutable) {
+    if (tx.myVoteStatus === null || isExecutable || tx.status === TxStatus.EXECUTING) {
       return (
         <ActionButtons
           onApprove={handleApprove}
           onDeny={handleDeny}
           onExecute={() => handleExecute(tx.txId)}
           loading={loading}
-          isExecutable={isExecutable}
+          isExecutable={isExecutable && tx.status !== TxStatus.EXECUTING}
+          isExecuting={tx.status === TxStatus.EXECUTING}
         />
       );
     }
