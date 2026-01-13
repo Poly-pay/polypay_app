@@ -11,8 +11,6 @@ import {
   CreateTransactionDto,
   ApproveTransactionDto,
   TxType,
-  encodeAddSigner,
-  encodeRemoveSigner,
   encodeUpdateThreshold,
   encodeBatchTransferMulti,
   encodeERC20Transfer,
@@ -28,6 +26,8 @@ import {
   TxStatusEventData,
   PaginatedResponse,
   DEFAULT_PAGE_SIZE,
+  encodeAddSigners,
+  encodeRemoveSigners,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -154,7 +154,7 @@ export class TransactionService {
           value: dto.value,
           tokenAddress: dto.tokenAddress,
           contactId: dto.contactId,
-          signerCommitment: dto.signerCommitment,
+          signerCommitments: dto.signerCommitments || [],
           newThreshold: dto.newThreshold,
           createdBy: userCommitment,
           status: 'PENDING',
@@ -550,39 +550,42 @@ export class TransactionService {
       // Handle ADD_SIGNER: create User + AccountSigner link
       if (
         transaction.type === TxType.ADD_SIGNER &&
-        transaction.signerCommitment
+        transaction.signerCommitments.length > 0
       ) {
         const account = await tx.account.findUnique({
           where: { address: transaction.accountAddress },
         });
 
         if (account) {
-          // Upsert user for new signer
-          const user = await tx.user.upsert({
-            where: { commitment: transaction.signerCommitment },
-            create: { commitment: transaction.signerCommitment },
-            update: {},
-          });
+          // Loop through all signers to add
+          for (const signerCommitment of transaction.signerCommitments) {
+            // Upsert user for new signer
+            const user = await tx.user.upsert({
+              where: { commitment: signerCommitment },
+              create: { commitment: signerCommitment },
+              update: {},
+            });
 
-          // Create AccountSigner link (ignore if already exists)
-          await tx.accountSigner.upsert({
-            where: {
-              userId_accountId: {
+            // Create AccountSigner link (ignore if already exists)
+            await tx.accountSigner.upsert({
+              where: {
+                userId_accountId: {
+                  userId: user.id,
+                  accountId: account.id,
+                },
+              },
+              create: {
                 userId: user.id,
                 accountId: account.id,
+                isCreator: false,
               },
-            },
-            create: {
-              userId: user.id,
-              accountId: account.id,
-              isCreator: false,
-            },
-            update: {},
-          });
+              update: {},
+            });
 
-          this.logger.log(
-            `Added signer ${transaction.signerCommitment} to account ${account.address}`,
-          );
+            this.logger.log(
+              `Added signer ${signerCommitment} to account ${account.address}`,
+            );
+          }
 
           // Update threshold for pending transactions if newThreshold exists
           if (transaction.newThreshold) {
@@ -605,48 +608,52 @@ export class TransactionService {
           }
         }
       }
-
       // Handle REMOVE_SIGNER: delete AccountSigner link + delete pending votes
       if (
         transaction.type === TxType.REMOVE_SIGNER &&
-        transaction.signerCommitment
+        transaction.signerCommitments.length > 0
       ) {
         const account = await tx.account.findUnique({
           where: { address: transaction.accountAddress },
         });
 
-        const user = await tx.user.findUnique({
-          where: { commitment: transaction.signerCommitment },
-        });
+        if (account) {
+          // Loop through all signers to remove
+          for (const signerCommitment of transaction.signerCommitments) {
+            const user = await tx.user.findUnique({
+              where: { commitment: signerCommitment },
+            });
 
-        if (account && user) {
-          await tx.accountSigner.deleteMany({
-            where: {
-              userId: user.id,
-              accountId: account.id,
-            },
-          });
+            if (user) {
+              await tx.accountSigner.deleteMany({
+                where: {
+                  userId: user.id,
+                  accountId: account.id,
+                },
+              });
 
-          this.logger.log(
-            `Removed signer ${transaction.signerCommitment} from account ${account.address}`,
-          );
-        }
+              this.logger.log(
+                `Removed signer ${signerCommitment} from account ${account.address}`,
+              );
+            }
 
-        // Delete all pending votes from removed signer (same account only)
-        const deletedVotes = await tx.vote.deleteMany({
-          where: {
-            voterCommitment: transaction.signerCommitment,
-            transaction: {
-              accountAddress: transaction.accountAddress,
-              status: { in: ['PENDING'] },
-            },
-          },
-        });
+            // Delete all pending votes from removed signer (same account only)
+            const deletedVotes = await tx.vote.deleteMany({
+              where: {
+                voterCommitment: signerCommitment,
+                transaction: {
+                  accountAddress: transaction.accountAddress,
+                  status: { in: ['PENDING'] },
+                },
+              },
+            });
 
-        if (deletedVotes.count > 0) {
-          this.logger.log(
-            `Deleted ${deletedVotes.count} pending votes from removed signer ${transaction.signerCommitment}`,
-          );
+            if (deletedVotes.count > 0) {
+              this.logger.log(
+                `Deleted ${deletedVotes.count} pending votes from removed signer ${signerCommitment}`,
+              );
+            }
+          }
         }
 
         // Update threshold for pending transactions if newThreshold exists
@@ -857,17 +864,25 @@ export class TransactionService {
         break;
 
       case TxType.ADD_SIGNER:
-        if (!dto.signerCommitment || dto.newThreshold === undefined) {
+        if (
+          !dto.signerCommitments ||
+          dto.signerCommitments.length === 0 ||
+          dto.newThreshold === undefined
+        ) {
           throw new BadRequestException(
-            'Add signer requires "signerCommitment" and "newThreshold"',
+            'Add signer requires "signerCommitments" (array) and "newThreshold"',
           );
         }
         break;
 
       case TxType.REMOVE_SIGNER:
-        if (!dto.signerCommitment || dto.newThreshold === undefined) {
+        if (
+          !dto.signerCommitments ||
+          dto.signerCommitments.length === 0 ||
+          dto.newThreshold === undefined
+        ) {
           throw new BadRequestException(
-            'Remove signer requires "signerCommitment" and "newThreshold"',
+            'Remove signer requires "signerCommitments" (array) and "newThreshold"',
           );
         }
         break;
@@ -936,18 +951,19 @@ export class TransactionService {
         return {
           to: transaction.accountAddress,
           value: '0',
-          data: encodeAddSigner(
-            transaction.signerCommitment,
+          data: encodeAddSigners(
+            transaction.signerCommitments,
             transaction.newThreshold,
           ),
         };
 
+      // THAY case REMOVE_SIGNER:
       case TxType.REMOVE_SIGNER:
         return {
           to: transaction.accountAddress,
           value: '0',
-          data: encodeRemoveSigner(
-            transaction.signerCommitment,
+          data: encodeRemoveSigners(
+            transaction.signerCommitments,
             transaction.newThreshold,
           ),
         };

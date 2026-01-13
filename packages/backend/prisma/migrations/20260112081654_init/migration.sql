@@ -59,7 +59,7 @@ CREATE TABLE "transactions" (
     "token_address" TEXT,
     "account_address" TEXT NOT NULL,
     "contact_id" TEXT,
-    "signer_commitment" TEXT,
+    "signer_commitments" TEXT[],
     "new_threshold" INTEGER,
     "batch_data" TEXT,
     "created_by" TEXT NOT NULL,

@@ -18,7 +18,6 @@ contract MetaMultiSigWallet {
     // ============ Constants ============
     bytes32 public constant PROVING_SYSTEM_ID = keccak256(abi.encodePacked("ultraplonk"));
     bytes32 public constant VERSION_HASH = sha256(abi.encodePacked(""));
-    uint256 public constant MAX_SIGNERS = 16;
     uint256 public constant BN254_PRIME = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
     // ============ Events ============
@@ -113,41 +112,52 @@ contract MetaMultiSigWallet {
     }
 
     // ============ Signer Management ============
-    function addSigner(uint256 newCommitment, uint256 newSigRequired) public onlySelf {
-        require(newCommitment != 0, "Invalid commitment");
-        require(commitments.length < MAX_SIGNERS, "Max signers reached");
+    function addSigners(uint256[] calldata newCommitments, uint256 newSigRequired) public onlySelf {
+        require(newCommitments.length > 0, "Empty array");
         require(newSigRequired > 0, "Must be non-zero sigs required");
-        require(newSigRequired <= commitments.length + 1, "Sigs required too high");
+        require(newSigRequired <= commitments.length + newCommitments.length, "Sigs required too high");
 
-        for (uint256 i = 0; i < commitments.length; i++) {
-            require(commitments[i] != newCommitment, "Commitment exists");
+        for (uint256 i = 0; i < newCommitments.length; i++) {
+            require(newCommitments[i] != 0, "Invalid commitment");
+            
+            // Check duplicate with existing signers
+            for (uint256 j = 0; j < commitments.length; j++) {
+                require(commitments[j] != newCommitments[i], "Commitment exists");
+            }
+            
+            // Check duplicate within input array
+            for (uint256 k = 0; k < i; k++) {
+                require(newCommitments[k] != newCommitments[i], "Duplicate in input");
+            }
+
+            commitments.push(newCommitments[i]);
+            emit Owner(newCommitments[i], true);
         }
 
-        commitments.push(newCommitment);
         signaturesRequired = newSigRequired;
-
-        emit Owner(newCommitment, true);
     }
 
-    function removeSigner(uint256 commitment, uint256 newSigRequired) public onlySelf {
-        require(commitments.length > 1, "Cannot remove last signer");
+    function removeSigners(uint256[] calldata commitmentsToRemove, uint256 newSigRequired) public onlySelf {
+        require(commitmentsToRemove.length > 0, "Empty array");
+        require(commitments.length > commitmentsToRemove.length, "Cannot remove all signers");
         require(newSigRequired > 0, "Must be non-zero sigs required");
-        require(newSigRequired <= commitments.length - 1, "Sigs required too high");
+        require(newSigRequired <= commitments.length - commitmentsToRemove.length, "Sigs required too high");
 
-        bool found = false;
-        for (uint256 i = 0; i < commitments.length; i++) {
-            if (commitments[i] == commitment) {
-                commitments[i] = commitments[commitments.length - 1];
-                commitments.pop();
-                found = true;
-                break;
+        for (uint256 i = 0; i < commitmentsToRemove.length; i++) {
+            bool found = false;
+            for (uint256 j = 0; j < commitments.length; j++) {
+                if (commitments[j] == commitmentsToRemove[i]) {
+                    commitments[j] = commitments[commitments.length - 1];
+                    commitments.pop();
+                    found = true;
+                    emit Owner(commitmentsToRemove[i], false);
+                    break;
+                }
             }
+            require(found, "Commitment not found");
         }
-        require(found, "Commitment not found");
 
         signaturesRequired = newSigRequired;
-
-        emit Owner(commitment, false);
     }
 
     function updateSignaturesRequired(uint256 newSigRequired) public onlySelf {

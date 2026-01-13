@@ -55,7 +55,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     amount: tx.value || undefined,
     recipientAddress: tx.to || undefined,
     tokenAddress: tx.tokenAddress || undefined,
-    signerCommitment: tx.signerCommitment || undefined,
+    signerCommitments: tx.signerCommitments || [],
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
     batchData,
@@ -218,7 +218,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
         <h3 className="text-lg font-semibold mb-4">Add Signer</h3>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
-            {tx.signerCommitment?.slice(0, 10)}...{tx.signerCommitment?.slice(-8)}
+            {tx.signerCommitments?.[0].slice(0, 10)}...{tx.signerCommitments?.[0].slice(-8)}
           </span>
         </div>
       </div>
@@ -231,7 +231,7 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
         <h3 className="text-lg font-semibold mb-2">Remove Signer</h3>
         <div className="flex items-center gap-2">
           <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
-            {tx.signerCommitment?.slice(0, 10)}...{tx.signerCommitment?.slice(-8)}
+            {tx.signerCommitments?.[0].slice(0, 10)}...{tx.signerCommitments?.[0].slice(-8)}
           </span>
         </div>
       </div>
@@ -384,7 +384,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
       return (
         <div className="flex items-center gap-2">
           <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
-            {tx.signerCommitment?.slice(0, 8)}...{tx.signerCommitment?.slice(-6)}
+            {tx.signerCommitments?.[0].slice(0, 8)}...{tx.signerCommitments?.[0].slice(-6)}
           </span>
         </div>
       );

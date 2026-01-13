@@ -14,7 +14,7 @@ export interface Transaction {
   contactId?: string;
   contact?: Contact;
   accountAddress: string;
-  signerCommitment?: string;
+  signerCommitments?: string[];
   newThreshold?: number;
   batchData?: string;
   createdBy: string;

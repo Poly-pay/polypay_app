@@ -725,7 +725,7 @@ const deployedContracts = {
   },
   2651420: {
     MetaMultiSigWallet: {
-      address: "0xa9c95A08850d294017902160d3047149A03984fC",
+      address: "0x1EaCA128069b2bb1cd476ef66E2701F98cAB148E",
       abi: [
         {
           inputs: [
@@ -854,19 +854,6 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "MAX_SIGNERS",
-          outputs: [
-            {
-              internalType: "uint256",
-              name: "",
-              type: "uint256",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        },
-        {
-          inputs: [],
           name: "PROVING_SYSTEM_ID",
           outputs: [
             {
@@ -894,9 +881,9 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "uint256",
-              name: "newCommitment",
-              type: "uint256",
+              internalType: "uint256[]",
+              name: "newCommitments",
+              type: "uint256[]",
             },
             {
               internalType: "uint256",
@@ -904,7 +891,7 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
-          name: "addSigner",
+          name: "addSigners",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -1145,9 +1132,9 @@ const deployedContracts = {
         {
           inputs: [
             {
-              internalType: "uint256",
-              name: "commitment",
-              type: "uint256",
+              internalType: "uint256[]",
+              name: "commitmentsToRemove",
+              type: "uint256[]",
             },
             {
               internalType: "uint256",
@@ -1155,7 +1142,7 @@ const deployedContracts = {
               type: "uint256",
             },
           ],
-          name: "removeSigner",
+          name: "removeSigners",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -1256,7 +1243,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 5059301,
+      deployedOnBlock: 6615581,
     },
   },
   11155111: {

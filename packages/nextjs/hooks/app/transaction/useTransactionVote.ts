@@ -2,11 +2,11 @@ import { useState } from "react";
 import {
   TxStatus,
   TxType,
-  encodeAddSigner,
+  encodeAddSigners,
   encodeBatchTransfer,
   encodeBatchTransferMulti,
   encodeERC20Transfer,
-  encodeRemoveSigner,
+  encodeRemoveSigners,
   encodeUpdateThreshold,
 } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
@@ -48,7 +48,7 @@ export interface TransactionRowData {
   amount?: string;
   recipientAddress?: string;
   tokenAddress?: string;
-  signerCommitment?: string;
+  signerCommitments?: string[];
   oldThreshold?: number;
   newThreshold?: number;
   batchData?: BatchTransfer[];
@@ -90,9 +90,9 @@ function buildTransactionParams(tx: TransactionRowData): {
     value = 0n;
 
     if (tx.type === TxType.ADD_SIGNER) {
-      callData = encodeAddSigner(tx.signerCommitment!, tx.newThreshold!);
+      callData = encodeAddSigners(tx.signerCommitments!, tx.newThreshold!);
     } else if (tx.type === TxType.REMOVE_SIGNER) {
-      callData = encodeRemoveSigner(tx.signerCommitment!, tx.newThreshold!);
+      callData = encodeRemoveSigners(tx.signerCommitments!, tx.newThreshold!);
     } else if (tx.type === TxType.SET_THRESHOLD) {
       callData = encodeUpdateThreshold(tx.newThreshold!);
     } else if (tx.type === TxType.BATCH && tx.batchData) {

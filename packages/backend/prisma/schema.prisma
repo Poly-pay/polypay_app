@@ -80,7 +80,7 @@ model Transaction {
   contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Add/Remove Signer
-  signerCommitment String? @map("signer_commitment")
+  signerCommitments String[] @map("signer_commitments") // array of commitments
 
   // Set Threshold
   newThreshold Int? @map("new_threshold")
@@ -212,8 +212,8 @@ model ContactGroupEntry {
 model Notification {
   id String @id @default(cuid())
 
-  recipientId String  @map("recipient_id")
-  recipient   User    @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId String @map("recipient_id")
+  recipient   User   @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
 
   senderId String @map("sender_id")
   sender   User   @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
