@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { BatchItem, TxType, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
+import { NATIVE_ETH } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
-import { NATIVE_ETH } from "~~/constants/token";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";

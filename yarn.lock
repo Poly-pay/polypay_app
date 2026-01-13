@@ -588,6 +588,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@cacheable/utils@npm:^2.3.3":
+  version: 2.3.3
+  resolution: "@cacheable/utils@npm:2.3.3"
+  dependencies:
+    hashery: ^1.3.0
+    keyv: ^5.5.5
+  checksum: 443b73520eb4f1a81e654ca4c347db8815912e7db271a9363ea8104dae666b3d370efa51368fd8c2ab818c24f46f54f2a5cf90cf6779e4e49d61bd1a1b3016fc
+  languageName: node
+  linkType: hard
+
 "@chainsafe/is-ip@npm:^2.0.1":
   version: 2.1.0
   resolution: "@chainsafe/is-ip@npm:2.1.0"
@@ -3570,6 +3580,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nestjs/axios@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@nestjs/axios@npm:4.0.1"
+  peerDependencies:
+    "@nestjs/common": ^10.0.0 || ^11.0.0
+    axios: ^1.3.1
+    rxjs: ^7.0.0
+  checksum: a6a3d4a1f0063a95ac74c56eb6947fc28482d7a4bb914e27faa1056ff83f1e9021b62099d14f24b8faedb9ddd217d13abdc99a087a02e6a7e3667d8b1106aa46
+  languageName: node
+  linkType: hard
+
+"@nestjs/cache-manager@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "@nestjs/cache-manager@npm:3.1.0"
+  peerDependencies:
+    "@nestjs/common": ^9.0.0 || ^10.0.0 || ^11.0.0
+    "@nestjs/core": ^9.0.0 || ^10.0.0 || ^11.0.0
+    cache-manager: ">=6"
+    keyv: ">=5"
+    rxjs: ^7.8.1
+  checksum: 618ff1357ac5ec6eaa5167c84759e05fe568e769a702c69b56ba16308b1c79919064e0eb2af73dbd0616164fd537b5787d158c47f089666f8976e2ee5d87b6d9
+  languageName: node
+  linkType: hard
+
 "@nestjs/cli@npm:^11.0.0":
   version: 11.0.14
   resolution: "@nestjs/cli@npm:11.0.14"
@@ -4772,6 +4806,8 @@ __metadata:
     "@aztec/bb.js": 0.84.0
     "@eslint/eslintrc": ^3.2.0
     "@eslint/js": ^9.18.0
+    "@nestjs/axios": ^4.0.1
+    "@nestjs/cache-manager": ^3.1.0
     "@nestjs/cli": ^11.0.0
     "@nestjs/common": ^11.0.1
     "@nestjs/config": ^4.0.2
@@ -4797,6 +4833,8 @@ __metadata:
     "@types/pg": ^8.15.5
     "@types/supertest": ^6.0.2
     axios: ^1.13.2
+    axios-retry: ^4.5.0
+    cache-manager: ^7.2.8
     class-transformer: ^0.5.1
     class-validator: ^0.14.2
     eslint: ^9.18.0
@@ -9106,6 +9144,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"axios-retry@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "axios-retry@npm:4.5.0"
+  dependencies:
+    is-retry-allowed: ^2.2.0
+  peerDependencies:
+    axios: 0.x || 1.x
+  checksum: ec831e566ed3a55d3c3c927c1d42c52f2c2f1a8ea99ff8521d3675c6313f8c77f704c7186299fda08b7dc0f771a2c5471e72d279789d5aade65ec3755ab3a1ff
+  languageName: node
+  linkType: hard
+
 "axios@npm:^0.21.1":
   version: 0.21.4
   resolution: "axios@npm:0.21.4"
@@ -9757,6 +9806,16 @@ __metadata:
     ssri: ^13.0.0
     unique-filename: ^5.0.0
   checksum: 595e6b91d72972d596e1e9ccab8ddbf08b773f27240220b1b5b1b7b3f52173cfbcf095212e5d7acd86c3bd453c28e69b116469889c511615ef3589523d542639
+  languageName: node
+  linkType: hard
+
+"cache-manager@npm:^7.2.8":
+  version: 7.2.8
+  resolution: "cache-manager@npm:7.2.8"
+  dependencies:
+    "@cacheable/utils": ^2.3.3
+    keyv: ^5.5.5
+  checksum: c43d3806bcbd010cab034b401b06207b09b52c3eed10d4f641a58800de6e611e81f5f1d2dfafff4c18ee36a756a9de423eaa65701a7b23b225231b4ddf7b35bb
   languageName: node
   linkType: hard
 
@@ -14199,6 +14258,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hashery@npm:^1.3.0":
+  version: 1.4.0
+  resolution: "hashery@npm:1.4.0"
+  dependencies:
+    hookified: ^1.14.0
+  checksum: f3de35f92a44d3ee36c4ccaaf6ba09c340d7d61be5e1674589dae6f0bcd7ec67b971d253b823d8e4ffb2bc2e3f338605417242c523517de886a2082ad4f905cb
+  languageName: node
+  linkType: hard
+
 "hashlru@npm:^2.3.0":
   version: 2.3.0
   resolution: "hashlru@npm:2.3.0"
@@ -14246,6 +14314,13 @@ __metadata:
   version: 4.10.6
   resolution: "hono@npm:4.10.6"
   checksum: 0f00bd42cb1e9ceae920341c94d790f054180021bd5fa85b9e032da8add2865d847a070d0d9213c707d5ede5a9fb4cf6d0107c55e13588a3babd51541b3ec97f
+  languageName: node
+  linkType: hard
+
+"hookified@npm:^1.14.0":
+  version: 1.15.0
+  resolution: "hookified@npm:1.15.0"
+  checksum: 8e429e5b902836bd9a3476390d4b239adf1c4b2b7b433ffb756bc3bcf60c3eca00141189b2aa5d69c08bf6a828251cf4af4e4bd8702b94dd0cbb1072f10745ae
   languageName: node
   linkType: hard
 
@@ -15003,6 +15078,13 @@ __metadata:
     has-tostringtag: ^1.0.2
     hasown: ^2.0.2
   checksum: 99ee0b6d30ef1bb61fa4b22fae7056c6c9b3c693803c0c284ff7a8570f83075a7d38cda53b06b7996d441215c27895ea5d1af62124562e13d91b3dbec41a5e13
+  languageName: node
+  linkType: hard
+
+"is-retry-allowed@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "is-retry-allowed@npm:2.2.0"
+  checksum: 3d1103a9290b5d03626756a41054844633eac78bc5d3e3a95b13afeae94fa3cfbcf7f0b5520d83f75f48a25ce7b142fdbac4217dc4b0630f3ea55e866ec3a029
   languageName: node
   linkType: hard
 
@@ -16194,7 +16276,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"keyv@npm:^5.5.3, keyv@npm:^5.5.4":
+"keyv@npm:^5.5.3, keyv@npm:^5.5.4, keyv@npm:^5.5.5":
   version: 5.5.5
   resolution: "keyv@npm:5.5.5"
   dependencies:

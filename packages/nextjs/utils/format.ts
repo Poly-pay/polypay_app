@@ -1,4 +1,4 @@
-import { formatTokenAmount, getTokenByAddress } from "~~/constants";
+import { formatTokenAmount, getTokenByAddress } from "@polypay/shared";
 
 /**
  * Format amount with token symbol

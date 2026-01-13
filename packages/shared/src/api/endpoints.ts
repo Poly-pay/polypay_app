@@ -65,4 +65,8 @@ export const API_ENDPOINTS = {
     login: "/api/auth/login",
     refresh: "/api/auth/refresh",
   },
+
+  prices: {
+    base: "/api/prices",
+  },
 } as const;

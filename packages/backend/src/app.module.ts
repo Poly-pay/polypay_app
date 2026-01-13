@@ -11,6 +11,7 @@ import { ContactBookModule } from './contact-book/contact-book.module';
 import { EventsModule } from './events/events.module';
 import { NotificationModule } from './notification/notification.module';
 import { AuthModule } from './auth/auth.module';
+import { PriceModule } from './price/price.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AuthModule } from './auth/auth.module';
     EventsModule,
     NotificationModule,
     AuthModule,
+    PriceModule,
   ],
 })
 export class AppModule {}

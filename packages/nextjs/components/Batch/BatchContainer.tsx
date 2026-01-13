@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import TransactionSummary from "./TransactionSummary";
 import { BatchItem } from "@polypay/shared";
-import { getTokenByAddress } from "~~/constants/token";
+import { getTokenByAddress } from "@polypay/shared";
 import { useBatchTransaction } from "~~/hooks";
 import { useDeleteBatchItem, useMyBatchItems } from "~~/hooks/api";
 import { formatAddress, formatAmount } from "~~/utils/format";

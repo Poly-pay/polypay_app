@@ -9,8 +9,8 @@ import {
   encodeRemoveSigners,
   encodeUpdateThreshold,
 } from "@polypay/shared";
+import { NATIVE_ETH } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
-import { NATIVE_ETH } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
