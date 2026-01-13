@@ -2,13 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Token } from "~~/constants";
+import { NATIVE_ETH, SUPPORTED_TOKENS, Token } from "~~/constants";
+import { useMetaMultiSigWallet } from "~~/hooks";
+import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 
 interface TokenPillPopoverProps {
   selectedToken: Token;
-  tokens: Token[];
   onSelect: (tokenAddress: string) => void;
-
   arrowSrc?: string;
   arrowWidth?: number;
   arrowHeight?: number;
@@ -19,7 +19,6 @@ interface TokenPillPopoverProps {
 
 export function TokenPillPopover({
   selectedToken,
-  tokens,
   onSelect,
   arrowSrc = "/batch/popover-arrow.svg",
   arrowWidth = 28,
@@ -27,7 +26,8 @@ export function TokenPillPopover({
   pillClassName,
   popoverClassName,
 }: TokenPillPopoverProps) {
-  console.log(tokens);
+  const metaMultiSigWallet = useMetaMultiSigWallet();
+  const { balances } = useTokenBalances(metaMultiSigWallet?.address);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -76,32 +76,31 @@ export function TokenPillPopover({
           />
 
           <div className="py-1 min-w-[300px]">
-            {tokens.map(token => {
-              console.log(token.icon);
-              return (
-                <div
-                  key={token.address}
-                  onClick={() => {
-                    onSelect(token.address);
-                    setOpen(false);
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-[#FF7CEB1A] cursor-pointer first:rounded-t-lg last:rounded-b-lg"
-                >
-                  <Image key={token.address} src={token.icon} alt={token.symbol} width={32} height={32} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{token.name}</p>
-                    <p className="text-grey-800 text-xs">{token.symbol}</p>
-                  </div>
-                  <div>
-                    {/* // TODO : convert amount to USD price */}
-                    <p className="text-grey-950 font-medium">
-                      <span className="text-grey-300">$</span> 1,200
-                    </p>
-                    <p className="text-grey-800 text-xs">1200 {token.symbol}</p>
-                  </div>
+            {SUPPORTED_TOKENS.filter(token => token.address !== NATIVE_ETH.address).map(token => (
+              <div
+                key={token.address}
+                onClick={() => {
+                  onSelect(token.address);
+                  setOpen(false);
+                }}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-[#FF7CEB1A] cursor-pointer first:rounded-t-lg last:rounded-b-lg"
+              >
+                <Image key={token.address} src={token.icon} alt={token.symbol} width={32} height={32} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{token.name}</p>
+                  <p className="text-grey-800 text-xs">{token.symbol}</p>
                 </div>
-              );
-            })}
+                <div className="text-right">
+                  {/* // TODO : convert amount to USD price */}
+                  <p className="text-grey-950 font-medium">
+                    <span className="text-grey-300">$</span> 1,200
+                  </p>
+                  <p className="text-grey-800 text-xs">
+                    {balances[token.address] || "0"} {token.symbol}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

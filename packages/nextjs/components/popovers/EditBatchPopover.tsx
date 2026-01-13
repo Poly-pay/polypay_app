@@ -6,7 +6,7 @@ import { TokenPillPopover } from "./TokenPillPopover";
 import { BatchItem } from "@polypay/shared";
 import { formatEther, formatUnits } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
-import { NATIVE_ETH, SUPPORTED_TOKENS, Token } from "~~/constants";
+import { NATIVE_ETH, Token } from "~~/constants";
 import { getTokenByAddress } from "~~/constants/token";
 import { useZodForm } from "~~/hooks/form";
 import { editBatchSchema } from "~~/lib/form";
@@ -139,7 +139,6 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
           <div className="flex gap-2 items-center justify-center pt-5 w-full">
             <TokenPillPopover
               selectedToken={selectedToken}
-              tokens={SUPPORTED_TOKENS}
               onSelect={(tokenAddress: string) => form.setValue("tokenAddress", tokenAddress)}
             />
 
