@@ -39,6 +39,7 @@ jobs:
         run: |
           docker build \
             --platform linux/amd64 \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }} \
             -f docker/frontend.Dockerfile \
             -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
             .
