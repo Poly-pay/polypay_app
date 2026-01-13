@@ -43,6 +43,13 @@ export const transferSchema = z.object({
 });
 export type TransferFormData = z.infer<typeof transferSchema>;
 
+export const editBatchSchema = transferSchema.extend({
+  tokenAddress: z.string().optional(),
+  contactId: z.string().optional(),
+  contactName: z.string().optional(),
+});
+export type EditBatchFormData = z.infer<typeof editBatchSchema>;
+
 // ==================== Edit Account ====================
 
 export const editAccountNameSchema = z.object({

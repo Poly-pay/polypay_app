@@ -29,6 +29,9 @@ const modals: ModalRegistry = {
   developingFeature: dynamic(() => import("./DevelopingFeatureModal"), {
     ssr: false,
   }),
+  removeBatch: dynamic(() => import("./RemoveBatchModal"), {
+    ssr: false,
+  }),
 };
 
 type ModalInstance = {

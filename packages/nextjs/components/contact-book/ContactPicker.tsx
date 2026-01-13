@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { ContactBookUserIcon } from "../icons/ContactBookUserIcon";
 import { Contact } from "@polypay/shared";
-import { BookUser, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useContacts, useGroups } from "~~/hooks";
 
 interface ContactPickerProps {
@@ -13,14 +15,29 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const pickerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: groups = [] } = useGroups(accountId);
   const { data: contacts = [], isLoading } = useContacts(accountId, selectedGroupId || undefined);
 
+  useEffect(() => {
+    if (isOpen && buttonRef.current && dropdownRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+      const dropdownRect = dropdownRef.current.getBoundingClientRect();
+
+      const left = buttonRect.left - dropdownRect.width - 12;
+      const top = buttonRect.top - 12;
+
+      setPosition({ top, left });
+    }
+  }, [isOpen]);
+
   // Close picker when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside: (event: MouseEvent) => void = (event: MouseEvent) => {
       if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
@@ -58,25 +75,47 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
     <div className="relative" ref={pickerRef}>
       {/* Trigger button */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled}
         className="p-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         title="Select from contacts"
       >
-        <BookUser size={20} className="text-gray-500" />
+        <ContactBookUserIcon width={20} height={20} className="text-gray-500" />
       </button>
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute bottom-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
+        <div
+          ref={dropdownRef}
+          className="fixed w-80 bg-white rounded-2xl shadow-lg border border-grey-100 z-50"
+          style={{
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+          }}
+        >
+          {/* Arrow */}
+          <Image
+            src="/batch/popover-arrow.svg"
+            alt="arrow"
+            width={32}
+            height={32}
+            className="absolute -right-6"
+            style={{
+              top: buttonRef.current ? `${16 + buttonRef.current.getBoundingClientRect().height / 2}px` : "32px",
+              transform: "translateY(-50%)",
+            }}
+          />
           {/* Header */}
-          <div className="p-3 border-b border-gray-100">
-            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-              <Search size={16} className="text-gray-400" />
+          <div className="p-3">
+            <div className="flex items-center gap-2 border border-[#E2E2E2] bg-gray-50 rounded-xl pr-3 pl-1 py-1">
+              <div className="flex items-center justify-center p-2 rounded-lg bg-white">
+                <Search size={16} className="text-gray-400" />
+              </div>
               <input
                 type="text"
-                placeholder="Search contacts..."
+                placeholder="Enter contact name"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="flex-1 bg-transparent outline-none text-sm"
@@ -92,7 +131,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
 
           {/* Group tabs */}
           {groups.length > 0 && (
-            <div className="flex gap-1 p-2 border-b border-gray-100 overflow-x-auto">
+            <div className="flex gap-1 p-2 overflow-x-auto">
               <button
                 onClick={() => setSelectedGroupId(null)}
                 className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors cursor-pointer ${
@@ -116,7 +155,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
           )}
 
           {/* Contact list */}
-          <div className="max-h-64 overflow-y-auto">
+          <div className="max-h-64 overflow-y-auto overflow-x-hidden rounded-b-2xl">
             {isLoading ? (
               <div className="p-4 text-center text-gray-400 text-sm">Loading...</div>
             ) : filteredContacts.length > 0 ? (
@@ -126,13 +165,23 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
                   onClick={() => handleSelect(contact)}
                   className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left cursor-pointer"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <span className="text-primary text-sm font-medium">{contact.name.charAt(0).toUpperCase()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="block font-medium text-sm truncate">{contact.name}</span>
-                    <span className="block text-xs text-gray-400 truncate">{formatAddress(contact.address)}</span>
+                    {contact.groups && contact.groups.length > 0 && (
+                      <span className="block text-xs text-gray-400 truncate">
+                        {contact.groups
+                          .map(entry => entry.group?.name)
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    )}
                   </div>
+                  <span className="block text-sm text-main-violet truncate">
+                    {"[" + formatAddress(contact.address) + "]"}
+                  </span>
                 </button>
               ))
             ) : (
@@ -140,13 +189,6 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
                 {searchTerm ? "No contacts found" : "No contacts yet"}
               </div>
             )}
-          </div>
-
-          {/* Footer link */}
-          <div className="p-2 border-t border-gray-100">
-            <a href="/contact-book" className="block text-center text-xs text-primary hover:underline py-1">
-              Manage Contact Book →
-            </a>
           </div>
         </div>
       )}
