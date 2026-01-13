@@ -21,7 +21,7 @@ export function useTokenBalances(accountAddress: string | undefined) {
   const { targetNetwork } = useTargetNetwork();
   const { data: blockNumber } = useBlockNumber({ watch: true, chainId: targetNetwork.id });
 
-  // Fetch native ETH balance (auto update on block change)
+  // Fetch native ETH balance
   const { data: nativeBalance, isLoading: isLoadingNative } = useWatchBalance({
     address: accountAddress as `0x${string}`,
   });
