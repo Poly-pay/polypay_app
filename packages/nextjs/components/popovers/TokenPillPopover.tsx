@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { SUPPORTED_TOKENS, Token } from "~~/constants";
+import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 

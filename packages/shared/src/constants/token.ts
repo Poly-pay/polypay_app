@@ -4,6 +4,7 @@ export interface Token {
   name: string;
   decimals: number;
   icon: string;
+  coingeckoId: string;
 }
 
 // Native ETH (use zero address to identify)
@@ -13,6 +14,7 @@ export const NATIVE_ETH: Token = {
   name: "Ethereum",
   decimals: 18,
   icon: "/token/eth.svg",
+  coingeckoId: "ethereum",
 };
 
 // Horizen testnet tokens
@@ -24,6 +26,7 @@ export const SUPPORTED_TOKENS: Token[] = [
     name: "USD Coin",
     decimals: 6,
     icon: "/token/usdc.svg",
+    coingeckoId: "usd-coin",
   },
   {
     address: "0x15d70535a71Dba52b572EbF746c7C2F5806ACd0e", // USDT Horizen testnet address
@@ -31,6 +34,7 @@ export const SUPPORTED_TOKENS: Token[] = [
     name: "Tether USD",
     decimals: 6,
     icon: "/token/usdt.svg",
+    coingeckoId: "tether",
   },
   {
     address: "0xFac500d99a2e696e4781D6960A1fDD0189A0c85a",
@@ -38,20 +42,39 @@ export const SUPPORTED_TOKENS: Token[] = [
     name: "Dai Stablecoin",
     decimals: 18,
     icon: "/token/dai.svg",
+    coingeckoId: "dai",
   },
 ];
+
+// Helper: Get all coingecko IDs
+export function getCoingeckoIds(): string[] {
+  return SUPPORTED_TOKENS.map((t) => t.coingeckoId);
+}
 
 // Helper: Get token by address
 export function getTokenByAddress(address: string | null | undefined): Token {
   if (!address || address === "0x0000000000000000000000000000000000000000") {
     return NATIVE_ETH;
   }
-  return SUPPORTED_TOKENS.find(t => t.address.toLowerCase() === address.toLowerCase()) || NATIVE_ETH;
+  return (
+    SUPPORTED_TOKENS.find(
+      (t) => t.address.toLowerCase() === address.toLowerCase(),
+    ) || NATIVE_ETH
+  );
 }
 
 // Helper: Get token by symbol
 export function getTokenBySymbol(symbol: string): Token {
-  return SUPPORTED_TOKENS.find(t => t.symbol.toUpperCase() === symbol.toUpperCase()) || NATIVE_ETH;
+  return (
+    SUPPORTED_TOKENS.find(
+      (t) => t.symbol.toUpperCase() === symbol.toUpperCase(),
+    ) || NATIVE_ETH
+  );
+}
+
+// Helper: Get token by coingecko ID
+export function getTokenByCoingeckoId(coingeckoId: string): Token | undefined {
+  return SUPPORTED_TOKENS.find((t) => t.coingeckoId === coingeckoId);
 }
 
 // Helper: Format amount with decimals

@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Transaction, TxStatus, TxType, VoteType, horizenTestnet } from "@polypay/shared";
+import { getTokenByAddress } from "@polypay/shared";
 import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
-import { getTokenByAddress } from "~~/constants";
 import {
   BatchTransfer,
   Member,

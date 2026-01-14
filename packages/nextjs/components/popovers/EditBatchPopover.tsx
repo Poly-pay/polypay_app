@@ -3,11 +3,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { TokenPillPopover } from "./TokenPillPopover";
-import { BatchItem } from "@polypay/shared";
+import { BatchItem, NATIVE_ETH, Token, getTokenByAddress } from "@polypay/shared";
 import { formatEther, formatUnits } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
-import { NATIVE_ETH, Token } from "~~/constants";
-import { getTokenByAddress } from "~~/constants/token";
 import { useContacts } from "~~/hooks";
 import { useZodForm } from "~~/hooks/form";
 import { editBatchSchema } from "~~/lib/form";
