@@ -9,8 +9,9 @@ import { BatchItem } from "@polypay/shared";
 import AddressNamedTooltip from "~~/components/tooltips/AddressNamedTooltip";
 import { Token, parseTokenAmount } from "~~/constants";
 import { getTokenByAddress } from "~~/constants/token";
-import { useBatchTransaction, useModalApp } from "~~/hooks";
+import { useBatchTransaction, useContacts, useModalApp } from "~~/hooks";
 import { useDeleteBatchItem, useMyBatchItems, useUpdateBatchItem } from "~~/hooks/api";
+import { useAccountStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -50,6 +51,7 @@ function BatchTransactions({
   onEdit,
   isLoading,
   isRemoving,
+  accountId,
 }: {
   batchItems: BatchItem[];
   selectedItems: Set<string>;
@@ -60,11 +62,12 @@ function BatchTransactions({
   onEdit: (id: string, data: { recipient: string; amount: string; token: Token; contactId?: string }) => void;
   isLoading?: boolean;
   isRemoving?: boolean;
+  accountId: string | null;
 }) {
   const { openModal } = useModalApp();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const { data: contacts = [] } = useContacts(accountId);
 
-  // Create refs for each edit button using useMemo
   const editButtonRefs = useMemo<Record<string, React.RefObject<HTMLButtonElement | null>>>(() => {
     const refs: Record<string, React.RefObject<HTMLButtonElement | null>> = {};
     batchItems.forEach(item => {
@@ -117,6 +120,10 @@ function BatchTransactions({
           const isSelected = selectedItems.has(item.id);
           const isHighlighted = isSelected || isActive;
 
+          const matchedContact = contacts.find(
+            contact => contact.address.toLowerCase() === item.recipient.toLowerCase(),
+          );
+
           return (
             <div
               key={item.id}
@@ -160,33 +167,40 @@ function BatchTransactions({
                 width={100}
                 height={100}
               />
-
               {/* Recipient */}
-              <AddressNamedTooltip address={item.recipient} name={item.contact?.name} isHighlighted={isHighlighted}>
-                <div
-                  className={`flex items-center gap-1 text-xs font-medium rounded-full w-fit pl-1 pr-4 py-1 max-w-32 ${
-                    isHighlighted ? "bg-white text-black" : "bg-grey-100 text-black group-hover:bg-white"
-                  }`}
-                >
-                  <Image
-                    src={"/new-account/default-avt.svg"}
-                    alt="avatar"
-                    width={16}
-                    height={16}
-                    className="flex-shrink-0"
-                  />
-                  <span className="truncate overflow-hidden">
-                    {item.contact?.name ? (
+              {matchedContact ? (
+                <AddressNamedTooltip address={item.recipient} name={matchedContact.name} isHighlighted={isHighlighted}>
+                  <div
+                    className={`flex items-center gap-1 text-xs font-medium rounded-full w-fit pl-1 pr-4 py-1 max-w-32 ${
+                      isHighlighted ? "bg-white text-black" : "bg-grey-100 text-black group-hover:bg-white"
+                    }`}
+                  >
+                    <Image
+                      src={"/new-account/default-avt.svg"}
+                      alt="avatar"
+                      width={16}
+                      height={16}
+                      className="flex-shrink-0"
+                    />
+                    <span className="truncate overflow-hidden">
                       <Fragment>
-                        <span className="font-medium mr-0.5">{item?.contact?.name}</span>
+                        <span className="font-medium mr-0.5">{matchedContact.name}</span>
                         <span>{"(" + `${formatAddress(item?.recipient, { start: 3, end: 3 })}` + ")"}</span>
                       </Fragment>
-                    ) : (
-                      formatAddress(item?.recipient, { start: 3, end: 3 })
-                    )}
-                  </span>
-                </div>
-              </AddressNamedTooltip>
+                    </span>
+                  </div>
+                </AddressNamedTooltip>
+              ) : (
+                <span
+                  className={`px-2 py-1 rounded-full w-fit text-xs font-medium ${
+                    isHighlighted
+                      ? "text-black bg-white"
+                      : "text-black bg-grey-100 group-hover:bg-white group-hover:text-black"
+                  }`}
+                >
+                  {formatAddress(item?.recipient, { start: 4, end: 4 })}
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 <div>
                   <button
@@ -249,10 +263,14 @@ export default function BatchContainer() {
   const { mutateAsync: deleteBatchItem, isPending: isRemoving } = useDeleteBatchItem();
   const { mutateAsync: updateBatchItem } = useUpdateBatchItem();
   const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useMyBatchItems();
+  const { currentAccount } = useAccountStore();
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [isExiting] = useState(false);
+
+  // Get accountId from current account
+  const accountId = currentAccount?.id || null;
 
   const {
     proposeBatch,
@@ -265,7 +283,6 @@ export default function BatchContainer() {
     },
   });
 
-  // Select all handler
   const handleSelectAll = () => {
     if (selectedItems.size === batchItems.length) {
       setSelectedItems(new Set());
@@ -274,7 +291,6 @@ export default function BatchContainer() {
     }
   };
 
-  // Select single item handler
   const handleSelectItem = (id: string) => {
     const newSelected = new Set(selectedItems);
     if (newSelected.has(id)) {
@@ -303,16 +319,13 @@ export default function BatchContainer() {
     }
   };
 
-  // Edit item handler
   const handleEdit = async (
     id: string,
     data: { recipient: string; amount: string; token: Token; contactId?: string },
   ) => {
     try {
-      // Convert amount from readable format to wei/smallest unit based on selected token
       const amountInSmallestUnit = parseTokenAmount(data.amount, data.token.decimals);
 
-      // Call update mutation with all fields
       await updateBatchItem({
         id,
         data: {
@@ -323,10 +336,8 @@ export default function BatchContainer() {
         },
       });
 
-      // Show success notification
       notification.success("Batch item updated successfully");
 
-      // Refetch batch items to get updated data
       await refetchBatchItems();
     } catch (error) {
       console.error("Failed to update batch item:", error);
@@ -366,6 +377,7 @@ export default function BatchContainer() {
           onEdit={handleEdit}
           isLoading={isLoading}
           isRemoving={isRemoving}
+          accountId={accountId}
         />
       </div>
 
@@ -385,6 +397,7 @@ export default function BatchContainer() {
             onConfirm={handleProposeBatch}
             isLoading={isProposing}
             loadingState={loadingState}
+            accountId={accountId}
           />
         </div>
       )}

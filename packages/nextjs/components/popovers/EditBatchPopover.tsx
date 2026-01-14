@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { TokenPillPopover } from "./TokenPillPopover";
 import { BatchItem } from "@polypay/shared";
@@ -8,6 +8,7 @@ import { formatEther, formatUnits } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { NATIVE_ETH, Token } from "~~/constants";
 import { getTokenByAddress } from "~~/constants/token";
+import { useContacts } from "~~/hooks";
 import { useZodForm } from "~~/hooks/form";
 import { editBatchSchema } from "~~/lib/form";
 import { useAccountStore } from "~~/services/store";
@@ -25,7 +26,9 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
   const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const popoverRef = useRef<HTMLDivElement>(null);
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { currentAccount: selectedAccount } = useAccountStore();
+  const { data: contacts = [] } = useContacts(selectedAccount?.id || null);
 
   const formatAmountFromWei = (amount: string, tokenAddress: string) => {
     try {
@@ -86,6 +89,39 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
     form.setValue("contactName", name);
   };
 
+  const handleRecipientChange = (value: string) => {
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
+
+    form.setValue("recipient", value, { shouldValidate: false });
+
+    validationTimeoutRef.current = setTimeout(() => {
+      form.trigger("recipient");
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const watchedAmount = form.watch("amount");
+  const watchedTokenAddress = form.watch("tokenAddress");
+  const watchedContactName = form.watch("contactName");
+  const watchedRecipient = form.watch("recipient");
+  const selectedToken = getTokenByAddress(watchedTokenAddress || NATIVE_ETH.address);
+
+  const matchedContact = useMemo(() => {
+    if (!watchedRecipient) return null;
+    return contacts.find(contact => contact.address.toLowerCase() === watchedRecipient.toLowerCase());
+  }, [contacts, watchedRecipient]);
+
+  const shouldShowBadge = !!matchedContact;
+
   const handleSave = async () => {
     const isValid = await form.trigger();
     if (!isValid) return;
@@ -103,11 +139,6 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
   };
 
   if (!isOpen) return null;
-
-  const watchedAmount = form.watch("amount");
-  const watchedTokenAddress = form.watch("tokenAddress");
-  const watchedContactName = form.watch("contactName");
-  const selectedToken = getTokenByAddress(watchedTokenAddress || NATIVE_ETH.address);
 
   return (
     <div
@@ -180,35 +211,43 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
                 {...form.register("recipient")}
                 type="text"
                 placeholder="Enter recipient address (0x...)"
+                onChange={e => {
+                  handleRecipientChange(e.target.value);
+                }}
                 className="text-sm outline-none py-1 placeholder:text-grey-400 flex-1 w-full truncate overflow-hidden"
               />
-              <div
-                className={`flex bg-grey-100 items-center gap-1 text-xs font-medium rounded-full w-fit pl-1 pr-4 py-1 max-w-20`}
-              >
-                <Image
-                  src={"/new-account/default-avt.svg"}
-                  alt="avatar"
-                  width={16}
-                  height={16}
-                  className="flex-shrink-0"
-                />
-                <span className="truncate overflow-hidden">
-                  {watchedContactName ? (
-                    <>
-                      <span className="font-medium mr-0.5">{watchedContactName}</span>
-                      <span>{"(" + `${formatAddress(form.watch("recipient"), { start: 3, end: 3 })}` + ")"}</span>
-                    </>
-                  ) : (
-                    formatAddress(form.watch("recipient") || item.recipient, { start: 3, end: 3 })
-                  )}
-                </span>
-              </div>
+              {shouldShowBadge && (
+                <div
+                  className={`flex bg-grey-100 items-center gap-1 text-xs font-medium rounded-full w-fit pl-1 pr-4 py-1 max-w-20`}
+                >
+                  <Image
+                    src={"/new-account/default-avt.svg"}
+                    alt="avatar"
+                    width={16}
+                    height={16}
+                    className="flex-shrink-0"
+                  />
+                  <span className="truncate overflow-hidden">
+                    {watchedContactName ? (
+                      <>
+                        <span className="font-medium mr-0.5">{watchedContactName}</span>
+                        <span>{"(" + `${formatAddress(watchedRecipient, { start: 3, end: 3 })}` + ")"}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-medium mr-0.5">{matchedContact?.name}</span>
+                        <span>{"(" + `${formatAddress(watchedRecipient, { start: 3, end: 3 })}` + ")"}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
             <ContactPicker accountId={selectedAccount?.id || null} onSelect={handleContactSelect} disabled={false} />
           </div>
 
           {form.formState.errors.recipient && (
-            <p className="text-red-500 text-xs">{form.formState.errors.recipient.message}</p>
+            <span className="text-red-500 text-xs">{form.formState.errors.recipient.message}</span>
           )}
         </div>
 
@@ -221,7 +260,9 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
           </button>
           <button
             onClick={handleSave}
-            disabled={!watchedAmount || !form.watch("recipient")}
+            disabled={
+              !watchedAmount || !watchedRecipient || !!form.formState.errors.recipient || !!form.formState.errors.amount
+            }
             className="flex-1 bg-main-pink font-medium text-sm py-2 rounded-lg hover:bg-main-pink/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save changes

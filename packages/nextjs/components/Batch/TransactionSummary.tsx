@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { useContacts } from "~~/hooks";
 import { formatAddress } from "~~/utils/format";
 
 interface TransactionSummaryProps {
@@ -17,6 +18,7 @@ interface TransactionSummaryProps {
   className?: string;
   isLoading?: boolean;
   loadingState?: string;
+  accountId: string | null;
 }
 
 const TransactionSummary: React.FC<TransactionSummaryProps> = ({
@@ -25,7 +27,9 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
   className,
   isLoading = false,
   loadingState = "",
+  accountId,
 }) => {
+  const { data: contacts = [] } = useContacts(accountId);
   return (
     <div className={`bg-white relative rounded-lg h-full overflow-hidden ${className} transition-all`}>
       <div className="p-5">
@@ -44,39 +48,51 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
 
         {/* Transactions List */}
         <div className="flex flex-col gap-0.5 max-h-[400px] items-center justify-start w-full overflow-y-auto mt-10">
-          {transactions.map(transaction => (
-            <div
-              key={transaction.id}
-              className="bg-grey-50 flex gap-3 items-center justify-between p-3 w-full rounded-lg"
-            >
-              {/* Amount with Token Icon */}
-              <div className="flex items-center gap-1 text-grey-950 text-[16px]">
-                {transaction.tokenIcon && (
-                  <Image src={transaction.tokenIcon} alt={transaction.tokenSymbol || "token"} width={20} height={20} />
-                )}
-                {transaction.amount}
-              </div>
+          {transactions.map(transaction => {
+            const matchedContact = contacts.find(
+              contact => contact.address.toLowerCase() === transaction.recipient.toLowerCase(),
+            );
 
-              {/* Arrow */}
-              <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
-
-              {/* Recipient */}
-
+            return (
               <div
-                className={`flex items-center gap-1 text-back text-xs font-medium bg-white rounded-full w-fit pl-1 pr-4 py-1`}
+                key={transaction.id}
+                className="bg-grey-50 flex gap-3 items-center justify-between p-3 w-full rounded-lg"
               >
-                <Image src={"/new-account/default-avt.svg"} alt="avatar" width={16} height={16} />
-                {transaction.contactName ? (
-                  <div className=" max-w-24 overflow-hidden truncate">
-                    <span className="font-medium">{transaction.contactName}</span>
-                    <span>{"(" + `${formatAddress(transaction.recipient, { start: 3, end: 3 }) + ")"}`}</span>
+                {/* Amount with Token Icon */}
+                <div className="flex items-center gap-1 text-grey-950 text-[16px]">
+                  {transaction.tokenIcon && (
+                    <Image
+                      src={transaction.tokenIcon}
+                      alt={transaction.tokenSymbol || "token"}
+                      width={20}
+                      height={20}
+                    />
+                  )}
+                  {transaction.amount}
+                </div>
+
+                {/* Arrow */}
+                <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
+
+                {/* Recipient */}
+                {matchedContact ? (
+                  <div
+                    className={`flex items-center gap-1 text-black text-xs font-medium bg-white rounded-full w-fit pl-1 pr-4 py-1`}
+                  >
+                    <Image src={"/new-account/default-avt.svg"} alt="avatar" width={16} height={16} />
+                    <div className="max-w-24 overflow-hidden truncate">
+                      <span className="font-medium">{matchedContact.name}</span>
+                      <span>{"(" + `${formatAddress(transaction.recipient, { start: 3, end: 3 }) + ")"}`}</span>
+                    </div>
                   </div>
                 ) : (
-                  formatAddress(transaction.recipient, { start: 3, end: 3 })
+                  <span className="px-2 py-1 rounded-full text-xs font-medium text-black bg-white">
+                    {formatAddress(transaction.recipient, { start: 4, end: 4 })}
+                  </span>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
