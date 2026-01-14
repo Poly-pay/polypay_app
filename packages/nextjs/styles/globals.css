@@ -15,6 +15,7 @@
   --color-main-navy-blue: #066eff;
   --color-main-black: #1e1e1e;
   --color-main-white: #ffffff;
+  --color-main-magenta: #b5009a;
 
   --color-grey-0: #ffffff;
   --color-grey-50: #f7f7f7;
@@ -56,7 +57,9 @@
   --color-green-900: #094b2e;
   --color-green-950: #042a1a;
 
+  --color-pink-25: #ffecfc;
   --color-pink-50: #fbf3ff;
+  --color-pink-75: #ffe0fa;
   --color-pink-100: #f7e7ff;
   --color-pink-150: #ffacf2;
   --color-pink-200: #efcfff;
@@ -65,6 +68,7 @@
   --color-pink-400: #d56bff;
   --color-pink-450: #f35ddd;
   --color-pink-500: #c43ef7;
+  --color-pink-550: #d338bb;
   --color-pink-600: #aa1fdb;
   --color-pink-700: #9115b7;
   --color-pink-800: #781396;
@@ -72,9 +76,11 @@
   --color-pink-950: #410151;
 
   --color-blue-100: #9dcff0;
+  --color-blue-550: #0050e4;
   --color-blue-600: #0059ff;
 
   --color-violet-50: #bbb4f7;
+  --color-violet-100: #ede6ff;
   --color-violet-300: #6d2eff;
 
   --color-lime-50: #c2ffca;

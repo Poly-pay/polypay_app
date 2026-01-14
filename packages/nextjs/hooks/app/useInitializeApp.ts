@@ -62,11 +62,6 @@ export const useInitializeApp = () => {
           if (!isCurrentAccountValid) {
             setCurrentAccount(accounts[0]);
           }
-
-          // Redirect from new-account to dashboard
-          if (router.pathname === Routes.DASHBOARD.subroutes.NEW_ACCOUNT.path) {
-            router.goToDashboard();
-          }
         } else {
           // No accounts
           clearCurrentAccount();

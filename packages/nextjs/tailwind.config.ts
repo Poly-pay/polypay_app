@@ -15,6 +15,7 @@ const config: Config = {
           "navy-blue": "var(--color-main-navy-blue)",
           black: "var(--color-main-black)",
           white: "var(--color-main-white)",
+          magenta: "var(--color-main-magenta)",
         },
         grey: {
           0: "var(--color-grey-0)",
@@ -60,7 +61,9 @@ const config: Config = {
           950: "var(--color-green-950)",
         },
         pink: {
+          25: "var(--color-pink-25)",
           50: "var(--color-pink-50)",
+          75: "var(--color-pink-75)",
           100: "var(--color-pink-100)",
           150: "var(--color-pink-150)",
           200: "var(--color-pink-200)",
@@ -69,6 +72,7 @@ const config: Config = {
           400: "var(--color-pink-400)",
           450: "var(--color-pink-450)",
           500: "var(--color-pink-500)",
+          550: "var(--color-pink-550)",
           600: "var(--color-pink-600)",
           700: "var(--color-pink-700)",
           800: "var(--color-pink-800)",
@@ -77,10 +81,12 @@ const config: Config = {
         },
         blue: {
           100: "var(--color-blue-100)",
+          550: "var(--color-blue-550)",
           600: "var(--color-blue-600)",
         },
         violet: {
           50: "var(--color-violet-50)",
+          100: "var(--color-violet-100)",
           300: "var(--color-violet-300)",
         },
         lime: {
