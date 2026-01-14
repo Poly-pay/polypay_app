@@ -70,6 +70,9 @@ export class BatchItemService {
     return this.prisma.batchItem.update({
       where: { id },
       data: dto,
+      include: {
+        contact: true,
+      },
     });
   }
 

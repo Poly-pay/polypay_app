@@ -7,10 +7,10 @@ import EditBatchPopover from "../popovers/EditBatchPopover";
 import TransactionSummary from "./TransactionSummary";
 import { BatchItem } from "@polypay/shared";
 import AddressNamedTooltip from "~~/components/tooltips/AddressNamedTooltip";
-import { Token } from "~~/constants";
+import { Token, parseTokenAmount } from "~~/constants";
 import { getTokenByAddress } from "~~/constants/token";
 import { useBatchTransaction, useModalApp } from "~~/hooks";
-import { useDeleteBatchItem, useMyBatchItems } from "~~/hooks/api";
+import { useDeleteBatchItem, useMyBatchItems, useUpdateBatchItem } from "~~/hooks/api";
 import { formatAddress, formatAmount } from "~~/utils/format";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -247,6 +247,7 @@ function BatchTransactions({
 // ==================== Main Container ====================
 export default function BatchContainer() {
   const { mutateAsync: deleteBatchItem, isPending: isRemoving } = useDeleteBatchItem();
+  const { mutateAsync: updateBatchItem } = useUpdateBatchItem();
   const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useMyBatchItems();
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -304,15 +305,28 @@ export default function BatchContainer() {
 
   // Edit item handler
   const handleEdit = async (
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     id: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     data: { recipient: string; amount: string; token: Token; contactId?: string },
   ) => {
     try {
-      // TODO: Implement update batch item API call
-      // For now, just show a notification
+      // Convert amount from readable format to wei/smallest unit based on selected token
+      const amountInSmallestUnit = parseTokenAmount(data.amount, data.token.decimals);
+
+      // Call update mutation with all fields
+      await updateBatchItem({
+        id,
+        data: {
+          recipient: data.recipient,
+          amount: amountInSmallestUnit,
+          tokenAddress: data.token.address,
+          contactId: data.contactId,
+        },
+      });
+
+      // Show success notification
       notification.success("Batch item updated successfully");
+
+      // Refetch batch items to get updated data
       await refetchBatchItems();
     } catch (error) {
       console.error("Failed to update batch item:", error);

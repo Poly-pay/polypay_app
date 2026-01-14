@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { NATIVE_ETH, SUPPORTED_TOKENS, Token } from "~~/constants";
+import { SUPPORTED_TOKENS, Token } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 
@@ -76,7 +76,7 @@ export function TokenPillPopover({
           />
 
           <div className="py-1 min-w-[300px]">
-            {SUPPORTED_TOKENS.filter(token => token.address !== NATIVE_ETH.address).map(token => (
+            {SUPPORTED_TOKENS.filter(token => token.address !== selectedToken.address).map(token => (
               <div
                 key={token.address}
                 onClick={() => {
