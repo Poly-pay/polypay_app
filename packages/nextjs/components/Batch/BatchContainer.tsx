@@ -192,13 +192,14 @@ function BatchTransactions({
                 </AddressNamedTooltip>
               ) : (
                 <span
-                  className={`px-2 py-1 rounded-full w-fit text-xs font-medium ${
+                  className={`flex item-center gap-1 px-2 py-1 rounded-full w-fit text-xs font-medium ${
                     isHighlighted
                       ? "text-black bg-white"
                       : "text-black bg-grey-100 group-hover:bg-white group-hover:text-black"
                   }`}
                 >
-                  {formatAddress(item?.recipient, { start: 4, end: 4 })}
+                  <Image src={"/new-account/default-avt.svg"} alt="avatar" width={16} height={16} />
+                  <span> {formatAddress(item?.recipient, { start: 3, end: 3 })}</span>
                 </span>
               )}
               <div className="flex items-center gap-2">

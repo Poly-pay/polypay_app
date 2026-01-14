@@ -86,8 +86,9 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <span className="px-2 py-1 rounded-full text-xs font-medium text-black bg-white">
-                    {formatAddress(transaction.recipient, { start: 4, end: 4 })}
+                  <span className="px-2 py-1 rounded-full flex item-center gap-1 text-xs font-medium text-black bg-white">
+                    <Image src={"/new-account/default-avt.svg"} alt="avatar" width={16} height={16} />
+                    <span>{formatAddress(transaction.recipient, { start: 3, end: 3 })}</span>
                   </span>
                 )}
               </div>
