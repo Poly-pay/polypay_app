@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
-import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "~~/constants";
 import { useTransferTransaction } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
 import { useZodForm } from "~~/hooks/form";
