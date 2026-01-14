@@ -153,10 +153,6 @@
     border-color: var(--color-gray-200, currentColor);
   }
 
-  p {
-    margin: 1rem 0;
-  }
-
   body {
     min-height: 100vh;
   }
@@ -173,6 +169,10 @@
 :root,
 [data-theme] {
   background: #ededed;
+}
+
+button {
+  cursor: pointer;
 }
 
 .btn {
