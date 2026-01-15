@@ -54,10 +54,8 @@ export function TokenPillPopover({
         }
         style={{ boxShadow: "0 4px 24.5px 0 rgba(46, 119, 255, 0.25)" }}
       >
+        <Image src={"/arrow/dropdown.svg"} alt="icon" width={14} height={14} />
         <Image src={selectedToken.icon} alt={selectedToken.symbol} width={24} height={24} />
-        <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
       </div>
 
       {open && (

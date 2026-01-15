@@ -101,7 +101,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
             alt="arrow"
             width={32}
             height={32}
-            className="absolute -right-6"
+            className="absolute -right-7"
             style={{
               top: buttonRef.current ? `${16 + buttonRef.current.getBoundingClientRect().height / 2}px` : "32px",
               transform: "translateY(-50%)",
@@ -109,8 +109,13 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
           />
           {/* Header */}
           <div className="p-3">
-            <div className="flex items-center gap-2 border border-[#E2E2E2] bg-gray-50 rounded-xl pr-3 pl-1 py-1">
-              <div className="flex items-center justify-center p-2 rounded-lg bg-white">
+            <div className="flex items-center gap-2 border border-[#E2E2E2] bg-[#F8F7F7] rounded-xl pr-3 pl-1 py-1">
+              <div
+                className="flex items-center justify-center p-2 rounded-lg bg-white"
+                style={{
+                  boxShadow: "0 0 4px 0 rgba(18, 18, 18, 0.10)",
+                }}
+              >
                 <Search size={16} className="text-gray-400" />
               </div>
               <input
@@ -163,7 +168,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
                 <button
                   key={contact.id}
                   onClick={() => handleSelect(contact)}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 p-3 hover:bg-pink-50 transition-colors text-left cursor-pointer"
                 >
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <span className="text-primary text-sm font-medium">{contact.name.charAt(0).toUpperCase()}</span>
