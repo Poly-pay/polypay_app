@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { CreateUserDto, UpdateUserDto } from '@polypay/shared';
+import { CreateUserDto } from '@polypay/shared';
 
 @Injectable()
 export class UserService {
@@ -14,12 +14,12 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Create new account
+   * Create new user
    */
   async create(dto: CreateUserDto) {
-    // Check if account already exists
+    // Check if user already exists
     const existing = await this.prisma.user.findUnique({
-      where: { commitment: dto.commitment, name: dto.name },
+      where: { commitment: dto.commitment },
     });
 
     if (existing) {
@@ -30,7 +30,7 @@ export class UserService {
       data: { commitment: dto.commitment },
     });
 
-    this.logger.log(`Created account: ${user.id}`);
+    this.logger.log(`Created user: ${user.id}`);
     return user;
   }
 
@@ -85,7 +85,7 @@ export class UserService {
       updatedAt: account.updatedAt,
       signers: account.signers.map((signer) => ({
         commitment: signer.user.commitment,
-        name: signer.user.name || undefined,
+        name: signer.displayName,
         isCreator: signer.isCreator,
       })),
     }));
@@ -102,22 +102,22 @@ export class UserService {
     });
   }
 
-  async update(commitment: string, dto: UpdateUserDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { commitment },
-    });
+  // async update(commitment: string, dto: UpdateUserDto) {
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { commitment },
+  //   });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+  //   if (!user) {
+  //     throw new NotFoundException('User not found');
+  //   }
 
-    return this.prisma.user.update({
-      where: { commitment },
-      data: {
-        name: dto.name,
-      },
-    });
-  }
+  //   return this.prisma.user.update({
+  //     where: { commitment },
+  //     data: {
+  //       name: dto.name,
+  //     },
+  //   });
+  // }
 
   async findAll() {
     return this.prisma.account.findMany({

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
-import { useMetaMultiSigWallet } from "~~/hooks";
+import { useMetaMultiSigWallet, useTokenPrices } from "~~/hooks";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 
 interface TokenPillPopoverProps {
@@ -28,6 +28,7 @@ export function TokenPillPopover({
 }: TokenPillPopoverProps) {
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { balances } = useTokenBalances(metaMultiSigWallet?.address);
+  const { getPriceBySymbol, isLoading: isLoadingPrices } = useTokenPrices();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +44,16 @@ export function TokenPillPopover({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
+
+  const getTokenUsdValue = (token: Token): string => {
+    const balance = parseFloat(balances[token.address] || "0");
+    const price = getPriceBySymbol(token.symbol);
+    const usdValue = balance * price;
+    return usdValue.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
   return (
     <div ref={rootRef} className="relative">
@@ -91,7 +102,7 @@ export function TokenPillPopover({
                 <div className="text-right">
                   {/* // TODO : convert amount to USD price */}
                   <p className="text-grey-950 font-medium">
-                    <span className="text-grey-300">$</span> 1,200
+                    <span className="text-grey-300">$</span> {isLoadingPrices ? "..." : getTokenUsdValue(token)}
                   </p>
                   <p className="text-grey-800 text-xs">
                     {balances[token.address] || "0"} {token.symbol}

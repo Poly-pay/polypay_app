@@ -1,5 +1,5 @@
 import { apiClient } from "./apiClient";
-import { API_ENDPOINTS, Account, CreateUserDto, UpdateUserDto, User } from "@polypay/shared";
+import { API_ENDPOINTS, Account, CreateUserDto, User } from "@polypay/shared";
 
 export const userApi = {
   create: async (dto: CreateUserDto): Promise<User> => {
@@ -17,8 +17,8 @@ export const userApi = {
     return data;
   },
 
-  updateMe: async (dto: UpdateUserDto): Promise<User> => {
-    const { data } = await apiClient.patch<User>(API_ENDPOINTS.users.me, dto);
-    return data;
-  },
+  // updateMe: async (dto: UpdateUserDto): Promise<User> => {
+  //   const { data } = await apiClient.patch<User>(API_ENDPOINTS.users.me, dto);
+  //   return data;
+  // },
 };

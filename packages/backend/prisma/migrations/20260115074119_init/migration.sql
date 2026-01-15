@@ -17,7 +17,6 @@ CREATE TYPE "NotificationType" AS ENUM ('COMMITMENT_RECEIVED');
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "commitment" TEXT NOT NULL,
-    "name" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -42,6 +41,7 @@ CREATE TABLE "account_signers" (
     "user_id" TEXT NOT NULL,
     "account_id" TEXT NOT NULL,
     "is_creator" BOOLEAN NOT NULL DEFAULT false,
+    "display_name" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "account_signers_pkey" PRIMARY KEY ("id")
