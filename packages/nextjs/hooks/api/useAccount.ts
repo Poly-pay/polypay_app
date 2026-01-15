@@ -45,6 +45,7 @@ export const useUpdateAccount = () => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: accountKeys.byAddress(variables.address) });
       queryClient.invalidateQueries({ queryKey: accountKeys.all });
+      queryClient.invalidateQueries({ queryKey: userKeys.meAccounts });
     },
   });
 };

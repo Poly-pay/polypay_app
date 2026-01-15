@@ -5,6 +5,7 @@ export const colorTokens = {
     navyBlue: "#066EFF",
     black: "#1E1E1E",
     white: "#FFFFFF",
+    magenta: "#B5009A",
   },
   grey: {
     0: "#FFFFFF",
@@ -50,7 +51,9 @@ export const colorTokens = {
     950: "#042A1A",
   },
   pink: {
+    25: "#FFECFC",
     50: "#FBF3FF",
+    75: "#FFE0FA",
     100: "#F7E7FF",
     150: "#FFACF2",
     200: "#EFCFFF",
@@ -59,6 +62,7 @@ export const colorTokens = {
     400: "#D56BFF",
     450: "#f35ddd",
     500: "#C43EF7",
+    550: "#D338BB",
     600: "#AA1FDB",
     700: "#9115B7",
     800: "#781396",
@@ -67,10 +71,12 @@ export const colorTokens = {
   },
   blue: {
     100: "#9DCFF0",
+    550: "#0050E4",
     600: "#0059FF",
   },
   violet: {
     50: "#BBB4F7",
+    100: "#EDE6FF",
     300: "#6D2EFF",
   },
   lime: {

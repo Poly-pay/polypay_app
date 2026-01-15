@@ -50,28 +50,44 @@ export class UserService {
   }
 
   /**
-   * Get accounts for user
+   * Get accounts for user with signers list
    */
   async getAccounts(commitment: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { commitment },
+    // Query 1: Get account IDs where user is a signer
+    const userAccounts = await this.prisma.accountSigner.findMany({
+      where: { user: { commitment } },
+      select: { accountId: true },
+    });
+
+    if (userAccounts.length === 0) {
+      return [];
+    }
+
+    const accountIds = userAccounts.map((a) => a.accountId);
+
+    // Query 2: Get accounts with all signers
+    const accounts = await this.prisma.account.findMany({
+      where: { id: { in: accountIds } },
       include: {
-        accounts: {
-          include: {
-            account: true,
-          },
+        signers: {
+          include: { user: true },
         },
       },
     });
 
-    if (!user) {
-      // Return empty array if user doesn't exist yet
-      return [];
-    }
-
-    return user.accounts.map((aw) => ({
-      ...aw.account,
-      isCreator: aw.isCreator,
+    // Map to response format
+    return accounts.map((account) => ({
+      id: account.id,
+      address: account.address,
+      name: account.name,
+      threshold: account.threshold,
+      createdAt: account.createdAt,
+      updatedAt: account.updatedAt,
+      signers: account.signers.map((signer) => ({
+        commitment: signer.user.commitment,
+        name: signer.user.name || undefined,
+        isCreator: signer.isCreator,
+      })),
     }));
   }
 

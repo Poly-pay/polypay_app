@@ -4,11 +4,12 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import AccountSidebar from "./AccountSidebar";
+import ManageAccountsSidebar from "./ManageAccountsSidebar";
+import { useMyAccounts } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
+import { useAccountStore } from "~~/services/store";
 import { ModalName } from "~~/types/modal";
-
-export const ACCOUNT_SIDEBAR_OFFSET = 285;
-export const NEW_SUB_ACCOUNT_SIDEBAR_OFFSET = 567;
 
 const SIDEBAR_LINKS = {
   DASHBOARD: "/dashboard",
@@ -22,16 +23,15 @@ const sectionItems = [
   {
     label: "Quick Access",
     menuItems: [
-      { icon: "/sidebar/dashboard.svg", label: "dashboard", link: SIDEBAR_LINKS.DASHBOARD },
-      { icon: "/sidebar/contact-book.svg", label: "contact book", link: SIDEBAR_LINKS.CONTACT_BOOK },
+      { icon: "/sidebar/dashboard.svg", label: "Dashboard", link: SIDEBAR_LINKS.DASHBOARD },
+      { icon: "/sidebar/contact-book.svg", label: "Contact Book", link: SIDEBAR_LINKS.CONTACT_BOOK },
     ],
   },
   {
     label: "Payments",
-    description: "Move assets your way – fast, private.",
     menuItems: [
-      { icon: "/sidebar/transfer.svg", label: "transfer", link: SIDEBAR_LINKS.TRANSFER },
-      { icon: "/sidebar/batch.svg", label: "batch", link: SIDEBAR_LINKS.BATCH },
+      { icon: "/sidebar/transfer.svg", label: "Transfer", link: SIDEBAR_LINKS.TRANSFER },
+      { icon: "/sidebar/batch.svg", label: "Batch", link: SIDEBAR_LINKS.BATCH },
     ],
   },
 ];
@@ -40,31 +40,30 @@ const SectionItem = ({
   label,
   menuItems,
   showDivider,
-  selectedItem,
   openModal,
 }: {
   label: string;
-  menuItems: { icon: string; label: string; transactionsCount?: number; link: string }[];
+  menuItems: { icon: string; label: string; link: string }[];
   showDivider?: boolean;
-  selectedItem: string | null;
-  onItemClick: (itemLabel: string) => void;
   openModal: (name: ModalName, props?: Record<string, any>) => void;
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
-  const itemComponent = (item: any) => {
-    const isDevelopingFeature = ["swap", "ai assistant"].includes(item.label);
+  const itemComponent = (item: { icon: string; label: string; link: string }) => {
+    const isDevelopingFeature = ["swap", "ai assistant"].includes(item.label.toLowerCase());
+    const isActive = pathname === item.link;
+    const isHovered = hoveredItem === item.link;
 
     return (
       <div
         key={item.label}
-        className={`flex xl:w-full w-fit items-center gap-2 p-2 rounded-xl cursor-pointer justify-between capitalize ${
-          selectedItem === item.link || pathname === item.link
-            ? "bg-white text-black font-semibold"
-            : "hover:bg-white hover:text-black"
-        }`}
+        className={`
+          flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl cursor-pointer
+          ${isActive ? "bg-main-white border-b border-grey-500" : ""}
+          ${!isActive && isHovered ? "bg-main-white/50" : ""}
+        `}
         onClick={() => {
           if (isDevelopingFeature) {
             openModal("developingFeature");
@@ -75,7 +74,8 @@ const SectionItem = ({
         onMouseEnter={() => setHoveredItem(item.link)}
         onMouseLeave={() => setHoveredItem(null)}
       >
-        <div className="flex flex-row items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Icon */}
           <div className="w-6 h-6 flex items-center justify-center">
             <Image
               src={item.icon}
@@ -84,18 +84,18 @@ const SectionItem = ({
               height={24}
               style={{
                 filter:
-                  selectedItem === item.link || hoveredItem === item.link || pathname === item.link
+                  isActive || isHovered
                     ? "brightness(0) saturate(100%) invert(62%) sepia(85%) saturate(1295%) hue-rotate(288deg) brightness(101%) contrast(104%)"
                     : "none",
               }}
             />
           </div>
+          {/* Label */}
           <span
-            className={`xl:inline hidden ${
-              selectedItem === item.link || pathname === item.link
-                ? "font-semibold text-black"
-                : "font-normal text-text-primary group-hover:font-semibold group-hover:text-black font-barlow"
-            }`}
+            className={`
+              xl:block hidden text-sm capitalize
+              ${isActive ? "font-semibold text-grey-950" : "font-medium text-grey-950"}
+            `}
           >
             {item.label}
           </span>
@@ -105,65 +105,118 @@ const SectionItem = ({
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col">
-        <span className="text-lg text-text-primary text-grey-450">{label}</span>
+    <div className="flex flex-col gap-3">
+      {/* Section Label */}
+      <div className="flex flex-col gap-[3px]">
+        <span className="xl:block hidden text-sm font-medium text-grey-400 tracking-[-0.03em]">{label}</span>
       </div>
-      <div className="flex flex-col gap-0.5 items-center">{menuItems.map(item => itemComponent(item))}</div>
-      {showDivider && <div className="w-full h-[1px] my-1 bg-gray-300" />}
+      {/* Menu Items */}
+      <div className="flex flex-col gap-1">{menuItems.map(item => itemComponent(item))}</div>
+      {/* Divider */}
+      {showDivider && <div className="w-full h-0 border-t-[0.5px] border-grey-200" />}
     </div>
   );
 };
 
 export default function Sidebar() {
   const { openModal } = useModalApp();
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  const router = useRouter();
+  const router = useAppRouter();
+  const { data: accounts = [], isLoading: isLoadingAccounts } = useMyAccounts();
+  const { currentAccount, setCurrentAccount } = useAccountStore();
 
-  const handleItemClick = (itemLabel: string) => {
-    setSelectedItem(itemLabel);
+  // Manage Accounts Sidebar state
+  const [isManageAccountsOpen, setIsManageAccountsOpen] = useState(false);
+  const selectedAccountId = currentAccount?.id || accounts[0]?.id || "";
+
+  const handleOpenManageAccounts = () => {
+    setIsManageAccountsOpen(true);
+  };
+
+  const handleCloseManageAccounts = () => {
+    setIsManageAccountsOpen(false);
+  };
+
+  const handleSelectAccount = (accountId: string) => {
+    const account = accounts.find(a => a.id === accountId);
+    if (account) {
+      setCurrentAccount(account);
+    }
+    handleCloseManageAccounts();
+  };
+
+  const handleCreateAccount = () => {
+    router.goToDashboardNewAccount();
+    handleCloseManageAccounts();
   };
 
   return (
-    <div className="bg-background h-full relative rounded-lg  justify-between flex flex-col z-30 border border-grey-100 p-3">
-      <div>
-        {/* Header */}
-        <div className="flex flex-row items-center gap-3" onClick={() => router.push("/")}>
-          <Image src="/logo/polypay-icon.svg" alt="logo" className="w-8 h-8 cursor-pointer" width={32} height={32} />
-          <Image
-            src="/logo/polypay-text.svg"
-            alt="logo"
-            className="cursor-pointer xl:inline hidden"
-            width={68}
-            height={68}
-          />
-          <div className="xl:flex hidden flex-row items-center justify-center rounded-full px-3 py-1 bg-divider">
-            <span className="text-sm font-normal text-[#B5009A] px-3 py-1 bg-[#FF7CEB33] rounded-full">Beta</span>
+    <div className="relative h-full">
+      {/* Main Sidebar */}
+      <div className="xl:w-[272px] w-[68px] h-full bg-grey-100 border border-grey-100 rounded-lg flex flex-col justify-between p-3">
+        {/* Top Section */}
+        <div className="flex flex-col">
+          {/* Header - Logo */}
+          <div className="flex items-center gap-[11px] py-[1px] cursor-pointer" onClick={() => router.push("/")}>
+            {/* Logo */}
+            <div className="flex items-center gap-[4.85px]">
+              <Image src="/logo/polypay-icon.svg" alt="logo" width={32} height={28} />
+              <Image src="/logo/polypay-text.svg" alt="logo" className="xl:block hidden" width={68} height={16} />
+            </div>
+            {/* Beta Badge */}
+            <div className="xl:flex hidden items-center px-2.5 py-[5px] bg-pink-350/20 rounded-3xl">
+              <span className="text-xs font-medium text-main-magenta">Beta</span>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="w-full h-0 border-t border-grey-200 my-3" />
+
+          {/* Menu Sections */}
+          <div className="flex flex-col gap-3">
+            {sectionItems.map((item, index) => (
+              <SectionItem
+                key={item.label}
+                label={item.label}
+                menuItems={item.menuItems}
+                showDivider={index < sectionItems.length - 1}
+                openModal={openModal}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="w-full h-[1px] my-3 bg-gray-300" />
+        {/* Bottom Section */}
+        <div className="flex flex-col gap-2.5">
+          {/* Request new feature */}
+          <div
+            className="h-[36px] flex items-center gap-[5px] px-2.5 py-1.5 bg-main-white rounded-lg cursor-pointer hover:bg-grey-50"
+            onClick={() => {
+              // TODO: Open request feature modal
+            }}
+          >
+            <Image src="/sidebar/request-feature.svg" alt="Request feature" width={20} height={20} />
+            <span className="xl:block hidden flex-1 text-sm font-medium text-grey-700">Request new feature</span>
+            <Image src="/sidebar/arrow-right.svg" alt="Arrow" width={16} height={16} className="xl:block hidden" />
+          </div>
 
-        {/* Menu */}
-        <div className="flex flex-col gap-2">
-          {sectionItems.map((item, index) => (
-            <SectionItem
-              key={item.label}
-              label={item.label}
-              menuItems={item.menuItems}
-              showDivider={index < sectionItems.length - 1}
-              selectedItem={selectedItem}
-              onItemClick={handleItemClick}
-              openModal={openModal}
-            />
-          ))}
+          {/* Account Sidebar */}
+          <AccountSidebar onOpenManageAccounts={handleOpenManageAccounts} />
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 px-1">
-        <AccountSidebar />
-      </div>
+      {/* Invisible backdrop for click outside to close */}
+      {isManageAccountsOpen && <div className="fixed inset-0 z-40" onClick={handleCloseManageAccounts} />}
+
+      {/* Always render for animation */}
+      <ManageAccountsSidebar
+        isOpen={isManageAccountsOpen}
+        onClose={handleCloseManageAccounts}
+        accounts={accounts}
+        selectedAccountId={selectedAccountId}
+        onSelectAccount={handleSelectAccount}
+        onCreateAccount={handleCreateAccount}
+        isLoading={isLoadingAccounts}
+      />
     </div>
   );
 }
