@@ -1,5 +1,5 @@
 import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
-import { UpdateUserDto } from "@polypay/shared";
+// import { UpdateUserDto } from "@polypay/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userApi } from "~~/services/api";
 
@@ -35,14 +35,14 @@ export const useMyAccounts = () => {
   });
 };
 
-export const useUpdateMe = () => {
-  const queryClient = useQueryClient();
+// export const useUpdateMe = () => {
+//   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (dto: UpdateUserDto) => userApi.updateMe(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userKeys.me });
-      queryClient.invalidateQueries({ queryKey: userKeys.meAccounts });
-    },
-  });
-};
+//   return useMutation({
+//     mutationFn: (dto: UpdateUserDto) => userApi.updateMe(dto),
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: userKeys.me });
+//       queryClient.invalidateQueries({ queryKey: userKeys.meAccounts });
+//     },
+//   });
+// };

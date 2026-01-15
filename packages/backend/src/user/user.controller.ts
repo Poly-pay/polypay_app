@@ -5,17 +5,9 @@ import {
   ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  UseGuards,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Logger } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, UpdateUserDto } from '@polypay/shared';
+import { CreateUserDto } from '@polypay/shared';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { User } from '@/generated/prisma/client';
@@ -100,31 +92,31 @@ export class UserController {
    * Update current user
    * PATCH /api/users/me
    */
-  @Patch('me')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({
-    summary: 'Update current user',
-    description: 'Update the authenticated user information.',
-  })
-  @ApiBody({
-    type: UpdateUserDto,
-    examples: {
-      example1: {
-        summary: 'Update user name',
-        value: {
-          name: 'John Doe',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 200, description: 'User updated successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async updateMe(@CurrentUser() user: User, @Body() dto: UpdateUserDto) {
-    return this.userService.update(user.commitment, dto);
-  }
+  // @Patch('me')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiBearerAuth('JWT-auth')
+  // @ApiOperation({
+  //   summary: 'Update current user',
+  //   description: 'Update the authenticated user information.',
+  // })
+  // @ApiBody({
+  //   type: UpdateUserDto,
+  //   examples: {
+  //     example1: {
+  //       summary: 'Update user name',
+  //       value: {
+  //         name: 'John Doe',
+  //       },
+  //     },
+  //   },
+  // })
+  // @ApiResponse({ status: 200, description: 'User updated successfully' })
+  // @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  // @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
+  // @ApiResponse({ status: 404, description: 'User not found' })
+  // async updateMe(@CurrentUser() user: User, @Body() dto: UpdateUserDto) {
+  //   return this.userService.update(user.commitment, dto);
+  // }
 
   /**
    * Get all users

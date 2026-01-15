@@ -18,7 +18,6 @@ datasource db {
 model User {
   id         String   @id @default(cuid())
   commitment String   @unique
-  name       String? // Global name for user 
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
@@ -47,11 +46,12 @@ model Account {
 }
 
 model AccountSigner {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  accountId String   @map("account_id")
-  isCreator Boolean  @default(false) @map("is_creator")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  accountId   String   @map("account_id")
+  isCreator   Boolean  @default(false) @map("is_creator")
+  displayName String?  @map("display_name")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   user    User    @relation(fields: [userId], references: [id])
   account Account @relation(fields: [accountId], references: [id])

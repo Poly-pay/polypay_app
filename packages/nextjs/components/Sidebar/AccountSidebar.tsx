@@ -11,6 +11,7 @@ import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { copyToClipboard } from "~~/utils/copy";
+import { formatAddress } from "~~/utils/format";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
 
 interface AccountSidebarProps {
@@ -26,6 +27,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
   const { openModal } = useModalApp();
   const { commitment, logout } = useIdentityStore();
   const { clearCurrentAccount, currentAccount } = useAccountStore();
+  const mySigner = currentAccount?.signers.find(s => s.commitment === commitment);
 
   const handleLogout = () => {
     logout();
@@ -90,10 +92,12 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
               />
             </div>
           </div>
-          {/* Signer */} {/* TODO: show signer name of current account*/}
+          {/* Signer */}
           <div className="flex items-center gap-1">
             <Image src="/sidebar/signer-icon.svg" alt="Signer" width={12} height={12} className="rounded-lg" />
-            <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">Signer name</span>
+            <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
+              {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"}
+            </span>
           </div>
         </div>
 

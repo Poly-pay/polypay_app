@@ -58,13 +58,6 @@ export class AccountService {
           });
 
           if (existing) {
-            // Update name only if current name is null
-            if (!existing.name && signer.name) {
-              return prisma.user.update({
-                where: { commitment: signer.commitment },
-                data: { name: signer.name },
-              });
-            }
             return existing;
           }
 
@@ -72,7 +65,6 @@ export class AccountService {
           return prisma.user.create({
             data: {
               commitment: signer.commitment,
-              name: signer.name,
             },
           });
         }),
@@ -89,15 +81,19 @@ export class AccountService {
 
       // Create AccountSigner links
       await Promise.all(
-        users.map((user) =>
-          prisma.accountSigner.create({
+        users.map((user) => {
+          const signerDto = dto.signers.find(
+            (s) => s.commitment === user.commitment,
+          );
+          return prisma.accountSigner.create({
             data: {
               userId: user.id,
               accountId: newAccount.id,
               isCreator: user.commitment === creatorCommitment,
+              displayName: signerDto?.name || null,
             },
-          }),
-        ),
+          });
+        }),
       );
 
       return prisma.account.findUniqueOrThrow({
@@ -169,7 +165,7 @@ export class AccountService {
       createdAt: account.createdAt,
       signers: account.signers.map((as) => ({
         commitment: as.user.commitment,
-        name: as.user.name,
+        name: as.displayName,
         isCreator: as.isCreator,
       })),
     };
@@ -198,6 +194,7 @@ export class AccountService {
       createdAt: account.createdAt,
       signers: account.signers.map((as) => ({
         commitment: as.user.commitment,
+        name: as.displayName,
         isCreator: as.isCreator,
       })),
     }));
