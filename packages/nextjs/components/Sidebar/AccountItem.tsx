@@ -290,8 +290,8 @@ interface SignerRowProps {
 }
 
 function SignerRow({ signer, isLast, copyToClipboard }: SignerRowProps) {
-  const displayName = signer.name || "Unknown";
   const shortCommitment = formatAddress(signer.commitment, { start: 4, end: 3 });
+  const displayName = signer.name || shortCommitment;
 
   return (
     <div className={`flex items-center justify-between px-3 py-3 ${!isLast ? "border-b border-grey-100" : ""}`}>
