@@ -31,7 +31,7 @@ const Title: React.FC = () => {
   }
 
   return (
-    <div className="flex justify-between gap-1">
+    <div className="w-full flex justify-between gap-1">
       {/* Title */}
       <div className={`flex gap-1.5 items-center justify-start w-full bg-white rounded-[10px]`}>
         <div className="flex gap-[7px] items-center px-3 py-2 rounded-[10px] bg-background min-w-0 flex-1">

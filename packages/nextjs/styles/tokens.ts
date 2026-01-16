@@ -56,6 +56,7 @@ export const colorTokens = {
     75: "#FFE0FA",
     100: "#F7E7FF",
     150: "#FFACF2",
+    175: "#FF0ADA",
     200: "#EFCFFF",
     300: "#E6A7FF",
     350: "#FF7CEB",
@@ -75,6 +76,7 @@ export const colorTokens = {
     600: "#0059FF",
   },
   violet: {
+    25: "#F6F3FF",
     50: "#BBB4F7",
     100: "#EDE6FF",
     300: "#6D2EFF",

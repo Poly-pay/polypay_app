@@ -8,6 +8,7 @@ import { X } from "lucide-react";
 import DecryptedText from "~~/components/effects/DecryptedText";
 import { useAuth } from "~~/hooks";
 import { ModalProps } from "~~/types/modal";
+import { copyToClipboard } from "~~/utils/copy";
 import { notification } from "~~/utils/scaffold-eth";
 
 const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
@@ -26,20 +27,13 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <ModalContainer
-      isOpen={isOpen}
-      onClose={handleClose}
-      // preventClose={!commitment}
-      className="sm:max-w-[500px] p-0"
-      isCloseButton={false}
-    >
+    <ModalContainer isOpen={isOpen} onClose={handleClose} className="w-[500px] p-0" isCloseButton={false}>
       <div className="flex flex-col bg-white rounded-lg overflow-hidden -mx-1.5 -my-4">
         <div className="flex items-center justify-between p-4 pb-2 border-b bg-gray-100">
           <div className="flex items-center gap-2">
             <Image src={"/commitment/commitment-header-icon.svg"} width={36} height={36} alt="icon" />
             <span className="flex flex-col">
-              <span className="font-semibold text-gray-900 uppercase">New released</span>
-              <span className="text-gray-950 text-[14px]">Make your experience private through Commitment</span>
+              <span className="font-semibold text-gray-900 uppercase">Generate commitment</span>
             </span>
           </div>
           {commitment && (
@@ -62,26 +56,54 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="">
-            <h3 className="font-semibold text-gray-900 text-2xl uppercase">commitment</h3>
-            <span className="text-sm text-gray-500 leading-relaxed">
-              We now using commitment to protect your privacy. Your commitment can be used as a multisig signer address.
-            </span>
-          </div>
+          {commitment ? (
+            <>
+              <h3 className="font-semibold text-gray-900 text-2xl uppercase">Your commitment is on the way</h3>
+              <span className="block text-sm text-gray-500 leading-relaxed text-[13px]">
+                Your commitment is being created for you. Use the commitment to create a multisig account or provide
+                this to the account creator to add you as a signer.
+              </span>
+            </>
+          ) : (
+            <>
+              <h3 className="font-semibold text-gray-900 text-2xl uppercase">commitment</h3>
+              <span className="block text-sm text-gray-500 leading-relaxed m-0">
+                PolyPay is a privacy preserving multisig wallet with payroll features.
+              </span>
+              <span className="block text-sm text-gray-500 leading-relaxed m-0">
+                In order to improve your experience you need to generate a commitment to log-in in a &apos;private
+                way&apos;
+              </span>
+            </>
+          )}
           {commitment && (
-            <span
-              className="p-2 bg-[#FF7CEB1A] border-[1px] border-primary rounded-2xl text-[#FF0ADA] font-repetition text-[17px] cursor-pointer"
+            <div
+              className="w-[296px] h-[31px] flex items-center px-2.5 py-[7px] gap-2 bg-[#FF7CEB1A] border border-main-pink rounded-full cursor-pointer hover:bg-[#FF7CEB33] transition-colors"
               onClick={() => {
-                navigator.clipboard.writeText(commitment);
-                notification.success("Commitment copied to clipboard");
+                copyToClipboard(commitment || "", "Commitment copied to clipboard");
               }}
             >
-              <DecryptedText
-                text={`${commitment.slice(0, 15)}...${commitment.slice(-4)}`}
-                animateOn="view"
-                revealDirection="center"
+              {/* Commitment text */}
+              <span className="flex-1 text-pink-175 font-family-repetition text-[17px] tracking-[0.03em] truncate">
+                <DecryptedText
+                  text={`${commitment.slice(0, 24)}...${commitment.slice(-4)}`}
+                  animateOn="view"
+                  revealDirection="center"
+                />
+              </span>
+
+              {/* Copy icon */}
+              <Image
+                src="/sidebar/copy.svg"
+                alt="Copy"
+                width={16}
+                height={16}
+                className="shrink-0"
+                style={{
+                  filter: "brightness(0) saturate(100%) invert(28%) sepia(100%) saturate(5000%) hue-rotate(300deg)",
+                }}
               />
-            </span>
+            </div>
           )}
         </div>
 
@@ -97,9 +119,9 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             <Button
               onClick={handleGenerateAndLogin}
               disabled={isLoading}
-              className="w-full bg-pink-350 text-white rounded-lg py-3 cursor-pointer"
+              className="w-full bg-pink-350 text-black rounded-lg py-3 cursor-pointer"
             >
-              {isLoading ? "Generating & Logging in..." : "Generate & Login"}
+              {isLoading ? "Generating & Signing in..." : "Generate & Sign in"}
             </Button>
           )}
         </div>

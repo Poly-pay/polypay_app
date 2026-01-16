@@ -66,6 +66,7 @@ const config: Config = {
           75: "var(--color-pink-75)",
           100: "var(--color-pink-100)",
           150: "var(--color-pink-150)",
+          175: "var(--color-pink-175)",
           200: "var(--color-pink-200)",
           300: "var(--color-pink-300)",
           350: "var(--color-pink-350)",
@@ -85,6 +86,7 @@ const config: Config = {
           600: "var(--color-blue-600)",
         },
         violet: {
+          25: "var(--color-violet-25)",
           50: "var(--color-violet-50)",
           100: "var(--color-violet-100)",
           300: "var(--color-violet-300)",
@@ -103,6 +105,10 @@ const config: Config = {
       borderRadius: {
         field: "var(--radius-field)",
         box: "var(--radius-box)",
+      },
+      fontFamily: {
+        barlow: "var(--font-barlow), sans-serif",
+        repetition: "var(--font-repetition), sans-serif",
       },
     },
   },
