@@ -5,4 +5,5 @@ export * from "./batch-item";
 export * from "./contact-book";
 export * from "./notification";
 export * from "./auth";
+export * from "./feature-request";
 export * from "./pagination.dto";

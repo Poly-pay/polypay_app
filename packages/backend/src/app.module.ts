@@ -12,6 +12,7 @@ import { EventsModule } from './events/events.module';
 import { NotificationModule } from './notification/notification.module';
 import { AuthModule } from './auth/auth.module';
 import { PriceModule } from './price/price.module';
+import { FeatureRequestModule } from './feature-request/feature-request.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PriceModule } from './price/price.module';
     NotificationModule,
     AuthModule,
     PriceModule,
+    FeatureRequestModule,
   ],
 })
 export class AppModule {}

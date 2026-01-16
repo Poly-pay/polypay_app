@@ -67,3 +67,10 @@ export const updateThresholdSchema = z.object({
   threshold: z.number().min(1, "Threshold must be at least 1"),
 });
 export type UpdateThresholdFormData = z.infer<typeof updateThresholdSchema>;
+
+// ==================== Feature Request ====================
+
+export const featureRequestSchema = z.object({
+  content: validators.requiredString("Feature request").trim(),
+});
+export type FeatureRequestFormData = z.infer<typeof featureRequestSchema>;
