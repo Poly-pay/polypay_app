@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, Repeat } from "lucide-react";
+import Image from "next/image";
+import { Repeat } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { IAccountFormData } from "~~/types/form/account";
 
@@ -58,14 +59,14 @@ export default function AccountName({ className, form, onNextStep, isValid }: Ac
               })}
               maxLength={30}
               placeholder="Your account name"
-              className="w-[400px] h-[48px] flex-1 px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
+              className="w-[421px] h-[48px] flex-1 px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[16px] text-gray-400">
               {name.length}/30
             </span>
           </div>
 
-          <Repeat onClick={handleGenerateName} width={16} height={16} className="cursor-pointer ml-2" />
+          <Repeat onClick={handleGenerateName} size={16} className="cursor-pointer ml-2 shrink-0" />
         </div>
 
         {/* Next button */}
@@ -73,11 +74,19 @@ export default function AccountName({ className, form, onNextStep, isValid }: Ac
           <button
             onClick={onNextStep}
             disabled={!isValid}
-            className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-all bg-gray-100 ${
-              isValid ? "cursor-pointer hover:scale-105" : "cursor-not-allowed"
+            className={`flex items-center justify-center w-16 h-16 rounded-full shadow-lg transition-all bg-gray-100 ${
+              isValid
+                ? "cursor-pointer hover:scale-105 bg-main-black"
+                : "cursor-not-allowed disabled:cursor-not-allowed"
             }`}
           >
-            <ArrowRight width={24} height={24} className="text-gray-400" />
+            <Image
+              src="/new-account/arrow-right.svg"
+              alt="Next"
+              width={24}
+              height={24}
+              className={isValid ? "brightness-0 invert" : ""}
+            />
           </button>
         </div>
       </div>
