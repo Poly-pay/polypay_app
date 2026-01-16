@@ -258,3 +258,11 @@ enum ProofStatus {
 enum NotificationType {
   COMMITMENT_RECEIVED
 }
+
+model FeatureRequest {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feature_requests")
+}
