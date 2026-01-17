@@ -8,6 +8,7 @@ interface AuthProofResult {
   proof: number[];
   publicInputs: string[];
   vk?: any;
+  walletAddress: string; // For analytics only
 }
 
 export const useAuthProof = () => {
@@ -25,7 +26,10 @@ export const useAuthProof = () => {
     setError(null);
 
     try {
-      // 1. Sign identity message
+      // 1. Get wallet address for analytics
+      const [walletAddress] = await walletClient.getAddresses();
+
+      // 2. Sign identity message
       const secret = await createSecret(walletClient);
       const commitment = await createCommitment(secret);
 
@@ -62,6 +66,7 @@ export const useAuthProof = () => {
         proof: proofArray,
         publicInputs,
         vk,
+        walletAddress, // For analytics only - NOT stored in database
       };
     } catch (err: any) {
       setError(err.message || "Failed to generate auth proof");
