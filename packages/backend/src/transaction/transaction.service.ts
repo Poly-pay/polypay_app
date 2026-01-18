@@ -271,6 +271,11 @@ export class TransactionService {
       throw new BadRequestException('Proof verification failed');
     }
 
+    const voterName = await this.getSignerDisplayName(
+      transaction.accountAddress,
+      userCommitment,
+    );
+
     // 5. Create vote
     const vote = await this.prisma.vote.create({
       data: {
@@ -298,6 +303,7 @@ export class TransactionService {
       approveCount,
       vote: {
         ...vote,
+        voterName,
         voteType: vote.voteType as VoteType,
         proofStatus: vote.proofStatus as ProofStatus,
       },
@@ -376,6 +382,11 @@ export class TransactionService {
       where: { txId, voteType: VoteType.APPROVE },
     });
 
+    const voterName = await this.getSignerDisplayName(
+      transaction.accountAddress,
+      userCommitment,
+    );
+
     // Emit realtime event
     const eventData: TxVotedEventData = {
       txId,
@@ -383,6 +394,7 @@ export class TransactionService {
       approveCount,
       vote: {
         ...vote,
+        voterName,
         voteType: vote.voteType as VoteType,
         proofStatus: vote.proofStatus as ProofStatus,
       },
@@ -459,6 +471,17 @@ export class TransactionService {
           orderBy: { createdAt: 'asc' },
         },
         contact: true,
+        account: {
+          include: {
+            signers: {
+              include: {
+                user: {
+                  select: { commitment: true },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -472,7 +495,25 @@ export class TransactionService {
     const hasMore = transactions.length > limit;
 
     // Remove extra item if exists
-    const data = hasMore ? transactions.slice(0, limit) : transactions;
+    const rawData = hasMore ? transactions.slice(0, limit) : transactions;
+
+    // Transform data to include voterName in votes
+    const data = rawData.map((tx) => {
+      // Create map: commitment -> displayName
+      const signerMap = new Map(
+        tx.account.signers.map((s) => [s.user.commitment, s.displayName]),
+      );
+
+      return {
+        ...tx,
+        votes: tx.votes.map((vote) => ({
+          ...vote,
+          voterName: signerMap.get(vote.voterCommitment) || null,
+        })),
+        // Remove account.signers from response to reduce payload
+        account: undefined,
+      };
+    });
 
     // Get next cursor from last item
     const nextCursor =
@@ -1175,5 +1216,18 @@ export class TransactionService {
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async getSignerDisplayName(
+    accountAddress: string,
+    commitment: string,
+  ): Promise<string | null> {
+    const signer = await this.prisma.accountSigner.findFirst({
+      where: {
+        account: { address: accountAddress },
+        user: { commitment },
+      },
+    });
+    return signer?.displayName || null;
   }
 }

@@ -9,7 +9,6 @@
 @theme {
   --shadow-center: 0 0 12px -2px rgb(0 0 0 / 0.05);
   --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-
   --font-family-repetition: var(--font-repetition), sans-serif;
   --font-family-barlow: var(--font-barlow), sans-serif;
 
@@ -35,6 +34,7 @@
   --color-grey-950: #363636;
   --color-grey-1000: #1e1e1e;
 
+  --color-red-25: #ffbebe;
   --color-red-50: #fff1f1;
   --color-red-100: #ffdfdf;
   --color-red-200: #ffc5c5;
@@ -79,6 +79,7 @@
   --color-pink-900: #651779;
   --color-pink-950: #410151;
 
+  --color-blue-50: #d2d8ff;
   --color-blue-100: #9dcff0;
   --color-blue-550: #0050e4;
   --color-blue-600: #0059ff;

@@ -25,6 +25,7 @@ export type VoteStatus = "approved" | "denied";
 
 export interface Member {
   commitment: string;
+  name: string | null;
   isInitiator: boolean;
   isMe: boolean;
   voteStatus: VoteStatus;

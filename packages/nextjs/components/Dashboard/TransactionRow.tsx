@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Transaction, TxStatus, TxType, VoteType, horizenTestnet } from "@polypay/shared";
 import { getTokenByAddress } from "@polypay/shared";
-import { ArrowRight, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import {
   BatchTransfer,
   Member,
@@ -20,11 +20,11 @@ import { formatAddress, formatAmount } from "~~/utils/format";
 export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
   const members: Member[] = tx.votes.map(vote => ({
     commitment: vote.voterCommitment,
+    name: vote.voterName || null,
     isInitiator: vote.voterCommitment === tx.createdBy,
     isMe: vote.voterCommitment === myCommitment,
     voteStatus: vote.voteType === "APPROVE" ? "approved" : "denied",
   }));
-
   const myVote = tx.votes.find(v => v.voterCommitment === myCommitment);
   const myVoteStatus: VoteStatus | null = myVote
     ? myVote.voteType === VoteType.APPROVE
@@ -75,29 +75,57 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
   };
 }
 
-function AddressWithContact({ address, contactName }: { address: string; contactName?: string }) {
+function AddressWithContact({
+  address,
+  contactName,
+  className,
+}: {
+  address: string;
+  contactName?: string;
+  className?: string;
+}) {
   if (contactName) {
     return (
-      <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
+      <span className={`text-sm text-main-black bg-grey-100 px-5 py-1 rounded-3xl ${className}`}>
         <span className="font-medium">{contactName}</span>
-        <span className="text-gray-500 ml-1">({formatAddress(address)})</span>
+        <span className="text-main-black ml-1">({formatAddress(address)})</span>
       </span>
     );
   }
-  return <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">{formatAddress(address)}</span>;
+  return (
+    <span className={`text-sm text-main-black bg-grey-100 px-5 py-1 rounded-3xl ${className}`}>
+      {formatAddress(address)}
+    </span>
+  );
 }
 
 // ============ Vote Badge Component ============
-function VoteBadge({ status }: { status: VoteStatus }) {
+function VoteBadge({ status }: { status: VoteStatus | "waiting" }) {
   if (status === "approved") {
-    return <span className="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full">Approved</span>;
+    return (
+      <span className="flex items-center justify-center px-3 py-1 text-sm font-semibold text-main-black bg-lime-50 rounded-md tracking-tight">
+        Approved
+      </span>
+    );
   }
   if (status === "denied") {
-    return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Denied</span>;
+    return (
+      <span className="flex items-center justify-center px-3 py-1 text-sm font-semibold text-main-black bg-red-25 rounded-md tracking-tight">
+        Denied
+      </span>
+    );
   }
   return (
-    <span className="px-3 py-1 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-full">
+    <span className="flex items-center justify-center px-3 py-1 text-sm font-semibold text-main-black bg-blue-50 rounded-md tracking-tight">
       Waiting for confirm...
+    </span>
+  );
+}
+
+function AwaitingBadge() {
+  return (
+    <span className="flex items-center justify-center px-3 py-1 text-sm font-semibold text-main-black bg-blue-50 rounded-md tracking-tight">
+      Awaiting
     </span>
   );
 }
@@ -110,7 +138,7 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
         href={txHash ? `${horizenTestnet.blockExplorers.default.url}/tx/${txHash}` : "#"}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1 px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full hover:bg-green-200 transition-colors"
+        className="flex items-center gap-1 px-3 py-1 text-sm font-semibold text-grey-900 bg-lime-50 rounded-md tracking-tight hover:opacity-80 transition-opacity"
       >
         Succeed
         <ExternalLink size={14} />
@@ -118,7 +146,11 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
     );
   }
   if (status === TxStatus.FAILED) {
-    return <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full">Failed</span>;
+    return (
+      <span className="flex items-center justify-center px-3 py-1 text-sm font-semibold text-grey-900 bg-red-25 rounded-md tracking-tight">
+        Denied
+      </span>
+    );
   }
   return null;
 }
@@ -147,7 +179,7 @@ function ActionButtons({
           onExecute();
         }}
         disabled={loading || isExecuting}
-        className="px-6 py-2 text-sm font-medium text-blue-700 bg-blue-200 rounded-full hover:bg-blue-100 transition-colors cursor-pointer disabled:opacity-50"
+        className="w-[90px] py-1 px-3 text-sm font-medium text-white bg-main-black rounded-lg cursor-pointer disabled:opacity-50"
       >
         {loading || isExecuting ? "Executing..." : "Execute"}
       </button>
@@ -162,7 +194,7 @@ function ActionButtons({
           onDeny();
         }}
         disabled={loading}
-        className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-50"
+        className="px-6 py-2 text-sm font-medium text-main-black bg-gray-100 rounded-full hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-50"
       >
         Deny
       </button>
@@ -172,7 +204,7 @@ function ActionButtons({
           onApprove();
         }}
         disabled={loading}
-        className="px-6 py-2 text-sm font-medium text-white bg-pink-350 rounded-full hover:bg-pink-450 transition-colors cursor-pointer disabled:opacity-50"
+        className="px-6 py-2 text-sm font-medium text-main-black bg-pink-350 rounded-full hover:bg-pink-450 transition-colors cursor-pointer disabled:opacity-50"
       >
         {loading ? "Processing..." : "Approve"}
       </button>
@@ -181,32 +213,81 @@ function ActionButtons({
 }
 
 // ============ Transaction Display Components ============
-function TxHeader({ tx }: { tx: TransactionRowData }) {
+interface TxHeaderProps {
+  tx: TransactionRowData;
+  myVoteStatus: VoteStatus | null;
+  onApprove: () => void;
+  onDeny: () => void;
+  loading: boolean;
+  initiatorName?: string;
+  initiatorCommitment: string;
+}
+
+function TxHeader({
+  tx,
+  myVoteStatus,
+  onApprove,
+  onDeny,
+  loading,
+  initiatorCommitment,
+  initiatorName,
+}: TxHeaderProps & { initiatorCommitment?: string }) {
+  const headerText = getExpandedHeaderText(tx.type);
+  const shortCommitment = formatAddress(initiatorCommitment, { start: 4, end: 4 });
+
+  const renderHeaderRow = () => (
+    <div className="flex items-center justify-between mb-4">
+      <div className="text-lg font-semibold">
+        {tx.type === TxType.BATCH ? (
+          <span>{tx.batchData?.length ?? 0} transactions</span>
+        ) : (
+          <span>
+            {headerText} {initiatorName ? `${initiatorName} (${shortCommitment})` : shortCommitment}
+          </span>
+        )}
+      </div>
+      {myVoteStatus === null && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              onDeny();
+            }}
+            disabled={loading}
+            className="px-6 py-2 text-sm font-medium text-main-black bg-white rounded-full hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Deny
+          </button>
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              onApprove();
+            }}
+            disabled={loading}
+            className="px-6 py-2 text-sm font-medium text-main-black bg-pink-350 rounded-full hover:bg-pink-450 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {loading ? "Processing..." : "Approve"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   if (tx.type === TxType.TRANSFER) {
     return (
-      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
-        <h3 className="text-lg font-semibold mb-2">Transfer</h3>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-            <Image
-              src={getTokenByAddress(tx.tokenAddress).icon}
-              alt={getTokenByAddress(tx.tokenAddress).symbol}
-              width={20}
-              height={20}
-            />
-            <span>{formatAmount(tx.amount ?? "0", tx.tokenAddress)}</span>
-          </div>
-          <ArrowRight size={20} />
-          <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-            {tx.contact?.name ? (
-              <>
-                <span className="font-medium">{tx.contact.name}</span>
-                <span className="text-white/70">({formatAddress(tx.recipientAddress ?? "")})</span>
-              </>
-            ) : (
-              <span>{tx.recipientAddress}</span>
-            )}
-          </div>
+      <div className="bg-violet-300 text-white p-4 rounded-lg">
+        {renderHeaderRow()}
+        <div className="flex items-center gap-4" key={tx.type}>
+          <span className="mr-10">Tranfer</span>
+          <Image
+            src={getTokenByAddress(tx.tokenAddress).icon}
+            alt={getTokenByAddress(tx.tokenAddress).symbol}
+            width={20}
+            height={20}
+          />
+          <span>{formatAmount(tx.amount ?? "0", tx.tokenAddress)}</span>
+          <Image src="/arrow/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
+          <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} className="bg-white" />
         </div>
       </div>
     );
@@ -214,12 +295,13 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 
   if (tx.type === TxType.ADD_SIGNER) {
     return (
-      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
-        <h3 className="text-lg font-semibold mb-4">Add Signer</h3>
+      <div className="bg-violet-300 text-white p-4 rounded-lg">
+        {renderHeaderRow()}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
-            {tx.signerCommitments?.[0].slice(0, 10)}...{tx.signerCommitments?.[0].slice(-8)}
-          </span>
+          <div className="flex items-center gap-2 text-[12px] bg-white text-main-black px-3 py-1.5 rounded-full">
+            <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
+            <span>{formatAddress(tx.signerCommitments?.[0] ?? "", { start: 4, end: 4 })}</span>
+          </div>
         </div>
       </div>
     );
@@ -227,12 +309,13 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 
   if (tx.type === TxType.REMOVE_SIGNER) {
     return (
-      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
-        <h3 className="text-lg font-semibold mb-2">Remove Signer</h3>
+      <div className="bg-violet-300 text-white p-4 rounded-lg">
+        {renderHeaderRow()}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
-            {tx.signerCommitments?.[0].slice(0, 10)}...{tx.signerCommitments?.[0].slice(-8)}
-          </span>
+          <div className="flex items-center gap-2 text-[12px] bg-white text-main-black px-3 py-1.5 rounded-full">
+            <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
+            <span>{formatAddress(tx.signerCommitments?.[0] ?? "", { start: 4, end: 4 })}</span>
+          </div>
         </div>
       </div>
     );
@@ -240,12 +323,13 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 
   if (tx.type === TxType.SET_THRESHOLD) {
     return (
-      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
-        <h3 className="text-lg font-semibold mb-2">Set Threshold</h3>
+      <div className="bg-violet-300 text-white p-4 rounded-lg">
+        {renderHeaderRow()}
         <div className="flex items-center gap-3">
-          <span className="text-2xl font-bold">{tx.oldThreshold}</span>
-          <ArrowRight size={20} />
-          <span className="text-2xl font-bold">{tx.newThreshold}</span>
+          <span className="text-sm text-white font-medium">New Threshold</span>
+          <span className="text-sm text-white font-medium">{String(tx.oldThreshold).padStart(2, "0")}</span>
+          <Image src="/arrow/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
+          <span className="text-sm text-white font-medium">{String(tx.newThreshold).padStart(2, "0")}</span>
         </div>
       </div>
     );
@@ -253,37 +337,25 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
 
   if (tx.type === TxType.BATCH && tx.batchData) {
     return (
-      <div className="bg-violet-300 text-white p-4 rounded-t-lg">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">Batch Transfer</h3>
-          <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-sm">
-            <span>{tx.batchData.length} transfers</span>
-          </div>
-        </div>
+      <div className="bg-violet-300 text-white p-4 rounded-lg">
+        {renderHeaderRow()}
         <div className="space-y-2 max-h-[200px] overflow-y-auto">
           {tx.batchData.map((transfer, index) => (
-            <div key={index} className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg">
-              <span className="text-white/60 text-sm w-6">#{index + 1}</span>
-              <div className="flex items-center gap-2">
-                <Image
-                  src={getTokenByAddress(transfer.tokenAddress).icon}
-                  alt={getTokenByAddress(transfer.tokenAddress).symbol}
-                  width={16}
-                  height={16}
-                />
-                <span className="font-medium">{formatAmount(transfer.amount, transfer.tokenAddress)}</span>
-              </div>
-              <ArrowRight size={16} className="text-white/60" />
-              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                {transfer.contactName ? (
-                  <>
-                    <span className="font-medium">{transfer.contactName}</span>
-                    <span className="text-white/70 ml-1">({formatAddress(transfer.recipient)})</span>
-                  </>
-                ) : (
-                  formatAddress(transfer.recipient)
-                )}
-              </span>
+            <div className="flex items-center gap-4" key={tx.type + index}>
+              <span className="mr-10">Tranfer</span>
+              <Image
+                src={getTokenByAddress(transfer.tokenAddress).icon}
+                alt={getTokenByAddress(transfer.tokenAddress).symbol}
+                width={20}
+                height={20}
+              />
+              <span>{formatAmount(transfer.amount ?? "0", transfer.tokenAddress)}</span>
+              <Image src="/arrow/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
+              <AddressWithContact
+                address={transfer.recipient ?? ""}
+                contactName={transfer.contactName}
+                className="bg-white"
+              />
             </div>
           ))}
         </div>
@@ -294,50 +366,96 @@ function TxHeader({ tx }: { tx: TransactionRowData }) {
   return null;
 }
 
-function MemberList({
+interface SignerWithStatus {
+  commitment: string;
+  name?: string | null;
+  isInitiator: boolean;
+  isMe: boolean;
+  voteStatus: VoteStatus | "waiting";
+}
+
+function SignerList({
   members,
+  allSigners,
   votedCount,
   threshold,
   totalSigners,
+  myCommitment,
+  initiatorCommitment,
+  txStatus,
 }: {
   members: Member[];
+  allSigners: string[];
   votedCount: number;
   threshold: number;
   totalSigners: number;
+  myCommitment: string;
+  initiatorCommitment: string;
+  txStatus: TxStatus;
 }) {
+  // If tx is executed or failed, only show voters from members
+  // Otherwise, merge allSigners with vote status
+  const signersWithStatus: SignerWithStatus[] =
+    txStatus === TxStatus.EXECUTED || txStatus === TxStatus.FAILED
+      ? members.map(member => ({
+          commitment: member.commitment,
+          name: member.name || null,
+          isInitiator: member.commitment === initiatorCommitment,
+          isMe: member.commitment === myCommitment,
+          voteStatus: member.voteStatus,
+        }))
+      : allSigners.map(commitment => {
+          const voted = members.find(m => m.commitment === commitment);
+          return {
+            commitment,
+            name: voted?.name || null,
+            isInitiator: commitment === initiatorCommitment,
+            isMe: commitment === myCommitment,
+            voteStatus: voted?.voteStatus || "waiting",
+          };
+        });
+
   return (
-    <div className="bg-white border border-t-0 rounded-b-lg">
+    <div className="flex flex-col p-4 gap-2 border border-grey-200 rounded-xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <span className="font-semibold text-gray-800">Members</span>
-        <div className="flex items-center gap-4 text-sm text-gray-600">
-          <span>
+      <div className="flex items-center justify-between">
+        <span className="text-base font-semibold text-grey-900 tracking-tight">Signers</span>
+        <div className="flex items-center gap-4 text-sm">
+          <span className="text-grey-400 tracking-tight">
             Voted{" "}
-            <span className="font-medium">
+            <span className="text-grey-800 font-medium">
               {votedCount}/{totalSigners}
             </span>
           </span>
-          <span>
+          <span className="text-grey-400 tracking-tight">
             Threshold{" "}
-            <span className="font-medium">
+            <span className="text-grey-800 font-medium">
               {threshold}/{totalSigners}
             </span>
           </span>
         </div>
       </div>
 
-      {/* Member Rows */}
-      <div className="divide-y">
-        {members.map((member, index) => (
-          <div key={index} className="flex items-center justify-between px-4 py-3">
+      {/* Signer Rows */}
+      <div className="flex flex-col gap-0.5">
+        {signersWithStatus.map((signer, index) => (
+          <div key={index} className="flex items-center justify-between py-2">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-800 font-mono text-sm">
-                {member.commitment.slice(0, 8)}...{member.commitment.slice(-6)}
+              <span className="text-sm font-medium text-grey-800 tracking-tight">
+                {signer.name ? (
+                  <>
+                    {signer.name} ({formatAddress(signer.commitment, { start: 4, end: 4 })})
+                  </>
+                ) : (
+                  formatAddress(signer.commitment, { start: 4, end: 4 })
+                )}
               </span>
-              {member.isInitiator && <span className="text-sm text-blue-600">[Initiator]</span>}
-              {member.isMe && <span className="text-sm text-orange-500">[me]</span>}
+              {signer.isMe && <span className="text-sm font-medium text-pink-350 tracking-tight">[you]</span>}
+              {signer.isInitiator && (
+                <span className="text-sm font-medium text-[#066EFF] tracking-tight">[Transaction Initiator]</span>
+              )}
             </div>
-            <VoteBadge status={member.voteStatus} />
+            <VoteBadge status={signer.voteStatus} />
           </div>
         ))}
       </div>
@@ -357,6 +475,24 @@ function getTxTypeLabel(type: TxType): string {
       return "Threshold";
     case TxType.BATCH:
       return "Batch";
+  }
+}
+
+// Get header text for expanded content based on tx type
+function getExpandedHeaderText(type: TxType): string {
+  switch (type) {
+    case TxType.ADD_SIGNER:
+      return "Added by";
+    case TxType.REMOVE_SIGNER:
+      return "Removed by";
+    case TxType.SET_THRESHOLD:
+      return "Updated by";
+    case TxType.TRANSFER:
+      return "Created by";
+    case TxType.BATCH:
+      return "";
+    default:
+      return "Created by";
   }
 }
 
@@ -382,19 +518,20 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
     case TxType.ADD_SIGNER:
     case TxType.REMOVE_SIGNER:
       return (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-grey-1000 bg-grey-100 px-5 py-1 rounded-3xl">
-            {tx.signerCommitments?.[0].slice(0, 8)}...{tx.signerCommitments?.[0].slice(-6)}
-          </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full">
+            <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
+            <span className="text-[12px]">{formatAddress(tx.signerCommitments?.[0] ?? "", { start: 4, end: 4 })}</span>
+          </div>
         </div>
       );
 
     case TxType.SET_THRESHOLD:
       return (
         <div className="flex items-center gap-3">
-          <span className="font-semibold text-gray-800">{tx.oldThreshold}</span>
+          <span className="text-gray-950">{String(tx.oldThreshold).padStart(2, "0")}</span>
           <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
-          <span className="font-semibold text-gray-800">{tx.newThreshold}</span>
+          <span className="text-gray-950">{String(tx.newThreshold).padStart(2, "0")}</span>
         </div>
       );
 
@@ -456,11 +593,13 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   };
 
   const renderRightSide = () => {
+    // Executed or Failed
     if (tx.status === TxStatus.EXECUTED || tx.status === TxStatus.FAILED) {
       return <StatusBadge status={tx.status} txHash={tx.txHash} />;
     }
 
-    if (tx.myVoteStatus === null || isExecutable || tx.status === TxStatus.EXECUTING) {
+    // Can execute
+    if (isExecutable || tx.status === TxStatus.EXECUTING) {
       return (
         <ActionButtons
           onApprove={handleApprove}
@@ -473,8 +612,35 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
       );
     }
 
-    return <VoteBadge status={tx.myVoteStatus} />;
+    // Not voted yet - show action buttons
+    if (tx.myVoteStatus === null) {
+      // Expanded → show Awaiting (buttons are in TxHeader)
+      if (expanded) {
+        return <AwaitingBadge />;
+      }
+      // Collapsed → show action buttons
+      return (
+        <ActionButtons
+          onApprove={handleApprove}
+          onDeny={handleDeny}
+          onExecute={() => handleExecute(tx.txId)}
+          loading={loading}
+          isExecutable={false}
+          isExecuting={false}
+        />
+      );
+    }
+
+    // Voted but waiting for others
+    return <AwaitingBadge />;
   };
+
+  // Get initiator name for header
+  const initiator = tx.members.find(m => m.isInitiator);
+  const initiatorName = initiator
+    ? initiator.name || formatAddress(initiator.commitment, { start: 4, end: 4 })
+    : "Unknown";
+  const initiatorCommitment = tx.members.find(m => m.isInitiator)?.commitment || "";
 
   useEffect(() => {
     const checkExecutable = async () => {
@@ -501,40 +667,59 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
         <div className="mb-1 px-4 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg">{loadingState}</div>
       )}
 
-      {/* Collapsed Row */}
+      {/* Main Container */}
       <div
+        className={`flex flex-col p-6 gap-3 bg-white border border-grey-200 rounded-xl ${!expanded ? "pb-0 pt-3" : "pt-3"}`}
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between p-4 bg-white border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
       >
-        <div className="flex items-center gap-4">
-          {expanded ? (
-            <ChevronDown size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
-          ) : (
-            <ChevronRight size={24} className="text-gray-600 rounded-[20px] bg-gray-100 p-[3px]" />
-          )}
-          <span className="font-medium text-grey-600 min-w-[100px]">{getTxTypeLabel(tx.type)}</span>
-          <TxDetails tx={tx} />
-        </div>
-        <div onClick={e => e.stopPropagation()}>{renderRightSide()}</div>
-      </div>
-
-      {/* Expanded Content */}
-      {shouldRender && (
+        {/* Collapsed Row */}
         <div
-          className={`overflow-hidden ${expanded ? "animate-expand" : "animate-collapse"} mt-1`}
-          onAnimationEnd={handleAnimationEnd}
+          className={`flex items-center justify-between pb-3 border-grey-200 cursor-pointer ${expanded ? "border-b" : ""}`}
         >
-          <div className="mx-2">
-            <TxHeader tx={tx} />
-            <MemberList
+          <div className="flex items-center gap-3">
+            {expanded ? (
+              <ChevronDown size={18} className="text-grey-600 border border-grey-200 rounded-full p-0.5" />
+            ) : (
+              <ChevronRight size={18} className="text-grey-600 border border-grey-200 rounded-full p-0.5" />
+            )}
+            <span className="text-sm font-medium text-grey-500 tracking-tight">{getTxTypeLabel(tx.type)}</span>
+            {!expanded && <TxDetails tx={tx} />}
+          </div>
+          <div onClick={e => e.stopPropagation()}>{renderRightSide()}</div>
+        </div>
+
+        {/* Expanded Content */}
+        {shouldRender && (
+          <div
+            className={`flex flex-col gap-3 overflow-hidden ${expanded ? "animate-expand" : "animate-collapse"}`}
+            onAnimationEnd={handleAnimationEnd}
+          >
+            <TxHeader
+              tx={tx}
+              myVoteStatus={tx.myVoteStatus}
+              onApprove={handleApprove}
+              onDeny={handleDeny}
+              loading={loading}
+              initiatorCommitment={initiatorCommitment}
+              initiatorName={initiatorName}
+            />
+            <SignerList
               members={tx.members}
+              allSigners={commitmentsData?.map(item => item?.toString()) || []}
               votedCount={tx.votedCount}
-              threshold={Number(walletThreshold)}
+              threshold={
+                tx.status === TxStatus.EXECUTED || tx.status === TxStatus.FAILED
+                  ? tx.approveCount
+                  : Number(walletThreshold) || 0
+              }
               totalSigners={totalSigners}
+              myCommitment={tx.members.find(m => m.isMe)?.commitment || ""}
+              initiatorCommitment={initiatorCommitment}
+              txStatus={tx.status}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -34,6 +34,7 @@ const config: Config = {
           1000: "var(--color-grey-1000)",
         },
         red: {
+          25: "var(--color-red-25)",
           50: "var(--color-red-50)",
           100: "var(--color-red-100)",
           200: "var(--color-red-200)",
@@ -81,6 +82,7 @@ const config: Config = {
           950: "var(--color-pink-950)",
         },
         blue: {
+          50: "var(--color-blue-50)",
           100: "var(--color-blue-100)",
           550: "var(--color-blue-550)",
           600: "var(--color-blue-600)",

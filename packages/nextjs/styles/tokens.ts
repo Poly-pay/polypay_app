@@ -24,6 +24,7 @@ export const colorTokens = {
     1000: "#1E1E1E",
   },
   red: {
+    25: "#FFBEBE",
     50: "#FFF1F1",
     100: "#FFDFDF",
     200: "#FFC5C5",
@@ -71,6 +72,7 @@ export const colorTokens = {
     950: "#410151",
   },
   blue: {
+    50: "#D2D8FF",
     100: "#9DCFF0",
     550: "#0050E4",
     600: "#0059FF",
