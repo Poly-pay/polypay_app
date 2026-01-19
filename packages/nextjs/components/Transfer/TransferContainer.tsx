@@ -136,11 +136,11 @@ export default function TransferContainer() {
       <div className="flex flex-col gap-6 items-center justify-center flex-1 px-4">
         {/* Title section */}
         <div className="flex flex-col items-center justify-center pt-8 relative z-50">
-          <div className="xl:text-6xl text=3xl text-center font-bold uppercase w-full">transfering</div>
+          <div className="text-6xl text-center font-bold uppercase w-full">transfering</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="xl:text-6xl text=3xl text-center font-bold uppercase">t</div>
+            <div className="text-6xl text-center font-bold uppercase">t</div>
             <div className="xl:h-11 h-6 relative rounded-full xl:w-32 w-16 border-[4.648px] border-primary border-solid"></div>
-            <div className="xl:text-6xl text=3xl text-center font-bold uppercase">anyone</div>
+            <div className="text-6xl text-center font-bold uppercase">anyone</div>
           </div>
         </div>
 
@@ -220,7 +220,7 @@ export default function TransferContainer() {
           <button
             onClick={handleAddToBatch}
             disabled={isLoading || !watchedAmount || !watchedRecipient}
-            className="bg-main-black flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
+            className="bg-main-black flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
           >
             <span className="font-medium xl:text-base text-xs text-center text-white tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Add to batch"}

@@ -8,7 +8,6 @@ import TransactionSummary from "./TransactionSummary";
 import { BatchItem, Token, parseTokenAmount } from "@polypay/shared";
 import { getTokenByAddress } from "@polypay/shared";
 import AddressNamedTooltip from "~~/components/tooltips/AddressNamedTooltip";
-// import { Token, parseTokenAmount } from "~~/constants";
 import { useBatchTransaction, useContacts, useModalApp } from "~~/hooks";
 import { useDeleteBatchItem, useMyBatchItems, useUpdateBatchItem } from "~~/hooks/api";
 import { useAccountStore } from "~~/services/store";
@@ -386,7 +385,7 @@ export default function BatchContainer() {
       {selectedItems.size > 0 && (
         <div className={`overflow-hidden ${isExiting ? "animate-slide-out" : "animate-slide-in"}`}>
           <TransactionSummary
-            className="w-[500px]"
+            className="xl:w-[500px] w-[250px]"
             transactions={selectedBatchItems.map(item => ({
               id: item.id,
               amount: formatAmount(item.amount, item.tokenAddress),

@@ -48,7 +48,7 @@ const EditStep: React.FC<EditStepProps> = ({
     if (threshold < 1 || threshold > totalSignersAfterChanges) return false;
 
     if (pendingAdds.length > 0) {
-      const allValid = pendingAdds.every(s => s.name.trim() !== "" && s.commitment.trim() !== "");
+      const allValid = pendingAdds.every(s => s.commitment.trim() !== "");
       if (!allValid) return false;
     }
 
@@ -192,7 +192,7 @@ const EditStep: React.FC<EditStepProps> = ({
                   className="p-1 transition-colors hover:opacity-70 disabled:opacity-30"
                   disabled={loading || visibleExistingSigners.length <= 1}
                 >
-                  <Trash2 className="w-4 h-4 text-grey-400" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             ))}
@@ -224,14 +224,14 @@ const EditStep: React.FC<EditStepProps> = ({
                   className="p-1 transition-colors hover:opacity-70"
                   disabled={loading}
                 >
-                  <Trash2 className="w-4 h-4 text-grey-950" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             ))}
           </div>
 
           {/* New Signer button */}
-          <div className="flex justify-end pr-6">
+          <div className="flex justify-end pr-8.5">
             <button
               onClick={handleAddNewSigner}
               className="h-[28px] px-2 flex items-center gap-2 rounded-lg bg-violet-300 text-grey-0 text-xs font-medium tracking-tight hover:opacity-90 transition-opacity disabled:opacity-50"

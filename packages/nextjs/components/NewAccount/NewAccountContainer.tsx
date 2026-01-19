@@ -136,7 +136,7 @@ export default function NewAccountContainer() {
       </div>
 
       <StatusContainer
-        className="w-[400px]"
+        className="w-[280px] lg:w-[400px] flex-shrink-0"
         accountName={formData.name}
         currentStep={currentStep}
         signers={validSigners}
