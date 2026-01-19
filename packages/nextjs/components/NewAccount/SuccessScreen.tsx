@@ -4,24 +4,23 @@ import React, { useState } from "react";
 import Image from "next/image";
 import ReceiveModal from "../modals/QRAddressReceiverModal";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
-import { notification } from "~~/utils/scaffold-eth";
+import { useAccountStore, useSidebarStore } from "~~/services/store";
+import { copyToClipboard } from "~~/utils/copy";
 
 interface SuccessScreenProps {
   className?: string;
-  accountName: string;
-  accountAddress: string;
 }
 
-const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, accountName, accountAddress }) => {
+const SuccessScreen: React.FC<SuccessScreenProps> = ({ className }) => {
   const router = useAppRouter();
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
 
-  const handleCopyAddress = () => {
-    navigator.clipboard.writeText(accountAddress);
-    notification.success("Account address copied to clipboard!");
-  };
+  const { currentAccount } = useAccountStore();
+  const { openManageAccountsWithExpand } = useSidebarStore();
 
   const handleSeeAccount = () => {
+    // Open manage accounts sidebar and expand the new account
+    openManageAccountsWithExpand(currentAccount?.id || "");
     router.goToDashboard();
   };
 
@@ -56,15 +55,15 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, accountName, a
 
         <div className="bg-gray-50 rounded-2xl p-8 w-full max-w-lg border-[1px] border-gray-200 shadow-sm">
           <div className="text-center">
-            <h3 className="text-grey-900 text-[32px] font-medium mb-4">{accountName}</h3>
+            <h3 className="text-grey-950 text-[32px] font-medium mb-4">{currentAccount?.name}</h3>
             <span className="block border-b-[1px] border-gray-200 w-full "></span>
 
             <div
-              className="text-[24px] text-violet-300 leading-relaxed break-all px-2 cursor-pointer hover:bg-gray-200 rounded py-2 transition-colors font-repetition"
-              onClick={handleCopyAddress}
+              className="text-[24px] text-violet-300 leading-relaxed break-all px-2 cursor-pointer hover:bg-gray-200 rounded py-2 transition-colors font-family-repetition"
+              onClick={() => copyToClipboard(currentAccount?.address || "", "Address copied to clipboard!")}
               title="Click to copy"
             >
-              {accountAddress}
+              {currentAccount?.address}
             </div>
 
             <span className="block border-b-[1px] border-gray-200 w-full mb-4 "></span>
@@ -80,14 +79,18 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, accountName, a
                 onClick={() => setIsReceiveModalOpen(true)}
                 className="flex-1 bg-primary flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
               >
-                <span className="font-semibold text-[16px] text-center text-white">Fund your account</span>
+                <span className="font-semibold text-[16px] text-center text-black">Fund your account</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <ReceiveModal isOpen={isReceiveModalOpen} onClose={() => setIsReceiveModalOpen(false)} address={accountAddress} />
+      <ReceiveModal
+        isOpen={isReceiveModalOpen}
+        onClose={() => setIsReceiveModalOpen(false)}
+        address={currentAccount?.address || ""}
+      />
     </div>
   );
 };

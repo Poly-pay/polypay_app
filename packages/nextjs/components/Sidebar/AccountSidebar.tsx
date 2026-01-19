@@ -3,9 +3,11 @@
 import React from "react";
 import Image from "next/image";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
+import { useQueryClient } from "@tanstack/react-query";
 import { Address } from "viem";
-import { useDisconnect, useWalletClient } from "wagmi";
+import { useAccount, useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
+import { useMyAccounts, userKeys } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
@@ -23,16 +25,23 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
   const { data: walletClient } = useWalletClient();
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
+  const { connector } = useAccount();
+  const queryClient = useQueryClient();
 
   const { openModal } = useModalApp();
   const { commitment, logout } = useIdentityStore();
   const { clearCurrentAccount, currentAccount } = useAccountStore();
+  const { data: accounts } = useMyAccounts();
   const mySigner = currentAccount?.signers.find(s => s.commitment === commitment);
+
+  const hasAccounts = accounts && accounts.length > 0;
 
   const handleLogout = () => {
     logout();
     clearCurrentAccount();
     disconnect();
+
+    queryClient.removeQueries({ queryKey: userKeys.all });
     appRouter.goToDashboardNewAccount();
   };
 
@@ -58,27 +67,64 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
     <div className="p-3 bg-main-white border border-grey-200 rounded-xl flex flex-col gap-1.5">
       {/* Account Info Row */}
       <div
-        className="flex items-center gap-2 pl-1 pr-3 py-1 bg-pink-25 rounded-xl cursor-pointer hover:bg-pink-75"
+        className={`
+          flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl cursor-pointer
+          ${hasAccounts ? "bg-pink-25 hover:bg-pink-75" : "bg-violet-25 hover:bg-violet-100"}
+        `}
         onClick={onOpenManageAccounts}
       >
         {/* Avatar */}
-        <div className="w-10 h-10 bg-main-pink rounded-[9px] flex items-center justify-center">
-          <Image src="/sidebar/account-icon.svg" alt="Account" width={24} height={24} />
+        <div className={`rounded-[9px] flex items-center justify-center`}>
+          {hasAccounts ? (
+            <Image src="/sidebar/account-icon.svg" alt="Account" width={40} height={40} />
+          ) : (
+            <Image src="/common/user-avatar-empty.svg" alt="Avatar" width={40} height={40} />
+          )}
         </div>
 
         {/* Info */}
         <div className="xl:flex hidden flex-1 flex-col gap-1">
-          {/* Name + Address */}
-          <div className="flex items-center gap-1.5">
-            {/* Name */}
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-medium text-main-pink truncate max-w-[60px] tracking-[-0.04em]">
-                {currentAccount?.name || "My Account"}
-              </span>
-            </div>
-            {/* Address */}
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-medium text-main-black tracking-[-0.04em]">{shortAddress}</span>
+          {hasAccounts ? (
+            // Have account - 2 lines
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-medium text-main-pink truncate max-w-[60px] tracking-[-0.04em]">
+                  {currentAccount?.name || "My Account"}
+                </span>
+                <span className="text-xs font-medium text-main-black tracking-[-0.04em]">{shortAddress}</span>
+                <Image
+                  src="/sidebar/copy.svg"
+                  alt="Copy"
+                  width={16}
+                  height={16}
+                  className="opacity-40 cursor-pointer hover:opacity-100"
+                  onClick={e => {
+                    e.stopPropagation();
+                    copyToClipboard(walletClient.account.address, "Address copied to clipboard");
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <Image src="/sidebar/signer-icon.svg" alt="Signer" width={12} height={12} className="rounded-lg" />
+                <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
+                  {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"}
+                </span>
+              </div>
+            </>
+          ) : (
+            // No account - 1 line only
+            <div className="flex items-center gap-1.5">
+              {/* Wallet Icon from connector */}
+              {connector?.icon && (
+                <Image
+                  src={connector.icon}
+                  alt={connector.name || "Wallet"}
+                  width={16}
+                  height={16}
+                  className="rounded"
+                />
+              )}
+              <span className="text-sm font-medium text-grey-900 tracking-[-0.04em]">{shortAddress}</span>
               <Image
                 src="/sidebar/copy.svg"
                 alt="Copy"
@@ -91,14 +137,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                 }}
               />
             </div>
-          </div>
-          {/* Signer */}
-          <div className="flex items-center gap-1">
-            <Image src="/sidebar/signer-icon.svg" alt="Signer" width={12} height={12} className="rounded-lg" />
-            <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
-              {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"}
-            </span>
-          </div>
+          )}
         </div>
 
         {/* Arrow */}

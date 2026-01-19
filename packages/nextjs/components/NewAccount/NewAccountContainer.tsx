@@ -12,6 +12,7 @@ import { CreateAccountFormData, createAccountSchema } from "~~/lib/form";
 import { useAccountStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
+import { getValidSigners } from "~~/utils/signer";
 
 export default function NewAccountContainer() {
   const { commitment } = useIdentityStore();
@@ -20,14 +21,16 @@ export default function NewAccountContainer() {
   const { mutateAsync: createAccount, isPending: isCreating } = useCreateAccount();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [createdAccountAddress, setCreatedAccountAddress] = useState<string>("");
 
   const form = useZodForm({
     schema: createAccountSchema,
     defaultValues: {
       name: "",
-      signers: [{ name: "", commitment: commitment || "" }],
-      threshold: 1,
+      signers: [
+        { name: "", commitment: commitment || "" },
+        { name: "", commitment: "" },
+      ],
+      threshold: 2,
     },
   });
 
@@ -72,7 +75,6 @@ export default function NewAccountContainer() {
       });
 
       setCurrentAccount(account);
-      setCreatedAccountAddress(account.address);
       setCurrentStep(3);
     } catch (err: any) {
       notification.error("Failed to create account: " + (err?.message || err.toString()));
@@ -85,8 +87,11 @@ export default function NewAccountContainer() {
     if (commitment) {
       form.reset({
         name: "",
-        signers: [{ name: "", commitment }],
-        threshold: 1,
+        signers: [
+          { name: "", commitment },
+          { name: "", commitment: "" },
+        ],
+        threshold: 2,
       });
       // Reset to step 1 when account changes
       setCurrentStep(1);
@@ -94,14 +99,12 @@ export default function NewAccountContainer() {
   }, [commitment, form]);
 
   // Validation
-  const validSigners = formData.signers.filter(
-    (s: { commitment: string; name?: string }) => s?.commitment?.trim() !== "",
-  );
+  const validSigners = getValidSigners(formData.signers);
   const isStep1Valid = formData.name.trim().length > 0;
-  const isStep2Valid = validSigners.length > 0 && formData.threshold >= 1 && formData.threshold <= validSigners.length;
+  const isStep2Valid = validSigners.length >= 2 && formData.threshold >= 2 && formData.threshold <= validSigners.length;
 
   const EarthBackground = (
-    <div className="w-full relative z-0">
+    <div className="w-full relative z-1">
       <div className="absolute -top-50 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
         <Image src="/new-account/earth.svg" alt="Globe" className="w-full h-full" width={780} height={736} />
       </div>
@@ -109,13 +112,12 @@ export default function NewAccountContainer() {
     </div>
   );
 
-  // if (true) {
   if (currentStep === 3) {
     return (
       <div className="flex flex-row gap-1 w-full h-full bg-app-background">
         <div className="flex-1 overflow-hidden relative flex flex-col rounded-lg bg-background border border-divider">
           {EarthBackground}
-          <SuccessScreen className="w-full" accountName={formData.name} accountAddress={createdAccountAddress} />
+          <SuccessScreen className="w-full" />
         </div>
       </div>
     );
@@ -141,7 +143,7 @@ export default function NewAccountContainer() {
         threshold={formData.threshold}
         onCreateAccount={handleCreateAccount}
         loading={isCreating}
-        isFormValid={currentStep === 1 ? isStep1Valid : isStep2Valid}
+        isFormValid={isStep2Valid}
       />
     </div>
   );
