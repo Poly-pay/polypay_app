@@ -1,21 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Contact, ContactGroup } from "@polypay/shared";
 import { Search } from "lucide-react";
 import { ContactList } from "~~/components/contact-book/ContactList";
-import { CreateContactModal } from "~~/components/contact-book/CreateContactModal";
-import { CreateGroupModal } from "~~/components/contact-book/CreateGroupModal";
-import { DeleteConfirmModal } from "~~/components/contact-book/DeleteConfirmModal";
+import { EditContact } from "~~/components/contact-book/Editcontact";
+import { modalManager } from "~~/components/modals/ModalLayout";
 import { useContacts, useGroups } from "~~/hooks";
 import { useAccountStore } from "~~/services/store";
-
-type DeleteTarget = {
-  type: "group" | "contact";
-  id: string;
-  name: string;
-};
+import { formatAddress } from "~~/utils/format";
 
 export default function AddressBookPage() {
   const { currentAccount: selectedAccount } = useAccountStore();
@@ -24,9 +18,8 @@ export default function AddressBookPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
-  const [isCreateContactOpen, setIsCreateContactOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [editing, setEditing] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { data: groups = [], refetch: refetchGroups } = useGroups(accountId);
   const {
@@ -44,6 +37,18 @@ export default function AddressBookPage() {
     }
   }, [contacts, selectedContact]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const filteredContacts = useMemo(
     () =>
       contacts.filter(
@@ -57,20 +62,9 @@ export default function AddressBookPage() {
   const handleSelectGroup = (groupId: string | null) => {
     setSelectedGroupId(groupId);
     setSelectedContact(null);
+    setEditing(false);
+    setSearchTerm("");
     refetchContacts();
-  };
-
-  const handleDeleteSuccess = () => {
-    if (deleteTarget?.type === "contact") {
-      refetchContacts();
-      if (selectedContact?.id === deleteTarget.id) {
-        setSelectedContact(null);
-      }
-    } else if (deleteTarget?.type === "group") {
-      refetchGroups();
-      refetchContacts();
-    }
-    setDeleteTarget(null);
   };
 
   const handleGroupSuccess = () => {
@@ -89,7 +83,7 @@ export default function AddressBookPage() {
   return (
     <section className="grid grid-cols-12 h-full gap-1">
       <div className="col-span-8 bg-[#FFFFFFB2] rounded-lg border-2 border-white shadow-2xl">
-        <div className="container mx-auto p-6 h-full">
+        <div className="container mx-auto p-6 h-full flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-4xl text-main-black">Contact Book</h1>
 
@@ -104,6 +98,7 @@ export default function AddressBookPage() {
                   <Search size={14} />
                 </div>
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="Enter name"
                   value={searchTerm}
@@ -129,14 +124,26 @@ export default function AddressBookPage() {
                 </div>
               </div>
               <button
-                className="bg-grey-100 rounded-lg font-medium text-sm text-gray-700 transition-colors cursor-pointer w-24 h-12"
-                onClick={() => setIsCreateGroupOpen(true)}
+                className="bg-grey-100 rounded-lg font-medium text-sm text-gray-700 transition-colors cursor-pointer w-28 h-12"
+                onClick={() =>
+                  modalManager.openModal?.("createGroup", {
+                    accountId,
+                    contacts,
+                    onSuccess: handleGroupSuccess,
+                  })
+                }
               >
                 New group
               </button>
               <button
-                className="bg-main-violet text-white rounded-lg text-sm font-medium transition-colors cursor-pointer w-24 h-12"
-                onClick={() => setIsCreateContactOpen(true)}
+                className="bg-main-violet text-white rounded-lg text-sm font-medium transition-colors cursor-pointer w-28 h-12"
+                onClick={() =>
+                  modalManager.openModal?.("createContact", {
+                    accountId,
+                    groups,
+                    onSuccess: refetchContacts,
+                  })
+                }
               >
                 New contact
               </button>
@@ -173,72 +180,94 @@ export default function AddressBookPage() {
             selectedContactId={selectedContact?.id || null}
             onSelectContact={setSelectedContact}
           />
-
-          <CreateGroupModal
-            isOpen={isCreateGroupOpen}
-            onClose={() => setIsCreateGroupOpen(false)}
-            onSuccess={handleGroupSuccess}
-            accountId={accountId}
-            contacts={contacts}
-          />
-
-          <CreateContactModal
-            isOpen={isCreateContactOpen}
-            onClose={() => setIsCreateContactOpen(false)}
-            onSuccess={refetchContacts}
-            accountId={accountId}
-            groups={groups}
-          />
-
-          <DeleteConfirmModal
-            isOpen={!!deleteTarget}
-            onClose={() => setDeleteTarget(null)}
-            onSuccess={handleDeleteSuccess}
-            target={deleteTarget}
-            accountId={accountId}
-          />
         </div>
       </div>
       <div className="col-span-4 relative rounded-lg">
-        <div
-          className="absolute inset-0 w-full rounded-t-lg z-10"
-          style={{
-            height: "40%",
-            background: "linear-gradient(180deg, #FF7CEB 0%, #FFF 100%)",
-          }}
-        ></div>
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center">
-          <div className="w-6 h-64 bg-black py-8 flex flex-col items-center justify-between">
-            <p className="text-white text-xs font-medium -rotate-90">Apple</p>
-            <p className="text-white text-xs font-medium -rotate-90">Apple</p>
-            <p className="text-white text-xs font-medium -rotate-90">Apple</p>
-          </div>
-          <div className="contact-card relative">
-            <div className="bg-main-violet rounded-full px-4 py-1.5 absolute top-2 right-2">
-              <p className="text-white text-sm font-medium">Apple</p>
-            </div>
-            <Image
-              src={"/contact-book/profile-contact.png"}
-              alt="icon"
-              width={180}
-              height={140}
-              className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/3"
-            />
-            <div className="absolute left-2 bottom-4">
-              <p className="text-2xl text-white mb-1">Olivia Chen</p>
-              <div className="rounded-full py-0.5 px-1 bg-white w-fit">
-                <p className="text-xs font-medium text-main-navy-blue">0xa...f23</p>
+        {!editing && (
+          <div>
+            <div
+              className="absolute inset-0 w-full rounded-t-lg z-10"
+              style={{
+                height: "40%",
+                background: selectedContact
+                  ? "linear-gradient(180deg, #FF7CEB 0%, #FFF 100%)"
+                  : "linear-gradient(180deg, #BDBDBD 0%, #FFF 100%)",
+              }}
+            ></div>
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center">
+              <div className="w-6 h-64 bg-black py-8 flex flex-col items-center justify-between">
+                {[0, 1, 2].map(index => (
+                  <p key={index} className="text-white text-xs font-medium -rotate-90">
+                    {selectedContact?.groups[0]?.group?.name || "PolyPay"}
+                  </p>
+                ))}
+              </div>
+              <div className={selectedContact ? "contact-card relative" : "contact-card-empty relative"}>
+                {selectedContact && selectedContact.groups.length > 0 && (
+                  <div className="bg-main-violet rounded-full px-4 py-1.5 absolute top-2 right-2 max-w-40">
+                    <p className="text-white text-sm font-medium truncate whitespace-nowrap">
+                      {selectedContact?.groups[0].group?.name}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <Image
+                    src={`/contact-book/${selectedContact ? "profile-contact.png" : "empty-profile-contact.png"}`}
+                    alt="icon"
+                    width={180}
+                    height={140}
+                    className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/3"
+                  />
+                  {!selectedContact && (
+                    <p className="text-grey-500 text-2xl text-center absolute bottom-10 left-1/2 transform -translate-x-1/2 w-full">
+                      Select contact
+                    </p>
+                  )}
+                </div>
+                {selectedContact && (
+                  <div className="absolute left-2 bottom-4">
+                    <p className="text-2xl text-white mb-1">{selectedContact?.name}</p>
+                    <div className="rounded-full py-0.5 px-1 bg-white w-fit">
+                      <p className="text-xs font-medium text-main-navy-blue">
+                        {formatAddress(selectedContact?.address ?? "", { start: 3, end: 3 })}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+            {selectedContact && (
+              <div className="relative z-40 p-2">
+                <div className="flex justify-end">
+                  <button
+                    className="px-6 py-2.5 rounded-xl bg-white w-fit text-main-black text-sm font-medium"
+                    onClick={() => setEditing(true)}
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-        <div className="relative z-40 p-2">
-          <div className="flex justify-end">
-            <div className="px-6 py-1.5 rounded-xl bg-white w-fit">
-              <button className="text-main-black text-sm font-medium">Edit</button>
-            </div>
+        )}
+        {editing && selectedContact && (
+          <div className="flex flex-col h-full bg-white rounded-2xl">
+            <EditContact
+              contact={selectedContact}
+              accountId={accountId}
+              onSuccess={() => {
+                refetchContacts();
+              }}
+              onDelete={() => {
+                refetchContacts();
+                setSelectedContact(null);
+                setEditing(false);
+              }}
+              onClose={() => setEditing(false)}
+            />
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

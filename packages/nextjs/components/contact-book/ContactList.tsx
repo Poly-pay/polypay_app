@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Contact } from "@polypay/shared";
+import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
 
 interface ContactListProps {
@@ -44,9 +45,10 @@ export function ContactList({ contacts, isLoading, selectedContactId, onSelectCo
 
   if (contacts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-        <p className="text-lg">No contacts found</p>
-        <p className="text-sm">Add your first contact to get started</p>
+      <div className="flex-1 flex flex-col items-center justify-center h-full">
+        <Image src={"/common/empty-avatar.svg"} alt="No contact" width={200} height={200} />
+        <p className="text-2xl font-medium text-main-violet">No contact</p>
+        <p className="text-xl text-center text-grey-700">Looks like you don’t have any contacts yet. Let’s add one.</p>
       </div>
     );
   }
@@ -92,6 +94,7 @@ export function ContactList({ contacts, isLoading, selectedContactId, onSelectCo
                 width={16}
                 height={16}
                 className={`cursor-pointer ${isSelected ? "brightness-0 invert" : ""}`}
+                onClick={() => copyToClipboard(contact.address)}
               />
             </div>
           </div>
