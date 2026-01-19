@@ -24,6 +24,7 @@ export const colorTokens = {
     1000: "#1E1E1E",
   },
   red: {
+    25: "#FFBEBE",
     50: "#FFF1F1",
     100: "#FFDFDF",
     200: "#FFC5C5",
@@ -56,6 +57,7 @@ export const colorTokens = {
     75: "#FFE0FA",
     100: "#F7E7FF",
     150: "#FFACF2",
+    175: "#FF0ADA",
     200: "#EFCFFF",
     300: "#E6A7FF",
     350: "#FF7CEB",
@@ -70,11 +72,13 @@ export const colorTokens = {
     950: "#410151",
   },
   blue: {
+    50: "#D2D8FF",
     100: "#9DCFF0",
     550: "#0050E4",
     600: "#0059FF",
   },
   violet: {
+    25: "#F6F3FF",
     50: "#BBB4F7",
     100: "#EDE6FF",
     300: "#6D2EFF",
@@ -82,6 +86,10 @@ export const colorTokens = {
   lime: {
     50: "#C2FFCA",
     100: "#A6FF9E",
+  },
+  orange: {
+    50: "rgba(255, 135, 71, 0.08)",
+    500: "#FF762C",
   },
 } as const;
 

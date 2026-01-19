@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import { TooltipProvider } from "../ui/tooltip";
 import AccountItem from "./AccountItem";
 import { Account } from "@polypay/shared";
+import { useSidebarStore } from "~~/services/store";
 
 interface ManageAccountsSidebarProps {
   isOpen: boolean;
@@ -26,10 +27,10 @@ export default function ManageAccountsSidebar({
   onCreateAccount,
   isLoading = false,
 }: ManageAccountsSidebarProps) {
-  const [expandedAccountId, setExpandedAccountId] = useState<string | null>(null);
+  const { expandAccountId, setExpandAccountId } = useSidebarStore();
 
   const handleToggleExpand = (accountId: string) => {
-    setExpandedAccountId(prev => (prev === accountId ? null : accountId));
+    setExpandAccountId(expandAccountId === accountId ? null : accountId);
   };
 
   return (
@@ -90,7 +91,13 @@ export default function ManageAccountsSidebar({
           // Empty state
           <div className="flex-1 flex flex-col justify-center items-center gap-3 py-8">
             <div className="w-[120px] h-[120px] relative">
-              <img src="/common/empty-avatar.svg" alt="No accounts" className="w-full h-full object-contain" />
+              <Image
+                src="/common/empty-avatar.svg"
+                width={40}
+                height={40}
+                alt="No accounts"
+                className="w-full h-full object-contain"
+              />
             </div>
             <p className="text-center text-[#7B7B7B] text-sm leading-5 tracking-[-0.02em] font-normal">
               You don&apos;t have a multisig account yet.
@@ -106,7 +113,7 @@ export default function ManageAccountsSidebar({
                 key={account.id}
                 account={account}
                 isSelected={selectedAccountId === account.id}
-                isExpanded={expandedAccountId === account.id}
+                isExpanded={expandAccountId === account.id}
                 onSelect={onSelectAccount}
                 onToggleExpand={handleToggleExpand}
               />

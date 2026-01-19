@@ -69,4 +69,8 @@ export const API_ENDPOINTS = {
   prices: {
     base: "/api/prices",
   },
+
+  featureRequests: {
+    base: "/api/feature-requests",
+  },
 } as const;

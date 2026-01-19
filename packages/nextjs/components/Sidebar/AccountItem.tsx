@@ -9,6 +9,7 @@ import { useModalApp } from "~~/hooks";
 import { useUpdateAccount } from "~~/hooks/api/useAccount";
 import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
+import { useAccountStore } from "~~/services/store";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
 
@@ -41,6 +42,7 @@ interface AccountItemProps {
 export default function AccountItem({ account, isSelected, isExpanded, onSelect, onToggleExpand }: AccountItemProps) {
   const avatarSrc = getAvatarByAccountId(account.id);
   const { mutate: updateAccount } = useUpdateAccount();
+  const { setCurrentAccount, currentAccount } = useAccountStore();
   const { openModal } = useModalApp();
 
   // Inline edit state
@@ -91,6 +93,8 @@ export default function AccountItem({ account, isSelected, isExpanded, onSelect,
           },
         },
       );
+      // Update store
+      setCurrentAccount({ ...currentAccount, name: trimmedName } as any);
     } else {
       // No changes, revert to original name
       setEditedName(account.name);

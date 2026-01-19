@@ -6,11 +6,7 @@ import {
   IsString,
   Min,
 } from "class-validator";
-
-export interface Signer {
-  commitment: string;
-  name?: string;
-}
+import { SignerData } from "../../types";
 
 export class CreateAccountDto {
   @IsNotEmpty()
@@ -24,5 +20,5 @@ export class CreateAccountDto {
 
   @IsArray()
   @ArrayMinSize(1)
-  signers: Signer[];
+  signers: SignerData[];
 }

@@ -41,6 +41,12 @@ const modals: ModalRegistry = {
   deleteContact: dynamic(() => import("./DeleteContactModal"), {
     ssr: false,
   }),
+  requestFeature: dynamic(() => import("./RequestFeatureModal"), {
+    ssr: false,
+  }),
+  removeSigner: dynamic(() => import("./RemoveSignerModal"), {
+    ssr: false,
+  }),
 };
 
 type ModalInstance = {

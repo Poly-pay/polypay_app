@@ -8,7 +8,7 @@ import ManageAccountsSidebar from "./ManageAccountsSidebar";
 import { useMyAccounts } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
-import { useAccountStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore, useSidebarStore } from "~~/services/store";
 import { ModalName } from "~~/types/modal";
 
 const SIDEBAR_LINKS = {
@@ -41,11 +41,13 @@ const SectionItem = ({
   menuItems,
   showDivider,
   openModal,
+  disabled = false,
 }: {
   label: string;
   menuItems: { icon: string; label: string; link: string }[];
   showDivider?: boolean;
   openModal: (name: ModalName, props?: Record<string, any>) => void;
+  disabled?: boolean;
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const router = useRouter();
@@ -61,6 +63,7 @@ const SectionItem = ({
         key={item.label}
         className={`
           flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl cursor-pointer
+          ${disabled ? "opacity-50 pointer-events-none cursor-not-allowed" : "cursor-pointer"}
           ${isActive ? "bg-main-white border-b border-grey-500" : ""}
           ${!isActive && isHovered ? "bg-main-white/50" : ""}
         `}
@@ -118,22 +121,27 @@ const SectionItem = ({
   );
 };
 
-export default function Sidebar() {
+interface SidebarProps {
+  disabled?: boolean;
+}
+
+export default function Sidebar({ disabled = false }: SidebarProps) {
   const { openModal } = useModalApp();
   const router = useAppRouter();
   const { data: accounts = [], isLoading: isLoadingAccounts } = useMyAccounts();
+  const { commitment } = useIdentityStore();
   const { currentAccount, setCurrentAccount } = useAccountStore();
+  const { isManageAccountsOpen, openManageAccounts, closeManageAccounts } = useSidebarStore();
 
   // Manage Accounts Sidebar state
-  const [isManageAccountsOpen, setIsManageAccountsOpen] = useState(false);
   const selectedAccountId = currentAccount?.id || accounts[0]?.id || "";
 
   const handleOpenManageAccounts = () => {
-    setIsManageAccountsOpen(true);
+    openManageAccounts();
   };
 
   const handleCloseManageAccounts = () => {
-    setIsManageAccountsOpen(false);
+    closeManageAccounts();
   };
 
   const handleSelectAccount = (accountId: string) => {
@@ -156,7 +164,12 @@ export default function Sidebar() {
         {/* Top Section */}
         <div className="flex flex-col">
           {/* Header - Logo */}
-          <div className="flex items-center gap-[11px] py-[1px] cursor-pointer" onClick={() => router.push("/")}>
+          <div
+            className="flex items-center gap-[11px] py-[1px] cursor-pointer"
+            onClick={() => {
+              if (!disabled) router.goToDashboard();
+            }}
+          >
             {/* Logo */}
             <div className="flex items-center gap-[4.85px]">
               <Image src="/logo/polypay-icon.svg" alt="logo" width={32} height={28} />
@@ -180,6 +193,7 @@ export default function Sidebar() {
                 menuItems={item.menuItems}
                 showDivider={index < sectionItems.length - 1}
                 openModal={openModal}
+                disabled={disabled}
               />
             ))}
           </div>
@@ -188,16 +202,16 @@ export default function Sidebar() {
         {/* Bottom Section */}
         <div className="flex flex-col gap-2.5">
           {/* Request new feature */}
-          <div
-            className="h-[36px] flex items-center gap-[5px] px-2.5 py-1.5 bg-main-white rounded-lg cursor-pointer hover:bg-grey-50"
-            onClick={() => {
-              // TODO: Open request feature modal
-            }}
-          >
-            <Image src="/sidebar/request-feature.svg" alt="Request feature" width={20} height={20} />
-            <span className="xl:block hidden flex-1 text-sm font-medium text-grey-700">Request new feature</span>
-            <Image src="/sidebar/arrow-right.svg" alt="Arrow" width={16} height={16} className="xl:block hidden" />
-          </div>
+          {commitment && (
+            <div
+              className="h-[36px] flex items-center gap-[5px] px-2.5 py-1.5 bg-main-white rounded-lg cursor-pointer hover:bg-grey-50"
+              onClick={() => openModal("requestFeature")}
+            >
+              <Image src="/sidebar/request-feature.svg" alt="Request feature" width={20} height={20} />
+              <span className="xl:block hidden flex-1 text-sm font-medium text-grey-700">Request new feature</span>
+              <Image src="/sidebar/arrow-right.svg" alt="Arrow" width={16} height={16} className="xl:block hidden" />
+            </div>
+          )}
 
           {/* Account Sidebar */}
           <AccountSidebar onOpenManageAccounts={handleOpenManageAccounts} />

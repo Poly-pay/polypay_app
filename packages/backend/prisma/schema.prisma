@@ -80,7 +80,7 @@ model Transaction {
   contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Add/Remove Signer
-  signerCommitments String[] @map("signer_commitments") // array of commitments
+  signerData String? @map("signer_data") // JSON array of {commitment, name}
 
   // Set Threshold
   newThreshold Int? @map("new_threshold")
@@ -257,4 +257,12 @@ enum ProofStatus {
 
 enum NotificationType {
   COMMITMENT_RECEIVED
+}
+
+model FeatureRequest {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feature_requests")
 }

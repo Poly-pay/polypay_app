@@ -23,4 +23,6 @@ export type ModalName =
   | "removeBatch"
   | "createGroup"
   | "createContact"
-  | "deleteContact";
+  | "deleteContact"
+  | "requestFeature"
+  | "removeSigner";

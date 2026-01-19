@@ -28,6 +28,7 @@ import {
   DEFAULT_PAGE_SIZE,
   encodeAddSigners,
   encodeRemoveSigners,
+  SignerData,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -154,7 +155,7 @@ export class TransactionService {
           value: dto.value,
           tokenAddress: dto.tokenAddress,
           contactId: dto.contactId,
-          signerCommitments: dto.signerCommitments || [],
+          signerData: dto.signers ? JSON.stringify(dto.signers) : null,
           newThreshold: dto.newThreshold,
           createdBy: userCommitment,
           status: 'PENDING',
@@ -271,6 +272,11 @@ export class TransactionService {
       throw new BadRequestException('Proof verification failed');
     }
 
+    const voterName = await this.getSignerDisplayName(
+      transaction.accountAddress,
+      userCommitment,
+    );
+
     // 5. Create vote
     const vote = await this.prisma.vote.create({
       data: {
@@ -298,6 +304,7 @@ export class TransactionService {
       approveCount,
       vote: {
         ...vote,
+        voterName,
         voteType: vote.voteType as VoteType,
         proofStatus: vote.proofStatus as ProofStatus,
       },
@@ -376,6 +383,11 @@ export class TransactionService {
       where: { txId, voteType: VoteType.APPROVE },
     });
 
+    const voterName = await this.getSignerDisplayName(
+      transaction.accountAddress,
+      userCommitment,
+    );
+
     // Emit realtime event
     const eventData: TxVotedEventData = {
       txId,
@@ -383,6 +395,7 @@ export class TransactionService {
       approveCount,
       vote: {
         ...vote,
+        voterName,
         voteType: vote.voteType as VoteType,
         proofStatus: vote.proofStatus as ProofStatus,
       },
@@ -459,6 +472,17 @@ export class TransactionService {
           orderBy: { createdAt: 'asc' },
         },
         contact: true,
+        account: {
+          include: {
+            signers: {
+              include: {
+                user: {
+                  select: { commitment: true },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -472,7 +496,36 @@ export class TransactionService {
     const hasMore = transactions.length > limit;
 
     // Remove extra item if exists
-    const data = hasMore ? transactions.slice(0, limit) : transactions;
+    const rawData = hasMore ? transactions.slice(0, limit) : transactions;
+
+    // Transform data to include voterName in votes
+    const data = rawData.map((tx) => {
+      // Create map: commitment -> displayName
+      const signerMap = new Map(
+        tx.account.signers.map((s) => [s.user.commitment, s.displayName]),
+      );
+
+      // Parse signerData from JSON string to object
+      let parsedSignerData = null;
+      if (tx.signerData) {
+        try {
+          parsedSignerData = JSON.parse(tx.signerData);
+        } catch {
+          parsedSignerData = null;
+        }
+      }
+
+      return {
+        ...tx,
+        votes: tx.votes.map((vote) => ({
+          ...vote,
+          voterName: signerMap.get(vote.voterCommitment) || null,
+        })),
+        signerData: parsedSignerData,
+        // Remove account.signers from response to reduce payload
+        account: undefined,
+      };
+    });
 
     // Get next cursor from last item
     const nextCursor =
@@ -548,25 +601,24 @@ export class TransactionService {
       }
 
       // Handle ADD_SIGNER: create User + AccountSigner link
-      if (
-        transaction.type === TxType.ADD_SIGNER &&
-        transaction.signerCommitments.length > 0
-      ) {
+      if (transaction.type === TxType.ADD_SIGNER && transaction.signerData) {
+        const signers: SignerData[] = JSON.parse(transaction.signerData);
+
         const account = await tx.account.findUnique({
           where: { address: transaction.accountAddress },
         });
 
         if (account) {
           // Loop through all signers to add
-          for (const signerCommitment of transaction.signerCommitments) {
+          for (const signer of signers) {
             // Upsert user for new signer
             const user = await tx.user.upsert({
-              where: { commitment: signerCommitment },
-              create: { commitment: signerCommitment },
+              where: { commitment: signer.commitment },
+              create: { commitment: signer.commitment },
               update: {},
             });
 
-            // Create AccountSigner link (ignore if already exists)
+            // Create AccountSigner link with displayName
             await tx.accountSigner.upsert({
               where: {
                 userId_accountId: {
@@ -578,12 +630,15 @@ export class TransactionService {
                 userId: user.id,
                 accountId: account.id,
                 isCreator: false,
+                displayName: signer.name || null,
               },
-              update: {},
+              update: {
+                displayName: signer.name || undefined,
+              },
             });
 
             this.logger.log(
-              `Added signer ${signerCommitment} to account ${account.address}`,
+              `Added signer ${signer.commitment} (${signer.name || 'no name'}) to account ${account.address}`,
             );
           }
 
@@ -608,20 +663,20 @@ export class TransactionService {
           }
         }
       }
+
       // Handle REMOVE_SIGNER: delete AccountSigner link + delete pending votes
-      if (
-        transaction.type === TxType.REMOVE_SIGNER &&
-        transaction.signerCommitments.length > 0
-      ) {
+      if (transaction.type === TxType.REMOVE_SIGNER && transaction.signerData) {
+        const signers: SignerData[] = JSON.parse(transaction.signerData);
+
         const account = await tx.account.findUnique({
           where: { address: transaction.accountAddress },
         });
 
         if (account) {
           // Loop through all signers to remove
-          for (const signerCommitment of transaction.signerCommitments) {
+          for (const signer of signers) {
             const user = await tx.user.findUnique({
-              where: { commitment: signerCommitment },
+              where: { commitment: signer.commitment },
             });
 
             if (user) {
@@ -633,14 +688,14 @@ export class TransactionService {
               });
 
               this.logger.log(
-                `Removed signer ${signerCommitment} from account ${account.address}`,
+                `Removed signer ${signer.commitment} from account ${account.address}`,
               );
             }
 
             // Delete all pending votes from removed signer (same account only)
             const deletedVotes = await tx.vote.deleteMany({
               where: {
-                voterCommitment: signerCommitment,
+                voterCommitment: signer.commitment,
                 transaction: {
                   accountAddress: transaction.accountAddress,
                   status: { in: ['PENDING'] },
@@ -650,7 +705,7 @@ export class TransactionService {
 
             if (deletedVotes.count > 0) {
               this.logger.log(
-                `Deleted ${deletedVotes.count} pending votes from removed signer ${signerCommitment}`,
+                `Deleted ${deletedVotes.count} pending votes from removed signer ${signer.commitment}`,
               );
             }
           }
@@ -865,25 +920,31 @@ export class TransactionService {
 
       case TxType.ADD_SIGNER:
         if (
-          !dto.signerCommitments ||
-          dto.signerCommitments.length === 0 ||
+          !dto.signers ||
+          dto.signers.length === 0 ||
           dto.newThreshold === undefined
         ) {
           throw new BadRequestException(
-            'Add signer requires "signerCommitments" (array) and "newThreshold"',
+            'Add signer requires "signers" (array of {commitment, name?}) and "newThreshold"',
           );
+        }
+        if (dto.signers.length > 10) {
+          throw new BadRequestException('Maximum 10 signers per transaction');
         }
         break;
 
       case TxType.REMOVE_SIGNER:
         if (
-          !dto.signerCommitments ||
-          dto.signerCommitments.length === 0 ||
+          !dto.signers ||
+          dto.signers.length === 0 ||
           dto.newThreshold === undefined
         ) {
           throw new BadRequestException(
-            'Remove signer requires "signerCommitments" (array) and "newThreshold"',
+            'Remove signer requires "signers" (array of {commitment, name?}) and "newThreshold"',
           );
+        }
+        if (dto.signers.length > 10) {
+          throw new BadRequestException('Maximum 10 signers per transaction');
         }
         break;
 
@@ -947,26 +1008,33 @@ export class TransactionService {
           data: '0x',
         };
 
-      case TxType.ADD_SIGNER:
+      case TxType.ADD_SIGNER: {
+        const signers: SignerData[] = transaction.signerData
+          ? JSON.parse(transaction.signerData)
+          : [];
         return {
           to: transaction.accountAddress,
           value: '0',
           data: encodeAddSigners(
-            transaction.signerCommitments,
+            signers.map((s) => s.commitment),
             transaction.newThreshold,
           ),
         };
+      }
 
-      // THAY case REMOVE_SIGNER:
-      case TxType.REMOVE_SIGNER:
+      case TxType.REMOVE_SIGNER: {
+        const signers: SignerData[] = transaction.signerData
+          ? JSON.parse(transaction.signerData)
+          : [];
         return {
           to: transaction.accountAddress,
           value: '0',
           data: encodeRemoveSigners(
-            transaction.signerCommitments,
+            signers.map((s) => s.commitment),
             transaction.newThreshold,
           ),
         };
+      }
 
       case TxType.SET_THRESHOLD:
         return {
@@ -1175,5 +1243,18 @@ export class TransactionService {
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async getSignerDisplayName(
+    accountAddress: string,
+    commitment: string,
+  ): Promise<string | null> {
+    const signer = await this.prisma.accountSigner.findFirst({
+      where: {
+        account: { address: accountAddress },
+        user: { commitment },
+      },
+    });
+    return signer?.displayName || null;
   }
 }

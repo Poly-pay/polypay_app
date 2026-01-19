@@ -9,6 +9,8 @@
 @theme {
   --shadow-center: 0 0 12px -2px rgb(0 0 0 / 0.05);
   --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --font-family-repetition: var(--font-repetition), sans-serif;
+  --font-family-barlow: var(--font-barlow), sans-serif;
 
   --color-main-pink: #ff6ee9;
   --color-main-violet: #6d2eff;
@@ -32,6 +34,7 @@
   --color-grey-950: #363636;
   --color-grey-1000: #1e1e1e;
 
+  --color-red-25: #ffbebe;
   --color-red-50: #fff1f1;
   --color-red-100: #ffdfdf;
   --color-red-200: #ffc5c5;
@@ -62,6 +65,7 @@
   --color-pink-75: #ffe0fa;
   --color-pink-100: #f7e7ff;
   --color-pink-150: #ffacf2;
+  --color-pink-175: #ff0ada;
   --color-pink-200: #efcfff;
   --color-pink-300: #e6a7ff;
   --color-pink-350: #ff7ceb;
@@ -75,16 +79,21 @@
   --color-pink-900: #651779;
   --color-pink-950: #410151;
 
+  --color-blue-50: #d2d8ff;
   --color-blue-100: #9dcff0;
   --color-blue-550: #0050e4;
   --color-blue-600: #0059ff;
 
+  --color-violet-25: #f6f3ff;
   --color-violet-50: #bbb4f7;
   --color-violet-100: #ede6ff;
   --color-violet-300: #6d2eff;
 
   --color-lime-50: #c2ffca;
   --color-lime-100: #a6ff9e;
+
+  --color-orange-50: rgba(255, 135, 71, 0.08);
+  --color-orange-500: #ff762c;
 }
 
 @plugin "daisyui" {
@@ -167,6 +176,7 @@
   h2,
   h3,
   h4 {
+    /* margin-bottom: 0.5rem; */
     line-height: 1;
   }
 }
