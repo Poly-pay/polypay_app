@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TxType, encodeAddSigners, encodeRemoveSigners, encodeUpdateThreshold } from "@polypay/shared";
+import { SignerData, TxType, encodeAddSigners, encodeRemoveSigners, encodeUpdateThreshold } from "@polypay/shared";
 import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { notification } from "~~/utils/scaffold-eth";
@@ -70,17 +70,32 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
     await refetchThreshold();
   };
 
-  const addSigner = async (signerCommitment: string, newThreshold: number) => {
-    if (newThreshold < 1 || newThreshold > signers.length + 1) {
+  const addSigner = async (newSigners: SignerData[], newThreshold: number) => {
+    if (newSigners.length === 0) {
+      notification.error("At least one signer is required");
+      return;
+    }
+
+    if (newSigners.length > 10) {
+      notification.error("Maximum 10 signers per transaction");
+      return;
+    }
+
+    if (newThreshold < 1 || newThreshold > signers.length + newSigners.length) {
       notification.error("Invalid threshold value");
       return;
     }
 
     setIsLoading(true);
     try {
-      const callData = encodeAddSigners([signerCommitment], newThreshold);
+      const commitments = newSigners.map(s => s.commitment.trim());
+      const callData = encodeAddSigners(commitments, newThreshold);
+
       await executeSignerTransaction(TxType.ADD_SIGNER, callData, {
-        signerCommitments: [signerCommitment.trim()],
+        signers: newSigners.map(s => ({
+          commitment: s.commitment.trim(),
+          name: s.name?.trim() || null,
+        })),
         newThreshold,
       });
 
@@ -95,27 +110,44 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
     }
   };
 
-  const removeSigner = async (signerCommitment: string, newThreshold: number) => {
-    if (signers.length <= 1) {
-      notification.error("Cannot remove last signer");
+  const removeSigner = async (signersToRemove: SignerData[], newThreshold: number) => {
+    if (signersToRemove.length === 0) {
+      notification.error("At least one signer is required");
+      return;
+    }
+
+    if (signersToRemove.length > 10) {
+      notification.error("Maximum 10 signers per transaction");
+      return;
+    }
+
+    const remainingSigners = signers.length - signersToRemove.length;
+
+    if (remainingSigners < 1) {
+      notification.error("Cannot remove all signers");
       return;
     }
 
     let adjustedThreshold = newThreshold;
-    if (adjustedThreshold > signers.length - 1) {
-      adjustedThreshold = signers.length - 1;
+    if (adjustedThreshold > remainingSigners) {
+      adjustedThreshold = remainingSigners;
     }
 
-    if (adjustedThreshold < 1 || adjustedThreshold > signers.length - 1) {
+    if (adjustedThreshold < 1) {
       notification.error("Invalid threshold value for removal");
       return;
     }
 
     setIsLoading(true);
     try {
-      const callData = encodeRemoveSigners([signerCommitment], adjustedThreshold);
+      const commitments = signersToRemove.map(s => s.commitment.trim());
+      const callData = encodeRemoveSigners(commitments, adjustedThreshold);
+
       await executeSignerTransaction(TxType.REMOVE_SIGNER, callData, {
-        signerCommitments: [signerCommitment.trim()],
+        signers: signersToRemove.map(s => ({
+          commitment: s.commitment.trim(),
+          name: s.name?.trim() || null,
+        })),
         newThreshold: adjustedThreshold,
       });
 

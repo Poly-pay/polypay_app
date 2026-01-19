@@ -87,6 +87,10 @@ export const colorTokens = {
     50: "#C2FFCA",
     100: "#A6FF9E",
   },
+  orange: {
+    50: "rgba(255, 135, 71, 0.08)",
+    500: "#FF762C",
+  },
 } as const;
 
 export type ColorTokens = typeof colorTokens;

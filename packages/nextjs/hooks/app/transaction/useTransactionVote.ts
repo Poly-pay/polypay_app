@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  SignerData,
   TxStatus,
   TxType,
   encodeAddSigners,
@@ -49,7 +50,7 @@ export interface TransactionRowData {
   amount?: string;
   recipientAddress?: string;
   tokenAddress?: string;
-  signerCommitments?: string[];
+  signerData?: SignerData[] | null;
   oldThreshold?: number;
   newThreshold?: number;
   batchData?: BatchTransfer[];
@@ -91,9 +92,11 @@ function buildTransactionParams(tx: TransactionRowData): {
     value = 0n;
 
     if (tx.type === TxType.ADD_SIGNER) {
-      callData = encodeAddSigners(tx.signerCommitments!, tx.newThreshold!);
+      const commitments = tx.signerData?.map(s => s.commitment) || [];
+      callData = encodeAddSigners(commitments, tx.newThreshold!);
     } else if (tx.type === TxType.REMOVE_SIGNER) {
-      callData = encodeRemoveSigners(tx.signerCommitments!, tx.newThreshold!);
+      const commitments = tx.signerData?.map(s => s.commitment) || [];
+      callData = encodeRemoveSigners(commitments, tx.newThreshold!);
     } else if (tx.type === TxType.SET_THRESHOLD) {
       callData = encodeUpdateThreshold(tx.newThreshold!);
     } else if (tx.type === TxType.BATCH && tx.batchData) {

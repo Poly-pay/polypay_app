@@ -21,4 +21,5 @@ export type ModalName =
   | "editAccount"
   | "developingFeature"
   | "removeBatch"
-  | "requestFeature";
+  | "requestFeature"
+  | "removeSigner";

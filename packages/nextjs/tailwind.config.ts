@@ -97,6 +97,10 @@ const config: Config = {
           50: "var(--color-lime-50)",
           100: "var(--color-lime-100)",
         },
+        orange: {
+          50: "var(--color-orange-50)",
+          500: "var(--color-orange-500)",
+        },
       },
       boxShadow: {
         center: "var(--shadow-center)",

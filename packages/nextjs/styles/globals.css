@@ -91,6 +91,9 @@
 
   --color-lime-50: #c2ffca;
   --color-lime-100: #a6ff9e;
+
+  --color-orange-50: rgba(255, 135, 71, 0.08);
+  --color-orange-500: #ff762c;
 }
 
 @plugin "daisyui" {
