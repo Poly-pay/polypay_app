@@ -55,7 +55,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     amount: tx.value || undefined,
     recipientAddress: tx.to || undefined,
     tokenAddress: tx.tokenAddress || undefined,
-    signerCommitments: tx.signerCommitments || [],
+    signerData: tx.signerData || null,
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
     batchData,
@@ -298,11 +298,29 @@ function TxHeader({
       <div className="bg-violet-300 text-white p-4 rounded-lg">
         {renderHeaderRow()}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-2 text-[12px] bg-white text-main-black px-3 py-1.5 rounded-full">
-            <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
-            <span>{formatAddress(tx.signerCommitments?.[0] ?? "", { start: 4, end: 4 })}</span>
-          </div>
+          {tx.signerData?.map((signer, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2 text-[12px] bg-white text-main-black px-3 py-1.5 rounded-full"
+            >
+              <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
+              <span>
+                {signer.name
+                  ? `${signer.name} (${formatAddress(signer.commitment, { start: 4, end: 4 })})`
+                  : formatAddress(signer.commitment, { start: 4, end: 4 })}
+              </span>
+            </div>
+          ))}
         </div>
+        {/* Threshold update */}
+        {tx.newThreshold && tx.newThreshold !== tx.threshold && (
+          <div className="flex items-center gap-2 mt-3 text-sm">
+            <span className="text-white/80">Threshold update:</span>
+            <span className="text-sm text-white font-medium">{String(tx.oldThreshold).padStart(2, "0")}</span>
+            <Image src="/arrow/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
+            <span className="text-sm text-white font-medium">{String(tx.newThreshold).padStart(2, "0")}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -311,12 +329,30 @@ function TxHeader({
     return (
       <div className="bg-violet-300 text-white p-4 rounded-lg">
         {renderHeaderRow()}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-[12px] bg-white text-main-black px-3 py-1.5 rounded-full">
-            <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
-            <span>{formatAddress(tx.signerCommitments?.[0] ?? "", { start: 4, end: 4 })}</span>
-          </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {tx.signerData?.map((signer, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-2 text-[12px] bg-white text-main-black px-3 py-1.5 rounded-full"
+            >
+              <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
+              <span>
+                {signer.name
+                  ? `${signer.name} (${formatAddress(signer.commitment, { start: 4, end: 4 })})`
+                  : formatAddress(signer.commitment, { start: 4, end: 4 })}
+              </span>
+            </div>
+          ))}
         </div>
+        {/* Threshold update */}
+        {tx.newThreshold && tx.newThreshold !== tx.threshold && (
+          <div className="flex items-center gap-2 mt-3 text-sm">
+            <span className="text-white/80">Threshold update:</span>
+            <span className="text-sm text-white font-medium">{String(tx.oldThreshold).padStart(2, "0")}</span>
+            <Image src="/arrow/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
+            <span className="text-sm text-white font-medium">{String(tx.newThreshold).padStart(2, "0")}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -519,10 +555,20 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
     case TxType.REMOVE_SIGNER:
       return (
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full">
-            <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
-            <span className="text-[12px]">{formatAddress(tx.signerCommitments?.[0] ?? "", { start: 4, end: 4 })}</span>
-          </div>
+          {tx.signerData?.map((signer, index) => (
+            <div key={index} className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full">
+              <Image src="/avatars/signer-3.svg" alt="Signer" width={16} height={16} className="rounded-full" />
+              <span className="text-[12px]">
+                {signer.name ? (
+                  <>
+                    {signer.name} ({formatAddress(signer.commitment, { start: 4, end: 4 })})
+                  </>
+                ) : (
+                  formatAddress(signer.commitment, { start: 4, end: 4 })
+                )}
+              </span>
+            </div>
+          ))}
         </div>
       );
 
