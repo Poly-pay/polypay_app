@@ -139,7 +139,7 @@ export const EditContact = ({ contact, accountId, onSuccess, onDelete, onClose }
               },
             })
           }
-          className="py-3 px-6 rounded-lg text-white bg-red-500 font-medium"
+          className="py-3 px-6 rounded-xl text-white bg-red-500 font-medium"
         >
           Delete contact
         </button>
@@ -147,7 +147,7 @@ export const EditContact = ({ contact, accountId, onSuccess, onDelete, onClose }
           type="submit"
           onClick={onSubmit}
           disabled={updateContact.isPending}
-          className="py-3 px-6 rounded-lg bg-main-pink font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="py-3 px-6 rounded-xl bg-main-pink font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {updateContact.isPending ? <span className="loading loading-spinner loading-sm" /> : "Save changes"}
         </button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Contact, ContactGroup } from "@polypay/shared";
 import { Search } from "lucide-react";
 import { ContactList } from "~~/components/contact-book/ContactList";
@@ -12,6 +13,7 @@ import { useAccountStore } from "~~/services/store";
 import { formatAddress } from "~~/utils/format";
 
 export default function AddressBookPage() {
+  const router = useRouter();
   const { currentAccount: selectedAccount } = useAccountStore();
   const accountId = selectedAccount?.id || null;
 
@@ -70,6 +72,20 @@ export default function AddressBookPage() {
   const handleGroupSuccess = () => {
     refetchGroups();
     refetchContacts();
+  };
+
+  const handleTransfer = () => {
+    if (!selectedContact) return;
+    // Store contact info in sessionStorage
+    sessionStorage.setItem(
+      "transferRecipient",
+      JSON.stringify({
+        address: selectedContact.address,
+        name: selectedContact.name,
+        contactId: selectedContact.id,
+      }),
+    );
+    router.push("/transfer");
   };
 
   if (!accountId) {
@@ -197,7 +213,7 @@ export default function AddressBookPage() {
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center">
               <div className="w-6 h-64 bg-black py-8 flex flex-col items-center justify-between">
                 {[0, 1, 2].map(index => (
-                  <p key={index} className="text-white text-xs font-medium -rotate-90">
+                  <p key={index} className="text-white text-xs font-medium -rotate-90 max-w-16 truncate">
                     {selectedContact?.groups[0]?.group?.name || "PolyPay"}
                   </p>
                 ))}
@@ -227,8 +243,8 @@ export default function AddressBookPage() {
                 </div>
                 {selectedContact && (
                   <div className="absolute left-2 bottom-4">
-                    <p className="text-2xl text-white mb-1">{selectedContact?.name}</p>
-                    <div className="rounded-full py-0.5 px-1 bg-white w-fit">
+                    <p className="text-2xl text-white mb-1 max-w-[200px] truncate">{selectedContact?.name}</p>
+                    <div className="rounded-full py-0.5 px-1.5 bg-white w-fit">
                       <p className="text-xs font-medium text-main-navy-blue">
                         {formatAddress(selectedContact?.address ?? "", { start: 3, end: 3 })}
                       </p>
@@ -238,7 +254,7 @@ export default function AddressBookPage() {
               </div>
             </div>
             {selectedContact && (
-              <div className="relative z-40 p-2">
+              <div className="relative z-40 p-4">
                 <div className="flex justify-end">
                   <button
                     className="px-6 py-2.5 rounded-xl bg-white w-fit text-main-black text-sm font-medium"
@@ -266,6 +282,13 @@ export default function AddressBookPage() {
               }}
               onClose={() => setEditing(false)}
             />
+          </div>
+        )}
+        {selectedContact && !editing && (
+          <div className="w-full px-5 bg-grey-50 absolute bottom-0 z-50 h-20 rounded-b-lg flex items-center justify-center border-t border-grey-200">
+            <button className="h-12 px-6 rounded-xl font-medium bg-main-pink w-full" onClick={handleTransfer}>
+              Transfer
+            </button>
           </div>
         )}
       </div>
