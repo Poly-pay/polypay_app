@@ -78,7 +78,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
           {hasAccounts ? (
             <Image src="/sidebar/account-icon.svg" alt="Account" width={40} height={40} />
           ) : (
-            <Image src="/common/user-avatar-empty.svg" alt="Avatar" width={40} height={40} />
+            <Image src="/avatars/user-avatar-empty-square.svg" alt="Avatar" width={40} height={40} />
           )}
         </div>
 
@@ -93,7 +93,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                 </span>
                 <span className="text-xs font-medium text-main-black tracking-[-0.04em]">{shortAddress}</span>
                 <Image
-                  src="/sidebar/copy.svg"
+                  src="/icons/actions/copy-purple.svg"
                   alt="Copy"
                   width={16}
                   height={16}
@@ -105,7 +105,13 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                 />
               </div>
               <div className="flex items-center gap-1">
-                <Image src="/sidebar/signer-icon.svg" alt="Signer" width={12} height={12} className="rounded-lg" />
+                <Image
+                  src="/avatars/user-avatar-empty-square.svg"
+                  alt="Signer"
+                  width={12}
+                  height={12}
+                  className="rounded-lg"
+                />
                 <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
                   {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"}
                 </span>
@@ -126,7 +132,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
               )}
               <span className="text-sm font-medium text-grey-900 tracking-[-0.04em]">{shortAddress}</span>
               <Image
-                src="/sidebar/copy.svg"
+                src="/icons/actions/copy-purple.svg"
                 alt="Copy"
                 width={16}
                 height={16}
@@ -141,7 +147,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
         </div>
 
         {/* Arrow */}
-        <Image src="/sidebar/chevron-right.svg" alt="Expand" width={10} height={10} />
+        <Image src="/icons/arrows/chevron-right-purple.svg" alt="Expand" width={10} height={10} />
       </div>
 
       {/* Commitment Section */}
@@ -170,7 +176,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
               />
               {/* Copy */}
               <Image
-                src="/sidebar/copy-white.svg"
+                src="/icons/actions/copy-white.svg"
                 alt="Copy"
                 width={16}
                 height={16}

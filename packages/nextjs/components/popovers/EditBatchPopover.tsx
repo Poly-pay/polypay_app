@@ -150,7 +150,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
       }}
     >
       <Image
-        src="/batch/popover-arrow.svg"
+        src="/icons/arrows/popover-arrow.svg"
         alt="arrow"
         width={32}
         height={32}
@@ -219,7 +219,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
                   className={`flex bg-grey-100 items-center gap-1 text-xs font-medium rounded-full w-fit pl-1 pr-4 py-1 max-w-20`}
                 >
                   <Image
-                    src={"/new-account/default-avt.svg"}
+                    src={"/avatars/default-avt.svg"}
                     alt="avatar"
                     width={16}
                     height={16}

@@ -209,7 +209,7 @@ export default function Sidebar({ disabled = false }: SidebarProps) {
             >
               <Image src="/sidebar/request-feature.svg" alt="Request feature" width={20} height={20} />
               <span className="xl:block hidden flex-1 text-sm font-medium text-grey-700">Request new feature</span>
-              <Image src="/sidebar/arrow-right.svg" alt="Arrow" width={16} height={16} className="xl:block hidden" />
+              <Image src="/icons/arrows/arrow-right-purple.svg" alt="Arrow" width={16} height={16} className="xl:block hidden" />
             </div>
           )}
 

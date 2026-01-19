@@ -20,7 +20,7 @@ interface TokenPillPopoverProps {
 export function TokenPillPopover({
   selectedToken,
   onSelect,
-  arrowSrc = "/batch/popover-arrow.svg",
+  arrowSrc = "/icons/arrows/popover-arrow.svg",
   arrowWidth = 28,
   arrowHeight = 28,
   pillClassName,
@@ -65,7 +65,7 @@ export function TokenPillPopover({
         }
         style={{ boxShadow: "0 4px 24.5px 0 rgba(46, 119, 255, 0.25)" }}
       >
-        <Image src={"/arrow/dropdown.svg"} alt="icon" width={14} height={14} />
+        <Image src={"/icons/arrows/dropdown.svg"} alt="icon" width={14} height={14} />
         <Image src={selectedToken.icon} alt={selectedToken.symbol} width={24} height={24} />
       </div>
 

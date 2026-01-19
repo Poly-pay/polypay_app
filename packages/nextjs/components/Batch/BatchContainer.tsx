@@ -161,7 +161,7 @@ function BatchTransactions({
 
               {/* Arrow */}
               <Image
-                src="/arrow/arrow-right.svg"
+                src="icons/arrows/arrow-right-long-purple.svg"
                 className={`mr-3 transition-all ${isHighlighted ? "brightness-0 invert" : "group-hover:brightness-0 group-hover:invert"}`}
                 alt="Arrow Right"
                 width={100}
@@ -176,7 +176,7 @@ function BatchTransactions({
                     }`}
                   >
                     <Image
-                      src={"/new-account/default-avt.svg"}
+                      src={"/avatars/default-avt.svg"}
                       alt="avatar"
                       width={16}
                       height={16}
@@ -198,7 +198,7 @@ function BatchTransactions({
                       : "text-black bg-grey-100 group-hover:bg-white group-hover:text-black"
                   }`}
                 >
-                  <Image src={"/new-account/default-avt.svg"} alt="avatar" width={16} height={16} />
+                  <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} />
                   <span> {formatAddress(item?.recipient, { start: 3, end: 3 })}</span>
                 </span>
               )}
@@ -214,7 +214,7 @@ function BatchTransactions({
                       isHighlighted ? "bg-white" : "bg-grey-100 group-hover:bg-white"
                     }`}
                   >
-                    <Image src="/misc/edit-icon.svg" alt="Edit" width={16} height={16} />
+                    <Image src="/icons/misc/edit-icon.svg" alt="Edit" width={16} height={16} />
                     <span className="font-medium text-[14px] text-center text-black">Edit</span>
                   </button>
                 </div>
@@ -232,7 +232,7 @@ function BatchTransactions({
                     disabled={isRemoving}
                     className="w-[95px] bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center gap-2 py-1.5 rounded-lg shadow-[0px_2px_4px_-1px_rgba(255,0,4,0.5),0px_0px_0px_1px_#ff6668] disabled:opacity-50"
                   >
-                    <Image src="/misc/trash-icon.svg" alt="Remove" width={16} height={16} />
+                    <Image src="/icons/misc/trash-icon.svg" alt="Remove" width={16} height={16} />
                     <span className="font-medium text-[14px] text-center text-white">Remove</span>
                   </button>
                 </div>

@@ -184,7 +184,7 @@ export default function AccountItem({ account, isSelected, isExpanded, onSelect,
                 )}
                 {isSelected && (
                   <Image
-                    src="/sidebar/edit.svg"
+                    src="/icons/actions/edit-pink.svg"
                     alt="Edit"
                     width={16}
                     height={16}

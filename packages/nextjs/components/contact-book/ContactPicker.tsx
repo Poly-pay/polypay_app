@@ -97,7 +97,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
         >
           {/* Arrow */}
           <Image
-            src="/batch/popover-arrow.svg"
+            src="/icons/arrows/popover-arrow.svg"
             alt="arrow"
             width={32}
             height={32}

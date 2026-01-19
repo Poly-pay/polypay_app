@@ -24,15 +24,15 @@ const AVATAR_IMAGES = [
 ] as const;
 
 const SOCIAL_LINKS = [
-  { icon: "/icons/x-icon.svg", alt: "X", handle: "@PolyPay_finance", url: "https://x.com/poly_pay" },
+  { icon: "/icons/socials/x-icon.svg", alt: "X", handle: "@PolyPay_finance", url: "https://x.com/poly_pay" },
   {
-    icon: "/icons/git-icon.svg",
+    icon: "/icons/socials/git-icon.svg",
     alt: "GitHub",
     handle: "@PolyPay",
     url: "https://github.com/Poly-pay/polypay_multisig",
   },
   // TODO : fill in telegram's URL
-  { icon: "/icons/telegram-icon.svg", alt: "Telegram", handle: "@PolyPay_finance", url: "#" },
+  { icon: "/icons/socials/telegram-icon.svg", alt: "Telegram", handle: "@PolyPay_finance", url: "#" },
 ] as const;
 
 export default function NotFound() {

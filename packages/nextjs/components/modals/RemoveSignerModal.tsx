@@ -32,7 +32,7 @@ const RemoveSignerModal: React.FC<RemoveSignerModalProps> = ({ isOpen, onClose, 
         <div className="flex items-center justify-between w-full h-[70px] px-3 border-b border-grey-200 rounded-t-2xl">
           <div className="flex items-center gap-4">
             {/* Icon */}
-            <Image src="/common/confirm.svg" alt="Confirm" width={36} height={36} />
+            <Image src="/icons/misc/icon-modal.svg" alt="Confirm" width={36} height={36} />
 
             {/* Title & Subtitle */}
             <div className="flex flex-col gap-0.5">
@@ -64,7 +64,7 @@ const RemoveSignerModal: React.FC<RemoveSignerModalProps> = ({ isOpen, onClose, 
 
           {/* Image */}
           <Image
-            src="/batch/remove.svg"
+            src="/modals/remove.svg"
             alt="Delete Signer"
             width={145}
             height={155}

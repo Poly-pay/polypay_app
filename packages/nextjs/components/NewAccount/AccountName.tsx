@@ -81,7 +81,7 @@ export default function AccountName({ className, form, onNextStep, isValid }: Ac
             }`}
           >
             <Image
-              src="/new-account/arrow-right.svg"
+              src="/icons/arrows/arrow-right-white.svg"
               alt="Next"
               width={24}
               height={24}

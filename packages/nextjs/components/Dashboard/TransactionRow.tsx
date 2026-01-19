@@ -286,7 +286,7 @@ function TxHeader({
             height={20}
           />
           <span>{formatAmount(tx.amount ?? "0", tx.tokenAddress)}</span>
-          <Image src="/arrow/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
+          <Image src="/icons/arrows/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} className="bg-white" />
         </div>
       </div>
@@ -317,7 +317,7 @@ function TxHeader({
           <div className="flex items-center gap-2 mt-3 text-sm">
             <span className="text-white/80">Threshold update:</span>
             <span className="text-sm text-white font-medium">{String(tx.oldThreshold).padStart(2, "0")}</span>
-            <Image src="/arrow/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
+            <Image src="/icons/arrows/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
             <span className="text-sm text-white font-medium">{String(tx.newThreshold).padStart(2, "0")}</span>
           </div>
         )}
@@ -349,7 +349,7 @@ function TxHeader({
           <div className="flex items-center gap-2 mt-3 text-sm">
             <span className="text-white/80">Threshold update:</span>
             <span className="text-sm text-white font-medium">{String(tx.oldThreshold).padStart(2, "0")}</span>
-            <Image src="/arrow/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
+            <Image src="/icons/arrows/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
             <span className="text-sm text-white font-medium">{String(tx.newThreshold).padStart(2, "0")}</span>
           </div>
         )}
@@ -364,7 +364,7 @@ function TxHeader({
         <div className="flex items-center gap-3">
           <span className="text-sm text-white font-medium">New Threshold</span>
           <span className="text-sm text-white font-medium">{String(tx.oldThreshold).padStart(2, "0")}</span>
-          <Image src="/arrow/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
+          <Image src="/icons/arrows/arrow-right-long-pink.svg" alt="Arrow Right" width={100} height={100} />
           <span className="text-sm text-white font-medium">{String(tx.newThreshold).padStart(2, "0")}</span>
         </div>
       </div>
@@ -386,7 +386,7 @@ function TxHeader({
                 height={20}
               />
               <span>{formatAmount(transfer.amount ?? "0", transfer.tokenAddress)}</span>
-              <Image src="/arrow/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
+              <Image src="/icons/arrows/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
               <AddressWithContact
                 address={transfer.recipient ?? ""}
                 contactName={transfer.contactName}
@@ -546,7 +546,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
             />
             <span className="font-medium">{formatAmount(tx.amount ?? "0", tx.tokenAddress)}</span>
           </div>
-          <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
+          <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} />
         </div>
       );
@@ -576,7 +576,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
       return (
         <div className="flex items-center gap-3">
           <span className="text-gray-950">{String(tx.oldThreshold).padStart(2, "0")}</span>
-          <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
+          <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={100} height={100} />
           <span className="text-gray-950">{String(tx.newThreshold).padStart(2, "0")}</span>
         </div>
       );

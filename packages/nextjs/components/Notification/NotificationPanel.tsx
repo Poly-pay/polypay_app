@@ -17,7 +17,7 @@ export const NotificationPanel: React.FC = () => {
     <Sheet>
       <SheetTrigger asChild>
         <div className="w-[65px] relative flex items-center justify-center bg-white rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-          <Image src="/misc/bell-icon.gif" alt="Bell" width={35} height={35} />
+          <Image src="/icons/misc/bell-icon.gif" alt="Bell" width={35} height={35} />
           {Number(unreadCount) > 0 && (
             <span className="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-blue-500 rounded-full">
               {unreadCount}
