@@ -75,7 +75,7 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
         >
           {/* Arrow */}
           <Image
-            src="/batch/popover-arrow.svg"
+            src="/icons/arrows/popover-arrow.svg"
             alt="arrow"
             width={32}
             height={32}

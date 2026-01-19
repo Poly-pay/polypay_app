@@ -72,14 +72,14 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
                 </div>
 
                 {/* Arrow */}
-                <Image src="/arrow/arrow-right.svg" alt="Arrow Right" width={100} height={100} />
+                <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={100} height={100} />
 
                 {/* Recipient */}
                 {matchedContact ? (
                   <div
                     className={`flex items-center gap-1 text-black text-xs font-medium bg-white rounded-full w-fit pl-1 pr-4 py-1`}
                   >
-                    <Image src={"/new-account/default-avt.svg"} alt="avatar" width={16} height={16} />
+                    <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} />
                     <div className="max-w-24 overflow-hidden truncate">
                       <span className="font-medium">{matchedContact.name}</span>
                       <span>{"(" + `${formatAddress(transaction.recipient, { start: 3, end: 3 }) + ")"}`}</span>
@@ -87,7 +87,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
                   </div>
                 ) : (
                   <span className="px-2 py-1 rounded-full flex item-center gap-1 text-xs font-medium text-black bg-white">
-                    <Image src={"/new-account/default-avt.svg"} alt="avatar" width={16} height={16} />
+                    <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} />
                     <span>{formatAddress(transaction.recipient, { start: 3, end: 3 })}</span>
                   </span>
                 )}

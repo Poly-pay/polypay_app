@@ -62,7 +62,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
             width={200}
             height={200}
           />
-          <span className="text-white text-[22px] py-1 font-semibold px-4 text-center w-[80%] rounded-lg bg-[#00000078]">
+          <span className="text-white text-sm lg:text-[22px] py-1 font-semibold px-4 text-center w-[80%] rounded-lg bg-[#00000078]">
             {accountName || "Your account name"}
           </span>
         </div>
@@ -141,7 +141,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
           }`}
         >
           <span
-            className={`flex items-center gap-3 font-semibold text-[16px] ${isFormValid && !loading ? "text-black" : "text-white"}`}
+            className={`flex items-center gap-3 font-semibold xl:text-[16px] text-sm ${isFormValid && !loading ? "text-black" : "text-white"}`}
           >
             {loading ? "Creating your account..." : "Create your account"}
             {loading && (

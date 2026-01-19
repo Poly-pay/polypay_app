@@ -58,7 +58,7 @@ export default function ManageAccountsSidebar({
             className="w-11 h-11 flex items-center justify-center bg-main-white border border-grey-200 rounded-lg hover:bg-grey-50"
             onClick={onClose}
           >
-            <Image src="/sidebar/chevrons-left.svg" alt="Collapse" width={24} height={24} />
+            <Image src="/icons/arrows/chevrons-double-left.svg" alt="Collapse" width={24} height={24} />
           </button>
         </div>
 

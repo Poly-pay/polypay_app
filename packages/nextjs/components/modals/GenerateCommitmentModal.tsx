@@ -31,7 +31,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       <div className="flex flex-col bg-white rounded-lg overflow-hidden -mx-1.5 -my-4">
         <div className="flex items-center justify-between p-4 pb-2 border-b bg-gray-100">
           <div className="flex items-center gap-2">
-            <Image src={"/commitment/commitment-header-icon.svg"} width={36} height={36} alt="icon" />
+            <Image src={"/icons/misc/icon-modal.svg"} width={36} height={36} alt="icon" />
             <span className="flex flex-col">
               <span className="font-semibold text-gray-900 uppercase">Generate commitment</span>
             </span>
@@ -94,7 +94,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
               {/* Copy icon */}
               <Image
-                src="/sidebar/copy.svg"
+                src="/icons/actions/copy-purple.svg"
                 alt="Copy"
                 width={16}
                 height={16}

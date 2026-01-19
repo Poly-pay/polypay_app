@@ -12,7 +12,7 @@ export const BackButton = () => {
       className="flex items-center justify-center w-12 h-12 bg-white rounded-[10px] hover:bg-grey-100 transition-colors"
       aria-label="Back to dashboard"
     >
-      <Image src="/arrow/arrow-left.svg" alt="Back" width={20} height={20} />
+      <Image src="/icons/arrows/arrow-left.svg" alt="Back" width={20} height={20} />
     </button>
   );
 };

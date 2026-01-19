@@ -59,7 +59,7 @@ export default function AccountName({ className, form, onNextStep, isValid }: Ac
               })}
               maxLength={30}
               placeholder="Your account name"
-              className="w-[421px] h-[48px] flex-1 px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
+              className="w-[350px] lg:w-[421px] h-[48px] flex-1 px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[16px] text-gray-400">
               {name.length}/30
@@ -81,7 +81,7 @@ export default function AccountName({ className, form, onNextStep, isValid }: Ac
             }`}
           >
             <Image
-              src="/new-account/arrow-right.svg"
+              src="/icons/arrows/arrow-right-white.svg"
               alt="Next"
               width={24}
               height={24}

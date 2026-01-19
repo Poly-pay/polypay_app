@@ -48,11 +48,11 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
   // Not connected state
   if (!walletClient?.account) {
     return (
-      <div className="p-3 bg-main-white border border-grey-200 rounded-xl">
+      <div className="flex justify-center p-3 bg-main-white border border-grey-200 rounded-xl">
         <div className="flex flex-col gap-1">
           <Image src="/logo/polypay-icon.svg" width={24} height={24} alt="logo" />
-          <span className="font-bold">Welcome to Polypay</span>
-          <span className="text-sm">Connect your wallet to power up your journal.</span>
+          <span className="hidden xl:block font-bold">Welcome to Polypay</span>
+          <span className="hidden xl:block text-sm">Connect your wallet to power up your journal.</span>
           <MultisigConnectButton />
         </div>
       </div>
@@ -78,7 +78,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
           {hasAccounts ? (
             <Image src="/sidebar/account-icon.svg" alt="Account" width={40} height={40} />
           ) : (
-            <Image src="/common/user-avatar-empty.svg" alt="Avatar" width={40} height={40} />
+            <Image src="/avatars/user-avatar-empty-square.svg" alt="Avatar" width={40} height={40} />
           )}
         </div>
 
@@ -93,7 +93,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                 </span>
                 <span className="text-xs font-medium text-main-black tracking-[-0.04em]">{shortAddress}</span>
                 <Image
-                  src="/sidebar/copy.svg"
+                  src="/icons/actions/copy-purple.svg"
                   alt="Copy"
                   width={16}
                   height={16}
@@ -105,7 +105,13 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                 />
               </div>
               <div className="flex items-center gap-1">
-                <Image src="/sidebar/signer-icon.svg" alt="Signer" width={12} height={12} className="rounded-lg" />
+                <Image
+                  src="/avatars/user-avatar-empty-square.svg"
+                  alt="Signer"
+                  width={12}
+                  height={12}
+                  className="rounded-lg"
+                />
                 <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
                   {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"}
                 </span>
@@ -126,7 +132,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
               )}
               <span className="text-sm font-medium text-grey-900 tracking-[-0.04em]">{shortAddress}</span>
               <Image
-                src="/sidebar/copy.svg"
+                src="/icons/actions/copy-purple.svg"
                 alt="Copy"
                 width={16}
                 height={16}
@@ -141,18 +147,18 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
         </div>
 
         {/* Arrow */}
-        <Image src="/sidebar/chevron-right.svg" alt="Expand" width={10} height={10} />
+        <Image src="/icons/arrows/chevron-right-purple.svg" alt="Expand" width={10} height={10} />
       </div>
 
       {/* Commitment Section */}
-      <div className="xl:flex hidden flex-col gap-[3px]">
+      <div className="flex flex-col gap-[3px]">
         {/* Label */}
-        <span className="text-sm font-medium text-grey-400 tracking-[-0.04em]">Commitment</span>
+        <span className="xl:block hidden text-sm font-medium text-grey-400 tracking-[-0.04em]">Commitment</span>
 
         {/* Commitment Box */}
         <div
           className={`
-            h-8 px-2.5 py-1 bg-main-black rounded-lg flex items-center gap-[5px]
+            h-8 px-2.5 py-1 bg-main-black rounded-lg flex items-center justify-between gap-[5px]
             ${!commitment ? "cursor-pointer hover:bg-grey-900" : ""}
           `}
           onClick={() => !commitment && openModal("generateCommitment")}
@@ -160,26 +166,28 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
           {commitment ? (
             <>
               {/* Logo mini */}
-              <Image src="/logo/polypay-icon.svg" alt="Polypay" width={9} height={17} />
-              {/* Commitment text */}
-              <ShinyText
-                text={shortCommitment || ""}
-                disabled={false}
-                speed={3}
-                className="flex-1 text-sm font-medium text-main-white tracking-[-0.06em]"
-              />
+              <span className="xl:flex gap-1 hidden">
+                <Image src="/logo/polypay-icon.svg" alt="Polypay" width={9} height={17} />
+                {/* Commitment text */}
+                <ShinyText
+                  text={shortCommitment || ""}
+                  disabled={false}
+                  speed={3}
+                  className="flex-1 text-sm font-medium text-main-white tracking-[-0.06em]"
+                />
+              </span>
               {/* Copy */}
               <Image
-                src="/sidebar/copy-white.svg"
+                src="/icons/actions/copy-white.svg"
                 alt="Copy"
                 width={16}
                 height={16}
-                className="cursor-pointer hover:opacity-80"
+                className="justify-items-end cursor-pointer hover:opacity-80"
                 onClick={() => copyToClipboard(commitment || "", "Commitment copied to clipboard")}
               />
             </>
           ) : (
-            <span className="flex-1 text-sm font-medium text-main-white text-center tracking-[-0.06em]">
+            <span className="flex-1 xl:block hidden text-sm font-medium text-main-white text-center tracking-[-0.06em]">
               Generate your commitment
             </span>
           )}
@@ -187,7 +195,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-start gap-2">
+      <div className="xl:flex hidden items-start gap-2">
         {/* QR Code */}
         <div
           className="w-8 h-8 bg-grey-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-grey-200"

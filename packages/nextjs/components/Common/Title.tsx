@@ -44,7 +44,7 @@ const Title: React.FC = () => {
       {hasMultisigAccount && (
         <PortfolioModal>
           <div className="flex flex-row gap-2 w-[200px] justify-center items-center bg-white rounded-lg cursor-pointer">
-            <Image src="/misc/coin-icon.gif" alt="portfolio" className="w-8 h-8" width={32} height={32} />
+            <Image src="/icons/misc/coin-icon.gif" alt="portfolio" className="w-8 h-8" width={32} height={32} />
             <span className="text-text-primary font-bold">PORTFOLIO</span>
           </div>
         </PortfolioModal>

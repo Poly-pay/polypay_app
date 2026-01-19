@@ -20,7 +20,7 @@ interface TokenPillPopoverProps {
 export function TokenPillPopover({
   selectedToken,
   onSelect,
-  arrowSrc = "/batch/popover-arrow.svg",
+  arrowSrc = "/icons/arrows/popover-arrow.svg",
   arrowWidth = 28,
   arrowHeight = 28,
   pillClassName,
@@ -65,7 +65,7 @@ export function TokenPillPopover({
         }
         style={{ boxShadow: "0 4px 24.5px 0 rgba(46, 119, 255, 0.25)" }}
       >
-        <Image src={"/arrow/dropdown.svg"} alt="icon" width={14} height={14} />
+        <Image src={"/icons/arrows/dropdown.svg"} alt="icon" width={14} height={14} />
         <Image src={selectedToken.icon} alt={selectedToken.symbol} width={24} height={24} />
       </div>
 
@@ -84,7 +84,7 @@ export function TokenPillPopover({
             className="absolute -right-6 top-4"
           />
 
-          <div className="py-1 min-w-[300px]">
+          <div className="py-1 xl:min-w-[300px] min-w-[220px]">
             {SUPPORTED_TOKENS.filter(token => token.address !== selectedToken.address).map(token => (
               <div
                 key={token.address}
@@ -100,7 +100,6 @@ export function TokenPillPopover({
                   <p className="text-grey-800 text-xs">{token.symbol}</p>
                 </div>
                 <div className="text-right">
-                  {/* // TODO : convert amount to USD price */}
                   <p className="text-grey-950 font-medium">
                     <span className="text-grey-300">$</span> {isLoadingPrices ? "..." : getTokenUsdValue(token)}
                   </p>

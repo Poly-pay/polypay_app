@@ -59,7 +59,7 @@ CREATE TABLE "transactions" (
     "token_address" TEXT,
     "account_address" TEXT NOT NULL,
     "contact_id" TEXT,
-    "signer_commitments" TEXT[],
+    "signer_data" TEXT,
     "new_threshold" INTEGER,
     "batch_data" TEXT,
     "created_by" TEXT NOT NULL,
@@ -160,6 +160,15 @@ CREATE TABLE "notifications" (
     CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "feature_requests" (
+    "id" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "feature_requests_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_commitment_key" ON "users"("commitment");
 
@@ -258,12 +267,3 @@ ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- CreateTable
-CREATE TABLE "feature_requests" (
-    "id" TEXT NOT NULL,
-    "content" TEXT NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "feature_requests_pkey" PRIMARY KEY ("id")
-);

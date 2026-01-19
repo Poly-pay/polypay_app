@@ -5,14 +5,17 @@ import ConfirmStep from "./ConfirmStep";
 import EditStep from "./EditStep";
 import SubmittingStep from "./SubmittingStep";
 import { ActionMode, ExistingSigner, ModalStep, PendingSigner } from "./types";
+import { useQueryClient } from "@tanstack/react-query";
 import ModalContainer from "~~/components/modals/ModalContainer";
-import { useAccount, useMetaMultiSigWallet, useSignerTransaction } from "~~/hooks";
-import { useIdentityStore } from "~~/services/store";
+import { useAccount, useMetaMultiSigWallet, useSignerTransaction, userKeys } from "~~/hooks";
+import { useIdentityStore, useSidebarStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
 import { notification } from "~~/utils/scaffold-eth";
 
 const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const { commitment: myCommitment } = useIdentityStore();
+  const { closeManageAccounts } = useSidebarStore();
+  const queryClient = useQueryClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { data: account } = useAccount(metaMultiSigWallet?.address || "");
 
@@ -141,7 +144,9 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       }
 
       notification.success("Proposal submitted successfully!");
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
       handleFullClose();
+      closeManageAccounts();
     } catch (error: any) {
       console.error("Failed to submit proposal:", error);
       notification.error(error.message || "Failed to submit proposal");

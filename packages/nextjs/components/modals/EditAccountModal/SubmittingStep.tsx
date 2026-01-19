@@ -4,10 +4,9 @@ import React from "react";
 
 const SubmittingStep = () => {
   return (
-    <div className="flex flex-col items-center bg-grey-0 rounded-2xl border border-grey-200 w-[400px] py-10">
+    <div className="flex flex-col items-center bg-grey-0 rounded-2xl border border-grey-200 w-[420px] py-10">
       {/* Rocket animation video */}
       <div className="w-[200px] h-[200px] flex items-center justify-center">
-        {/* TODO: fix video here to drop background */}
         <video autoPlay loop muted playsInline className="w-full h-full object-contain">
           <source src="/animations/rocket-loading.mp4" type="video/mp4" />
           {/* Fallback emoji if video fails */}
@@ -19,7 +18,9 @@ const SubmittingStep = () => {
       <div className="flex flex-col items-center px-5 gap-2 w-full">
         {/* Title */}
         <h2 className="text-xl font-semibold tracking-tight uppercase text-grey-1000 text-center w-full">
-          Submitting proposal...
+          <span className="relative">
+            Submitting proposal <span className="absolute -right-6 -top-1/3">. . .</span>
+          </span>
         </h2>
 
         {/* Description */}

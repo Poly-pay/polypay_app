@@ -49,7 +49,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
       className={`overflow-hidden relative w-full h-full flex flex-col rounded-lg bg-white border border-divider ${className}`}
     >
       {/* Main content */}
-      <div className="flex flex-col gap-[20px] items-center justify-center flex-1 p-10 relative z-10 overflow-auto">
+      <div className="flex flex-col gap-[20px] items-center justify-center flex-1 xl:p-10 p-2 relative z-10 overflow-auto">
         {/* Title */}
         <div className="flex flex-col items-center justify-center pb-4">
           <div className="text-grey-1000 text-6xl text-center font-bold uppercase w-full">create new</div>

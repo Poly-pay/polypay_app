@@ -42,7 +42,7 @@ const RemoveBatchModel: React.FC<RemoveBatchModalProps> = ({ isOpen, onClose, it
         <XIcon width={16} height={16} onClick={onClose} className="mr-1 cursor-pointer" />
       </div>
       <div className="flex flex-col items-center justify-center w-full gap-5 my-5">
-        <Image src="/batch/remove.svg" alt="Remove Batch" width={200} height={200} />
+        <Image src="/modals/remove.svg" alt="Remove Batch" width={200} height={200} />
         <span className="text-red-500 text-center text-xl">
           Are you sure you want to delete this <br /> transaction from batch?
         </span>

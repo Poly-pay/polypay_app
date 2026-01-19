@@ -10,6 +10,7 @@ import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useAccountStore, useIdentityStore, useSidebarStore } from "~~/services/store";
 import { ModalName } from "~~/types/modal";
+import { notification } from "~~/utils/scaffold-eth";
 
 const SIDEBAR_LINKS = {
   DASHBOARD: "/dashboard",
@@ -162,7 +163,12 @@ export default function Sidebar({ disabled = false }: SidebarProps) {
       {/* Main Sidebar */}
       <div className="xl:w-[272px] w-[68px] h-full bg-grey-100 border border-grey-100 rounded-lg flex flex-col justify-between p-3">
         {/* Top Section */}
-        <div className="flex flex-col">
+        <div
+          className="flex flex-col"
+          onClick={() => {
+            if (disabled) notification.info("You need to login first!!");
+          }}
+        >
           {/* Header - Logo */}
           <div
             className="flex items-center gap-[11px] py-[1px] cursor-pointer"
@@ -209,7 +215,13 @@ export default function Sidebar({ disabled = false }: SidebarProps) {
             >
               <Image src="/sidebar/request-feature.svg" alt="Request feature" width={20} height={20} />
               <span className="xl:block hidden flex-1 text-sm font-medium text-grey-700">Request new feature</span>
-              <Image src="/sidebar/arrow-right.svg" alt="Arrow" width={16} height={16} className="xl:block hidden" />
+              <Image
+                src="/icons/arrows/arrow-right-purple.svg"
+                alt="Arrow"
+                width={16}
+                height={16}
+                className="xl:block hidden"
+              />
             </div>
           )}
 
