@@ -258,3 +258,12 @@ ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_id_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_sender_id_fkey" FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- CreateTable
+CREATE TABLE "feature_requests" (
+    "id" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "feature_requests_pkey" PRIMARY KEY ("id")
+);

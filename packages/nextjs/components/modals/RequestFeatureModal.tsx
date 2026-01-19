@@ -3,10 +3,10 @@ import ModalContainer from "./ModalContainer";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { toast } from "react-hot-toast";
 import { FeatureRequestFormData, featureRequestSchema } from "~~/lib/form/schemas";
 import { featureRequestApi } from "~~/services/api";
 import { ModalProps } from "~~/types/modal";
+import { notification } from "~~/utils/scaffold-eth";
 
 const BUTTON_BASE_CLASS = "text-main-black font-medium h-9 text-sm rounded-lg disabled:opacity-50";
 
@@ -29,12 +29,12 @@ const RequestFeatureModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const onSubmit = async (data: FeatureRequestFormData) => {
     try {
       await featureRequestApi.create(data);
-      toast.success("Feature request submitted successfully!");
+      notification.success("Feature request submitted successfully!");
       reset();
       onClose();
     } catch (error) {
       console.error("Error submitting feature request:", error);
-      toast.error("Failed to submit feature request");
+      notification.error("Failed to submit feature request");
     }
   };
 
