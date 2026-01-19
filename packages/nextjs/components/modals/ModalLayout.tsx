@@ -32,6 +32,10 @@ const modals: ModalRegistry = {
   removeBatch: dynamic(() => import("./RemoveBatchModal"), {
     ssr: false,
   }),
+
+  requestFeature: dynamic(() => import("./RequestFeatureModal"), {
+    ssr: false,
+  }),
 };
 
 type ModalInstance = {

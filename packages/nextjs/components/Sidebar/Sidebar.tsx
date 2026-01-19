@@ -205,9 +205,7 @@ export default function Sidebar({ disabled = false }: SidebarProps) {
           {commitment && (
             <div
               className="h-[36px] flex items-center gap-[5px] px-2.5 py-1.5 bg-main-white rounded-lg cursor-pointer hover:bg-grey-50"
-              onClick={() => {
-                // TODO: Open request feature modal
-              }}
+              onClick={() => openModal("requestFeature")}
             >
               <Image src="/sidebar/request-feature.svg" alt="Request feature" width={20} height={20} />
               <span className="xl:block hidden flex-1 text-sm font-medium text-grey-700">Request new feature</span>

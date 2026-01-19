@@ -172,7 +172,7 @@
   h2,
   h3,
   h4 {
-    margin-bottom: 0.5rem;
+    /* margin-bottom: 0.5rem; */
     line-height: 1;
   }
 }
