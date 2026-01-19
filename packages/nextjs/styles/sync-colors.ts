@@ -54,6 +54,8 @@ const updateGlobalCSS = () => {
   const newContent = `${before}
   --shadow-center: 0 0 12px -2px rgb(0 0 0 / 0.05);
   --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --font-family-repetition: var(--font-repetition), sans-serif;
+  --font-family-barlow: var(--font-barlow), sans-serif;
 
 ${colorVars}
 ${after}`;
