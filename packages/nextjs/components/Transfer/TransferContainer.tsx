@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
@@ -28,6 +28,27 @@ export default function TransferContainer() {
       amount: "",
     },
   });
+
+  useEffect(() => {
+    // Check for recipient data from sessionStorage
+    const recipientData = sessionStorage.getItem("transferRecipient");
+    if (recipientData) {
+      try {
+        const { address, name, contactId } = JSON.parse(recipientData);
+        form.setValue("recipient", address, { shouldValidate: true });
+        if (contactId) {
+          setSelectedContactId(contactId);
+        }
+        if (name) {
+          notification.info(`Pre-filled address for: ${name}`);
+        }
+        // Clear the data after using it
+        sessionStorage.removeItem("transferRecipient");
+      } catch (error) {
+        console.error("Failed to parse recipient data:", error);
+      }
+    }
+  }, [form]);
 
   const { transfer, isLoading, loadingState } = useTransferTransaction({
     onSuccess: () => {

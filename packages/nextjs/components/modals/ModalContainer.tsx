@@ -73,7 +73,7 @@ const ModalContainer = forwardRef<ModalRef, ModalProps>(
           </DialogHeader>
 
           <div className="row-center justify-between">
-            <div className="flex justify-start gap-2">
+            <div className="flex justify-start gap-2 items-center">
               {icon && (
                 <div className="mt-0.5">
                   <Image src={icon} alt="icon" width={28} height={28} />

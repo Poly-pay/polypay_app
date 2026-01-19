@@ -232,3 +232,19 @@ button {
   scrollbar-width: thin;
   scrollbar-color: #bbbbbb transparent;
 }
+
+.contact-card {
+  border-radius: 18px;
+  border: 4px solid #ff92ee;
+  background: var(--Main-colors-Pink, #ff6ee9);
+  width: 232px;
+  height: 280px;
+}
+
+.contact-card-empty {
+  border-radius: 18px;
+  border: 4px solid #ccc;
+  background: #dedede;
+  width: 232px;
+  height: 280px;
+}

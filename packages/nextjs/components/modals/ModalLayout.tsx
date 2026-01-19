@@ -32,6 +32,15 @@ const modals: ModalRegistry = {
   removeBatch: dynamic(() => import("./RemoveBatchModal"), {
     ssr: false,
   }),
+  createGroup: dynamic(() => import("./CreateGroupModal"), {
+    ssr: false,
+  }),
+  createContact: dynamic(() => import("./CreateContactModal"), {
+    ssr: false,
+  }),
+  deleteContact: dynamic(() => import("./DeleteContactModal"), {
+    ssr: false,
+  }),
   requestFeature: dynamic(() => import("./RequestFeatureModal"), {
     ssr: false,
   }),
