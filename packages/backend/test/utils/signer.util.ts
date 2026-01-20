@@ -6,7 +6,7 @@ import {
 } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { type TestUser } from "../fixtures/test-users";
-import { horizenTestnet } from "@polypay/shared";
+import { horizenMainnet, horizenTestnet, NetworkValue } from "@polypay/shared";
 
 /**
  * Test signer with wallet client and account info
@@ -25,10 +25,11 @@ export interface TestSigner {
  */
 export function createTestSigner(testUser: TestUser): TestSigner {
   const account = privateKeyToAccount(testUser.privateKey);
+  const network = process.env.NETWORK;
 
   const walletClient = createWalletClient({
     account,
-    chain: horizenTestnet,
+    chain: network === NetworkValue.mainnet ? horizenMainnet : horizenTestnet,
     transport: http(),
   });
 

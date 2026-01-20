@@ -6,12 +6,12 @@ import {
   decodeFunctionData,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { horizenTestnet } from '@polypay/shared';
 import {
-  METAMULTISIG_ABI,
-  METAMULTISIG_BYTECODE,
-  METAMULTISIG_CONSTANTS,
+  getChain,
+  getContractConfig,
+  NetworkType,
 } from '@polypay/shared';
+import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
@@ -22,6 +22,8 @@ export class RelayerService {
   private account;
   private publicClient;
   private walletClient;
+  private chain;
+  private contractConfig;
 
   constructor(private readonly configService: ConfigService) {
     const privateKey = this.configService.get<string>(
@@ -32,16 +34,22 @@ export class RelayerService {
       throw new Error('RELAYER_WALLET_KEY is not set');
     }
 
+    // Get network config from env
+    const network = (this.configService.get<string>(CONFIG_KEYS.APP_NETWORK) ||
+      'testnet') as NetworkType;
+    this.chain = getChain(network);
+    this.contractConfig = getContractConfig(network);
+
     this.account = privateKeyToAccount(privateKey);
 
     this.publicClient = createPublicClient({
-      chain: horizenTestnet,
+      chain: this.chain,
       transport: http(),
     });
 
     this.walletClient = createWalletClient({
       account: this.account,
-      chain: horizenTestnet,
+      chain: this.chain,
       transport: http(),
     });
 
@@ -64,14 +72,14 @@ export class RelayerService {
       abi: METAMULTISIG_ABI,
       bytecode: METAMULTISIG_BYTECODE,
       args: [
-        METAMULTISIG_CONSTANTS.zkVerifyAddress,
-        METAMULTISIG_CONSTANTS.vkHash,
-        BigInt(METAMULTISIG_CONSTANTS.chainId),
+        this.contractConfig.zkVerifyAddress,
+        this.contractConfig.vkHash,
+        BigInt(this.contractConfig.chainId),
         commitmentsBigInt,
         BigInt(threshold),
       ],
       account: this.account,
-      chain: horizenTestnet,
+      chain: this.chain,
     });
 
     this.logger.log(`Deploy tx sent: ${txHash}`);
@@ -300,7 +308,7 @@ export class RelayerService {
       functionName: 'execute',
       args,
       account: this.account,
-      chain: horizenTestnet,
+      chain: this.chain,
       gas: gasEstimate + 50000n,
     });
 

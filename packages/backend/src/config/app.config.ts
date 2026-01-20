@@ -9,4 +9,5 @@ export default registerAs('app', () => ({
   apiPrefix: process.env.API_PREFIX || 'api',
   // Logging
   logLevel: process.env.LOG_LEVEL || 'info',
+  network: process.env.NETWORK || 'testnet',
 }));
