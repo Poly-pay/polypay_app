@@ -96,7 +96,7 @@ const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
   return (
     <ModalContainer isOpen={isOpen} onClose={handleClose} isCloseButton={false} className="w-[600px] bg-white p-0">
-      <ModalHeader title="New contact" iconSrc="/contact-book/create-modal-icon.svg" onClose={handleClose} />
+      <ModalHeader title="New contact" iconSrc="/common/create-modal-icon.svg" onClose={handleClose} />
 
       <form onSubmit={onSubmit}>
         <div className="p-5 space-y-5">

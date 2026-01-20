@@ -53,6 +53,7 @@ const config: Config = {
           150: "var(--color-green-150)",
           200: "var(--color-green-200)",
           300: "var(--color-green-300)",
+          325: "var(--color-green-325)",
           400: "var(--color-green-400)",
           500: "var(--color-green-500)",
           600: "var(--color-green-600)",
