@@ -157,17 +157,37 @@ function printStats(stats: AllStats) {
 
     sorted.forEach(([addr, count], idx) => {
       console.log(
-        `  ${(idx + 1).toString().padStart(2)}. ${addr.substring(0, 10)}...${addr.slice(-8)} - ${count} actions`,
+        `${emoji}  ${(idx + 1).toString().padStart(2)}. ${addr.substring(0, 10)}...${addr.slice(-8)} - ${count} actions`,
       );
     });
   }
 
-  printTop10('Top 10 Active Users (APPROVE):', stats.approve.userActionCount, '✅');
-  printTop10('Top 10 Active Wallets (APPROVE):', stats.approve.walletActionCount, '✅');
-  printTop10('Top 10 Active Users (EXECUTE):', stats.execute.userActionCount, '🚀');
-  printTop10('Top 10 Active Wallets (EXECUTE):', stats.execute.walletActionCount, '🚀');
+  printTop10(
+    'Top 10 Active Users (APPROVE):',
+    stats.approve.userActionCount,
+    '✅',
+  );
+  printTop10(
+    'Top 10 Active Wallets (APPROVE):',
+    stats.approve.walletActionCount,
+    '✅',
+  );
+  printTop10(
+    'Top 10 Active Users (EXECUTE):',
+    stats.execute.userActionCount,
+    '🚀',
+  );
+  printTop10(
+    'Top 10 Active Wallets (EXECUTE):',
+    stats.execute.walletActionCount,
+    '🚀',
+  );
   printTop10('Top 10 Active Users (DENY):', stats.deny.userActionCount, '❌');
-  printTop10('Top 10 Active Wallets (DENY):', stats.deny.walletActionCount, '❌');
+  printTop10(
+    'Top 10 Active Wallets (DENY):',
+    stats.deny.walletActionCount,
+    '❌',
+  );
 }
 
 function main() {
