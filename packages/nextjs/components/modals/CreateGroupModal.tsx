@@ -116,7 +116,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       isCloseButton={false}
       className="max-w-lg w-full bg-white p-0"
     >
-      <ModalHeader title="New Group" iconSrc="/contact-book/create-modal-icon.svg" onClose={handleClose} />
+      <ModalHeader title="New Group" iconSrc="/common/create-modal-icon.svg" onClose={handleClose} />
 
       <form onSubmit={onSubmit}>
         <div className="space-y-5 px-4">

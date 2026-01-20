@@ -47,6 +47,10 @@ const modals: ModalRegistry = {
   removeSigner: dynamic(() => import("./RemoveSignerModal"), {
     ssr: false,
   }),
+  signerList: dynamic(() => import("./SignerListModal"), {
+    ssr: false,
+  }),
+  switchAccount: dynamic(() => import("./SwitchAccountModal"), { ssr: false }),
 };
 
 type ModalInstance = {

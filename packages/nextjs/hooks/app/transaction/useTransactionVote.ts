@@ -11,8 +11,9 @@ import {
   encodeUpdateThreshold,
 } from "@polypay/shared";
 import { NATIVE_ETH } from "@polypay/shared";
+import { useQueryClient } from "@tanstack/react-query";
 import { useWalletClient } from "wagmi";
-import { useMetaMultiSigWallet } from "~~/hooks";
+import { accountKeys, useMetaMultiSigWallet, userKeys } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
@@ -129,6 +130,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setLoadingState,
   });
+  const queryClient = useQueryClient();
 
   const approve = async (tx: TransactionRowData) => {
     if (!walletClient || !metaMultiSigWallet) {
@@ -211,6 +213,10 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
 
       console.log("Transaction executed:", result.txHash);
       notification.success("Transaction executed successfully!");
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: accountKeys.byAddress(metaMultiSigWallet?.address || ""),
+      });
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Execute error:", error);

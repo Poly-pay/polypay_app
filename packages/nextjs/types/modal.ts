@@ -25,4 +25,6 @@ export type ModalName =
   | "createContact"
   | "deleteContact"
   | "requestFeature"
-  | "removeSigner";
+  | "removeSigner"
+  | "signerList"
+  | "switchAccount";

@@ -10,26 +10,9 @@ import { useUpdateAccount } from "~~/hooks/api/useAccount";
 import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useAccountStore } from "~~/services/store";
+import { getAvatarByAccountId } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
-
-// Avatar images pool
-const AVATAR_IMAGES = [
-  "/sidebar/avatar-1.svg",
-  "/sidebar/avatar-2.svg",
-  "/sidebar/avatar-3.svg",
-  "/sidebar/avatar-4.svg",
-];
-
-// Get consistent avatar based on account id
-const getAvatarByAccountId = (accountId: string): string => {
-  let hash = 0;
-  for (let i = 0; i < accountId.length; i++) {
-    hash = accountId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % AVATAR_IMAGES.length;
-  return AVATAR_IMAGES[index];
-};
 
 interface AccountItemProps {
   account: Account;
