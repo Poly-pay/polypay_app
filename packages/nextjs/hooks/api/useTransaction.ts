@@ -5,6 +5,8 @@ import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import {
   ApproveTransactionDto,
   DEFAULT_PAGE_SIZE,
+  DenyTransactionDto,
+  ExecuteTransactionDto,
   PaginatedResponse,
   TX_CREATED_EVENT,
   TX_STATUS_EVENT,
@@ -102,7 +104,7 @@ export const useDenyTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ txId }: { txId: number }) => transactionApi.deny(txId),
+    mutationFn: ({ txId, dto }: { txId: number; dto: DenyTransactionDto }) => transactionApi.deny(txId, dto),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });
@@ -132,7 +134,7 @@ export const useExecuteTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: transactionApi.execute,
+    mutationFn: ({ txId, dto }: { txId: number; dto: ExecuteTransactionDto }) => transactionApi.execute(txId, dto),
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: transactionKeys.byTxId(data.txId) });

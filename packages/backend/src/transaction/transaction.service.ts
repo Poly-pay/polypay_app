@@ -38,6 +38,7 @@ import {
 } from '@/common/constants';
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
+import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 
 @Injectable()
 export class TransactionService {
@@ -49,6 +50,7 @@ export class TransactionService {
     private relayerService: RelayerService,
     private batchItemService: BatchItemService,
     private readonly eventsService: EventsService,
+    private readonly analyticsLogger: AnalyticsLoggerService,
   ) {}
 
   /**
@@ -189,6 +191,32 @@ export class TransactionService {
       `Created transaction txId: ${transaction.txId}, nonce: ${transaction.nonce}`,
     );
 
+    this.analyticsLogger.logApprove(
+      dto.userAddress,
+      transaction.accountAddress,
+      transaction.nonce,
+    );
+
+    if (dto.type === TxType.ADD_SIGNER) {
+      this.analyticsLogger.logAddSigner(
+        dto.userAddress,
+        transaction.accountAddress,
+        transaction.nonce,
+      );
+    } else if (dto.type === TxType.REMOVE_SIGNER) {
+      this.analyticsLogger.logRemoveSigner(
+        dto.userAddress,
+        transaction.accountAddress,
+        transaction.nonce,
+      );
+    } else if (dto.type === TxType.SET_THRESHOLD) {
+      this.analyticsLogger.logUpdateThreshold(
+        dto.userAddress,
+        transaction.accountAddress,
+        transaction.nonce,
+      );
+    }
+
     // Emit realtime event
     const eventData: TxCreatedEventData = {
       txId: transaction.txId,
@@ -292,6 +320,32 @@ export class TransactionService {
 
     this.logger.log(`Vote APPROVE added for txId: ${txId}`);
 
+    this.analyticsLogger.logApprove(
+      dto.userAddress,
+      transaction.accountAddress,
+      transaction.nonce,
+    );
+
+    if (transaction.type === TxType.ADD_SIGNER) {
+      this.analyticsLogger.logAddSigner(
+        dto.userAddress,
+        transaction.accountAddress,
+        transaction.nonce,
+      );
+    } else if (transaction.type === TxType.REMOVE_SIGNER) {
+      this.analyticsLogger.logRemoveSigner(
+        dto.userAddress,
+        transaction.accountAddress,
+        transaction.nonce,
+      );
+    } else if (transaction.type === TxType.SET_THRESHOLD) {
+      this.analyticsLogger.logUpdateThreshold(
+        dto.userAddress,
+        transaction.accountAddress,
+        transaction.nonce,
+      );
+    }
+
     // Calculate approve count
     const approveCount = await this.prisma.vote.count({
       where: { txId, voteType: VoteType.APPROVE },
@@ -328,7 +382,7 @@ export class TransactionService {
   /**
    * Deny transaction
    */
-  async deny(txId: number, userCommitment: string) {
+  async deny(txId: number, userCommitment: string, userAddress?: string) {
     // 1. Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -370,6 +424,12 @@ export class TransactionService {
     });
 
     this.logger.log(`Vote DENY added for txId: ${txId}`);
+
+    this.analyticsLogger.logDeny(
+      userAddress,
+      transaction.accountAddress,
+      transaction.nonce,
+    );
 
     // 4. Check if transaction should fail
     await this.checkIfFailed(txId);
@@ -784,7 +844,7 @@ export class TransactionService {
   /**
    * Execute transaction on-chain via relayer
    */
-  async executeOnChain(txId: number) {
+  async executeOnChain(txId: number, userAddress?: string) {
     // Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
@@ -817,6 +877,12 @@ export class TransactionService {
 
       // 3. Mark as executed only on success
       await this.markExecuted(txId, txHash);
+
+      this.analyticsLogger.logExecute(
+        userAddress,
+        transaction.accountAddress,
+        transaction.nonce,
+      );
 
       return { txId, txHash, status: 'EXECUTED' };
     } catch (error) {

@@ -17,4 +17,8 @@ export class ApproveTransactionDto {
   @IsOptional()
   @IsString()
   vk?: string;
+
+  @IsOptional()
+  @IsString()
+  userAddress?: string;
 }

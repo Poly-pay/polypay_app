@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SignerData, TxType, encodeAddSigners, encodeRemoveSigners, encodeUpdateThreshold } from "@polypay/shared";
+import { useWalletClient } from "wagmi";
 import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { notification } from "~~/utils/scaffold-eth";
@@ -12,6 +13,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
 
+  const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setLoadingState,
@@ -37,7 +39,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
     callData: `0x${string}`,
     txPayload: Record<string, unknown>,
   ) => {
-    if (!metaMultiSigWallet) {
+    if (!walletClient || !metaMultiSigWallet) {
       throw new Error("Wallet not connected");
     }
 
@@ -63,6 +65,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       proof,
       publicInputs,
       nullifier,
+      userAddress: walletClient.account.address,
       ...txPayload,
     });
 

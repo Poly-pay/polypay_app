@@ -167,6 +167,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
           proof: proofData.proof,
           publicInputs: proofData.publicInputs,
           nullifier: proofData.nullifier,
+          userAddress: walletClient.account.address,
         },
       });
 
@@ -182,6 +183,11 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
   };
 
   const deny = async (tx: TransactionRowData) => {
+    if (!walletClient) {
+      notification.error("Wallet not connected");
+      return;
+    }
+
     if (!commitment) {
       notification.error("No commitment found");
       return;
@@ -192,6 +198,9 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       setLoadingState("Submitting deny vote...");
       await denyApi({
         txId: tx.txId,
+        dto: {
+          userAddress: walletClient.account.address,
+        },
       });
 
       notification.success("Deny vote submitted!");
@@ -206,10 +215,20 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
   };
 
   const execute = async (txId: number) => {
+    if (!walletClient) {
+      notification.error("Wallet not connected");
+      return;
+    }
+
     setIsLoading(true);
     try {
       setLoadingState("Executing on-chain...");
-      const result = await executeApi(txId);
+      const result = await executeApi({
+        txId,
+        dto: {
+          userAddress: walletClient.account.address,
+        },
+      });
 
       console.log("Transaction executed:", result.txHash);
       notification.success("Transaction executed successfully!");
