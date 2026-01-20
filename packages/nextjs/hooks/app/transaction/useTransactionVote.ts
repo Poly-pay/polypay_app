@@ -1,17 +1,19 @@
 import { useState } from "react";
 import {
+  SignerData,
   TxStatus,
   TxType,
-  encodeAddSigner,
+  encodeAddSigners,
   encodeBatchTransfer,
   encodeBatchTransferMulti,
   encodeERC20Transfer,
-  encodeRemoveSigner,
+  encodeRemoveSigners,
   encodeUpdateThreshold,
 } from "@polypay/shared";
+import { NATIVE_ETH } from "@polypay/shared";
+import { useQueryClient } from "@tanstack/react-query";
 import { useWalletClient } from "wagmi";
-import { NATIVE_ETH } from "~~/constants";
-import { useMetaMultiSigWallet } from "~~/hooks";
+import { accountKeys, useMetaMultiSigWallet, userKeys } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
@@ -25,6 +27,7 @@ export type VoteStatus = "approved" | "denied";
 
 export interface Member {
   commitment: string;
+  name: string | null;
   isInitiator: boolean;
   isMe: boolean;
   voteStatus: VoteStatus;
@@ -48,7 +51,7 @@ export interface TransactionRowData {
   amount?: string;
   recipientAddress?: string;
   tokenAddress?: string;
-  signerCommitment?: string;
+  signerData?: SignerData[] | null;
   oldThreshold?: number;
   newThreshold?: number;
   batchData?: BatchTransfer[];
@@ -62,7 +65,7 @@ export interface TransactionRowData {
   threshold: number;
   approveCount: number;
   myVoteStatus: VoteStatus | null;
-  walletAddress: string;
+  accountAddress: string;
 }
 
 /**
@@ -85,14 +88,16 @@ function buildTransactionParams(tx: TransactionRowData): {
       callData = encodeERC20Transfer(tx.recipientAddress!, BigInt(tx.amount || "0")) as `0x${string}`;
     }
   } else {
-    // For non-transfer types, to = wallet address
-    to = tx.walletAddress as `0x${string}`;
+    // For non-transfer types, to = account address
+    to = tx.accountAddress as `0x${string}`;
     value = 0n;
 
     if (tx.type === TxType.ADD_SIGNER) {
-      callData = encodeAddSigner(tx.signerCommitment!, tx.newThreshold!);
+      const commitments = tx.signerData?.map(s => s.commitment) || [];
+      callData = encodeAddSigners(commitments, tx.newThreshold!);
     } else if (tx.type === TxType.REMOVE_SIGNER) {
-      callData = encodeRemoveSigner(tx.signerCommitment!, tx.newThreshold!);
+      const commitments = tx.signerData?.map(s => s.commitment) || [];
+      callData = encodeRemoveSigners(commitments, tx.newThreshold!);
     } else if (tx.type === TxType.SET_THRESHOLD) {
       callData = encodeUpdateThreshold(tx.newThreshold!);
     } else if (tx.type === TxType.BATCH && tx.batchData) {
@@ -125,6 +130,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setLoadingState,
   });
+  const queryClient = useQueryClient();
 
   const approve = async (tx: TransactionRowData) => {
     if (!walletClient || !metaMultiSigWallet) {
@@ -207,6 +213,10 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
 
       console.log("Transaction executed:", result.txHash);
       notification.success("Transaction executed successfully!");
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: accountKeys.byAddress(metaMultiSigWallet?.address || ""),
+      });
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Execute error:", error);

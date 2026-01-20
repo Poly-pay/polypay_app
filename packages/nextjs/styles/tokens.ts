@@ -5,6 +5,7 @@ export const colorTokens = {
     navyBlue: "#066EFF",
     black: "#1E1E1E",
     white: "#FFFFFF",
+    magenta: "#B5009A",
   },
   grey: {
     0: "#FFFFFF",
@@ -23,6 +24,7 @@ export const colorTokens = {
     1000: "#1E1E1E",
   },
   red: {
+    25: "#FFBEBE",
     50: "#FFF1F1",
     100: "#FFDFDF",
     200: "#FFC5C5",
@@ -41,6 +43,7 @@ export const colorTokens = {
     150: "#CEEFE8",
     200: "#ABEFC4",
     300: "#74E1A3",
+    325: "#73FE33",
     400: "#3BCC7E",
     500: "#18B164",
     600: "#0C9352",
@@ -50,15 +53,19 @@ export const colorTokens = {
     950: "#042A1A",
   },
   pink: {
+    25: "#FFECFC",
     50: "#FBF3FF",
+    75: "#FFE0FA",
     100: "#F7E7FF",
     150: "#FFACF2",
+    175: "#FF0ADA",
     200: "#EFCFFF",
     300: "#E6A7FF",
     350: "#FF7CEB",
     400: "#D56BFF",
     450: "#f35ddd",
     500: "#C43EF7",
+    550: "#D338BB",
     600: "#AA1FDB",
     700: "#9115B7",
     800: "#781396",
@@ -66,16 +73,24 @@ export const colorTokens = {
     950: "#410151",
   },
   blue: {
+    50: "#D2D8FF",
     100: "#9DCFF0",
+    550: "#0050E4",
     600: "#0059FF",
   },
   violet: {
+    25: "#F6F3FF",
     50: "#BBB4F7",
+    100: "#EDE6FF",
     300: "#6D2EFF",
   },
   lime: {
     50: "#C2FFCA",
     100: "#A6FF9E",
+  },
+  orange: {
+    50: "rgba(255, 135, 71, 0.08)",
+    500: "#FF762C",
   },
 } as const;
 

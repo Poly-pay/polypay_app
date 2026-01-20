@@ -1,4 +1,6 @@
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsEnum,
   IsNotEmpty,
@@ -8,6 +10,7 @@ import {
   Min,
 } from "class-validator";
 import { TxType } from "../../enums";
+import { SignerData } from "../../types";
 
 export class CreateTransactionDto {
   @IsNotEmpty()
@@ -21,7 +24,7 @@ export class CreateTransactionDto {
 
   @IsNotEmpty()
   @IsString()
-  walletAddress: string;
+  accountAddress: string;
 
   @IsNotEmpty()
   @IsNumber()
@@ -48,8 +51,10 @@ export class CreateTransactionDto {
 
   // ADD_SIGNER / REMOVE_SIGNER
   @IsOptional()
-  @IsString()
-  signerCommitment?: string;
+  @IsArray()
+  @ArrayMinSize(1, { message: "At least 1 signer is required" })
+  @ArrayMaxSize(10, { message: "Maximum 10 signers per transaction" })
+  signers?: SignerData[];
 
   // SET_THRESHOLD / ADD_SIGNER / REMOVE_SIGNER
   @IsOptional()

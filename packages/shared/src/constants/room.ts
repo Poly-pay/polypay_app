@@ -1,10 +1,10 @@
 export const ROOM_PREFIX = {
-  WALLET: "wallet",
+  ACCOUNT: "account",
   COMMITMENT: "commitment",
 } as const;
 
-export function getWalletRoom(address: string): string {
-  return `${ROOM_PREFIX.WALLET}:${address}`;
+export function getAccountRoom(address: string): string {
+  return `${ROOM_PREFIX.ACCOUNT}:${address}`;
 }
 
 export function getCommitmentRoom(commitment: string): string {

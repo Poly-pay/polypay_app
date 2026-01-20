@@ -56,7 +56,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       const isSigner = (commitments ?? []).some(c => BigInt(c) === BigInt(commitment));
 
       if (!isSigner) {
-        throw new Error("You are not a signer of this wallet");
+        throw new Error("You are not a signer of this account");
       }
 
       // 2. Sign txHash

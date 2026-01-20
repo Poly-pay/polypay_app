@@ -1,197 +1,227 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { Balance } from "../scaffold-eth";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
-import { Check, Copy, Pencil, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Address } from "viem";
-import { useDisconnect, useWalletClient } from "wagmi";
+import { useAccount, useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
-import { useMe, useUpdateMe } from "~~/hooks";
+import { useMyAccounts, userKeys } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
-import { getBlockExplorerAddressLink, notification } from "~~/utils/scaffold-eth";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
+import { copyToClipboard } from "~~/utils/copy";
+import { formatAddress } from "~~/utils/format";
+import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
 
-export default function AccountSidebar() {
+interface AccountSidebarProps {
+  onOpenManageAccounts: () => void;
+}
+
+export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarProps) {
   const appRouter = useAppRouter();
   const { data: walletClient } = useWalletClient();
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
+  const { connector } = useAccount();
+  const queryClient = useQueryClient();
 
   const { openModal } = useModalApp();
   const { commitment, logout } = useIdentityStore();
-  const { clearCurrentWallet } = useWalletStore();
+  const { clearCurrentAccount, currentAccount } = useAccountStore();
+  const { data: accounts } = useMyAccounts();
+  const mySigner = currentAccount?.signers.find(s => s.commitment === commitment);
 
-  const { data: me } = useMe();
-  const { mutate: updateMe } = useUpdateMe();
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState("");
+  const hasAccounts = accounts && accounts.length > 0;
 
-  const handleStartEdit = () => {
-    setNameInput(me?.name || "");
-    setIsEditingName(true);
+  const handleLogout = () => {
+    logout();
+    clearCurrentAccount();
+    disconnect();
+
+    queryClient.removeQueries({ queryKey: userKeys.all });
+    appRouter.goToDashboardNewAccount();
   };
 
-  const handleSaveName = () => {
-    if (nameInput.trim()) {
-      updateMe(
-        { name: nameInput.trim() },
-        {
-          onSuccess: () => setIsEditingName(false),
-        },
-      );
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditingName(false);
-    setNameInput("");
-  };
-
+  // Not connected state
   if (!walletClient?.account) {
     return (
-      <div className="flex flex-col">
-        <span className="flex flex-col gap-1 bg-white p-3 rounded-lg">
+      <div className="flex justify-center p-3 bg-main-white border border-grey-200 rounded-xl">
+        <div className="flex flex-col gap-1">
           <Image src="/logo/polypay-icon.svg" width={24} height={24} alt="logo" />
-          <span className="font-bold">Welcome to Polypay</span>
-          <span className="text-[14px]">Connect your wallet to power up your journal.</span>
+          <span className="hidden xl:block font-bold">Welcome to Polypay</span>
+          <span className="hidden xl:block text-sm">Connect your wallet to power up your journal.</span>
           <MultisigConnectButton />
-        </span>
+        </div>
       </div>
     );
   }
 
+  // Format address
+  const shortAddress = `${walletClient.account.address.slice(0, 4)}...${walletClient.account.address.slice(-3)}`;
+  const shortCommitment = commitment ? `${commitment.slice(0, 4)}...${commitment.slice(-4)}` : null;
+
   return (
-    <section className="flex flex-col">
-      <div className="flex flex-col gap-1 bg-white px-1 py-2 rounded-lg">
-        <div className="flex gap-2">
-          {/* Left side */}
-          <div className="h-full w-full flex flex-col justify-between">
-            <div className="flex flex-row bg-[#F6F3FF] rounded-lg p-1 gap-2">
-              <Image src="/sidebar/avatar.svg" width={70} height={70} alt="Avatar" />
-              <div className="xl:flex hidden flex-col w-full justify-between">
-                <div className="flex flex-row items-center gap-2">
-                  {isEditingName ? (
-                    <>
-                      <input
-                        type="text"
-                        value={nameInput}
-                        onChange={e => setNameInput(e.target.value)}
-                        className="w-[100%] flex-1 px-2 py-1 text-[14px] border border-gray-300 rounded focus:outline-none focus:border-primary"
-                        placeholder="Your name"
-                        autoFocus
-                      />
-                      <Check
-                        width={16}
-                        height={16}
-                        className="cursor-pointer text-green-500"
-                        onClick={handleSaveName}
-                      />
-                      <X width={16} height={16} className="cursor-pointer text-red-500" onClick={handleCancelEdit} />
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[14px] font-medium">{me?.name || "Set your name"}</span>
-                      <Pencil
-                        width={12}
-                        height={12}
-                        className="cursor-pointer text-gray-500 hover:text-primary"
-                        onClick={handleStartEdit}
-                      />
-                    </>
-                  )}
-                </div>
-                <Balance address={walletClient?.account?.address as Address} className="min-h-0 h-auto text-[14px]" />
-                <span className="flex flex-row items-center gap-2">
-                  <Image src="/sidebar/fox.svg" width={14} height={14} alt="Fox" />
-                  <span className="text-[12px]">
-                    {walletClient?.account?.address?.slice(0, 6)}...{walletClient?.account?.address?.slice(-4)}
-                  </span>
-                  <Copy
-                    onClick={e => {
-                      e.stopPropagation();
-                      navigator.clipboard.writeText(walletClient?.account?.address || "");
-                      notification.success("Address copied to clipboard");
-                    }}
-                    width={12}
-                    height={12}
-                    className="cursor-pointer"
-                  />
+    <div className="p-3 bg-main-white border border-grey-200 rounded-xl flex flex-col gap-1.5">
+      {/* Account Info Row */}
+      <div
+        className={`
+          flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl cursor-pointer
+          ${hasAccounts ? "bg-pink-25 hover:bg-pink-75" : "bg-violet-25 hover:bg-violet-100"}
+        `}
+        onClick={onOpenManageAccounts}
+      >
+        {/* Avatar */}
+        <div className={`rounded-[9px] flex items-center justify-center`}>
+          {hasAccounts ? (
+            <Image src="/sidebar/account-icon.svg" alt="Account" width={40} height={40} />
+          ) : (
+            <Image src="/avatars/user-avatar-empty-square.svg" alt="Avatar" width={40} height={40} />
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="xl:flex hidden flex-1 flex-col gap-1">
+          {hasAccounts ? (
+            // Have account - 2 lines
+            <>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-medium text-main-pink truncate max-w-[60px] tracking-[-0.04em]">
+                  {currentAccount?.name || "My Account"}
+                </span>
+                <span className="text-xs font-medium text-main-black tracking-[-0.04em]">{shortAddress}</span>
+                <Image
+                  src="/icons/actions/copy-purple.svg"
+                  alt="Copy"
+                  width={16}
+                  height={16}
+                  className="opacity-40 cursor-pointer hover:opacity-100"
+                  onClick={e => {
+                    e.stopPropagation();
+                    copyToClipboard(walletClient.account.address, "Address copied to clipboard");
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <Image
+                  src="/avatars/user-avatar-empty-square.svg"
+                  alt="Signer"
+                  width={12}
+                  height={12}
+                  className="rounded-lg"
+                />
+                <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
+                  {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"}
                 </span>
               </div>
+            </>
+          ) : (
+            // No account - 1 line only
+            <div className="flex items-center gap-1.5">
+              {/* Wallet Icon from connector */}
+              {connector?.icon && (
+                <Image
+                  src={connector.icon}
+                  alt={connector.name || "Wallet"}
+                  width={16}
+                  height={16}
+                  className="rounded"
+                />
+              )}
+              <span className="text-sm font-medium text-grey-900 tracking-[-0.04em]">{shortAddress}</span>
+              <Image
+                src="/icons/actions/copy-purple.svg"
+                alt="Copy"
+                width={16}
+                height={16}
+                className="opacity-40 cursor-pointer hover:opacity-100"
+                onClick={e => {
+                  e.stopPropagation();
+                  copyToClipboard(walletClient.account.address, "Address copied to clipboard");
+                }}
+              />
             </div>
-            <div className="xl:block hidden">
-              <span className="text-sm">Commitment</span>
-              <div
-                className={`block bg-grey-1000 p-2 text-white font-semibold text-center text-[14px] rounded-lg
-                ${!commitment && "cursor-pointer hover:bg-gray-800"}`}
-              >
-                {commitment ? (
-                  <div className="flex flex-row justify-between items-center">
-                    <div className="flex flex-row gap-2">
-                      <Image src={`/logo/polypay-icon.svg`} width={10} height={10} alt="Polypay Icon" />
-                      <ShinyText
-                        text={`${commitment?.slice(0, 6)}...${commitment?.slice(-4)}`}
-                        disabled={false}
-                        speed={3}
-                      />
-                    </div>
-                    <Copy
-                      onClick={e => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(commitment || "");
-                        notification.success("Commitment copied to clipboard");
-                      }}
-                      width={14}
-                      height={14}
-                      className="cursor-pointer"
-                    />
-                  </div>
-                ) : (
-                  <span onClick={() => openModal("generateCommitment")}>Generate your commitment</span>
-                )}
-              </div>
-            </div>
-          </div>
-          {/* Right side */}
-          <div className="xl:flex hidden flex-col gap-2">
-            <Image
-              src="/sidebar/qrcode.svg"
-              width={36}
-              height={36}
-              alt="Qr Code"
-              onClick={() => openModal("qrAddressReceiver", { address: walletClient?.account?.address as Address })}
-              className="cursor-pointer"
-            />
-            <span>
-              <a
-                target="_blank"
-                href={getBlockExplorerAddressLink(targetNetwork, walletClient?.account?.address as Address)}
-                rel="noopener noreferrer"
-                className="cursor-pointer"
-              >
-                <Image src="/sidebar/external.svg" width={36} height={36} alt="External Link" />
-              </a>
+          )}
+        </div>
+
+        {/* Arrow */}
+        <Image src="/icons/arrows/chevron-right-purple.svg" alt="Expand" width={10} height={10} />
+      </div>
+
+      {/* Commitment Section */}
+      <div className="flex flex-col gap-[3px]">
+        {/* Label */}
+        <span className="xl:block hidden text-sm font-medium text-grey-400 tracking-[-0.04em]">Commitment</span>
+
+        {/* Commitment Box */}
+        <div
+          className={`
+            h-8 px-2.5 py-1 bg-main-black rounded-lg flex items-center justify-between gap-[5px]
+            ${!commitment ? "cursor-pointer hover:bg-grey-900" : ""}
+          `}
+          onClick={() => !commitment && openModal("generateCommitment")}
+        >
+          {commitment ? (
+            <>
+              {/* Logo mini */}
+              <span className="xl:flex gap-1 hidden">
+                <Image src="/logo/polypay-icon.svg" alt="Polypay" width={9} height={17} />
+                {/* Commitment text */}
+                <ShinyText
+                  text={shortCommitment || ""}
+                  disabled={false}
+                  speed={3}
+                  className="flex-1 text-sm font-medium text-main-white tracking-[-0.06em]"
+                />
+              </span>
+              {/* Copy */}
+              <Image
+                src="/icons/actions/copy-white.svg"
+                alt="Copy"
+                width={16}
+                height={16}
+                className="justify-items-end cursor-pointer hover:opacity-80"
+                onClick={() => copyToClipboard(commitment || "", "Commitment copied to clipboard")}
+              />
+            </>
+          ) : (
+            <span className="flex-1 xl:block hidden text-sm font-medium text-main-white text-center tracking-[-0.06em]">
+              Generate your commitment
             </span>
-            <Image
-              src="/sidebar/logout.svg"
-              width={36}
-              height={36}
-              alt="Logout"
-              className="cursor-pointer"
-              onClick={() => {
-                logout();
-                clearCurrentWallet();
-                disconnect();
-                appRouter.goToDashboardNewWallet();
-              }}
-            />
-          </div>
+          )}
         </div>
       </div>
-    </section>
+
+      {/* Action Buttons */}
+      <div className="xl:flex hidden items-start gap-2">
+        {/* QR Code */}
+        <div
+          className="w-8 h-8 bg-grey-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-grey-200"
+          onClick={() => openModal("qrAddressReceiver", { address: walletClient.account.address as Address })}
+        >
+          <Image src="/sidebar/qrcode.svg" alt="QR Code" width={16} height={16} />
+        </div>
+
+        {/* External Link */}
+        <a
+          target="_blank"
+          href={getBlockExplorerAddressLink(targetNetwork, walletClient.account.address as Address)}
+          rel="noopener noreferrer"
+          className="w-8 h-8 bg-grey-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-grey-200"
+        >
+          <Image src="/sidebar/external.svg" alt="External Link" width={16} height={16} />
+        </a>
+
+        {/* Logout */}
+        <div
+          className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-red-200"
+          onClick={handleLogout}
+        >
+          <Image src="/sidebar/logout.svg" alt="Logout" width={16} height={16} />
+        </div>
+      </div>
+    </div>
   );
 }

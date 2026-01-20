@@ -14,13 +14,13 @@ const barlow = Barlow({
 });
 
 const repetitionScroll = localFont({
-  src: "../public/fonts/RepetitionScroll.ttf", // Đường dẫn tới file font
+  src: "../public/fonts/RepetitionScroll.ttf",
   variable: "--font-repetition",
   display: "swap",
 });
 
 export const metadata = getMetadata({
-  title: "Polypay Wallet",
+  title: "Polypay App",
   description: "A secure and user-friendly wallet for your digital assets",
 });
 

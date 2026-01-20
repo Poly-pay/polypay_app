@@ -5,7 +5,7 @@ import {
   type Hex,
 } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
-import { type TestAccount } from "../fixtures/test-accounts";
+import { type TestUser } from "../fixtures/test-users";
 import { horizenTestnet } from "@polypay/shared";
 
 /**
@@ -20,11 +20,11 @@ export interface TestSigner {
 
 /**
  * Create a test signer from private key
- * @param testAccount - Test account with private key
+ * @param testUser - Test user with private key
  * @returns TestSigner with walletClient, account and address
  */
-export function createTestSigner(testAccount: TestAccount): TestSigner {
-  const account = privateKeyToAccount(testAccount.privateKey);
+export function createTestSigner(testUser: TestUser): TestSigner {
+  const account = privateKeyToAccount(testUser.privateKey);
 
   const walletClient = createWalletClient({
     account,
@@ -36,7 +36,7 @@ export function createTestSigner(testAccount: TestAccount): TestSigner {
     walletClient: walletClient as WalletClient,
     account,
     address: account.address,
-    privateKey: testAccount.privateKey,
+    privateKey: testUser.privateKey,
   };
 }
 

@@ -1,54 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { Fragment } from "react";
 import Image from "next/image";
+import EditBatchPopover from "../popovers/EditBatchPopover";
 import TransactionSummary from "./TransactionSummary";
-import { BatchItem } from "@polypay/shared";
-import { getTokenByAddress } from "~~/constants/token";
-import { useBatchTransaction } from "~~/hooks";
-import { useDeleteBatchItem, useMyBatchItems } from "~~/hooks/api";
+import { BatchItem, Token, parseTokenAmount } from "@polypay/shared";
+import { getTokenByAddress } from "@polypay/shared";
+import AddressNamedTooltip from "~~/components/tooltips/AddressNamedTooltip";
+import { useBatchTransaction, useContacts, useModalApp } from "~~/hooks";
+import { useDeleteBatchItem, useMyBatchItems, useUpdateBatchItem } from "~~/hooks/api";
+import { useAccountStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
+import { notification } from "~~/utils/scaffold-eth";
 
 // ==================== Custom Checkbox ====================
 function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
     <div
       onClick={onChange}
-      className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${
-        checked ? "bg-blue-600 border-blue-600" : "bg-white border-gray-300"
+      className={`w-4 h-4 rounded-md border flex items-center justify-center cursor-pointer transition-colors ${
+        checked ? "bg-main-pink border-white" : "bg-grey-200 border-grey-400"
       }`}
-    >
-      {checked && (
-        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-        </svg>
-      )}
-    </div>
+    ></div>
   );
 }
 
 // ==================== Header Component ====================
-function Header({ transactionCount }: { transactionCount: number }) {
+function Header() {
   return (
-    <div className="flex w-full flex-col gap-2">
-      <div className="flex gap-[5px] items-center justify-start w-full">
-        <div className="text-grey-900 text-6xl text-center font-bold uppercase">your</div>
-        <div className="h-[50px] relative rounded-full w-[100px] border-[6px] border-red-500 border-solid flex items-center justify-center">
-          <span className="text-red-500 text-4xl text-center font-extrabold uppercase leading-none">
-            {transactionCount ?? 0}
-          </span>
-        </div>
-        <div className="text-grey-900 text-6xl text-center font-bold uppercase">batch</div>
-      </div>
-      <div className="flex flex-col leading-none gap-1">
-        <span className="text-text-secondary text-[16px]">
-          Making bulk transactions will save you time as well as transaction costs.
-        </span>
-        <span className="text-text-secondary text-[16px]">
-          Below is a list of transactions that have been recently added.
-        </span>
-      </div>
-    </div>
+    <section>
+      <h3 className="text-grey-950 text-4xl">Your Batch</h3>
+      <p className="text-grey-700 text-sm max-w-[490px] mt-3 mb-0">
+        Making bulk transactions will save you time as well as transaction costs. Below is a list of transactions that
+        have been recently added.
+      </p>
+    </section>
   );
 }
 
@@ -60,8 +47,10 @@ function BatchTransactions({
   onSelectAll,
   onSelectItem,
   onRemove,
+  onEdit,
   isLoading,
   isRemoving,
+  accountId,
 }: {
   batchItems: BatchItem[];
   selectedItems: Set<string>;
@@ -69,9 +58,22 @@ function BatchTransactions({
   onSelectAll: () => void;
   onSelectItem: (id: string) => void;
   onRemove: (id: string) => void;
+  onEdit: (id: string, data: { recipient: string; amount: string; token: Token; contactId?: string }) => void;
   isLoading?: boolean;
   isRemoving?: boolean;
+  accountId: string | null;
 }) {
+  const { openModal } = useModalApp();
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const { data: contacts = [] } = useContacts(accountId);
+
+  const editButtonRefs = useMemo<Record<string, React.RefObject<HTMLButtonElement | null>>>(() => {
+    const refs: Record<string, React.RefObject<HTMLButtonElement | null>> = {};
+    batchItems.forEach(item => {
+      refs[item.id] = { current: null };
+    });
+    return refs;
+  }, [batchItems]);
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -82,37 +84,50 @@ function BatchTransactions({
 
   if (batchItems.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 gap-2">
-        <div className="text-text-secondary text-lg">No draft transactions</div>
-        <div className="text-text-secondary text-sm">Add transactions from the Send page to get started</div>
+      <div className="flex flex-col items-center justify-center gap-2 h-full">
+        <Image src="/common/empty-avatar.svg" alt="No transaction" width={150} height={150} />
+        <div className="text-2xl font-semibold text-center text-main-violet">No transaction</div>
+        <div className="text-xl text-center text-grey-700">There is no transaction found.</div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className="flex flex-col gap-1 w-full h-full overflow-auto mt-8">
       {/* Select All Button */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onSelectAll}
-          className="bg-blue-600 flex gap-2 items-center justify-center px-4 py-2 rounded-full cursor-pointer"
-        >
-          <span className="font-medium text-[14px] text-white tracking-[-0.42px]">Select all</span>
-        </button>
-        {selectedItems.size > 0 && <span className="text-text-secondary text-sm">{selectedItems.size} selected</span>}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onSelectAll}
+            className="bg-grey-100 flex gap-2 items-center justify-center px-4 py-2 rounded-full cursor-pointer"
+          >
+            <span className="font-medium text-sm text-grey-800">Select all</span>
+          </button>
+          {selectedItems.size > 0 && <span className="text-text-secondary text-sm">{selectedItems.size} selected</span>}
+        </div>
+        {batchItems.length > 0 && (
+          <span className="text-main-navy-blue text-sm font-medium">
+            {batchItems.length} transaction{`${batchItems.length > 1 ? "s" : ""}`}
+          </span>
+        )}
       </div>
 
       {/* Batch Items List */}
-      <div className="grid grid-cols-1 gap-0.5 w-full mt-2">
+      <div className="grid grid-cols-1 gap-2 w-full mt-2">
         {batchItems.map(item => {
           const isActive = activeItem === item.id;
           const isSelected = selectedItems.has(item.id);
+          const isHighlighted = isSelected || isActive;
+
+          const matchedContact = contacts.find(
+            contact => contact.address.toLowerCase() === item.recipient.toLowerCase(),
+          );
 
           return (
             <div
               key={item.id}
-              className={`grid grid-cols-[auto_auto_1fr_auto_1fr_auto] gap-3 items-center p-3 w-full cursor-pointer rounded transition-colors ${
-                isActive ? "bg-main-navy-blue" : "bg-grey-50 hover:bg-[#efefef]"
+              className={`shadow-sm grid grid-cols-[auto_auto_1fr_auto_1fr_auto] gap-3 items-center px-6 py-4 w-full cursor-pointer rounded-xl transition-colors group ${
+                isHighlighted ? "bg-main-violet" : "bg-white hover:bg-main-violet"
               }`}
               onClick={() => {
                 onSelectItem(item.id);
@@ -124,13 +139,15 @@ function BatchTransactions({
               </div>
 
               {/* Transaction Type */}
-              <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-grey-950"}`}>
+              <div
+                className={`text-sm font-medium w-[105px] ${isHighlighted ? "text-white" : "text-main-violet group-hover:text-white"}`}
+              >
                 Transfer
               </div>
 
               {/* Amount with Token */}
               <div
-                className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-grey-950"}`}
+                className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isHighlighted ? "text-white" : "text-grey-950 group-hover:text-white"}`}
               >
                 <Image
                   src={getTokenByAddress(item.tokenAddress).icon}
@@ -142,38 +159,101 @@ function BatchTransactions({
               </div>
 
               {/* Arrow */}
-              <div className="flex items-center justify-center w-16"></div>
-
+              <Image
+                src="icons/arrows/arrow-right-long-purple.svg"
+                className={`mr-3 transition-all ${isHighlighted ? "brightness-0 invert" : "group-hover:brightness-0 group-hover:invert"}`}
+                alt="Arrow Right"
+                width={100}
+                height={100}
+              />
               {/* Recipient */}
-              <div className={`text-[16px] tracking-[-0.32px] ${isActive ? "text-white" : "text-grey-950"}`}>
-                To: [{" "}
-                {item.contact?.name ? (
-                  <>
-                    <span className="font-medium">{item.contact.name}</span>
-                    <span className={isActive ? "text-white/70 ml-1" : "text-gray-500 ml-1"}>
-                      ({formatAddress(item.recipient)})
+              {matchedContact ? (
+                <AddressNamedTooltip address={item.recipient} name={matchedContact.name} isHighlighted={isHighlighted}>
+                  <div
+                    className={`flex items-center gap-1 text-xs font-medium rounded-full w-fit pl-1 pr-4 py-1 max-w-32 ${
+                      isHighlighted ? "bg-white text-black" : "bg-grey-100 text-black group-hover:bg-white"
+                    }`}
+                  >
+                    <Image
+                      src={"/avatars/default-avt.svg"}
+                      alt="avatar"
+                      width={16}
+                      height={16}
+                      className="flex-shrink-0"
+                    />
+                    <span className="truncate overflow-hidden">
+                      <Fragment>
+                        <span className="font-medium mr-0.5">{matchedContact.name}</span>
+                        <span>{"(" + `${formatAddress(item?.recipient, { start: 3, end: 3 })}` + ")"}</span>
+                      </Fragment>
                     </span>
-                  </>
-                ) : (
-                  formatAddress(item.recipient)
-                )}
-                ]
-              </div>
-
-              {/* Remove Button */}
-              <div onClick={e => e.stopPropagation()}>
-                <button
-                  onClick={() => onRemove(item.id)}
-                  disabled={isRemoving}
-                  className="bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center px-5 py-1.5 rounded-[10px] shadow-[0px_2px_4px_-1px_rgba(255,0,4,0.5),0px_0px_0px_1px_#ff6668] cursor-pointer disabled:opacity-50"
+                  </div>
+                </AddressNamedTooltip>
+              ) : (
+                <span
+                  className={`flex item-center gap-1 px-2 py-1 rounded-full w-fit text-xs font-medium ${
+                    isHighlighted
+                      ? "text-black bg-white"
+                      : "text-black bg-grey-100 group-hover:bg-white group-hover:text-black"
+                  }`}
                 >
-                  <span className="font-medium text-[14px] text-center text-white tracking-[-0.42px]">Remove</span>
-                </button>
+                  <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} />
+                  <span> {formatAddress(item?.recipient, { start: 3, end: 3 })}</span>
+                </span>
+              )}
+              <div className="flex items-center gap-2">
+                <div>
+                  <button
+                    ref={editButtonRefs[item.id]}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setEditingItemId(item.id);
+                    }}
+                    className={`flex items-center justify-center gap-2 py-1.5 rounded-lg disabled:opacity-50 w-[95px] ${
+                      isHighlighted ? "bg-white" : "bg-grey-100 group-hover:bg-white"
+                    }`}
+                  >
+                    <Image src="/icons/misc/edit-icon.svg" alt="Edit" width={16} height={16} />
+                    <span className="font-medium text-[14px] text-center text-black">Edit</span>
+                  </button>
+                </div>
+
+                {/* Remove Button */}
+                <div>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      openModal("removeBatch", {
+                        item,
+                        onRemove: () => onRemove(item.id),
+                      });
+                    }}
+                    disabled={isRemoving}
+                    className="w-[95px] bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center gap-2 py-1.5 rounded-lg shadow-[0px_2px_4px_-1px_rgba(255,0,4,0.5),0px_0px_0px_1px_#ff6668] disabled:opacity-50"
+                  >
+                    <Image src="/icons/misc/trash-icon.svg" alt="Remove" width={16} height={16} />
+                    <span className="font-medium text-[14px] text-center text-white">Remove</span>
+                  </button>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Edit Popover */}
+      {editingItemId && editButtonRefs[editingItemId] && (
+        <EditBatchPopover
+          item={batchItems.find(item => item.id === editingItemId)!}
+          isOpen={true}
+          onClose={() => setEditingItemId(null)}
+          onSave={data => {
+            onEdit(editingItemId, data);
+            setEditingItemId(null);
+          }}
+          triggerRef={editButtonRefs[editingItemId]}
+        />
+      )}
     </div>
   );
 }
@@ -181,11 +261,16 @@ function BatchTransactions({
 // ==================== Main Container ====================
 export default function BatchContainer() {
   const { mutateAsync: deleteBatchItem, isPending: isRemoving } = useDeleteBatchItem();
+  const { mutateAsync: updateBatchItem } = useUpdateBatchItem();
   const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useMyBatchItems();
+  const { currentAccount } = useAccountStore();
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [isExiting] = useState(false);
+
+  // Get accountId from current account
+  const accountId = currentAccount?.id || null;
 
   const {
     proposeBatch,
@@ -198,7 +283,6 @@ export default function BatchContainer() {
     },
   });
 
-  // Select all handler
   const handleSelectAll = () => {
     if (selectedItems.size === batchItems.length) {
       setSelectedItems(new Set());
@@ -207,7 +291,6 @@ export default function BatchContainer() {
     }
   };
 
-  // Select single item handler
   const handleSelectItem = (id: string) => {
     const newSelected = new Set(selectedItems);
     if (newSelected.has(id)) {
@@ -230,8 +313,35 @@ export default function BatchContainer() {
       if (activeItem === id) {
         setActiveItem(null);
       }
+      notification.success("Batch item removed successfully");
     } catch (error) {
       console.error("Failed to remove batch item:", error);
+    }
+  };
+
+  const handleEdit = async (
+    id: string,
+    data: { recipient: string; amount: string; token: Token; contactId?: string },
+  ) => {
+    try {
+      const amountInSmallestUnit = parseTokenAmount(data.amount, data.token.decimals);
+
+      await updateBatchItem({
+        id,
+        data: {
+          recipient: data.recipient,
+          amount: amountInSmallestUnit,
+          tokenAddress: data.token.address,
+          contactId: data.contactId,
+        },
+      });
+
+      notification.success("Batch item updated successfully");
+
+      await refetchBatchItems();
+    } catch (error) {
+      console.error("Failed to update batch item:", error);
+      notification.error("Failed to update batch item");
     }
   };
 
@@ -245,18 +355,16 @@ export default function BatchContainer() {
   const selectedBatchItems = batchItems.filter((item: BatchItem) => selectedItems.has(item.id));
 
   return (
-    <div className="flex flex-row gap-1 w-full h-full bg-app-background">
+    <div className="flex flex-row gap-1 w-full h-full bg-[#ECEDEC]">
       {/* Main Content */}
-      <div className="flex flex-col gap-5 p-3 bg-background rounded-lg flex-1 border border-divider">
-        {/* Shopping Bag Icon */}
-        <div className="flex flex-row h-[100px] w-full justify-between">
-          <div className="w-full relative">
-            <div className="absolute -bottom-5 left-0 right-0 h-30 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
-          </div>
-        </div>
-
+      <div
+        className="py-5 px-8 bg-background rounded-lg flex flex-col flex-1 border-divider border-white border-2"
+        style={{
+          background: "rgba(255, 255, 255, 0.70)",
+        }}
+      >
         {/* Header */}
-        <Header transactionCount={batchItems.length} />
+        <Header />
 
         {/* Batch Items List */}
         <BatchTransactions
@@ -266,8 +374,10 @@ export default function BatchContainer() {
           onSelectAll={handleSelectAll}
           onSelectItem={handleSelectItem}
           onRemove={handleRemove}
+          onEdit={handleEdit}
           isLoading={isLoading}
           isRemoving={isRemoving}
+          accountId={accountId}
         />
       </div>
 
@@ -275,7 +385,7 @@ export default function BatchContainer() {
       {selectedItems.size > 0 && (
         <div className={`overflow-hidden ${isExiting ? "animate-slide-out" : "animate-slide-in"}`}>
           <TransactionSummary
-            className="w-[500px]"
+            className="xl:w-[500px] w-[250px]"
             transactions={selectedBatchItems.map(item => ({
               id: item.id,
               amount: formatAmount(item.amount, item.tokenAddress),
@@ -287,6 +397,7 @@ export default function BatchContainer() {
             onConfirm={handleProposeBatch}
             isLoading={isProposing}
             loadingState={loadingState}
+            accountId={accountId}
           />
         </div>
       )}

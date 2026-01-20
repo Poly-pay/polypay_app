@@ -9,12 +9,15 @@
 @theme {
   --shadow-center: 0 0 12px -2px rgb(0 0 0 / 0.05);
   --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --font-family-repetition: var(--font-repetition), sans-serif;
+  --font-family-barlow: var(--font-barlow), sans-serif;
 
   --color-main-pink: #ff6ee9;
   --color-main-violet: #6d2eff;
   --color-main-navy-blue: #066eff;
   --color-main-black: #1e1e1e;
   --color-main-white: #ffffff;
+  --color-main-magenta: #b5009a;
 
   --color-grey-0: #ffffff;
   --color-grey-50: #f7f7f7;
@@ -31,6 +34,7 @@
   --color-grey-950: #363636;
   --color-grey-1000: #1e1e1e;
 
+  --color-red-25: #ffbebe;
   --color-red-50: #fff1f1;
   --color-red-100: #ffdfdf;
   --color-red-200: #ffc5c5;
@@ -48,6 +52,7 @@
   --color-green-150: #ceefe8;
   --color-green-200: #abefc4;
   --color-green-300: #74e1a3;
+  --color-green-325: #73fe33;
   --color-green-400: #3bcc7e;
   --color-green-500: #18b164;
   --color-green-600: #0c9352;
@@ -56,29 +61,40 @@
   --color-green-900: #094b2e;
   --color-green-950: #042a1a;
 
+  --color-pink-25: #ffecfc;
   --color-pink-50: #fbf3ff;
+  --color-pink-75: #ffe0fa;
   --color-pink-100: #f7e7ff;
   --color-pink-150: #ffacf2;
+  --color-pink-175: #ff0ada;
   --color-pink-200: #efcfff;
   --color-pink-300: #e6a7ff;
   --color-pink-350: #ff7ceb;
   --color-pink-400: #d56bff;
   --color-pink-450: #f35ddd;
   --color-pink-500: #c43ef7;
+  --color-pink-550: #d338bb;
   --color-pink-600: #aa1fdb;
   --color-pink-700: #9115b7;
   --color-pink-800: #781396;
   --color-pink-900: #651779;
   --color-pink-950: #410151;
 
+  --color-blue-50: #d2d8ff;
   --color-blue-100: #9dcff0;
+  --color-blue-550: #0050e4;
   --color-blue-600: #0059ff;
 
+  --color-violet-25: #f6f3ff;
   --color-violet-50: #bbb4f7;
+  --color-violet-100: #ede6ff;
   --color-violet-300: #6d2eff;
 
   --color-lime-50: #c2ffca;
   --color-lime-100: #a6ff9e;
+
+  --color-orange-50: rgba(255, 135, 71, 0.08);
+  --color-orange-500: #ff762c;
 }
 
 @plugin "daisyui" {
@@ -153,10 +169,6 @@
     border-color: var(--color-gray-200, currentColor);
   }
 
-  p {
-    margin: 1rem 0;
-  }
-
   body {
     min-height: 100vh;
   }
@@ -165,7 +177,7 @@
   h2,
   h3,
   h4 {
-    margin-bottom: 0.5rem;
+    /* margin-bottom: 0.5rem; */
     line-height: 1;
   }
 }
@@ -173,6 +185,10 @@
 :root,
 [data-theme] {
   background: #ededed;
+}
+
+button {
+  cursor: pointer;
 }
 
 .btn {
@@ -216,4 +232,20 @@
 .content {
   scrollbar-width: thin;
   scrollbar-color: #bbbbbb transparent;
+}
+
+.contact-card {
+  border-radius: 18px;
+  border: 4px solid #ff92ee;
+  background: var(--Main-colors-Pink, #ff6ee9);
+  width: 232px;
+  height: 280px;
+}
+
+.contact-card-empty {
+  border-radius: 18px;
+  border: 4px solid #ccc;
+  background: #dedede;
+  width: 232px;
+  height: 280px;
 }

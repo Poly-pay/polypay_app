@@ -20,7 +20,7 @@ export interface WalletData {
 function Header() {
   return (
     <div className="flex flex-col items-start justify-between w-full">
-      <p className="xl:text-[55.78px] text-3xl  capitalize">Dashboard</p>
+      <p className="text-4xl capitalize">Dashboard</p>
       <InfoCardContainer />
     </div>
   );
@@ -29,12 +29,12 @@ function Header() {
 export default function DashboardContainer() {
   const { commitment } = useIdentityStore();
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const walletAddress = metaMultiSigWallet?.address || "";
+  const accountAddress = metaMultiSigWallet?.address || "";
 
   const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
-    useTransactionsInfinite(walletAddress);
+    useTransactionsInfinite(accountAddress);
 
-  useTransactionRealtime(walletAddress);
+  useTransactionRealtime(accountAddress);
 
   const { ref } = useInfiniteScroll({
     hasNextPage,
@@ -58,7 +58,7 @@ export default function DashboardContainer() {
   );
 
   return (
-    <div className="flex flex-col gap-5 p-2 lg:px-[100px] px-12 pt-7">
+    <div className="flex flex-col gap-5 px-[100px] py-[30px] h-full bg-[#FFFFFFB2]">
       <Header />
 
       {/* Loading State */}

@@ -9,4 +9,12 @@ export class UpdateBatchItemDto {
   @IsOptional()
   @IsString()
   amount?: string;
+
+  @IsOptional()
+  @IsString()
+  tokenAddress?: string;
+
+  @IsString()
+  @IsOptional()
+  contactId?: string;
 }

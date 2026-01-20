@@ -1,11 +1,11 @@
 import { NotificationType } from "../enums";
-import { Account } from "./account";
+import { User } from "./user";
 
 export interface Notification {
   id: string;
   recipientId: string;
   senderId: string;
-  sender?: Account;
+  sender?: User;
   type: NotificationType;
   read: boolean;
   createdAt: string;

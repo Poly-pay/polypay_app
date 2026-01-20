@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { TxType, encodeERC20Transfer } from "@polypay/shared";
+import { NATIVE_ETH, Token, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
-import { NATIVE_ETH, Token, parseTokenAmount } from "~~/constants";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
@@ -83,7 +83,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       const result = await createTransaction({
         nonce,
         type: TxType.TRANSFER,
-        walletAddress: metaMultiSigWallet.address,
+        accountAddress: metaMultiSigWallet.address,
         threshold: Number(currentThreshold),
         to: recipient,
         value: valueInSmallestUnit,

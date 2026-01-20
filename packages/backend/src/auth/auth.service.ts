@@ -52,14 +52,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid proof');
     }
 
-    // 2. Find or create account
-    let account = await this.prisma.account.findUnique({
+    // 2. Find or create user
+    let user = await this.prisma.user.findUnique({
       where: { commitment },
     });
 
-    if (!account) {
-      this.logger.log(`Creating new account for commitment: ${commitment}`);
-      account = await this.prisma.account.create({
+    if (!user) {
+      this.logger.log(`Creating new user for commitment: ${commitment}`);
+      user = await this.prisma.user.create({
         data: { commitment },
       });
     }
@@ -75,7 +75,7 @@ export class AuthService {
     this.logger.log(`Login successful for commitment: ${commitment}`);
 
     return {
-      account,
+      user,
       ...tokens,
     };
   }
@@ -91,13 +91,13 @@ export class AuthService {
         secret: this.configService.get<string>(CONFIG_KEYS.JWT_REFRESH_SECRET),
       });
 
-      // Verify account exists
-      const account = await this.prisma.account.findUnique({
+      // Verify user exists
+      const user = await this.prisma.user.findUnique({
         where: { commitment: payload.sub },
       });
 
-      if (!account) {
-        throw new UnauthorizedException('Account not found');
+      if (!user) {
+        throw new UnauthorizedException('User not found');
       }
 
       // Generate new tokens

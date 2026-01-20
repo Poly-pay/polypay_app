@@ -1,7 +1,7 @@
 import { validators } from "./validation";
 import { z } from "zod";
 
-// ==================== Contact / Address Book ====================
+// ==================== Contact Book ====================
 
 export const createContactSchema = z.object({
   name: validators.requiredString("Name").max(100, "Name too long"),
@@ -16,19 +16,19 @@ export const createGroupSchema = z.object({
 });
 export type CreateGroupFormData = z.infer<typeof createGroupSchema>;
 
-// ==================== Wallet ====================
+// ==================== Account ====================
 
 const signerSchema = z.object({
   commitment: z.string().min(1, "Signer commitment is required"),
   name: z.string().optional(),
 });
 
-export const createWalletSchema = z.object({
-  name: validators.requiredString("Wallet name").max(50, "Name too long"),
+export const createAccountSchema = z.object({
+  name: validators.requiredString("Account name").max(50, "Name too long"),
   signers: z.array(signerSchema).min(1, "At least one signer required"),
   threshold: z.number().min(1, "Threshold must be at least 1"),
 });
-export type CreateWalletFormData = z.infer<typeof createWalletSchema>;
+export type CreateAccountFormData = z.infer<typeof createAccountSchema>;
 
 // ==================== Transfer ====================
 
@@ -42,6 +42,13 @@ export const transferSchema = z.object({
   amount: z.string(),
 });
 export type TransferFormData = z.infer<typeof transferSchema>;
+
+export const editBatchSchema = transferSchema.extend({
+  tokenAddress: z.string().optional(),
+  contactId: z.string().optional(),
+  contactName: z.string().optional(),
+});
+export type EditBatchFormData = z.infer<typeof editBatchSchema>;
 
 // ==================== Edit Account ====================
 
@@ -60,3 +67,10 @@ export const updateThresholdSchema = z.object({
   threshold: z.number().min(1, "Threshold must be at least 1"),
 });
 export type UpdateThresholdFormData = z.infer<typeof updateThresholdSchema>;
+
+// ==================== Feature Request ====================
+
+export const featureRequestSchema = z.object({
+  content: validators.requiredString("Feature request").trim(),
+});
+export type FeatureRequestFormData = z.infer<typeof featureRequestSchema>;

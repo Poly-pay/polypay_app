@@ -14,49 +14,55 @@ datasource db {
   provider = "postgresql"
 }
 
-model Account {
+// User is repersent for wallet client
+model User {
   id         String   @id @default(cuid())
   commitment String   @unique
-  name       String? // Global name for account
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
-  wallets               AccountWallet[]
+  accounts              AccountSigner[]
   batchItems            BatchItem[]
   receivedNotifications Notification[]  @relation("ReceivedNotifications")
   sentNotifications     Notification[]  @relation("SentNotifications")
+
+  @@map("users")
 }
 
-model Wallet {
+model Account {
   id        String   @id @default(cuid())
   address   String   @unique
   name      String
   threshold Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  accounts      AccountWallet[]
+  signers       AccountSigner[]
   transactions  Transaction[]
-  addressGroups AddressGroup[]
+  contactGroups ContactGroup[]
   contacts      Contact[]
+
+  @@map("accounts")
 }
 
-model AccountWallet {
-  id        String   @id @default(cuid())
-  accountId String
-  walletId  String
-  isCreator Boolean  @default(false)
-  createdAt DateTime @default(now())
+model AccountSigner {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  accountId   String   @map("account_id")
+  isCreator   Boolean  @default(false) @map("is_creator")
+  displayName String?  @map("display_name")
+  createdAt   DateTime @default(now()) @map("created_at")
 
+  user    User    @relation(fields: [userId], references: [id])
   account Account @relation(fields: [accountId], references: [id])
-  wallet  Wallet  @relation(fields: [walletId], references: [id])
 
-  @@unique([accountId, walletId])
+  @@unique([userId, accountId])
+  @@map("account_signers")
 }
 
 model Transaction {
   id     String   @id @default(cuid())
-  txId   Int      @unique @default(autoincrement())
+  txId   Int      @unique @default(autoincrement()) @map("tx_id")
   type   TxType
   status TxStatus @default(PENDING)
   nonce  Int // unique per wallet
@@ -64,157 +70,162 @@ model Transaction {
   // Transfer (ETH only)
   to           String?
   value        String?
-  tokenAddress String? // null for ETH, address for ERC20 
+  tokenAddress String? @map("token_address") // null for ETH, address for ERC20 
 
-  walletAddress String
-  wallet        Wallet @relation(fields: [walletAddress], references: [address])
+  accountAddress String  @map("account_address")
+  account        Account @relation(fields: [accountAddress], references: [address])
 
   // Link to contact for display name (optional)
-  contactId String?
+  contactId String?  @map("contact_id")
   contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
   // Add/Remove Signer
-  signerCommitment String?
+  signerData String? @map("signer_data") // JSON array of {commitment, name}
 
   // Set Threshold
-  newThreshold Int?
+  newThreshold Int? @map("new_threshold")
 
   // Batch data (JSON string of recipients + amounts)
-  batchData String?
+  batchData String? @map("batch_data")
 
   // Metadata
-  createdBy    String // commitment initial
-  threshold    Int // approval threshold at the time of creation
+  createdBy String @map("created_by") // commitment initial
+  threshold Int // approval threshold at the time of creation
 
   // Execution
-  txHash     String?
-  executedAt DateTime?
+  txHash     String?   @map("tx_hash")
+  executedAt DateTime? @map("executed_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   votes Vote[]
 
-  @@unique([walletAddress, nonce])
+  @@unique([accountAddress, nonce])
   @@index([status])
-  @@index([walletAddress])
+  @@index([accountAddress])
   @@index([contactId])
+  @@map("transactions")
 }
 
 model ReservedNonce {
-  id            String   @id @default(cuid())
-  walletAddress String
-  nonce         Int
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
+  id             String   @id @default(cuid())
+  accountAddress String   @map("account_address")
+  nonce          Int
+  expiresAt      DateTime @map("expires_at")
+  createdAt      DateTime @default(now()) @map("created_at")
 
-  @@unique([walletAddress, nonce])
+  @@unique([accountAddress, nonce])
+  @@map("reserved_nonces")
 }
 
 model Vote {
   id              String   @id @default(cuid())
-  txId            Int
-  voterCommitment String
-  voteType        VoteType
+  txId            Int      @map("tx_id")
+  voterCommitment String   @map("voter_commitment")
+  voteType        VoteType @map("vote_type")
 
   // ZK Proof (only APPROVE)
   nullifier   String? // This unique on-chain, but on our backend, it can be duplicate across tx (because txs can have same nonce)
-  jobId       String?      @unique
-  proofStatus ProofStatus?
+  jobId       String?      @unique @map("job_id")
+  proofStatus ProofStatus? @map("proof_status")
 
   // Aggregation data
-  aggregationId    String?
-  domainId         Int?         @default(175)
-  merkleProof      String[]
-  leafCount        Int?
-  leafIndex        Int?
+  aggregationId String?  @map("aggregation_id")
+  domainId      Int?     @default(175) @map("domain_id")
+  merkleProof   String[] @map("merkle_proof")
+  leafCount     Int?     @map("leaf_count")
+  leafIndex     Int?     @map("leaf_index")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   transaction Transaction @relation(fields: [txId], references: [txId])
 
   @@unique([txId, voterCommitment])
   @@index([txId])
   @@index([proofStatus])
+  @@map("votes")
 }
 
 model BatchItem {
   id           String  @id @default(cuid())
-  accountId    String
-  contactId    String?
+  userId       String  @map("user_id")
+  contactId    String? @map("contact_id")
   recipient    String
   amount       String
-  tokenAddress String? // null for ETH, address for ERC20 
+  tokenAddress String? @map("token_address") // null for ETH, address for ERC20 
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
 
-  @@index([accountId])
+  @@index([userId])
+  @@map("batch_items")
 }
 
-model AddressGroup {
+model ContactGroup {
   id        String   @id @default(cuid())
-  walletId  String
+  accountId String   @map("account_id")
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  wallet   Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  contacts ContactGroup[]
+  account  Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contacts ContactGroupEntry[]
 
-  @@unique([walletId, name])
-  @@map("address_groups")
+  @@unique([accountId, name])
+  @@map("contact_groups")
 }
 
 model Contact {
   id        String   @id @default(uuid())
-  walletId  String
+  accountId String   @map("account_id")
   name      String
   address   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  wallet       Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  groups       ContactGroup[]
+  account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  groups       ContactGroupEntry[]
   transactions Transaction[]
   batchItems   BatchItem[]
 
-  @@unique([walletId, name])
-  @@unique([walletId, address])
+  @@unique([accountId, name])
+  @@unique([accountId, address])
   @@map("contacts")
 }
 
-model ContactGroup {
-  contactId String
-  groupId   String
+model ContactGroupEntry {
+  contactId String @map("contact_id")
+  groupId   String @map("group_id")
 
   contact Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  group   AddressGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group   ContactGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@id([contactId, groupId])
-  @@map("contact_groups")
+  @@map("contact_group_entries")
 }
 
 model Notification {
   id String @id @default(cuid())
 
-  recipientId String
-  recipient   Account @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId String @map("recipient_id")
+  recipient   User   @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
 
-  senderId String
-  sender   Account @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId String @map("sender_id")
+  sender   User   @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
 
   type      NotificationType
   read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  createdAt DateTime         @default(now()) @map("created_at")
 
   @@index([recipientId])
   @@index([senderId])
   @@index([read])
+  @@map("notifications")
 }
 
 enum TxType {
@@ -246,4 +257,12 @@ enum ProofStatus {
 
 enum NotificationType {
   COMMITMENT_RECEIVED
+}
+
+model FeatureRequest {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feature_requests")
 }

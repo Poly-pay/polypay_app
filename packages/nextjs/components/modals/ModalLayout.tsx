@@ -29,6 +29,28 @@ const modals: ModalRegistry = {
   developingFeature: dynamic(() => import("./DevelopingFeatureModal"), {
     ssr: false,
   }),
+  removeBatch: dynamic(() => import("./RemoveBatchModal"), {
+    ssr: false,
+  }),
+  createGroup: dynamic(() => import("./CreateGroupModal"), {
+    ssr: false,
+  }),
+  createContact: dynamic(() => import("./CreateContactModal"), {
+    ssr: false,
+  }),
+  deleteContact: dynamic(() => import("./DeleteContactModal"), {
+    ssr: false,
+  }),
+  requestFeature: dynamic(() => import("./RequestFeatureModal"), {
+    ssr: false,
+  }),
+  removeSigner: dynamic(() => import("./RemoveSignerModal"), {
+    ssr: false,
+  }),
+  signerList: dynamic(() => import("./SignerListModal"), {
+    ssr: false,
+  }),
+  switchAccount: dynamic(() => import("./SwitchAccountModal"), { ssr: false }),
 };
 
 type ModalInstance = {

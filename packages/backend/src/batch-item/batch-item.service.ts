@@ -12,18 +12,18 @@ export class BatchItemService {
    * Create new batch item
    */
   async create(dto: CreateBatchItemDto, userCommitment: string) {
-    // Find account by commitment
-    const account = await this.prisma.account.findUnique({
+    // Find user by commitment
+    const user = await this.prisma.user.findUnique({
       where: { commitment: userCommitment },
     });
 
-    if (!account) {
-      throw new NotFoundException('Account not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
     const batchItem = await this.prisma.batchItem.create({
       data: {
-        accountId: account.id,
+        userId: user.id,
         recipient: dto.recipient,
         amount: dto.amount,
         tokenAddress: dto.tokenAddress,
@@ -42,7 +42,7 @@ export class BatchItemService {
    * Get all batch items for account
    */
   async findByCommitment(commitment: string) {
-    const account = await this.prisma.account.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { commitment },
       include: {
         batchItems: {
@@ -52,7 +52,7 @@ export class BatchItemService {
       },
     });
 
-    return account?.batchItems || [];
+    return user?.batchItems || [];
   }
 
   /**
@@ -70,6 +70,9 @@ export class BatchItemService {
     return this.prisma.batchItem.update({
       where: { id },
       data: dto,
+      include: {
+        contact: true,
+      },
     });
   }
 
@@ -93,16 +96,16 @@ export class BatchItemService {
    * Clear all batch items for account
    */
   async clearByCommitment(commitment: string) {
-    const account = await this.prisma.account.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { commitment },
     });
 
-    if (!account) {
+    if (!user) {
       return { deleted: 0 };
     }
 
     const result = await this.prisma.batchItem.deleteMany({
-      where: { accountId: account.id },
+      where: { userId: user.id },
     });
 
     this.logger.log(`Cleared ${result.count} batch items for ${commitment}`);

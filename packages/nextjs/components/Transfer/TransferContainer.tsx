@@ -1,23 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
-import { ContactPicker } from "~~/components/address-book/ContactPicker";
-import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "~~/constants";
+import { ContactPicker } from "~~/components/contact-book/ContactPicker";
+import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
 import { useTransferTransaction } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
 import { useZodForm } from "~~/hooks/form";
 import { TransferFormData, transferSchema } from "~~/lib/form";
-import { useIdentityStore, useWalletStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function TransferContainer() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedToken, setSelectedToken] = useState<Token>(NATIVE_ETH);
-  const [showTokenDropdown, setShowTokenDropdown] = useState(false);
 
-  const { currentWallet: selectedWallet } = useWalletStore();
+  const { currentAccount: selectedAccount } = useAccountStore();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
 
@@ -28,6 +28,27 @@ export default function TransferContainer() {
       amount: "",
     },
   });
+
+  useEffect(() => {
+    // Check for recipient data from sessionStorage
+    const recipientData = sessionStorage.getItem("transferRecipient");
+    if (recipientData) {
+      try {
+        const { address, name, contactId } = JSON.parse(recipientData);
+        form.setValue("recipient", address, { shouldValidate: true });
+        if (contactId) {
+          setSelectedContactId(contactId);
+        }
+        if (name) {
+          notification.info(`Pre-filled address for: ${name}`);
+        }
+        // Clear the data after using it
+        sessionStorage.removeItem("transferRecipient");
+      } catch (error) {
+        console.error("Failed to parse recipient data:", error);
+      }
+    }
+  }, [form]);
 
   const { transfer, isLoading, loadingState } = useTransferTransaction({
     onSuccess: () => {
@@ -112,14 +133,14 @@ export default function TransferContainer() {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-col gap-[20px] items-center justify-center flex-1 px-4">
+      <div className="flex flex-col gap-6 items-center justify-center flex-1 px-4">
         {/* Title section */}
         <div className="flex flex-col items-center justify-center pt-8 relative z-50">
-          <div className="text-grey-900 xl:text-6xl text=3xl text-center font-bold uppercase w-full">transfering</div>
+          <div className="text-6xl text-center font-bold uppercase w-full">transfering</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-grey-900 xl:text-6xl text=3xl text-center font-bold uppercase">t</div>
-            <div className="xl:h-[48px] h-6 relative rounded-full xl:w-[125.07px] w-16 border-[4.648px] border-primary border-solid"></div>
-            <div className="text-grey-900 xl:text-6xl text=3xl text-center font-bold uppercase">anyone</div>
+            <div className="text-6xl text-center font-bold uppercase">t</div>
+            <div className="xl:h-11 h-6 relative rounded-full xl:w-32 w-16 border-[4.648px] border-primary border-solid"></div>
+            <div className="text-6xl text-center font-bold uppercase">anyone</div>
           </div>
         </div>
 
@@ -128,60 +149,23 @@ export default function TransferContainer() {
           <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm">{loadingState}</div>
         )}
 
-        {/* Token selector and amount */}
-        <div className="flex gap-1 items-center justify-center w-full max-w-md">
-          {/* Token selector */}
-          <div className="relative mr-2">
-            <div
-              onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-              className="bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-1 rounded-full border border-grey-200 cursor-pointer hover:border-[#FF7CEB] transition-colors"
-            >
-              <Image
-                src={selectedToken.icon}
-                alt={selectedToken.symbol}
-                width={36}
-                height={36}
-                className="xl:h-9 xl:w-9 w-4 h-4"
-              />
-              <span className="xl:text-sm text-xs font-medium text-gray-700">{selectedToken.symbol}</span>
-              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+        <div className="flex flex-col gap-2 mt-20">
+          <div className="flex gap-2 items-center justify-center w-full">
+            <TokenPillPopover
+              selectedToken={selectedToken}
+              onSelect={(tokenAddress: string) => {
+                const token = SUPPORTED_TOKENS.find(t => t.address === tokenAddress);
+                if (token) {
+                  setSelectedToken(token);
+                }
+              }}
+            />
 
-            {showTokenDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-grey-200 shadow-lg z-10 min-w-[140px]">
-                {SUPPORTED_TOKENS.map(token => (
-                  <div
-                    key={token.address}
-                    onClick={() => {
-                      setSelectedToken(token);
-                      setShowTokenDropdown(false);
-                    }}
-                    className="flex items-center xl:gap-2 gap-1 px-3 py-2 hover:bg-gray-50 cursor-pointer first:rounded-t-lg last:rounded-b-lg"
-                  >
-                    <Image
-                      src={token.icon}
-                      alt={token.symbol}
-                      width={24}
-                      height={24}
-                      className="xl:w-6 xl:h-6 w-3 h-3"
-                    />
-                    <span className="xl:text-sm text-xs font-medium text-gray-700">{token.symbol}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Amount input */}
-          <div className="flex flex-col items-center">
             <input
               {...form.register("amount")}
               type="text"
               placeholder="0.00"
               onChange={e => {
-                // Only allow numbers and decimal point
                 const value = e.target.value;
                 if (value === "" || /^\d*\.?\d*$/.test(value)) {
                   form.setValue("amount", value, { shouldValidate: true });
@@ -190,13 +174,12 @@ export default function TransferContainer() {
               className="text-text-primary text-[44px] uppercase outline-none w-[150px]"
               disabled={isLoading}
             />
-            {form.formState.errors.amount && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.amount.message}</p>
-            )}
           </div>
-          <span className="text-grey-900 text-2xl font-medium">{selectedToken.symbol}</span>
-        </div>
 
+          {form.formState.errors.amount && (
+            <p className="text-red-500 text-xs">{form.formState.errors.amount.message}</p>
+          )}
+        </div>
         {/* Visual divider */}
         <div className="flex flex-col gap-2.5 items-center justify-center w-full max-w-md h-[100px] relative">
           <div className="h-[75.46px] w-full max-w-[528px] flex items-center justify-center relative">
@@ -204,29 +187,28 @@ export default function TransferContainer() {
               <div className="absolute left-1/2 top-0 w-0.5 h-full border-l border-dashed border-gray-300 transform -translate-x-1/2" />
               <div className="absolute left-0 top-1/2 w-full h-0.5 border-t border-dashed border-gray-300 transform -translate-y-1/2" />
             </div>
-            <div className="absolute bg-white rounded-[32.842px] w-8 h-8 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-[1px] border-dashed border-pink-350 shadow-[0_0_20px_rgba(255,124,235,0.5)]">
+            <div className="absolute bg-white rounded-[32.842px] w-8 h-8 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-1 border-dashed shadow-[0 4px 33.5px 0 rgba(26, 32, 111, 0.29)]">
               <div className="text-text-secondary text-[14px] text-center text-grey-800">To</div>
             </div>
           </div>
         </div>
-
         {/* Address input */}
         <div className="flex flex-col gap-[5px] items-center justify-start w-full max-w-xl">
           <div className="flex gap-2.5 items-center justify-center w-full">
-            <div className="bg-white grow min-h-px min-w-px relative rounded-[16px] border border-grey-200 shadow-[0px_0px_10.3px_0px_rgba(135,151,255,0.14),0px_0px_89.5px_0px_rgba(0,0,0,0.05)] p-3 justify-between flex-row flex">
+            <div className="bg-grey-50 grow min-h-px min-w-px relative rounded-2xl border border-grey-200 p-4 justify-between flex-row flex">
               <input
                 {...form.register("recipient")}
                 type="text"
-                placeholder="Enter recipient address (0x...)"
-                className="text-text-secondary text-[16px] outline-none placeholder:text-text-secondary flex-1 w-full"
-                disabled={isLoading}
-              />
-              <ContactPicker
-                walletId={selectedWallet?.id || null}
-                onSelect={handleContactSelect}
+                placeholder="Enter address"
+                className="text-text-secondary outline-none placeholder:text-text-secondary flex-1 w-full font-medium"
                 disabled={isLoading}
               />
             </div>
+            <ContactPicker
+              accountId={selectedAccount?.id || null}
+              onSelect={handleContactSelect}
+              disabled={isLoading}
+            />
           </div>
           {form.formState.errors.recipient && (
             <p className="text-red-500 text-sm">{form.formState.errors.recipient.message}</p>
@@ -238,28 +220,22 @@ export default function TransferContainer() {
           <button
             onClick={handleAddToBatch}
             disabled={isLoading || !watchedAmount || !watchedRecipient}
-            className="bg-pink-350 flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
+            className="bg-main-black flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
           >
-            <span className="font-semibold xl:text-base text-xs text-center text-white tracking-[-0.16px]">
+            <span className="font-medium xl:text-base text-xs text-center text-white tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Add to batch"}
             </span>
           </button>
           <button
             onClick={form.handleSubmit(handleTransfer)}
             disabled={isLoading || !watchedAmount || !watchedRecipient}
-            className="bg-pink-350 flex items-center justify-center px-5 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
+            className="bg-pink-350 flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
-            <span className="font-semibold xl:text-base text-xs text-center text-white tracking-[-0.16px]">
+            <span className="font-medium xl:text-base text-xs text-center tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Transfer now"}
             </span>
           </button>
         </div>
-
-        {/* Info text */}
-        <p className="text-sm text-gray-500 text-center max-w-md">
-          This will create a transfer proposal that requires <span className="font-medium">threshold</span> approvals
-          from signers.
-        </p>
       </div>
     </div>
   );

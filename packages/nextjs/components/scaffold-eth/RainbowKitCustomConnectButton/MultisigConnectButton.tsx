@@ -21,8 +21,8 @@ export const MultisigConnectButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <button className="btn btn-primary btn-sm text-white" onClick={openConnectModal} type="button">
-                    Connect Wallet
+                  <button className="btn btn-primary btn-sm text-black" onClick={openConnectModal} type="button">
+                    <span className="hidden xl:block">Connect Wallet</span>
                   </button>
                 );
               }

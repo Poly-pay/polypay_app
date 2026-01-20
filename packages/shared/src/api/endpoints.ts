@@ -1,29 +1,29 @@
 export const API_ENDPOINTS = {
-  wallets: {
-    base: "/api/wallets",
-    byAddress: (address: string) => `/api/wallets/${address}`,
-  },
-
   accounts: {
     base: "/api/accounts",
-    me: "/api/accounts/me",
-    meWallets: "/api/accounts/me/wallets",
+    byAddress: (address: string) => `/api/accounts/${address}`,
   },
 
-  addressBook: {
+  users: {
+    base: "/api/users",
+    me: "/api/users/me",
+    meAccounts: "/api/users/me/accounts",
+  },
+
+  contactBook: {
     groups: {
-      base: "/api/address-book/groups",
-      byId: (id: string) => `/api/address-book/groups/${id}`,
-      byWallet: (walletId: string) =>
-        `/api/address-book/groups?walletId=${walletId}`,
+      base: "/api/contact-book/groups",
+      byId: (id: string) => `/api/contact-book/groups/${id}`,
+      byAccount: (accountId: string) =>
+        `/api/contact-book/groups?accountId=${accountId}`,
     },
     contacts: {
-      base: "/api/address-book/contacts",
-      byId: (id: string) => `/api/address-book/contacts/${id}`,
-      byWallet: (walletId: string, groupId?: string) => {
-        const params = new URLSearchParams({ walletId });
+      base: "/api/contact-book/contacts",
+      byId: (id: string) => `/api/contact-book/contacts/${id}`,
+      byAccount: (accountId: string, groupId?: string) => {
+        const params = new URLSearchParams({ accountId });
         if (groupId) params.append("groupId", groupId);
-        return `/api/address-book/contacts?${params}`;
+        return `/api/contact-book/contacts?${params}`;
       },
     },
   },
@@ -37,8 +37,8 @@ export const API_ENDPOINTS = {
   transactions: {
     base: "/api/transactions",
     byTxId: (txId: number) => `/api/transactions/${txId}`,
-    byWallet: (walletAddress: string, status?: string) => {
-      const params = new URLSearchParams({ walletAddress });
+    byAccount: (accountAddress: string, status?: string) => {
+      const params = new URLSearchParams({ accountAddress });
       if (status) params.append("status", status);
       return `/api/transactions?${params}`;
     },
@@ -64,5 +64,13 @@ export const API_ENDPOINTS = {
   auth: {
     login: "/api/auth/login",
     refresh: "/api/auth/refresh",
+  },
+
+  prices: {
+    base: "/api/prices",
+  },
+
+  featureRequests: {
+    base: "/api/feature-requests",
   },
 } as const;

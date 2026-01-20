@@ -1,2 +1,2 @@
-export { CreateBatchItemDto } from "./create-batch-item.dto";
-export { UpdateBatchItemDto } from "./update-batch-item.dto";
+export * from "./create-batch-item.dto";
+export * from "./update-batch-item.dto";

@@ -1,6 +1,6 @@
 export interface BatchItem {
   id: string;
-  accountId: string;
+  userId: string;
   recipient: string;
   amount: string;
   tokenAddress?: string;

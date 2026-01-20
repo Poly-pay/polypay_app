@@ -4,24 +4,23 @@ import React, { useState } from "react";
 import Image from "next/image";
 import ReceiveModal from "../modals/QRAddressReceiverModal";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
-import { notification } from "~~/utils/scaffold-eth";
+import { useAccountStore, useSidebarStore } from "~~/services/store";
+import { copyToClipboard } from "~~/utils/copy";
 
 interface SuccessScreenProps {
   className?: string;
-  walletName: string;
-  walletAddress: string;
 }
 
-const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, walletAddress }) => {
+const SuccessScreen: React.FC<SuccessScreenProps> = ({ className }) => {
   const router = useAppRouter();
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
 
-  const handleCopyAddress = () => {
-    navigator.clipboard.writeText(walletAddress);
-    notification.success("Wallet address copied to clipboard!");
-  };
+  const { currentAccount } = useAccountStore();
+  const { openManageAccountsWithExpand } = useSidebarStore();
 
-  const handleSeeWallet = () => {
+  const handleSeeAccount = () => {
+    // Open manage accounts sidebar and expand the new account
+    openManageAccountsWithExpand(currentAccount?.id || "");
     router.goToDashboard();
   };
 
@@ -34,9 +33,9 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
           <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">successfully</div>
           <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">created</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
-            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">wa</div>
+            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">acc</div>
             <div className="h-[48px] relative rounded-full w-[125.07px] border-[4.648px] border-primary border-solid"></div>
-            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">et</div>
+            <div className="text-grey-1000 text-6xl text-center font-semibold uppercase">unt</div>
           </div>
         </div>
 
@@ -46,7 +45,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
             <div className="absolute left-0 top-1/2 w-full h-0.5 border-t border-dashed border-gray-300 transform -translate-y-1/2" />
           </div>
           <Image
-            src="/new-wallet/apple.svg"
+            src="/new-account/apple.svg"
             alt="Success Icon"
             width={75}
             height={75}
@@ -56,38 +55,42 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, walletName, wa
 
         <div className="bg-gray-50 rounded-2xl p-8 w-full max-w-lg border-[1px] border-gray-200 shadow-sm">
           <div className="text-center">
-            <h3 className="text-grey-900 text-[32px] font-medium mb-4">{walletName}</h3>
+            <h3 className="text-grey-950 text-[32px] font-medium mb-4">{currentAccount?.name}</h3>
             <span className="block border-b-[1px] border-gray-200 w-full "></span>
 
             <div
-              className="text-[24px] text-violet-300 leading-relaxed break-all px-2 cursor-pointer hover:bg-gray-200 rounded py-2 transition-colors font-repetition"
-              onClick={handleCopyAddress}
+              className="text-[24px] text-violet-300 leading-relaxed break-all px-2 cursor-pointer hover:bg-gray-200 rounded py-2 transition-colors font-family-repetition"
+              onClick={() => copyToClipboard(currentAccount?.address || "", "Address copied to clipboard!")}
               title="Click to copy"
             >
-              {walletAddress}
+              {currentAccount?.address}
             </div>
 
             <span className="block border-b-[1px] border-gray-200 w-full mb-4 "></span>
 
             <div className="flex gap-4 items-center justify-center w-full">
               <button
-                onClick={handleSeeWallet}
+                onClick={handleSeeAccount}
                 className="flex-1 bg-grey-1000 flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
               >
-                <span className="font-semibold text-[16px] text-center text-white">See your wallet</span>
+                <span className="font-semibold text-[16px] text-center text-white">See your account</span>
               </button>
               <button
                 onClick={() => setIsReceiveModalOpen(true)}
                 className="flex-1 bg-primary flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
               >
-                <span className="font-semibold text-[16px] text-center text-white">Fund your wallet</span>
+                <span className="font-semibold text-[16px] text-center text-black">Fund your account</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <ReceiveModal isOpen={isReceiveModalOpen} onClose={() => setIsReceiveModalOpen(false)} address={walletAddress} />
+      <ReceiveModal
+        isOpen={isReceiveModalOpen}
+        onClose={() => setIsReceiveModalOpen(false)}
+        address={currentAccount?.address || ""}
+      />
     </div>
   );
 };

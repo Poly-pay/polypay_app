@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { copyToClipboard } from "~~/utils/copy";
+import { useContacts } from "~~/hooks";
 import { formatAddress } from "~~/utils/format";
 
 interface TransactionSummaryProps {
@@ -18,6 +18,7 @@ interface TransactionSummaryProps {
   className?: string;
   isLoading?: boolean;
   loadingState?: string;
+  accountId: string | null;
 }
 
 const TransactionSummary: React.FC<TransactionSummaryProps> = ({
@@ -26,63 +27,74 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
   className,
   isLoading = false,
   loadingState = "",
+  accountId,
 }) => {
+  const { data: contacts = [] } = useContacts(accountId);
   return (
-    <div
-      className={`bg-white relative rounded-lg h-full overflow-hidden border border-primary ${className} transition-all`}
-    >
-      {/* Header Section */}
-      <div className="flex flex-col gap-3 items-start justify-start p-3 w-full">
-        {/* <img src="/misc/shopping-bag.svg" alt="Batch transactions" className="w-20 h-20" /> */}
-        <div className="flex flex-col gap-[3px] items-start justify-start w-full">
-          <div className="font-semibold text-grey-950 text-2xl tracking-[-0.72px] uppercase w-full">
-            Transactions summary
-          </div>
-          <div className="text-grey-500 text-lg tracking-[-0.54px] w-full">
-            Please review the selected transactions and confirm to propose them.
+    <div className={`bg-white relative rounded-lg h-full overflow-hidden ${className} transition-all`}>
+      <div className="p-5">
+        {/* Header Section */}
+        <div className="flex flex-col gap-3 items-start justify-start  w-full">
+          <Image src="/batch/tx-summary.svg" alt="Batch transactions" width={74} height={57} />
+          <div className="flex flex-col items-start justify-start w-full mt-3 gap-1">
+            <div className="font-semibold text-grey-950 text-2xl tracking-[-0.72px] uppercase w-full">
+              Transactions summary
+            </div>
+            <div className="text-grey-700 text-sm tracking-[-0.54px] w-full">
+              Please review the information below and confirm to <br /> make the transaction.
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Transactions List */}
-      <div className="flex flex-col gap-0.5 max-h-[400px] items-center justify-start px-3 py-0 w-full overflow-y-auto">
-        {transactions.map(transaction => (
-          <div key={transaction.id} className="bg-grey-50 flex gap-3 items-center justify-start p-3 w-full rounded">
-            {/* Amount with Token Icon */}
-            <div className="grow flex items-center gap-1 text-grey-950 text-[16px]">
-              {transaction.tokenIcon && (
-                <Image src={transaction.tokenIcon} alt={transaction.tokenSymbol || "token"} width={20} height={20} />
-              )}
-              {transaction.amount}
-            </div>
+        {/* Transactions List */}
+        <div className="flex flex-col gap-0.5 max-h-[400px] items-center justify-start w-full overflow-y-auto mt-10">
+          {transactions.map(transaction => {
+            const matchedContact = contacts.find(
+              contact => contact.address.toLowerCase() === transaction.recipient.toLowerCase(),
+            );
 
-            {/* Arrow */}
-            <div className="relative w-16">
-              {/* <img src="/arrow/thin-long-arrow-right.svg" alt="arrow" className="w-full h-full" /> */}
-            </div>
+            return (
+              <div
+                key={transaction.id}
+                className="bg-grey-50 flex gap-3 items-center justify-between p-3 w-full rounded-lg"
+              >
+                {/* Amount with Token Icon */}
+                <div className="flex items-center gap-1 text-grey-950 text-[16px]">
+                  {transaction.tokenIcon && (
+                    <Image
+                      src={transaction.tokenIcon}
+                      alt={transaction.tokenSymbol || "token"}
+                      width={20}
+                      height={20}
+                    />
+                  )}
+                  {transaction.amount}
+                </div>
 
-            {/* Recipient */}
-            <div className="text-grey-950 text-[16px]">
-              To: [{" "}
-              {transaction.contactName ? (
-                <>
-                  <span className="font-medium">{transaction.contactName}</span>
-                  <span
-                    className="text-gray-500 ml-1 cursor-pointer"
-                    onClick={() => copyToClipboard(transaction.recipient)}
+                {/* Arrow */}
+                <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={100} height={100} />
+
+                {/* Recipient */}
+                {matchedContact ? (
+                  <div
+                    className={`flex items-center gap-1 text-black text-xs font-medium bg-white rounded-full w-fit pl-1 pr-4 py-1`}
                   >
-                    ({formatAddress(transaction.recipient)})
+                    <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} />
+                    <div className="max-w-24 overflow-hidden truncate">
+                      <span className="font-medium">{matchedContact.name}</span>
+                      <span>{"(" + `${formatAddress(transaction.recipient, { start: 3, end: 3 }) + ")"}`}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="px-2 py-1 rounded-full flex item-center gap-1 text-xs font-medium text-black bg-white">
+                    <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} />
+                    <span>{formatAddress(transaction.recipient, { start: 3, end: 3 })}</span>
                   </span>
-                </>
-              ) : (
-                <span className="cursor-pointer" onClick={() => copyToClipboard(transaction.recipient)}>
-                  {formatAddress(transaction.recipient)}
-                </span>
-              )}
-              ]
-            </div>
-          </div>
-        ))}
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Confirm Button Section */}
@@ -90,12 +102,10 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
         <button
           onClick={onConfirm}
           disabled={isLoading || transactions.length === 0}
-          className="bg-gradient-to-b from-[#48b3ff] to-blue-600 flex items-center justify-center px-5 py-3 rounded-[10px] shadow-[0px_2px_4px_-1px_rgba(12,12,106,0.5),0px_0px_0px_1px_#4470ff] w-full disabled:opacity-50 cursor-pointer"
+          className="flex items-center justify-center px-5 py-3 rounded-lg w-full disabled:opacity-50 bg-main-pink"
         >
-          <span className="font-semibold text-[16px] text-center text-white tracking-[-0.16px]">
-            {isLoading
-              ? loadingState || "Processing..."
-              : `Propose ${transactions.length} transaction${transactions.length > 1 ? "s" : ""}`}
+          <span className="font-semibold text-sm text-center">
+            {isLoading ? loadingState || "Processing..." : `Execute`}
           </span>
         </button>
       </div>

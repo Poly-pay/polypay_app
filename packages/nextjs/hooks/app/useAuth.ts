@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { accountKeys } from "../api";
+import { userKeys } from "../api";
 import { useAuthProof } from "./useAuthProof";
 import { useQueryClient } from "@tanstack/react-query";
 import { authApi } from "~~/services/api";
@@ -48,7 +48,7 @@ export const useAuth = () => {
       setTokens(data.accessToken, data.refreshToken);
 
       // Invalidate me query to fetch latest account info
-      queryClient.invalidateQueries({ queryKey: accountKeys.me });
+      queryClient.invalidateQueries({ queryKey: userKeys.me });
 
       return true;
     } catch (err: any) {

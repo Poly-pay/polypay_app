@@ -12,9 +12,9 @@ export async function truncateAllTables(app: INestApplication): Promise<void> {
   // Delete in order: child tables first
   await prisma.vote.deleteMany({});
   await prisma.transaction.deleteMany({});
-  await prisma.accountWallet.deleteMany({});
-  await prisma.wallet.deleteMany({});
+  await prisma.accountSigner.deleteMany({});
   await prisma.account.deleteMany({});
+  await prisma.user.deleteMany({});
 
   console.log("All tables truncated");
 }

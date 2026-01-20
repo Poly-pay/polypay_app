@@ -1,4 +1,4 @@
-import { formatTokenAmount, getTokenByAddress } from "~~/constants";
+import { formatTokenAmount, getTokenByAddress } from "@polypay/shared";
 
 /**
  * Format amount with token symbol
@@ -19,10 +19,16 @@ export function formatAmount(amount: string, tokenAddress?: string | null): stri
 /**
  * Format address to short form
  * @param address - Full address
+ * @param options - Slice options { start: number, end: number }
  * @returns Shortened address like "0x1234...5678"
  */
-export function formatAddress(address: string): string {
+export function formatAddress(address: string, options?: { start?: number; end?: number }): string {
   if (!address) return "";
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+  const start = options?.start ?? 6;
+  const end = options?.end ?? 4;
+  const minLength = start + end;
+
+  if (address.length <= minLength) return address;
+  return `${address.slice(0, start)}...${address.slice(-end)}`;
 }

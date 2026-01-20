@@ -2,29 +2,31 @@
 
 import React from "react";
 import Image from "next/image";
-import { ISigner } from "~~/types/form/wallet";
+import { ISigner } from "~~/types/form/account";
+import { getValidSigners } from "~~/utils/signer";
 
 interface StatusContainerProps {
   className?: string;
-  walletName: string;
+  accountName: string;
   currentStep: number;
   signers: ISigner[];
   threshold: number;
-  onCreateWallet: () => void;
+  onCreateAccount: () => void;
   loading: boolean;
   isFormValid: boolean;
 }
 
 const StatusContainer: React.FC<StatusContainerProps> = ({
   className,
-  walletName,
+  accountName,
   currentStep,
   signers,
   threshold,
-  onCreateWallet,
+  onCreateAccount,
   loading,
   isFormValid,
 }) => {
+  const validSignersToShow = getValidSigners(signers);
   return (
     <div
       className={`bg-white relative rounded-lg h-full flex flex-col ${className} border border-divider justify-between`}
@@ -51,17 +53,17 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
           </div>
         </div>
 
-        {/* Wallet Name Card */}
+        {/* Account Name Card */}
         <div className="bg-[url('/common/bg-main.png')] bg-no-repeat bg-cover rounded-2xl w-full flex flex-col items-center justify-center relative h-[200px] gap-2 overflow-hidden p-3">
           <Image
-            src="/new-wallet/wallet-avatar.svg"
-            alt="Wallet"
+            src="/new-account/account-avatar.svg"
+            alt="Account"
             className="w-50 h-50 opacity-80"
             width={200}
             height={200}
           />
-          <span className="text-white text-[22px] py-1 font-semibold px-4 text-center w-[80%] rounded-lg bg-[#00000078]">
-            {walletName || "Your wallet name"}
+          <span className="text-white text-sm lg:text-[22px] py-1 font-semibold px-4 text-center w-[80%] rounded-lg bg-[#00000078]">
+            {accountName || "Your account name"}
           </span>
         </div>
 
@@ -69,7 +71,9 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
         <div className="bg-gray-50 rounded-xl w-full border border-gray-200 flex flex-col flex-1 overflow-hidden">
           <div className="p-4 border-b border-gray-200">
             <span className="text-grey-1000 text-[16px] font-semibold">
-              {currentStep === 1 ? "2. Signers & Confirmations" : `2. Signers & Confirmations (${signers.length})`}
+              {currentStep === 1
+                ? "2. Signers & Confirmations"
+                : `2. Signers & Confirmations (${validSignersToShow.length})`}
             </span>
           </div>
 
@@ -77,15 +81,15 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
             {currentStep === 1 ? (
               // Step 1 - Placeholder
               <div className="flex flex-col gap-3 items-center justify-center h-full">
-                <Image src="/new-wallet/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
+                <Image src="/new-account/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
                 <span className="text-grey-1000 text-[14px]">Setup on next step</span>
               </div>
             ) : (
               // Step 2 - Show signers
               <div className="flex flex-col gap-3">
-                {signers.length > 0 ? (
+                {validSignersToShow.length > 0 ? (
                   <>
-                    {signers.map((signer, index) => (
+                    {validSignersToShow.map((signer, index) => (
                       <div
                         key={index}
                         className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200"
@@ -105,11 +109,14 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
                     ))}
 
                     {/* Threshold info */}
-                    <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <span className="text-blue-700 text-[13px]">
-                        Threshold: <strong>{threshold}</strong> of <strong>{signers.length}</strong> signers required
-                      </span>
-                    </div>
+                    {isFormValid && (
+                      <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <span className="text-blue-700 text-[13px]">
+                          Threshold: <strong>{threshold}</strong> of <strong>{validSignersToShow.length}</strong>{" "}
+                          signers required
+                        </span>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full">
@@ -125,16 +132,18 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
       {/* Create Button */}
       <div className="bg-gray-50 w-full px-5 py-4 border-t border-gray-200">
         <button
-          onClick={onCreateWallet}
+          onClick={onCreateAccount}
           disabled={currentStep < 2 || loading || !isFormValid}
           className={`flex items-center justify-center px-5 py-3 rounded-xl w-full transition-all ${
-            currentStep >= 2 && isFormValid && !loading
+            currentStep == 2 && isFormValid && !loading
               ? "bg-primary hover:shadow-lg cursor-pointer"
               : "bg-gray-300 cursor-not-allowed"
           }`}
         >
-          <span className="flex items-center gap-3 font-semibold text-[16px] text-white">
-            {loading ? "Creating your wallet..." : "Create your wallet"}
+          <span
+            className={`flex items-center gap-3 font-semibold xl:text-[16px] text-sm ${isFormValid && !loading ? "text-black" : "text-white"}`}
+          >
+            {loading ? "Creating your account..." : "Create your account"}
             {loading && (
               <div className="animate-spin h-6 w-6 rounded-full border-2 border-white border-t-transparent" />
             )}

@@ -1,48 +1,50 @@
 import { encodeFunctionData, type Hex } from "viem";
 
 /**
- * Encode addSigner function call
+ * Encode addSigners function call
  */
-export function encodeAddSigner(commitment: string, newThreshold: number): Hex {
-  return encodeFunctionData({
-    abi: [
-      {
-        name: "addSigner",
-        type: "function",
-        inputs: [
-          { name: "newCommitment", type: "uint256" },
-          { name: "newSigRequired", type: "uint256" },
-        ],
-      },
-    ],
-    functionName: "addSigner",
-    args: [BigInt(commitment), BigInt(newThreshold)],
-  });
-}
-
-/**
- * Encode removeSigner function call
- */
-export function encodeRemoveSigner(
-  commitment: string,
+export function encodeAddSigners(
+  commitments: string[],
   newThreshold: number,
 ): Hex {
   return encodeFunctionData({
     abi: [
       {
-        name: "removeSigner",
+        name: "addSigners",
         type: "function",
         inputs: [
-          { name: "commitment", type: "uint256" },
+          { name: "newCommitments", type: "uint256[]" },
           { name: "newSigRequired", type: "uint256" },
         ],
       },
     ],
-    functionName: "removeSigner",
-    args: [BigInt(commitment), BigInt(newThreshold)],
+    functionName: "addSigners",
+    args: [commitments.map((c) => BigInt(c)), BigInt(newThreshold)],
   });
 }
 
+/**
+ * Encode removeSigners function call
+ */
+export function encodeRemoveSigners(
+  commitments: string[],
+  newThreshold: number,
+): Hex {
+  return encodeFunctionData({
+    abi: [
+      {
+        name: "removeSigners",
+        type: "function",
+        inputs: [
+          { name: "commitmentsToRemove", type: "uint256[]" },
+          { name: "newSigRequired", type: "uint256" },
+        ],
+      },
+    ],
+    functionName: "removeSigners",
+    args: [commitments.map((c) => BigInt(c)), BigInt(newThreshold)],
+  });
+}
 /**
  * Encode updateSignaturesRequired function call
  */

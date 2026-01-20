@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { BackButton } from "./Common/BackButton";
 import Title from "./Common/Title";
 import { InitializeApp } from "./InitializeApp";
 import Sidebar from "./Sidebar/Sidebar";
@@ -11,11 +12,14 @@ import { useTheme } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
-import { useCommitmentGuard, useEnforceNetwork } from "~~/hooks";
+import Routes from "~~/configs/routes.config";
+import { useCommitmentGuard, useEnforceNetwork, useMyAccounts } from "~~/hooks";
 import { useMobileDetection } from "~~/hooks/app/useMobileDetection";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useSocketConnection } from "~~/hooks/app/useSocketConnection";
 import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
 import { queryClient } from "~~/services/queryClient";
+import { useIdentityStore } from "~~/services/store";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
@@ -25,18 +29,51 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   useSocketConnection();
   useCommitmentGuard();
 
+  const { pathname } = useAppRouter();
+  const { data: accounts } = useMyAccounts();
+  const { commitment } = useIdentityStore();
+
+  const initialAccountCountRef = useRef<number | null>(null);
+
+  // Detect flow
+  const isNewAccountPage = pathname === Routes.DASHBOARD.subroutes.NEW_ACCOUNT.path;
+  const wasOnboarding = initialAccountCountRef.current === 0;
+  // hide sidebar if on new account page and user has at least one account
+  const shouldHideSidebar = isNewAccountPage && !wasOnboarding && accounts && accounts.length > 0 && commitment;
+  // disable sidebar interactions if on new account page and user has no accounts
+  const shouldDisableSidebar = (isNewAccountPage && accounts?.length === 0) || !commitment;
+
+  useEffect(() => {
+    if (isNewAccountPage && accounts !== undefined) {
+      if (initialAccountCountRef.current === null) {
+        initialAccountCountRef.current = accounts.length;
+      }
+    } else {
+      // Reset when leaving new-account page
+      initialAccountCountRef.current = null;
+    }
+  }, [isNewAccountPage, accounts]);
+
   return (
     <>
       <InitializeApp>
-        <div className="h-screen grid grid-cols-12 overflow-hidden">
-          {/* Sidebar fixed */}
-          <aside className="xl:col-span-2 col-span-1 max-h-screen">
-            <Sidebar />
-          </aside>
+        <div className="h-screen flex overflow-hidden">
+          {/* Sidebar - hidden when on new account page and user has accounts */}
+          {!shouldHideSidebar && (
+            <aside className="shrink-0 max-h-screen p-3">
+              <Sidebar disabled={shouldDisableSidebar} />
+            </aside>
+          )}
+
           {/* Main content */}
-          <main className="xl:col-span-10 col-span-11 py-3 pr-3">
+          <main className={`flex-1 ${shouldHideSidebar ? "p-3" : "py-3 pr-3"}`}>
             <section className="flex flex-col gap-2 h-full max-h-screen">
-              <Title />
+              {/* Title row with Back button */}
+              <div className="flex items-center gap-2">
+                {shouldHideSidebar && <BackButton />}
+                <Title />
+              </div>
+
               <div className="flex-1 content h-full rounded-lg bg-white overflow-auto animate-height-smooth">
                 {children}
               </div>

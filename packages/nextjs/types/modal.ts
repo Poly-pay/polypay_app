@@ -14,4 +14,17 @@ export type ModalComponent = React.ComponentType<ModalProps>;
 
 export type ModalRegistry = Record<string, ModalComponent>;
 
-export type ModalName = "qrAddressReceiver" | "generateCommitment" | "confirm" | "editAccount" | "developingFeature";
+export type ModalName =
+  | "qrAddressReceiver"
+  | "generateCommitment"
+  | "confirm"
+  | "editAccount"
+  | "developingFeature"
+  | "removeBatch"
+  | "createGroup"
+  | "createContact"
+  | "deleteContact"
+  | "requestFeature"
+  | "removeSigner"
+  | "signerList"
+  | "switchAccount";

@@ -4,6 +4,7 @@ export interface Vote {
   id: string;
   txId: number;
   voterCommitment: string;
+  voterName: string | null;
   voteType: VoteType;
   nullifier?: string;
   proofStatus?: ProofStatus;

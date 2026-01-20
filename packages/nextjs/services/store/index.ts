@@ -1,2 +1,3 @@
 export { useIdentityStore } from "./useIdentityStore";
-export { useWalletStore } from "./useWalletStore";
+export { useAccountStore } from "./useAccountStore";
+export { useSidebarStore } from "./useSidebarStore";

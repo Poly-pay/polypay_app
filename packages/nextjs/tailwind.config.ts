@@ -15,6 +15,7 @@ const config: Config = {
           "navy-blue": "var(--color-main-navy-blue)",
           black: "var(--color-main-black)",
           white: "var(--color-main-white)",
+          magenta: "var(--color-main-magenta)",
         },
         grey: {
           0: "var(--color-grey-0)",
@@ -33,6 +34,7 @@ const config: Config = {
           1000: "var(--color-grey-1000)",
         },
         red: {
+          25: "var(--color-red-25)",
           50: "var(--color-red-50)",
           100: "var(--color-red-100)",
           200: "var(--color-red-200)",
@@ -51,6 +53,7 @@ const config: Config = {
           150: "var(--color-green-150)",
           200: "var(--color-green-200)",
           300: "var(--color-green-300)",
+          325: "var(--color-green-325)",
           400: "var(--color-green-400)",
           500: "var(--color-green-500)",
           600: "var(--color-green-600)",
@@ -60,15 +63,19 @@ const config: Config = {
           950: "var(--color-green-950)",
         },
         pink: {
+          25: "var(--color-pink-25)",
           50: "var(--color-pink-50)",
+          75: "var(--color-pink-75)",
           100: "var(--color-pink-100)",
           150: "var(--color-pink-150)",
+          175: "var(--color-pink-175)",
           200: "var(--color-pink-200)",
           300: "var(--color-pink-300)",
           350: "var(--color-pink-350)",
           400: "var(--color-pink-400)",
           450: "var(--color-pink-450)",
           500: "var(--color-pink-500)",
+          550: "var(--color-pink-550)",
           600: "var(--color-pink-600)",
           700: "var(--color-pink-700)",
           800: "var(--color-pink-800)",
@@ -76,16 +83,24 @@ const config: Config = {
           950: "var(--color-pink-950)",
         },
         blue: {
+          50: "var(--color-blue-50)",
           100: "var(--color-blue-100)",
+          550: "var(--color-blue-550)",
           600: "var(--color-blue-600)",
         },
         violet: {
+          25: "var(--color-violet-25)",
           50: "var(--color-violet-50)",
+          100: "var(--color-violet-100)",
           300: "var(--color-violet-300)",
         },
         lime: {
           50: "var(--color-lime-50)",
           100: "var(--color-lime-100)",
+        },
+        orange: {
+          50: "var(--color-orange-50)",
+          500: "var(--color-orange-500)",
         },
       },
       boxShadow: {
@@ -97,6 +112,10 @@ const config: Config = {
       borderRadius: {
         field: "var(--radius-field)",
         box: "var(--radius-box)",
+      },
+      fontFamily: {
+        barlow: "var(--font-barlow), sans-serif",
+        repetition: "var(--font-repetition), sans-serif",
       },
     },
   },

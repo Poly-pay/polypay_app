@@ -1,9 +1,10 @@
-export { Account } from "./account";
-export { Wallet, WalletSigner } from "./wallet";
-export { Vote } from "./vote";
-export { Transaction } from "./transaction";
-export { BatchItem } from "./batch-item";
-export { AddressGroup, Contact } from "./address-book";
-export { Notification } from "./notification";
+export * from "./user";
+export * from "./account";
+export * from "./vote";
+export * from "./transaction";
+export * from "./batch-item";
+export * from "./contact-book";
+export * from "./notification";
 export * from "./socket-events";
 export * from "./auth";
+export * from "./feature-request";

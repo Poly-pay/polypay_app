@@ -11,8 +11,6 @@ import {
   CreateTransactionDto,
   ApproveTransactionDto,
   TxType,
-  encodeAddSigner,
-  encodeRemoveSigner,
   encodeUpdateThreshold,
   encodeBatchTransferMulti,
   encodeERC20Transfer,
@@ -28,10 +26,16 @@ import {
   TxStatusEventData,
   PaginatedResponse,
   DEFAULT_PAGE_SIZE,
+  encodeAddSigners,
+  encodeRemoveSigners,
+  SignerData,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
-import { DOMAIN_ID_HORIZEN_TESTNET } from '@/common/constants';
+import {
+  DOMAIN_ID_HORIZEN_TESTNET,
+  NOT_MEMBER_OF_ACCOUNT,
+} from '@/common/constants';
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 
@@ -51,16 +55,16 @@ export class TransactionService {
    * Create transaction with txId from smart contract nonce
    */
   async createTransaction(dto: CreateTransactionDto, userCommitment: string) {
-    // Check if user is a member of the wallet
-    const membership = await this.prisma.accountWallet.findFirst({
+    // Check if user is a signer of the account
+    const membership = await this.prisma.accountSigner.findFirst({
       where: {
-        wallet: { address: dto.walletAddress },
-        account: { commitment: userCommitment },
+        account: { address: dto.accountAddress },
+        user: { commitment: userCommitment },
       },
     });
 
     if (!membership) {
-      throw new ForbiddenException('You are not a member of this wallet');
+      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
     }
 
     // 1. Validate based on type
@@ -69,7 +73,7 @@ export class TransactionService {
     // 2. Validate nonce is reserved
     const reserved = await this.prisma.reservedNonce.findFirst({
       where: {
-        walletAddress: dto.walletAddress,
+        accountAddress: dto.accountAddress,
         nonce: dto.nonce,
         expiresAt: { gt: new Date() },
       },
@@ -81,15 +85,15 @@ export class TransactionService {
       );
     }
 
-    // 3. Check wallet exists and get total signers count
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { address: dto.walletAddress },
-      include: { accounts: true },
+    // 3. Check account exists and get total signers count
+    const account = await this.prisma.account.findUnique({
+      where: { address: dto.accountAddress },
+      include: { signers: true },
     });
 
-    if (!wallet) {
+    if (!account) {
       throw new NotFoundException(
-        `Wallet ${dto.walletAddress} not found. Please create wallet first.`,
+        `Account ${dto.accountAddress} not found. Please create account first.`,
       );
     }
 
@@ -145,13 +149,13 @@ export class TransactionService {
         data: {
           nonce: dto.nonce,
           type: dto.type,
-          walletAddress: dto.walletAddress,
+          accountAddress: dto.accountAddress,
           threshold: dto.threshold,
           to: dto.to,
           value: dto.value,
           tokenAddress: dto.tokenAddress,
           contactId: dto.contactId,
-          signerCommitment: dto.signerCommitment,
+          signerData: dto.signers ? JSON.stringify(dto.signers) : null,
           newThreshold: dto.newThreshold,
           createdBy: userCommitment,
           status: 'PENDING',
@@ -189,10 +193,10 @@ export class TransactionService {
     const eventData: TxCreatedEventData = {
       txId: transaction.txId,
       type: transaction.type as TxType,
-      walletAddress: transaction.walletAddress,
+      accountAddress: transaction.accountAddress,
     };
-    this.eventsService.emitToWallet(
-      dto.walletAddress,
+    this.eventsService.emitToAccount(
+      dto.accountAddress,
       TX_CREATED_EVENT,
       eventData,
     );
@@ -268,6 +272,11 @@ export class TransactionService {
       throw new BadRequestException('Proof verification failed');
     }
 
+    const voterName = await this.getSignerDisplayName(
+      transaction.accountAddress,
+      userCommitment,
+    );
+
     // 5. Create vote
     const vote = await this.prisma.vote.create({
       data: {
@@ -295,12 +304,13 @@ export class TransactionService {
       approveCount,
       vote: {
         ...vote,
+        voterName,
         voteType: vote.voteType as VoteType,
         proofStatus: vote.proofStatus as ProofStatus,
       },
     };
-    this.eventsService.emitToWallet(
-      transaction.walletAddress,
+    this.eventsService.emitToAccount(
+      transaction.accountAddress,
       TX_VOTED_EVENT,
       eventData,
     );
@@ -373,6 +383,11 @@ export class TransactionService {
       where: { txId, voteType: VoteType.APPROVE },
     });
 
+    const voterName = await this.getSignerDisplayName(
+      transaction.accountAddress,
+      userCommitment,
+    );
+
     // Emit realtime event
     const eventData: TxVotedEventData = {
       txId,
@@ -380,12 +395,13 @@ export class TransactionService {
       approveCount,
       vote: {
         ...vote,
+        voterName,
         voteType: vote.voteType as VoteType,
         proofStatus: vote.proofStatus as ProofStatus,
       },
     };
-    this.eventsService.emitToWallet(
-      transaction.walletAddress,
+    this.eventsService.emitToAccount(
+      transaction.accountAddress,
       TX_VOTED_EVENT,
       eventData,
     );
@@ -420,30 +436,30 @@ export class TransactionService {
   }
 
   /**
-   * Get transactions for a wallet with cursor-based pagination
+   * Get transactions for an account with cursor-based pagination
    */
   async getTransactions(
-    walletAddress: string,
+    accountAddress: string,
     userCommitment: string,
     status?: string,
     limit: number = DEFAULT_PAGE_SIZE,
     cursor?: string,
   ): Promise<PaginatedResponse<any>> {
-    // Check if user is a member of the wallet
+    // Check if user is a signer of the account
     if (userCommitment) {
-      const membership = await this.prisma.accountWallet.findFirst({
+      const membership = await this.prisma.accountSigner.findFirst({
         where: {
-          wallet: { address: walletAddress },
-          account: { commitment: userCommitment },
+          account: { address: accountAddress },
+          user: { commitment: userCommitment },
         },
       });
 
       if (!membership) {
-        throw new ForbiddenException('You are not a member of this wallet');
+        throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
       }
     }
 
-    const where: any = { walletAddress };
+    const where: any = { accountAddress };
     if (status) {
       where.status = status;
     }
@@ -456,6 +472,17 @@ export class TransactionService {
           orderBy: { createdAt: 'asc' },
         },
         contact: true,
+        account: {
+          include: {
+            signers: {
+              include: {
+                user: {
+                  select: { commitment: true },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -469,7 +496,36 @@ export class TransactionService {
     const hasMore = transactions.length > limit;
 
     // Remove extra item if exists
-    const data = hasMore ? transactions.slice(0, limit) : transactions;
+    const rawData = hasMore ? transactions.slice(0, limit) : transactions;
+
+    // Transform data to include voterName in votes
+    const data = rawData.map((tx) => {
+      // Create map: commitment -> displayName
+      const signerMap = new Map(
+        tx.account.signers.map((s) => [s.user.commitment, s.displayName]),
+      );
+
+      // Parse signerData from JSON string to object
+      let parsedSignerData = null;
+      if (tx.signerData) {
+        try {
+          parsedSignerData = JSON.parse(tx.signerData);
+        } catch {
+          parsedSignerData = null;
+        }
+      }
+
+      return {
+        ...tx,
+        votes: tx.votes.map((vote) => ({
+          ...vote,
+          voterName: signerMap.get(vote.voterCommitment) || null,
+        })),
+        signerData: parsedSignerData,
+        // Remove account.signers from response to reduce payload
+        account: undefined,
+      };
+    });
 
     // Get next cursor from last item
     const nextCursor =
@@ -481,18 +537,11 @@ export class TransactionService {
       hasMore,
     };
   }
+
   /**
    * Get execution data for smart contract
    */
-  async getExecutionData(txId: number) {
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { txId },
-    });
-
-    if (!transaction) {
-      throw new NotFoundException(`Transaction ${txId} not found`);
-    }
-
+  async getExecutionData(txId: number, transaction: Transaction) {
     // Aggregate all pending proofs (poll until all aggregated)
     await this.aggregateProofs(txId);
 
@@ -500,8 +549,8 @@ export class TransactionService {
     const approveVotes = await this.prisma.vote.findMany({
       where: {
         txId,
-        voteType: 'APPROVE',
-        proofStatus: 'AGGREGATED',
+        voteType: VoteType.APPROVE,
+        proofStatus: ProofStatus.AGGREGATED,
       },
     });
 
@@ -528,7 +577,7 @@ export class TransactionService {
     return {
       txId,
       nonce: transaction.nonce,
-      walletAddress: transaction.walletAddress,
+      accountAddress: transaction.accountAddress,
       to,
       value,
       data,
@@ -551,99 +600,148 @@ export class TransactionService {
         throw new NotFoundException(`Transaction ${txId} not found`);
       }
 
-      // Handle ADD_SIGNER: create Account + AccountWallet link
-      if (
-        transaction.type === TxType.ADD_SIGNER &&
-        transaction.signerCommitment
-      ) {
-        const wallet = await tx.wallet.findUnique({
-          where: { address: transaction.walletAddress },
-        });
-
-        if (wallet) {
-          // Upsert account for new signer
-          const account = await tx.account.upsert({
-            where: { commitment: transaction.signerCommitment },
-            create: { commitment: transaction.signerCommitment },
-            update: {},
-          });
-
-          // Create AccountWallet link (ignore if already exists)
-          await tx.accountWallet.upsert({
-            where: {
-              accountId_walletId: {
-                accountId: account.id,
-                walletId: wallet.id,
-              },
-            },
-            create: {
-              accountId: account.id,
-              walletId: wallet.id,
-              isCreator: false,
-            },
-            update: {},
-          });
-
-          this.logger.log(
-            `Added signer ${transaction.signerCommitment} to wallet ${wallet.address}`,
-          );
-        }
-      }
-
-      // Handle REMOVE_SIGNER: delete AccountWallet link + delete pending votes
-      if (
-        transaction.type === 'REMOVE_SIGNER' &&
-        transaction.signerCommitment
-      ) {
-        const wallet = await tx.wallet.findUnique({
-          where: { address: transaction.walletAddress },
-        });
+      // Handle ADD_SIGNER: create User + AccountSigner link
+      if (transaction.type === TxType.ADD_SIGNER && transaction.signerData) {
+        const signers: SignerData[] = JSON.parse(transaction.signerData);
 
         const account = await tx.account.findUnique({
-          where: { commitment: transaction.signerCommitment },
+          where: { address: transaction.accountAddress },
         });
 
-        if (wallet && account) {
-          await tx.accountWallet.deleteMany({
-            where: {
-              accountId: account.id,
-              walletId: wallet.id,
-            },
-          });
+        if (account) {
+          // Loop through all signers to add
+          for (const signer of signers) {
+            // Upsert user for new signer
+            const user = await tx.user.upsert({
+              where: { commitment: signer.commitment },
+              create: { commitment: signer.commitment },
+              update: {},
+            });
 
-          this.logger.log(
-            `Removed signer ${transaction.signerCommitment} from wallet ${wallet.address}`,
-          );
-        }
+            // Create AccountSigner link with displayName
+            await tx.accountSigner.upsert({
+              where: {
+                userId_accountId: {
+                  userId: user.id,
+                  accountId: account.id,
+                },
+              },
+              create: {
+                userId: user.id,
+                accountId: account.id,
+                isCreator: false,
+                displayName: signer.name || null,
+              },
+              update: {
+                displayName: signer.name || undefined,
+              },
+            });
 
-        // Delete all pending votes from removed signer (same wallet only)
-        const deletedVotes = await tx.vote.deleteMany({
-          where: {
-            voterCommitment: transaction.signerCommitment,
-            transaction: {
-              walletAddress: transaction.walletAddress,
-              status: { in: ['PENDING'] },
-            },
-          },
-        });
+            this.logger.log(
+              `Added signer ${signer.commitment} (${signer.name || 'no name'}) to account ${account.address}`,
+            );
+          }
 
-        if (deletedVotes.count > 0) {
-          this.logger.log(
-            `Deleted ${deletedVotes.count} pending votes from removed signer ${transaction.signerCommitment}`,
-          );
+          // Update threshold for pending transactions if newThreshold exists
+          if (transaction.newThreshold) {
+            const updatedTxs = await tx.transaction.updateMany({
+              where: {
+                accountAddress: transaction.accountAddress,
+                status: TxStatus.PENDING,
+                txId: { not: txId },
+              },
+              data: {
+                threshold: transaction.newThreshold,
+              },
+            });
+
+            if (updatedTxs.count > 0) {
+              this.logger.log(
+                `Updated threshold to ${transaction.newThreshold} for ${updatedTxs.count} pending transactions`,
+              );
+            }
+          }
         }
       }
 
-      // Handle SET_THRESHOLD: update threshold for all pending transactions in the same wallet
+      // Handle REMOVE_SIGNER: delete AccountSigner link + delete pending votes
+      if (transaction.type === TxType.REMOVE_SIGNER && transaction.signerData) {
+        const signers: SignerData[] = JSON.parse(transaction.signerData);
+
+        const account = await tx.account.findUnique({
+          where: { address: transaction.accountAddress },
+        });
+
+        if (account) {
+          // Loop through all signers to remove
+          for (const signer of signers) {
+            const user = await tx.user.findUnique({
+              where: { commitment: signer.commitment },
+            });
+
+            if (user) {
+              await tx.accountSigner.deleteMany({
+                where: {
+                  userId: user.id,
+                  accountId: account.id,
+                },
+              });
+
+              this.logger.log(
+                `Removed signer ${signer.commitment} from account ${account.address}`,
+              );
+            }
+
+            // Delete all pending votes from removed signer (same account only)
+            const deletedVotes = await tx.vote.deleteMany({
+              where: {
+                voterCommitment: signer.commitment,
+                transaction: {
+                  accountAddress: transaction.accountAddress,
+                  status: { in: ['PENDING'] },
+                },
+              },
+            });
+
+            if (deletedVotes.count > 0) {
+              this.logger.log(
+                `Deleted ${deletedVotes.count} pending votes from removed signer ${signer.commitment}`,
+              );
+            }
+          }
+        }
+
+        // Update threshold for pending transactions if newThreshold exists
+        if (transaction.newThreshold) {
+          const updatedTxs = await tx.transaction.updateMany({
+            where: {
+              accountAddress: transaction.accountAddress,
+              status: TxStatus.PENDING,
+              txId: { not: txId },
+            },
+            data: {
+              threshold: transaction.newThreshold,
+            },
+          });
+
+          if (updatedTxs.count > 0) {
+            this.logger.log(
+              `Updated threshold to ${transaction.newThreshold} for ${updatedTxs.count} pending transactions`,
+            );
+          }
+        }
+      }
+
+      // Handle SET_THRESHOLD: update threshold for all pending transactions in the same account
       if (
         transaction.type === TxType.SET_THRESHOLD &&
         transaction.newThreshold
       ) {
         const updatedTxs = await tx.transaction.updateMany({
           where: {
-            walletAddress: transaction.walletAddress,
+            accountAddress: transaction.accountAddress,
             status: TxStatus.PENDING,
-            txId: { not: txId }, // Exclude current transaction
+            txId: { not: txId },
           },
           data: {
             threshold: transaction.newThreshold,
@@ -652,7 +750,7 @@ export class TransactionService {
 
         if (updatedTxs.count > 0) {
           this.logger.log(
-            `Updated threshold to ${transaction.newThreshold} for ${updatedTxs.count} pending transactions in wallet ${transaction.walletAddress}`,
+            `Updated threshold to ${transaction.newThreshold} for ${updatedTxs.count} pending transactions in account ${transaction.accountAddress}`,
           );
         }
       }
@@ -667,14 +765,14 @@ export class TransactionService {
         },
       });
 
-      // emit event for status update
+      // Emit event for status update
       const eventData: TxStatusEventData = {
         txId,
         status: TxStatus.EXECUTED,
         txHash,
       };
-      this.eventsService.emitToWallet(
-        transaction.walletAddress,
+      this.eventsService.emitToAccount(
+        transaction.accountAddress,
         TX_STATUS_EVENT,
         eventData,
       );
@@ -687,13 +785,29 @@ export class TransactionService {
    * Execute transaction on-chain via relayer
    */
   async executeOnChain(txId: number) {
+    // Check transaction exists
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { txId },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException(`Transaction ${txId} not found`);
+    }
+
+    // Mark as EXECUTING
+    await this.updateStatusAndEmit(
+      txId,
+      transaction.accountAddress,
+      TxStatus.EXECUTING,
+    );
+
     // 1. Get execution data
-    const executionData = await this.getExecutionData(txId);
+    const executionData = await this.getExecutionData(txId, transaction);
 
     try {
       // 2. Execute via relayer (includes balance check + receipt verification)
       const { txHash } = await this.relayerService.executeTransaction(
-        executionData.walletAddress,
+        executionData.accountAddress,
         executionData.nonce,
         executionData.to,
         executionData.value,
@@ -708,6 +822,13 @@ export class TransactionService {
     } catch (error) {
       this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
 
+      // Revert to PENDING on failure
+      await this.updateStatusAndEmit(
+        txId,
+        executionData.accountAddress,
+        TxStatus.PENDING,
+      );
+
       // Parse error message for user-friendly response
       if (error.message?.includes('Insufficient wallet balance')) {
         // Extract amounts from error message
@@ -721,7 +842,7 @@ export class TransactionService {
           const requiredEth = Number(required) / 1e18;
           const availableEth = Number(available) / 1e18;
           throw new BadRequestException(
-            `Insufficient wallet balance. Required: ${requiredEth.toFixed(6)} ETH, Available: ${availableEth.toFixed(6)} ETH`,
+            `Insufficient account balance. Required: ${requiredEth.toFixed(6)} ETH, Available: ${availableEth.toFixed(6)} ETH`,
           );
         }
       }
@@ -739,17 +860,17 @@ export class TransactionService {
     }
   }
 
-  async reserveNonce(walletAddress: string, userCommitment: string) {
-    // Check if user is a member of the wallet
-    const membership = await this.prisma.accountWallet.findFirst({
+  async reserveNonce(accountAddress: string, userCommitment: string) {
+    // Check if user is a signer of the account
+    const membership = await this.prisma.accountSigner.findFirst({
       where: {
-        wallet: { address: walletAddress },
-        account: { commitment: userCommitment },
+        account: { address: accountAddress },
+        user: { commitment: userCommitment },
       },
     });
 
     if (!membership) {
-      throw new ForbiddenException('You are not a member of this wallet');
+      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -760,13 +881,13 @@ export class TransactionService {
 
       // 2. Find next available nonce
       const maxTxNonce = await tx.transaction.findFirst({
-        where: { walletAddress },
+        where: { accountAddress },
         orderBy: { nonce: 'desc' },
         select: { nonce: true },
       });
 
       const maxReservedNonce = await tx.reservedNonce.findFirst({
-        where: { walletAddress },
+        where: { accountAddress },
         orderBy: { nonce: 'desc' },
         select: { nonce: true },
       });
@@ -780,7 +901,7 @@ export class TransactionService {
       const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
 
       await tx.reservedNonce.create({
-        data: { walletAddress, nonce: nextNonce, expiresAt },
+        data: { accountAddress, nonce: nextNonce, expiresAt },
       });
 
       return { nonce: nextNonce, expiresAt };
@@ -798,18 +919,32 @@ export class TransactionService {
         break;
 
       case TxType.ADD_SIGNER:
-        if (!dto.signerCommitment || dto.newThreshold === undefined) {
+        if (
+          !dto.signers ||
+          dto.signers.length === 0 ||
+          dto.newThreshold === undefined
+        ) {
           throw new BadRequestException(
-            'Add signer requires "signerCommitment" and "newThreshold"',
+            'Add signer requires "signers" (array of {commitment, name?}) and "newThreshold"',
           );
+        }
+        if (dto.signers.length > 10) {
+          throw new BadRequestException('Maximum 10 signers per transaction');
         }
         break;
 
       case TxType.REMOVE_SIGNER:
-        if (!dto.signerCommitment || dto.newThreshold === undefined) {
+        if (
+          !dto.signers ||
+          dto.signers.length === 0 ||
+          dto.newThreshold === undefined
+        ) {
           throw new BadRequestException(
-            'Remove signer requires "signerCommitment" and "newThreshold"',
+            'Remove signer requires "signers" (array of {commitment, name?}) and "newThreshold"',
           );
+        }
+        if (dto.signers.length > 10) {
+          throw new BadRequestException('Maximum 10 signers per transaction');
         }
         break;
 
@@ -827,6 +962,25 @@ export class TransactionService {
         }
         break;
     }
+  }
+
+  private async updateStatusAndEmit(
+    txId: number,
+    accountAddress: string,
+    status: TxStatus,
+    txHash?: string,
+  ) {
+    await this.prisma.transaction.update({
+      where: { txId },
+      data: { status },
+    });
+
+    const eventData: TxStatusEventData = { txId, status, txHash };
+    this.eventsService.emitToAccount(
+      accountAddress,
+      TX_STATUS_EVENT,
+      eventData,
+    );
   }
 
   private buildExecuteParams(transaction: Transaction): {
@@ -854,29 +1008,37 @@ export class TransactionService {
           data: '0x',
         };
 
-      case TxType.ADD_SIGNER:
+      case TxType.ADD_SIGNER: {
+        const signers: SignerData[] = transaction.signerData
+          ? JSON.parse(transaction.signerData)
+          : [];
         return {
-          to: transaction.walletAddress,
+          to: transaction.accountAddress,
           value: '0',
-          data: encodeAddSigner(
-            transaction.signerCommitment,
+          data: encodeAddSigners(
+            signers.map((s) => s.commitment),
             transaction.newThreshold,
           ),
         };
+      }
 
-      case TxType.REMOVE_SIGNER:
+      case TxType.REMOVE_SIGNER: {
+        const signers: SignerData[] = transaction.signerData
+          ? JSON.parse(transaction.signerData)
+          : [];
         return {
-          to: transaction.walletAddress,
+          to: transaction.accountAddress,
           value: '0',
-          data: encodeRemoveSigner(
-            transaction.signerCommitment,
+          data: encodeRemoveSigners(
+            signers.map((s) => s.commitment),
             transaction.newThreshold,
           ),
         };
+      }
 
       case TxType.SET_THRESHOLD:
         return {
-          to: transaction.walletAddress,
+          to: transaction.accountAddress,
           value: '0',
           data: encodeUpdateThreshold(transaction.newThreshold),
         };
@@ -899,7 +1061,7 @@ export class TransactionService {
         if (hasERC20) {
           // Use batchTransferMulti for mixed transfers
           return {
-            to: transaction.walletAddress,
+            to: transaction.accountAddress,
             value: '0',
             data: encodeBatchTransferMulti(recipients, amounts, tokenAddresses),
           };
@@ -907,7 +1069,7 @@ export class TransactionService {
 
         // Use original batchTransfer for ETH-only
         return {
-          to: transaction.walletAddress,
+          to: transaction.accountAddress,
           value: '0',
           data: encodeBatchTransfer(recipients, amounts),
         };
@@ -919,15 +1081,15 @@ export class TransactionService {
 
   /**
    * Check if transaction should be marked as FAILED
-   * Query totalSigners realtime from wallet.accounts
+   * Query totalSigners realtime from account.signers
    */
   private async checkIfFailed(txId: number) {
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
       include: {
         votes: true,
-        wallet: {
-          include: { accounts: true },
+        account: {
+          include: { signers: true },
         },
       },
     });
@@ -935,7 +1097,7 @@ export class TransactionService {
     if (!transaction) return;
 
     // Get totalSigners realtime
-    const totalSigners = transaction.wallet.accounts.length;
+    const totalSigners = transaction.account.signers.length;
 
     const approveCount = transaction.votes.filter(
       (v) => v.voteType === VoteType.APPROVE,
@@ -960,8 +1122,8 @@ export class TransactionService {
         txId,
         status: TxStatus.FAILED,
       };
-      this.eventsService.emitToWallet(
-        transaction.walletAddress,
+      this.eventsService.emitToAccount(
+        transaction.accountAddress,
         TX_STATUS_EVENT,
         eventData,
       );
@@ -1081,5 +1243,18 @@ export class TransactionService {
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async getSignerDisplayName(
+    accountAddress: string,
+    commitment: string,
+  ): Promise<string | null> {
+    const signer = await this.prisma.accountSigner.findFirst({
+      where: {
+        account: { address: accountAddress },
+        user: { commitment },
+      },
+    });
+    return signer?.displayName || null;
   }
 }
