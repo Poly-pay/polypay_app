@@ -37,6 +37,7 @@ const config: HardhatUserConfig = {
       },
     ],
   },
+  // defaultNetwork: "horizenMainnet",
   defaultNetwork: "horizenTestnet",
   // defaultNetwork: "localhost",
   namedAccounts: {
@@ -130,6 +131,11 @@ const config: HardhatUserConfig = {
       url: "https://horizen-testnet.rpc.caldera.xyz/http",
       accounts: [deployerPrivateKey],
       chainId: 2651420,
+    },
+    horizenMainnet: {
+      url: "https://horizen.calderachain.xyz/http",
+      accounts: [deployerPrivateKey],
+      chainId: 26514,
     },
   },
   // Configuration for harhdat-verify plugin

@@ -103,10 +103,14 @@ export class ZkVerifyService {
       numberOfPublicInputs,
     );
 
+    const network = (this.configService.get<string>(CONFIG_KEYS.APP_NETWORK) ||
+      'testnet') as NetworkType;
+
     const params = {
       proofType: 'ultraplonk',
       vkRegistered: true,
-      chainId: this.chain.id,
+      // chainId: this.chain.id,
+      chainId: network === NetworkValue.mainnet ? 8453 : 2651420,
       proofOptions: {
         numberOfPublicInputs,
       },
