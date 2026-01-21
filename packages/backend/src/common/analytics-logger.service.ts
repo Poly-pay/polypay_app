@@ -27,7 +27,12 @@ export class AnalyticsLoggerService {
       const delay = Math.floor(Math.random() * 500);
 
       setTimeout(() => {
-        fs.appendFileSync(this.logPath, logEntry, 'utf8');
+        try {
+          this.ensureLogDirectoryExists();
+          fs.appendFileSync(this.logPath, logEntry, 'utf8');
+        } catch (error) {
+          this.logger.error(`Failed to write analytics log: ${error.message}`);
+        }
       }, delay);
 
       this.logger.debug(
@@ -100,7 +105,12 @@ export class AnalyticsLoggerService {
       const delay = Math.floor(Math.random() * 500);
 
       setTimeout(() => {
-        fs.appendFileSync(this.logPath, logEntry, 'utf8');
+        try {
+          this.ensureLogDirectoryExists();
+          fs.appendFileSync(this.logPath, logEntry, 'utf8');
+        } catch (error) {
+          this.logger.error(`Failed to write analytics log: ${error.message}`);
+        }
       }, delay);
 
       this.logger.debug(
