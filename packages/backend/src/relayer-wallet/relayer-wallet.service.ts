@@ -6,11 +6,7 @@ import {
   decodeFunctionData,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import {
-  getChain,
-  getContractConfig,
-  NetworkType,
-} from '@polypay/shared';
+import { getChain, getContractConfig, NetworkType } from '@polypay/shared';
 import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
@@ -74,7 +70,7 @@ export class RelayerService {
       args: [
         this.contractConfig.zkVerifyAddress,
         this.contractConfig.vkHash,
-        BigInt(this.contractConfig.chainId),
+        BigInt(this.chain.id),
         commitmentsBigInt,
         BigInt(threshold),
       ],
