@@ -33,11 +33,11 @@ import {
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
 import {
-  DOMAIN_ID_HORIZEN_TESTNET,
   NOT_MEMBER_OF_ACCOUNT,
 } from '@/common/constants';
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
+import { getDomainId } from '@/common/utils/proof';
 
 @Injectable()
 export class TransactionService {
@@ -171,7 +171,7 @@ export class TransactionService {
           nullifier: dto.nullifier,
           jobId: proofResult.jobId,
           proofStatus: 'PENDING',
-          domainId: DOMAIN_ID_HORIZEN_TESTNET,
+          domainId: getDomainId(),
         },
       });
 
@@ -286,7 +286,7 @@ export class TransactionService {
         nullifier: dto.nullifier,
         jobId: proofResult.jobId,
         proofStatus: ProofStatus.PENDING,
-        domainId: DOMAIN_ID_HORIZEN_TESTNET,
+        domainId: getDomainId(),
       },
     });
 
@@ -568,7 +568,7 @@ export class TransactionService {
       commitment: vote.voterCommitment,
       nullifier: vote.nullifier,
       aggregationId: vote.aggregationId,
-      domainId: vote.domainId ?? DOMAIN_ID_HORIZEN_TESTNET,
+      domainId: getDomainId(),
       zkMerklePath: vote.merkleProof,
       leafCount: vote.leafCount,
       index: vote.leafIndex,
