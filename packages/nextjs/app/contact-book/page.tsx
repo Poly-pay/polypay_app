@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Contact, ContactGroup } from "@polypay/shared";
 import { Search } from "lucide-react";
+import { ContactDetailDrawer } from "~~/components/contact-book/ContactDetailDrawer";
 import { ContactList } from "~~/components/contact-book/ContactList";
 import { EditContact } from "~~/components/contact-book/Editcontact";
 import { modalManager } from "~~/components/modals/ModalLayout";
@@ -21,6 +22,7 @@ export default function AddressBookPage() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [editing, setEditing] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { data: groups = [], refetch: refetchGroups } = useGroups(accountId);
@@ -65,8 +67,14 @@ export default function AddressBookPage() {
     setSelectedGroupId(groupId);
     setSelectedContact(null);
     setEditing(false);
+    setIsDrawerOpen(false);
     setSearchTerm("");
     refetchContacts();
+  };
+
+  const handleSelectContact = (contact: Contact) => {
+    setSelectedContact(contact);
+    setIsDrawerOpen(true);
   };
 
   const handleGroupSuccess = () => {
@@ -98,8 +106,8 @@ export default function AddressBookPage() {
 
   return (
     <section className="grid grid-cols-12 h-full gap-1">
-      <div className="col-span-8 bg-[#FFFFFFB2] rounded-lg border-2 border-white shadow-2xl">
-        <div className="container mx-auto p-6 h-full flex flex-col">
+      <div className="lg:col-span-8 col-span-12 bg-[#FFFFFFB2] rounded-lg border-2 border-white shadow-2xl">
+        <div className="lg:mx-auto mx-5 p-6 h-full flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-4xl text-main-black">Contact Book</h1>
 
@@ -194,11 +202,11 @@ export default function AddressBookPage() {
             contacts={filteredContacts}
             isLoading={isLoadingContacts}
             selectedContactId={selectedContact?.id || null}
-            onSelectContact={setSelectedContact}
+            onSelectContact={handleSelectContact}
           />
         </div>
       </div>
-      <div className="col-span-4 relative rounded-lg">
+      <div className="hidden lg:block lg:col-span-4 relative rounded-lg">
         {!editing && (
           <div>
             <div
@@ -292,6 +300,28 @@ export default function AddressBookPage() {
           </div>
         )}
       </div>
+      <ContactDetailDrawer
+        isOpen={isDrawerOpen}
+        contact={selectedContact}
+        accountId={accountId}
+        editing={editing}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setEditing(false);
+          setSelectedContact(null);
+        }}
+        onEdit={() => setEditing(!editing)}
+        onTransfer={handleTransfer}
+        onSuccess={() => {
+          refetchContacts();
+        }}
+        onDelete={() => {
+          refetchContacts();
+          setSelectedContact(null);
+          setEditing(false);
+          setIsDrawerOpen(false);
+        }}
+      />
     </section>
   );
 }

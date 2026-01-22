@@ -8,7 +8,6 @@ import { ModalProps } from "~~/types/modal";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
 
-
 const SignerListModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { data: account } = useAccount(metaMultiSigWallet?.address || "");
