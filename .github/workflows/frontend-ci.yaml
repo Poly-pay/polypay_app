@@ -9,7 +9,7 @@ on:
       - "packages/nextjs/**"
       - "packages/shared/**"
       - "docker/frontend.Dockerfile"
-      - ".github/frontend-ci.yaml"
+      - ".github/workflows/frontend-ci.yaml"
 
 jobs:
   build-and-push:
