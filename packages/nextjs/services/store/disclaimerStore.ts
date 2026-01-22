@@ -73,11 +73,11 @@ export const useDisclaimerStore = create<DisclaimerState>()(
     }),
     {
       name: "polypay-disclaimer",
-      partialize: (state) => ({
+      partialize: state => ({
         agreedAt: state.agreedAt,
         dontShowFor30Days: state.dontShowFor30Days,
       }),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => state => {
         state?.setHasHydrated(true);
       },
     },

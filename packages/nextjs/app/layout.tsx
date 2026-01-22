@@ -1,12 +1,12 @@
 import { Barlow } from "next/font/google";
 import localFont from "next/font/local";
 import "@rainbow-me/rainbowkit/styles.css";
+import { DisclaimerChecker } from "~~/components/Common/DisclaimerChecker";
 import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithProviders";
 import { ThemeProvider } from "~~/components/ThemeProvider";
 import { ModalLayout } from "~~/components/modals/ModalLayout";
 import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
-import { DisclaimerChecker } from "~~/components/Common/DisclaimerChecker";
 
 const barlow = Barlow({
   subsets: ["latin"],
