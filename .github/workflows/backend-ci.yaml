@@ -37,7 +37,7 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_BACKEND_IMAGE }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
           docker build \
             --platform linux/amd64 \
@@ -52,7 +52,7 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_BACKEND_IMAGE }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
           CLOUD_RUN_SERVICE: polypay-backend
         run: |
           gcloud run deploy ${CLOUD_RUN_SERVICE} \
