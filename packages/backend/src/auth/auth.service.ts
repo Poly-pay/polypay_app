@@ -30,19 +30,18 @@ export class AuthService {
   async login(dto: LoginDto) {
     const { commitment } = dto;
 
-    // 1. Verify proof with zkVerify
     this.logger.log(`Verifying auth proof for commitment: ${commitment}`);
 
+    let proofResult;
     try {
-      const proofResult =
-        await this.zkVerifyService.submitProofAndWaitFinalized(
-          {
-            proof: dto.proof,
-            publicInputs: dto.publicInputs,
-            vk: dto.vk,
-          },
-          'auth',
-        );
+      proofResult = await this.zkVerifyService.submitProofAndWaitFinalized(
+        {
+          proof: dto.proof,
+          publicInputs: dto.publicInputs,
+          vk: dto.vk,
+        },
+        'auth',
+      );
 
       if (proofResult.status === 'Failed') {
         throw new BadRequestException('Proof verification failed');
@@ -52,7 +51,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid proof');
     }
 
-    // 2. Find or create user
     let user = await this.prisma.user.findUnique({
       where: { commitment },
     });
@@ -64,12 +62,19 @@ export class AuthService {
       });
     }
 
-    // 3. Analytics logging (isolated - NOT stored in database)
     if (dto.walletAddress) {
-      this.analyticsLogger.logLogin(dto.walletAddress);
+      this.analyticsLogger.logLogin(dto.walletAddress, proofResult.txHash);
+
+      await this.prisma.loginHistory.create({
+        data: {
+          commitment,
+          walletAddress: dto.walletAddress,
+          jobId: proofResult.jobId,
+          zkVerifyTxHash: proofResult.txHash,
+        },
+      });
     }
 
-    // 4. Generate tokens
     const tokens = this.generateTokens(commitment);
 
     this.logger.log(`Login successful for commitment: ${commitment}`);

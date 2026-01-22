@@ -48,7 +48,7 @@ function parseLogFile(logPath: string): AllStats {
 
   for (const line of lines) {
     const parts = line.split(' | ');
-    if (parts.length < 5) continue;
+    if (parts.length < 6) continue;
 
     const action = parts[1];
     const userAddress = parts[2];

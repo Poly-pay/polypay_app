@@ -174,6 +174,7 @@ export class TransactionService {
           jobId: proofResult.jobId,
           proofStatus: 'PENDING',
           domainId: DOMAIN_ID_HORIZEN_TESTNET,
+          zkVerifyTxHash: proofResult.txHash,
         },
       });
 
@@ -195,6 +196,7 @@ export class TransactionService {
       dto.userAddress,
       transaction.accountAddress,
       transaction.nonce,
+      proofResult.txHash,
     );
 
     if (dto.type === TxType.ADD_SIGNER) {
@@ -202,18 +204,21 @@ export class TransactionService {
         dto.userAddress,
         transaction.accountAddress,
         transaction.nonce,
+        proofResult.txHash,
       );
     } else if (dto.type === TxType.REMOVE_SIGNER) {
       this.analyticsLogger.logRemoveSigner(
         dto.userAddress,
         transaction.accountAddress,
         transaction.nonce,
+        proofResult.txHash,
       );
     } else if (dto.type === TxType.SET_THRESHOLD) {
       this.analyticsLogger.logUpdateThreshold(
         dto.userAddress,
         transaction.accountAddress,
         transaction.nonce,
+        proofResult.txHash,
       );
     }
 
@@ -315,6 +320,7 @@ export class TransactionService {
         jobId: proofResult.jobId,
         proofStatus: ProofStatus.PENDING,
         domainId: DOMAIN_ID_HORIZEN_TESTNET,
+        zkVerifyTxHash: proofResult.txHash,
       },
     });
 
@@ -324,6 +330,7 @@ export class TransactionService {
       dto.userAddress,
       transaction.accountAddress,
       transaction.nonce,
+      proofResult.txHash,
     );
 
     if (transaction.type === TxType.ADD_SIGNER) {
@@ -331,18 +338,21 @@ export class TransactionService {
         dto.userAddress,
         transaction.accountAddress,
         transaction.nonce,
+        proofResult.txHash,
       );
     } else if (transaction.type === TxType.REMOVE_SIGNER) {
       this.analyticsLogger.logRemoveSigner(
         dto.userAddress,
         transaction.accountAddress,
         transaction.nonce,
+        proofResult.txHash,
       );
     } else if (transaction.type === TxType.SET_THRESHOLD) {
       this.analyticsLogger.logUpdateThreshold(
         dto.userAddress,
         transaction.accountAddress,
         transaction.nonce,
+        proofResult.txHash,
       );
     }
 

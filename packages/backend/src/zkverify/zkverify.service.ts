@@ -81,7 +81,7 @@ export class ZkVerifyService {
       vk?: string;
     },
     circuitType: CircuitType = 'transaction',
-  ): Promise<{ jobId: string; status: string }> {
+  ): Promise<{ jobId: string; status: string; txHash?: string }> {
     const proofUint8 = new Uint8Array(dto.proof);
     const numberOfPublicInputs = dto.publicInputs?.length || 1;
     const vk = await this.loadOrRegisterVk(
@@ -123,12 +123,12 @@ export class ZkVerifyService {
 
     this.logger.log(`Proof submitted, jobId: ${submitResponse.data.jobId}`);
 
-    // Wait for IncludedInBlock (finalized)
     const result = await this.waitForFinalized(submitResponse.data.jobId);
 
     return {
       jobId: submitResponse.data.jobId,
       status: result.status,
+      txHash: result.txHash,
     };
   }
 

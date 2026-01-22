@@ -125,12 +125,11 @@ model Vote {
   voterCommitment String   @map("voter_commitment")
   voteType        VoteType @map("vote_type")
 
-  // ZK Proof (only APPROVE)
-  nullifier   String? // This unique on-chain, but on our backend, it can be duplicate across tx (because txs can have same nonce)
-  jobId       String?      @unique @map("job_id")
-  proofStatus ProofStatus? @map("proof_status")
+  nullifier      String?  @map("nullifier")
+  jobId          String?  @unique @map("job_id")
+  proofStatus    ProofStatus? @map("proof_status")
+  zkVerifyTxHash String?  @map("zkverify_tx_hash")
 
-  // Aggregation data
   aggregationId String?  @map("aggregation_id")
   domainId      Int?     @default(175) @map("domain_id")
   merkleProof   String[] @map("merkle_proof")
@@ -265,4 +264,17 @@ model FeatureRequest {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("feature_requests")
+}
+
+model LoginHistory {
+  id             String   @id @default(cuid())
+  commitment     String
+  walletAddress  String   @map("wallet_address")
+  jobId          String   @map("job_id")
+  zkVerifyTxHash String?  @map("zkverify_tx_hash")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([commitment])
+  @@index([walletAddress])
+  @@map("login_history")
 }

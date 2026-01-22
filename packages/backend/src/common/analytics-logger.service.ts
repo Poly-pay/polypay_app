@@ -19,10 +19,11 @@ export class AnalyticsLoggerService {
     }
   }
 
-  logLogin(walletAddress: string) {
+  logLogin(walletAddress: string, zkVerifyTxHash?: string) {
     try {
       const timestamp = new Date().toISOString();
-      const logEntry = `${timestamp} | LOGIN | ${walletAddress}\n`;
+      const txHash = zkVerifyTxHash || 'PENDING';
+      const logEntry = `${timestamp} | LOGIN | ${walletAddress} | ${txHash}\n`;
 
       const delay = Math.floor(Math.random() * 500);
 
@@ -47,8 +48,15 @@ export class AnalyticsLoggerService {
     userAddress: string | undefined,
     accountAddress: string,
     nonce: number,
+    zkVerifyTxHash?: string,
   ) {
-    this.logAction('APPROVE', userAddress, accountAddress, nonce);
+    this.logAction(
+      'APPROVE',
+      userAddress,
+      accountAddress,
+      nonce,
+      zkVerifyTxHash,
+    );
   }
 
   logExecute(
@@ -71,24 +79,45 @@ export class AnalyticsLoggerService {
     userAddress: string | undefined,
     accountAddress: string,
     nonce: number,
+    zkVerifyTxHash?: string,
   ) {
-    this.logAction('ADD_SIGNER', userAddress, accountAddress, nonce);
+    this.logAction(
+      'ADD_SIGNER',
+      userAddress,
+      accountAddress,
+      nonce,
+      zkVerifyTxHash,
+    );
   }
 
   logRemoveSigner(
     userAddress: string | undefined,
     accountAddress: string,
     nonce: number,
+    zkVerifyTxHash?: string,
   ) {
-    this.logAction('REMOVE_SIGNER', userAddress, accountAddress, nonce);
+    this.logAction(
+      'REMOVE_SIGNER',
+      userAddress,
+      accountAddress,
+      nonce,
+      zkVerifyTxHash,
+    );
   }
 
   logUpdateThreshold(
     userAddress: string | undefined,
     accountAddress: string,
     nonce: number,
+    zkVerifyTxHash?: string,
   ) {
-    this.logAction('UPDATE_THRESHOLD', userAddress, accountAddress, nonce);
+    this.logAction(
+      'UPDATE_THRESHOLD',
+      userAddress,
+      accountAddress,
+      nonce,
+      zkVerifyTxHash,
+    );
   }
 
   private logAction(
@@ -96,11 +125,13 @@ export class AnalyticsLoggerService {
     userAddress: string | undefined,
     accountAddress: string,
     nonce: number,
+    zkVerifyTxHash?: string,
   ) {
     try {
       const timestamp = new Date().toISOString();
       const addr = userAddress || 'UNKNOWN';
-      const logEntry = `${timestamp} | ${action} | ${addr} | ${accountAddress} | ${nonce}\n`;
+      const txHash = zkVerifyTxHash || 'PENDING';
+      const logEntry = `${timestamp} | ${action} | ${addr} | ${accountAddress} | ${nonce} | ${txHash}\n`;
 
       const delay = Math.floor(Math.random() * 500);
 
