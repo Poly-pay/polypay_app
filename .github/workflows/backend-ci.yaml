@@ -9,6 +9,7 @@ on:
       - "packages/backend/**"
       - "packages/shared/**"
       - "docker/backend.Dockerfile"
+      - ".github/backend-ci.yaml"
 
 jobs:
   build-and-push:

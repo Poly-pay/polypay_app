@@ -9,6 +9,7 @@ on:
       - "packages/nextjs/**"
       - "packages/shared/**"
       - "docker/frontend.Dockerfile"
+      - ".github/frontend-ci.yaml"
 
 jobs:
   build-and-push:
@@ -46,7 +47,7 @@ jobs:
             .
 
           docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA}
-     
+
       - name: Deploy to Cloud Run
         env:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
