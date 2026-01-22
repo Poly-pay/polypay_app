@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "main"
+      - test/cicd-deploy
     paths:
       - "packages/nextjs/**"
       - "packages/shared/**"
@@ -45,3 +46,17 @@ jobs:
             .
 
           docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA}
+     
+      - name: Deploy to Cloud Run
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_FRONTEND_IMAGE }}
+          CLOUD_RUN_SERVICE: polypay-frontend
+        run: |
+          gcloud run deploy ${CLOUD_RUN_SERVICE} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
+            --region ${GCP_LOCATION} \
+            --platform managed \
+            --allow-unauthenticated
