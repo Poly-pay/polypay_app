@@ -3,9 +3,8 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import ModalContainer from "./ModalContainer";
-import { ShieldAlert } from "lucide-react";
 import { Button } from "~~/components/ui/button";
-import { useDisclaimerStore } from "~~/services/store";
+import { useDisclaimerStore } from "~~/services/store/disclaimerStore";
 import { ModalProps } from "~~/types/modal";
 
 const DisclaimerModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
@@ -21,56 +20,67 @@ const DisclaimerModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     <ModalContainer
       isOpen={isOpen}
       onClose={onClose}
-      className="w-[600px] p-0"
+      className="w-[500px] p-0"
       isCloseButton={false}
       preventClose={true}
     >
-      <div className="flex flex-col bg-white rounded-lg overflow-hidden -mx-1.5 -my-4">
+      <div className="flex flex-col items-center bg-white rounded-2xl overflow-hidden border border-grey-200 -mx-1.5 -my-4">
         {/* Header */}
-        <div className="flex items-center gap-2 p-4 border-b border-grey-200 bg-grey-100">
-          <Image src="/icons/misc/icon-modal.svg" width={36} height={36} alt="icon" />
-          <span className="font-semibold text-grey-950 uppercase text-lg">Notice</span>
+        <div className="flex items-center w-full px-3 py-4 gap-4">
+          <Image src="/icons/misc/icon-modal-notice.svg" width={36} height={36} alt="icon" />
+          <span className="font-semibold text-[16px] text-grey-950 uppercase tracking-[-0.03em]">Notice</span>
         </div>
 
-        {/* Body */}
-        <div className="flex flex-col items-center p-8 text-center bg-grey-100">
-          {/* Illustration Icon */}
-          <div className="flex items-center justify-center w-20 h-20 rounded-full bg-orange-50 mb-6">
-            <ShieldAlert className="w-10 h-10 text-orange-500" />
-          </div>
+        {/* Illustration */}
+        <div className="relative w-[200px] h-[210px] flex items-center justify-center">
+          {/* Circle border */}
+          <div className="absolute w-[200px] h-[200px] rounded-full border border-grey-100" />
+          {/* Cross lines */}
+          <div className="absolute w-[1px] h-[200px] bg-grey-100" />
+          <div className="absolute w-[200px] h-[1px] bg-grey-100" />
+          {/* Image */}
+          <Image
+            src="/modals/disclaimer-illustration.svg"
+            width={147}
+            height={158}
+            alt="Disclaimer"
+            className="relative z-10"
+          />
+        </div>
 
-          {/* Title */}
-          <h3 className="text-xl font-semibold text-grey-1000 uppercase mb-4">Beta Disclaimer</h3>
+        {/* Content */}
+        <div className="flex flex-col items-center px-5 gap-2 w-full">
+          <h3 className="text-[20px] font-medium text-grey-950 tracking-[-0.03em] text-center leading-[110%]">
+            BETA Disclaimer
+          </h3>
+          <p className="text-[14px] font-normal text-grey-700 tracking-[-0.03em] text-center leading-[110%]">
+            Please note that PolyPay is currently in beta and is used entirely at your own risk. We will not be liable
+            to you for any damages or losses (including but not limited to loss of funds) arising out of or relating to
+            your use of the application.
+          </p>
+          <p className="text-[14px] font-normal text-grey-700 tracking-[-0.03em] text-center leading-[110%]">
+            <span className="text-grey-950 font-medium">By clicking Agree</span>, you confirm that you have read and
+            understood this notice.
+          </p>
+        </div>
 
-          {/* Body Text */}
-          <div className="text-sm text-grey-600 leading-relaxed space-y-3 mb-6">
-            <p>Please note that PolyPay is currently in beta and is used entirely at your own risk.</p>
-            <p>
-              We will not be liable to you for any damages or losses (including but not limited to loss of funds)
-              arising out of or relating to your use of the application.
-            </p>
-            <p className="text-grey-800 font-medium">
-              By clicking Agree, you confirm that you have read and understood this notice.
-            </p>
-          </div>
-
+        {/* Footer */}
+        <div className="flex flex-col w-full px-5 pt-4 pb-5 gap-[7px] bg-grey-50 border-t border-grey-200 mt-5">
           {/* Checkbox */}
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-[7px] cursor-pointer py-[2px]">
             <input
               type="checkbox"
               checked={dontShowFor30Days}
               onChange={e => setDontShowFor30Days(e.target.checked)}
-              className="w-5 h-5 rounded border-grey-300 accent-pink-350 cursor-pointer"
+              className="w-[14px] h-[14px] rounded-[5px] border border-grey-400 bg-grey-200 cursor-pointer accent-main-pink"
             />
-            <span className="text-sm text-grey-800">Don&apos;t show this notice again for 30 days</span>
+            <span className="text-[14px] font-medium text-grey-800 tracking-[-0.03em]">Don&apos;t show it again</span>
           </label>
-        </div>
 
-        {/* Footer */}
-        <div className="p-4">
+          {/* Button */}
           <Button
             onClick={handleAgree}
-            className="w-full bg-pink-350 hover:bg-pink-400 text-grey-1000 font-medium rounded-lg py-3 cursor-pointer transition-all duration-200"
+            className="w-full h-9 bg-main-pink hover:bg-main-pink/90 text-grey-1000 text-[14px] font-medium tracking-[-0.04em] rounded-lg cursor-pointer transition-all duration-200"
           >
             I Understand & Agree
           </Button>
