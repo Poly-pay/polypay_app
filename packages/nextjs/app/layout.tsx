@@ -6,6 +6,7 @@ import { ThemeProvider } from "~~/components/ThemeProvider";
 import { ModalLayout } from "~~/components/modals/ModalLayout";
 import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
+import { DisclaimerChecker } from "~~/components/Common/DisclaimerChecker";
 
 const barlow = Barlow({
   subsets: ["latin"],
@@ -30,7 +31,10 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
       <body>
         <ThemeProvider enableSystem>
           <ScaffoldEthAppWithProviders>
-            <ModalLayout>{children}</ModalLayout>
+            <ModalLayout>
+              <DisclaimerChecker />
+              {children}
+            </ModalLayout>
           </ScaffoldEthAppWithProviders>
         </ThemeProvider>
       </body>
