@@ -4,12 +4,12 @@ on:
   push:
     branches:
       - "main"
+      - "test/cicd-migration"
     paths:
       - "packages/backend/**"
       - "packages/shared/**"
       - "docker/backend.Dockerfile"
       - ".github/workflows/backend-ci.yaml"
-      - "test/cicd-migration" 
 
 jobs:
   build-and-push:
