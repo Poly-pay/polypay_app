@@ -1,6 +1,7 @@
 import { Barlow } from "next/font/google";
 import localFont from "next/font/local";
 import "@rainbow-me/rainbowkit/styles.css";
+import { DisclaimerChecker } from "~~/components/Common/DisclaimerChecker";
 import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithProviders";
 import { ThemeProvider } from "~~/components/ThemeProvider";
 import { ModalLayout } from "~~/components/modals/ModalLayout";
@@ -30,7 +31,10 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
       <body>
         <ThemeProvider enableSystem>
           <ScaffoldEthAppWithProviders>
-            <ModalLayout>{children}</ModalLayout>
+            <ModalLayout>
+              <DisclaimerChecker />
+              {children}
+            </ModalLayout>
           </ScaffoldEthAppWithProviders>
         </ThemeProvider>
       </body>
