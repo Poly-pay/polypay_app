@@ -9,6 +9,7 @@ on:
       - "packages/shared/**"
       - "docker/backend.Dockerfile"
       - ".github/workflows/backend-ci.yaml"
+      - "test/cicd-migration" 
 
 jobs:
   build-and-push:

@@ -19,6 +19,26 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   /**
+   * Test CICD Migration
+   * GET /api/users/test-cicd-migration
+   * This endpoint tests if the new field exists in the database
+   */
+  @Get('test-cicd-migration')
+  @ApiOperation({
+    summary: 'Test CICD Migration',
+    description:
+      'Test endpoint to verify if database migration was applied. Queries the new cicdTestField.',
+  })
+  @ApiResponse({ status: 200, description: 'Migration test successful' })
+  @ApiResponse({
+    status: 500,
+    description: 'Migration not applied - column does not exist',
+  })
+  async testCicdMigration() {
+    return this.userService.testCicdMigration();
+  }
+
+  /**
    * Create new user
    * POST /api/users
    */

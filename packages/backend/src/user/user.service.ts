@@ -14,6 +14,36 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   /**
+   * Test CICD Migration
+   * Query the new cicdTestField to verify migration was applied
+   */
+  async testCicdMigration() {
+    try {
+      const user = await this.prisma.user.findFirst({
+        select: {
+          id: true,
+          commitment: true,
+          cicdTestField: true,
+        },
+      });
+
+      return {
+        success: true,
+        message:
+          'Migration applied successfully! cicdTestField exists in database.',
+        data: user,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          'Migration NOT applied! Column cicd_test_field does not exist.',
+        error: error.message,
+      };
+    }
+  }
+
+  /**
    * Create new user
    */
   async create(dto: CreateUserDto) {

@@ -21,6 +21,9 @@ model User {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
+  // CICD Test field - will be removed after testing
+  cicdTestField String? @map("cicd_test_field")
+
   accounts              AccountSigner[]
   batchItems            BatchItem[]
   receivedNotifications Notification[]  @relation("ReceivedNotifications")
