@@ -20,7 +20,7 @@ export class UserController {
 
   /**
    * Create new user
-   * POST /api/users 
+   * POST /api/users
    */
   @Post()
   @ApiOperation({
