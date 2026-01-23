@@ -125,7 +125,8 @@ model Vote {
   voterCommitment String   @map("voter_commitment")
   voteType        VoteType @map("vote_type")
 
-  nullifier      String?  @map("nullifier")
+  // ZK Proof (only APPROVE)
+  nullifier      String?  @map("nullifier") // This unique on-chain, but on our backend, it can be duplicate across tx (because txs can have same nonce)
   jobId          String?  @unique @map("job_id")
   proofStatus    ProofStatus? @map("proof_status")
   zkVerifyTxHash String?  @map("zkverify_tx_hash")
