@@ -97,4 +97,4 @@ WORKDIR /app/packages/backend
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && yarn start:prod"]
+CMD ["sh", "-c", "npx prisma migrate reset && npx prisma migrate deploy && yarn start:prod"]
