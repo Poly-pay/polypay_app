@@ -3,12 +3,13 @@ name: Backend CI
 on:
   push:
     branches:
-      - 'main'
+      - "main"
     paths:
-      - 'packages/backend/**'
-      - 'packages/shared/**'
-      - 'docker/backend.Dockerfile'
-    
+      - "packages/backend/**"
+      - "packages/shared/**"
+      - "docker/backend.Dockerfile"
+      - ".github/workflows/backend-ci.yaml"
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -21,10 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: 'google-github-actions/auth@v3'
+      - uses: "google-github-actions/auth@v3"
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider: 'projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ vars.GCP_WIF_POOL }}/providers/${{ vars.GCP_WIF_PROVIDER }}'
+          workload_identity_provider: "projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ vars.GCP_WIF_POOL }}/providers/${{ vars.GCP_WIF_PROVIDER }}"
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
 
       - name: Configure Docker
@@ -35,7 +36,7 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_BACKEND_IMAGE }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
           docker build \
             --platform linux/amd64 \
@@ -44,3 +45,17 @@ jobs:
             .
 
           docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA}
+
+      - name: Deploy to Cloud Run
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+          CLOUD_RUN_SERVICE: polypay-backend
+        run: |
+          gcloud run deploy ${CLOUD_RUN_SERVICE} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
+            --region ${GCP_LOCATION} \
+            --platform managed \
+            --allow-unauthenticated
