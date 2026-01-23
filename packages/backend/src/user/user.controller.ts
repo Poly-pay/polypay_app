@@ -28,7 +28,7 @@ export class UserController {
     summary: 'Test CICD Migration',
     description:
       'Test endpoint to verify if database migration was applied. Queries the new cicdTestField.',
-  })
+  }) 
   @ApiResponse({ status: 200, description: 'Migration test successful' })
   @ApiResponse({
     status: 500,
