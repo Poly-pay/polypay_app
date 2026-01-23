@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "main"
-      - "test/cicd-migration"
+      - "test/application"
     paths:
       - "packages/backend/**"
       - "packages/shared/**"
