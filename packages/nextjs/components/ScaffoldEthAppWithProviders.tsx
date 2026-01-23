@@ -11,19 +11,16 @@ import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { useTheme } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
-import { BlockieAvatar } from "~~/components/scaffold-eth";
 import Routes from "~~/configs/routes.config";
 import { useCommitmentGuard, useEnforceNetwork, useMyAccounts } from "~~/hooks";
 import { useMobileDetection } from "~~/hooks/app/useMobileDetection";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useSocketConnection } from "~~/hooks/app/useSocketConnection";
-import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
 import { queryClient } from "~~/services/queryClient";
 import { useIdentityStore } from "~~/services/store";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
-  useInitializeNativeCurrencyPrice();
   useMobileDetection();
   useEnforceNetwork();
   useSocketConnection();
@@ -99,7 +96,6 @@ export const ScaffoldEthAppWithProviders = ({ children }: { children: React.Reac
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider
-          avatar={BlockieAvatar}
           theme={mounted ? (isDarkMode ? darkTheme() : lightTheme()) : lightTheme()}
         >
           <ProgressBar height="3px" color="#2299dd" />
