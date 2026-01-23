@@ -65,14 +65,18 @@ export class AuthService {
     if (dto.walletAddress) {
       this.analyticsLogger.logLogin(dto.walletAddress, proofResult.txHash);
 
-      await this.prisma.loginHistory.create({
-        data: {
-          commitment,
-          walletAddress: dto.walletAddress,
-          jobId: proofResult.jobId,
-          zkVerifyTxHash: proofResult.txHash,
-        },
-      });
+      try {
+        await this.prisma.loginHistory.create({
+          data: {
+            commitment,
+            walletAddress: dto.walletAddress,
+            jobId: proofResult.jobId,
+            zkVerifyTxHash: proofResult.txHash,
+          },
+        });
+      } catch (error) {
+        this.logger.error(`Failed to save login history: ${error.message}`);
+      }
     }
 
     const tokens = this.generateTokens(commitment);

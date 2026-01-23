@@ -62,78 +62,43 @@ function parseLogFile(logPath: string): {
   return { logins, onchainActions };
 }
 
-function generateCSV(data: LoginRecord[], filename: string) {
-  const header = 'Timestamp,Address,zkVerify TxHash,Explorer Link\n';
-  const rows = data
-    .map((record) => {
-      const explorerLink =
-        record.zkVerifyTxHash !== 'PENDING'
-          ? `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`
-          : 'PENDING';
-      return `${record.timestamp},${record.address},${record.zkVerifyTxHash},${explorerLink}`;
-    })
-    .join('\n');
-
-  fs.writeFileSync(filename, header + rows, 'utf8');
-  console.log(`✅ Generated: ${filename}`);
-}
-
-function generateOnchainCSV(data: OnchainRecord[], filename: string) {
-  const header =
-    'Timestamp,Action,User Address,Multisig Wallet,Nonce,zkVerify TxHash,Explorer Link\n';
-  const rows = data
-    .map((record) => {
-      const explorerLink =
-        record.zkVerifyTxHash !== 'PENDING'
-          ? `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`
-          : 'PENDING';
-      return `${record.timestamp},${record.action},${record.userAddress},${record.multisigWallet},${record.nonce},${record.zkVerifyTxHash},${explorerLink}`;
-    })
-    .join('\n');
-
-  fs.writeFileSync(filename, header + rows, 'utf8');
-  console.log(`✅ Generated: ${filename}`);
-}
-
-function generateSummaryCSV(
+function generateCombinedCSV(
   logins: LoginRecord[],
   onchainActions: OnchainRecord[],
   filename: string,
 ) {
-  const uniqueLoginUsers = new Set(logins.map((r) => r.address)).size;
-  const totalLogins = logins.length;
+  const header =
+    'Timestamp,Action,User Address,Multisig Wallet,Nonce,zkVerify TxHash,Explorer Link\n';
 
-  const actionCounts: Record<string, number> = {};
-  const uniqueUsersPerAction: Record<string, Set<string>> = {};
-  const uniqueWalletsPerAction: Record<string, Set<string>> = {};
+  const allRecords: string[] = [];
+
+  logins.forEach((record) => {
+    const explorerLink =
+      record.zkVerifyTxHash !== 'PENDING'
+        ? `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`
+        : 'PENDING';
+    allRecords.push(
+      `${record.timestamp},LOGIN,${record.address},,,${record.zkVerifyTxHash},${explorerLink}`,
+    );
+  });
 
   onchainActions.forEach((record) => {
-    actionCounts[record.action] = (actionCounts[record.action] || 0) + 1;
-
-    if (!uniqueUsersPerAction[record.action]) {
-      uniqueUsersPerAction[record.action] = new Set();
-    }
-    uniqueUsersPerAction[record.action].add(record.userAddress);
-
-    if (!uniqueWalletsPerAction[record.action]) {
-      uniqueWalletsPerAction[record.action] = new Set();
-    }
-    uniqueWalletsPerAction[record.action].add(record.multisigWallet);
+    const explorerLink =
+      record.zkVerifyTxHash !== 'PENDING'
+        ? `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`
+        : 'PENDING';
+    allRecords.push(
+      `${record.timestamp},${record.action},${record.userAddress},${record.multisigWallet},${record.nonce},${record.zkVerifyTxHash},${explorerLink}`,
+    );
   });
 
-  const header = 'Metric,Value\n';
-  let rows = `Total Logins,${totalLogins}\n`;
-  rows += `Unique Login Users,${uniqueLoginUsers}\n`;
-  rows += `\n`;
-
-  Object.keys(actionCounts).forEach((action) => {
-    rows += `${action} - Total Actions,${actionCounts[action]}\n`;
-    rows += `${action} - Unique Users,${uniqueUsersPerAction[action].size}\n`;
-    rows += `${action} - Unique Wallets,${uniqueWalletsPerAction[action].size}\n`;
+  allRecords.sort((a, b) => {
+    const timestampA = a.split(',')[0];
+    const timestampB = b.split(',')[0];
+    return timestampA.localeCompare(timestampB);
   });
 
-  fs.writeFileSync(filename, header + rows, 'utf8');
-  console.log(`✅ Generated: ${filename}`);
+  fs.writeFileSync(filename, header + allRecords.join('\n'), 'utf8');
 }
 
 function main() {
@@ -144,37 +109,28 @@ function main() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  console.log(`\n📊 Generating Analytics Reports...\n`);
+  console.log(`\n📊 Generating Analytics Report...\n`);
   console.log(`Reading log file: ${logPath}`);
 
   const { logins, onchainActions } = parseLogFile(logPath);
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const outputFile = path.join(outputDir, 'analytics-report.csv');
 
-  generateCSV(logins, path.join(outputDir, `logins-${timestamp}.csv`));
+  generateCombinedCSV(logins, onchainActions, outputFile);
 
-  const actionGroups: Record<string, OnchainRecord[]> = {};
+  console.log(`\n✅ Report generated: ${outputFile}\n`);
+  console.log(`Total records: ${logins.length + onchainActions.length}`);
+  console.log(`  - LOGIN: ${logins.length}`);
+
+  const actionCounts: Record<string, number> = {};
   onchainActions.forEach((record) => {
-    if (!actionGroups[record.action]) {
-      actionGroups[record.action] = [];
-    }
-    actionGroups[record.action].push(record);
+    actionCounts[record.action] = (actionCounts[record.action] || 0) + 1;
   });
 
-  Object.keys(actionGroups).forEach((action) => {
-    generateOnchainCSV(
-      actionGroups[action],
-      path.join(outputDir, `${action.toLowerCase()}-${timestamp}.csv`),
-    );
+  Object.keys(actionCounts).forEach((action) => {
+    console.log(`  - ${action}: ${actionCounts[action]}`);
   });
-
-  generateSummaryCSV(
-    logins,
-    onchainActions,
-    path.join(outputDir, `summary-${timestamp}.csv`),
-  );
-
-  console.log(`\n✅ All reports generated in: ${outputDir}\n`);
+  console.log();
 }
 
 main();
