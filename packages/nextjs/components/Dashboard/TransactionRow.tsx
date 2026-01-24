@@ -604,25 +604,12 @@ interface TransactionRowProps {
 export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [isExecutable, setIsExecutable] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
 
   const { data: walletThreshold } = useWalletThreshold();
   const { data: commitmentsData } = useWalletCommitments();
 
   // Get totalSigners realtime from wallet commitments
   const totalSigners = commitmentsData?.length || 0;
-
-  useEffect(() => {
-    if (expanded) {
-      setShouldRender(true);
-    }
-  }, [expanded]);
-
-  const handleAnimationEnd = () => {
-    if (!expanded) {
-      setShouldRender(false);
-    }
-  };
 
   const { approve, deny, execute, isLoading: loading, loadingState } = useTransactionVote({ onSuccess });
 
@@ -735,11 +722,8 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
         </div>
 
         {/* Expanded Content */}
-        {shouldRender && (
-          <div
-            className={`flex flex-col gap-3 overflow-hidden ${expanded ? "animate-expand" : "animate-collapse"}`}
-            onAnimationEnd={handleAnimationEnd}
-          >
+        {expanded && (
+          <div className={`flex flex-col gap-3 overflow-hidden`}>
             <TxHeader
               tx={tx}
               myVoteStatus={tx.myVoteStatus}
