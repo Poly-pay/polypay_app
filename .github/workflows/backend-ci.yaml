@@ -49,13 +49,28 @@ jobs:
 
           docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA}
 
+      - name: Update and Run Prisma Migration Job
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+        run: |
+          gcloud run jobs update ${{ vars.GCP_BACKEND_NAME }} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
+            --region ${{ vars.GCP_LOCATION }}
+
+          gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
+            --region ${{ vars.GCP_LOCATION }} \
+            --wait
+
       - name: Deploy to Cloud Run
         env:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
           GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
-          CLOUD_RUN_SERVICE: polypay-backend
+          CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
           gcloud run deploy ${CLOUD_RUN_SERVICE} \
             --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
