@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "main"
+      - "test/full-application"
     paths:
       - "packages/nextjs/**"
       - "packages/shared/**"
