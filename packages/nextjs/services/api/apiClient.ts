@@ -4,7 +4,7 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestCo
 import { API_BASE_URL } from "~~/constants";
 
 const AUTHORIZATION_HEADER = (accessToken: string) => `Bearer ${accessToken}`;
-const ZK_TIMEOUT = 300000; // 300s for ZK proof generation + verification
+const ZK_TIMEOUT = 600000; // 10 minutes for ZK proof generation + verification
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

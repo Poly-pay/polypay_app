@@ -108,6 +108,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
   }, []);
 
   const watchedAmount = form.watch("amount");
+  const isAmountValid = watchedAmount !== "" && parseFloat(watchedAmount) > 0;
   const watchedTokenAddress = form.watch("tokenAddress");
   const watchedContactName = form.watch("contactName");
   const watchedRecipient = form.watch("recipient");
@@ -259,7 +260,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
           <button
             onClick={handleSave}
             disabled={
-              !watchedAmount || !watchedRecipient || !!form.formState.errors.recipient || !!form.formState.errors.amount
+              !isAmountValid || !watchedRecipient || !!form.formState.errors.recipient || !!form.formState.errors.amount
             }
             className="flex-1 bg-main-pink font-medium text-sm py-2 rounded-lg hover:bg-main-pink/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
