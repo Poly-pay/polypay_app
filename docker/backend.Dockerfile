@@ -20,14 +20,14 @@ COPY packages/hardhat/package.json ./packages/hardhat/
 
 # Clean up local artifacts and install
 RUN rm -rf packages/shared/node_modules \
-    packages/backend/node_modules \
-    packages/shared/dist \
-    packages/backend/dist && \
-    yarn install --immutable
+	packages/backend/node_modules \
+	packages/shared/dist \
+	packages/backend/dist && \
+	yarn install --immutable
 
 # Generate Prisma client
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
-    yarn workspace @polypay/backend prisma generate
+	yarn workspace @polypay/backend prisma generate
 
 
 # ===== STAGE 2: BUILDER =====
@@ -57,7 +57,7 @@ COPY --from=deps /app/packages/backend/src/generated ./packages/backend/src/gene
 
 # Build shared first, then backend
 RUN yarn workspace @polypay/shared build && \
-    yarn workspace @polypay/backend build
+	yarn workspace @polypay/backend build
 
 
 # ===== STAGE 3: RUNNER =====
@@ -69,7 +69,7 @@ ENV NODE_ENV=production
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nestjs
+	adduser --system --uid 1001 nestjs
 
 # Copy node_modules with correct ownership
 COPY --chown=nestjs:nodejs --from=deps /app/node_modules ./node_modules
@@ -97,4 +97,4 @@ WORKDIR /app/packages/backend
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma migrate reset && npx prisma migrate deploy && yarn start:prod"]
+CMD ["sh", "-c", "yarn start:prod"]
