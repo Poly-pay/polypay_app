@@ -62,14 +62,16 @@ export const useInitializeApp = () => {
           if (!isCurrentAccountValid) {
             setCurrentAccount(accounts[0]);
           }
+          // If have accounts and on new-account page, redirect to dashboard
+          if (router.pathname === Routes.DASHBOARD.subroutes.NEW_ACCOUNT.path) {
+            router.goToDashboard();
+          }
         } else {
           // No accounts
           clearCurrentAccount();
 
-          // Redirect to new-account if on dashboard
-          if (router.pathname === Routes.DASHBOARD.path) {
-            router.goToDashboardNewAccount();
-          }
+          // Redirect to new-account if not have account
+          router.goToDashboardNewAccount();
         }
       } catch (error: any) {
         // Check if request was aborted
@@ -84,7 +86,7 @@ export const useInitializeApp = () => {
           // Token expired, logout user
           logout();
           clearCurrentAccount();
-          router.goToDashboard();
+          router.goToDashboardNewAccount();
         } else if (appError.code === ErrorCode.NOT_FOUND) {
           // Treat as no accounts
           clearCurrentAccount();

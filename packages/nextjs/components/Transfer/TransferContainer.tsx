@@ -121,6 +121,7 @@ export default function TransferContainer() {
 
   const watchedRecipient = form.watch("recipient");
   const watchedAmount = form.watch("amount");
+  const isAmountValid = watchedAmount !== "" && parseFloat(watchedAmount) > 0;
 
   return (
     <div className="overflow-hidden relative w-full h-full flex flex-col rounded-lg">
@@ -219,7 +220,7 @@ export default function TransferContainer() {
         <div className="flex gap-2 items-center justify-center w-full max-w-xs">
           <button
             onClick={handleAddToBatch}
-            disabled={isLoading || !watchedAmount || !watchedRecipient}
+            disabled={isLoading || !isAmountValid || !watchedRecipient}
             className="bg-main-black flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
           >
             <span className="font-medium xl:text-base text-xs text-center text-white tracking-[-0.16px]">
@@ -228,7 +229,7 @@ export default function TransferContainer() {
           </button>
           <button
             onClick={form.handleSubmit(handleTransfer)}
-            disabled={isLoading || !watchedAmount || !watchedRecipient}
+            disabled={isLoading || !isAmountValid || !watchedRecipient}
             className="bg-pink-350 flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
             <span className="font-medium xl:text-base text-xs text-center tracking-[-0.16px]">
