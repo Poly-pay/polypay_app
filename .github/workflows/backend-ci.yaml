@@ -31,6 +31,9 @@ jobs:
       - name: Configure Docker
         run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}-docker.pkg.dev
 
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Build and push image
         env:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
@@ -41,10 +44,10 @@ jobs:
           docker build \
             --platform linux/amd64 \
             -f docker/backend.Dockerfile \
-            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
+            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             .
 
-          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA}
+          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA}
 
       - name: Deploy to Cloud Run
         env:
@@ -55,7 +58,7 @@ jobs:
           CLOUD_RUN_SERVICE: polypay-backend
         run: |
           gcloud run deploy ${CLOUD_RUN_SERVICE} \
-            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             --region ${GCP_LOCATION} \
             --platform managed \
             --allow-unauthenticated
