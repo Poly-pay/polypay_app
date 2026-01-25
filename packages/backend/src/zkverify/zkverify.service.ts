@@ -109,8 +109,7 @@ export class ZkVerifyService {
     const params = {
       proofType: 'ultraplonk',
       vkRegistered: true,
-      // chainId: this.chain.id,
-      chainId: network === NetworkValue.mainnet ? 8453 : 2651420,
+      chainId: this.chain.id,
       proofOptions: {
         numberOfPublicInputs,
       },

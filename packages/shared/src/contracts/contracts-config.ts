@@ -8,7 +8,7 @@ export const CONTRACT_CONFIG = {
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
   },
   mainnet: {
-    zkVerifyAddress: "", // TODO: add zkverify address for mainnet
+    zkVerifyAddress: "0xCb47A3C3B9Eb2E549a3F2EA4729De28CafbB2b69",
     vkHash:
       "0x80aca2e84f244400a76040aa5c77f9d83ff8409a2bf0d0cde96daffcf0a50e1b",
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",

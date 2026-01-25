@@ -566,7 +566,7 @@ export class TransactionService {
       commitment: vote.voterCommitment,
       nullifier: vote.nullifier,
       aggregationId: vote.aggregationId,
-      domainId: getDomainId(),
+      domainId: vote.domainId,
       zkMerklePath: vote.merkleProof,
       leafCount: vote.leafCount,
       index: vote.leafIndex,
@@ -1131,7 +1131,7 @@ export class TransactionService {
   private async aggregateProofs(
     txId: number,
     maxAttempts = 30,
-    intervalMs = 5000,
+    intervalMs = 10000,
   ) {
     let hasRecentAggregation = false;
     const TWO_MINUTES_MS = 2 * 60 * 1000;

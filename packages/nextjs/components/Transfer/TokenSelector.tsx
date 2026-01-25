@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
+import { NATIVE_ETH, NetworkValue, SUPPORTED_TOKENS, Token } from "@polypay/shared";
+import { network } from "~~/utils/network-config";
 
 interface TokenSelectorProps {
   selectedToken: Token;
@@ -88,18 +89,31 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
 
           {/* Token list */}
           <div className="flex flex-col">
-            {SUPPORTED_TOKENS.map(token => (
+            {network === NetworkValue.mainnet ? (
               <div
-                key={token.address}
-                onClick={() => handleTokenSelect(token)}
+                key={NATIVE_ETH.address}
+                onClick={() => handleTokenSelect(NATIVE_ETH)}
                 className={`flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors ${
-                  token.address === selectedToken.address ? "bg-gray-50" : ""
+                  NATIVE_ETH.address === selectedToken.address ? "bg-gray-50" : ""
                 }`}
               >
-                <Image src={token.icon} alt={token.symbol} width={20} height={20} />
-                <span className="text-sm font-medium">{token.symbol}</span>
+                <Image src={NATIVE_ETH.icon} alt={NATIVE_ETH.symbol} width={20} height={20} />
+                <span className="text-sm font-medium">{NATIVE_ETH.symbol}</span>
               </div>
-            ))}
+            ) : (
+              SUPPORTED_TOKENS.map(token => (
+                <div
+                  key={token.address}
+                  onClick={() => handleTokenSelect(token)}
+                  className={`flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors ${
+                    token.address === selectedToken.address ? "bg-gray-50" : ""
+                  }`}
+                >
+                  <Image src={token.icon} alt={token.symbol} width={20} height={20} />
+                  <span className="text-sm font-medium">{token.symbol}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

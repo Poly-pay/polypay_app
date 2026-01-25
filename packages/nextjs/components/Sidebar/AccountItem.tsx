@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Account, AccountSigner, SUPPORTED_TOKENS } from "@polypay/shared";
+import { Account, AccountSigner, NATIVE_ETH, NetworkValue, SUPPORTED_TOKENS } from "@polypay/shared";
 import { ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~~/components/ui/tooltip";
 import { useModalApp } from "~~/hooks";
@@ -13,6 +13,7 @@ import { useAccountStore } from "~~/services/store";
 import { getAvatarByAccountId } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
+import { network } from "~~/utils/network-config";
 
 interface AccountItemProps {
   account: Account;
@@ -42,12 +43,20 @@ export default function AccountItem({ account, isSelected, isExpanded, onSelect,
 
   // Calculate total USD value
   const totalUsdValue = React.useMemo(() => {
+    if (network === NetworkValue.mainnet) {
+      // Mainnet: only native ETH
+      const balance = balances[NATIVE_ETH.address] || "0";
+      const price = getPriceBySymbol(NATIVE_ETH.symbol);
+      return parseFloat(balance) * price;
+    }
+
+    // Testnet: all supported tokens
     return SUPPORTED_TOKENS.reduce((sum, token) => {
       const balance = balances[token.address] || "0";
       const price = getPriceBySymbol(token.symbol);
       return sum + parseFloat(balance) * price;
     }, 0);
-  }, [balances, getPriceBySymbol]);
+  }, [balances, getPriceBySymbol, network]);
 
   const formattedTotalUsd = totalUsdValue.toLocaleString("en-US", {
     minimumFractionDigits: 0,

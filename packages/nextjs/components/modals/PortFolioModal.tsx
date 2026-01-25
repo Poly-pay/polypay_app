@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
-import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
+import { NATIVE_ETH, NetworkValue, SUPPORTED_TOKENS, Token } from "@polypay/shared";
 import { Eye, EyeOff, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
 import { useMetaMultiSigWallet } from "~~/hooks";
@@ -12,6 +12,7 @@ import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
+import { network } from "~~/utils/network-config";
 
 interface PortfolioModalProps {
   children: React.ReactNode;
@@ -70,12 +71,20 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
 
   // Calculate total portfolio USD value
   const totalUsdValue = React.useMemo(() => {
+    if (network === NetworkValue.mainnet) {
+      // Mainnet: only native ETH
+      const balance = balances[NATIVE_ETH.address] || "0";
+      const price = getPriceBySymbol(NATIVE_ETH.symbol);
+      return parseFloat(balance) * price;
+    }
+
+    // Testnet: all supported tokens
     return SUPPORTED_TOKENS.reduce((sum, token) => {
       const balance = balances[token.address] || "0";
       const price = getPriceBySymbol(token.symbol);
       return sum + parseFloat(balance) * price;
     }, 0);
-  }, [balances, getPriceBySymbol]);
+  }, [balances, getPriceBySymbol, network]);
 
   // Get USD value for a specific token
   const getTokenUsdValue = (token: Token): number => {
@@ -176,15 +185,26 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
             </div>
 
             <div className="flex flex-col">
-              {SUPPORTED_TOKENS.map(token => (
+              {network === NetworkValue.mainnet ? (
+                // Mainnet: only native ETH
                 <TokenBalanceRow
-                  key={token.address}
-                  token={token}
-                  balance={getTokenBalance(token)}
-                  usdValue={getTokenUsdValue(token)}
+                  token={NATIVE_ETH}
+                  balance={getTokenBalance(NATIVE_ETH)}
+                  usdValue={getTokenUsdValue(NATIVE_ETH)}
                   isLoading={isLoading}
                 />
-              ))}
+              ) : (
+                // Testnet: all supported tokens
+                SUPPORTED_TOKENS.map(token => (
+                  <TokenBalanceRow
+                    key={token.address}
+                    token={token}
+                    balance={getTokenBalance(token)}
+                    usdValue={getTokenUsdValue(token)}
+                    isLoading={isLoading}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>
