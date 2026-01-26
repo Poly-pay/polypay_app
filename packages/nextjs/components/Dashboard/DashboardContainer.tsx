@@ -9,6 +9,8 @@ import { useInfiniteScroll, useMetaMultiSigWallet } from "~~/hooks";
 import { useTransactionRealtime, useTransactionsInfinite } from "~~/hooks/api/useTransaction";
 import { useIdentityStore } from "~~/services/store";
 
+//test config SLACK
+
 export interface WalletData {
   signers: string[];
   threshold: number;
