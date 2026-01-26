@@ -1,6 +1,5 @@
 name: Backend CI
 
-
 on:
   push:
     branches:
@@ -65,6 +64,7 @@ jobs:
           gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
             --region ${{ vars.GCP_LOCATION }} \
             --wait
+            
 
       - name: Deploy to Cloud Run
         env:
