@@ -4,11 +4,12 @@ on:
   push:
     branches:
       - "main"
+      - "feat/mainnet"      
     paths:
       - "packages/nextjs/**"
       - "packages/shared/**"
       - "docker/frontend.Dockerfile"
-      - ".github/workflows/frontend-ci.yaml"
+      - ".github/workflows/frontend-prod.yaml"
 
 jobs:
   build-and-deploy:
