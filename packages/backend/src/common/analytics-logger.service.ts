@@ -120,6 +120,61 @@ export class AnalyticsLoggerService {
     );
   }
 
+  logCreateAccount(userAddress: string | undefined, accountAddress: string) {
+    try {
+      const timestamp = new Date().toISOString();
+      const addr = userAddress || 'UNKNOWN';
+      const logEntry = `${timestamp} | CREATE_ACCOUNT | ${addr} | ${accountAddress} | - | -\n`;
+
+      const delay = Math.floor(Math.random() * 500);
+
+      setTimeout(() => {
+        try {
+          this.ensureLogDirectoryExists();
+          fs.appendFileSync(this.logPath, logEntry, 'utf8');
+        } catch (error) {
+          this.logger.error(`Failed to write analytics log: ${error.message}`);
+        }
+      }, delay);
+
+      this.logger.debug(
+        `Logged CREATE_ACCOUNT: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}...`,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to write analytics log: ${error.message}`);
+    }
+  }
+
+  logExecuteOnChain(
+    userAddress: string | undefined,
+    accountAddress: string,
+    nonce: number,
+    horizenTxHash: string,
+  ) {
+    try {
+      const timestamp = new Date().toISOString();
+      const addr = userAddress || 'UNKNOWN';
+      const logEntry = `${timestamp} | EXECUTE | ${addr} | ${accountAddress} | ${nonce} | ${horizenTxHash}\n`;
+
+      const delay = Math.floor(Math.random() * 500);
+
+      setTimeout(() => {
+        try {
+          this.ensureLogDirectoryExists();
+          fs.appendFileSync(this.logPath, logEntry, 'utf8');
+        } catch (error) {
+          this.logger.error(`Failed to write analytics log: ${error.message}`);
+        }
+      }, delay);
+
+      this.logger.debug(
+        `Logged EXECUTE: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}... | ${nonce}`,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to write analytics log: ${error.message}`);
+    }
+  }
+
   private logAction(
     action: string,
     userAddress: string | undefined,

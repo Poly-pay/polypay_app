@@ -68,7 +68,7 @@ export class AccountController {
   @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   async create(@CurrentUser() user: User, @Body() dto: CreateAccountDto) {
-    return this.accountService.create(dto, user.commitment);
+    return this.accountService.create(dto, user.commitment, dto.userAddress);
   }
 
   /**

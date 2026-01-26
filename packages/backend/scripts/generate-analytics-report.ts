@@ -2,6 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ZKVERIFY_EXPLORER = 'https://zkverify-testnet.subscan.io/tx';
+const HORIZEN_EXPLORER_ADDRESS =
+  'https://horizen-explorer-testnet.appchain.base.org/address';
+const HORIZEN_EXPLORER_TX =
+  'https://horizen-explorer-testnet.appchain.base.org/tx';
 
 interface LoginRecord {
   timestamp: string;
@@ -68,7 +72,7 @@ function generateCombinedCSV(
   filename: string,
 ) {
   const header =
-    'Timestamp,Action,User Address,Multisig Wallet,Nonce,zkVerify TxHash,Explorer Link\n';
+    'Timestamp,Action,User Address,Multisig Wallet,Nonce,TxHash,Explorer Link\n';
 
   const allRecords: string[] = [];
 
@@ -83,10 +87,18 @@ function generateCombinedCSV(
   });
 
   onchainActions.forEach((record) => {
-    const explorerLink =
-      record.zkVerifyTxHash !== 'PENDING'
-        ? `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`
-        : 'PENDING';
+    let explorerLink = 'PENDING';
+
+    if (record.zkVerifyTxHash !== 'PENDING') {
+      if (record.action === 'CREATE_ACCOUNT') {
+        explorerLink = `${HORIZEN_EXPLORER_ADDRESS}/${record.multisigWallet}`;
+      } else if (record.action === 'EXECUTE') {
+        explorerLink = `${HORIZEN_EXPLORER_TX}/${record.zkVerifyTxHash}`;
+      } else {
+        explorerLink = `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`;
+      }
+    }
+
     allRecords.push(
       `${record.timestamp},${record.action},${record.userAddress},${record.multisigWallet},${record.nonce},${record.zkVerifyTxHash},${explorerLink}`,
     );

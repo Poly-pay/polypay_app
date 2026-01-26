@@ -888,10 +888,11 @@ export class TransactionService {
       // 3. Mark as executed only on success
       await this.markExecuted(txId, txHash);
 
-      this.analyticsLogger.logExecute(
+      this.analyticsLogger.logExecuteOnChain(
         userAddress,
         transaction.accountAddress,
         transaction.nonce,
+        txHash,
       );
 
       return { txId, txHash, status: 'EXECUTED' };
