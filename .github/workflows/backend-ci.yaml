@@ -62,4 +62,4 @@ jobs:
             --region ${GCP_LOCATION} \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "RELAYER_ZKVERIFY_API_KEY=${RELAYER_ZKVERIFY_API_KEY},RELAYER_WALLET_KEY=${RELAYER_WALLET_KEY},CORS_ORIGIN=https://app.polypay.pro"
+            --update-env-vars "RELAYER_ZKVERIFY_API_KEY=${RELAYER_ZKVERIFY_API_KEY},RELAYER_WALLET_KEY=${RELAYER_WALLET_KEY},CORS_ORIGIN=https://app.polypay.pro"
