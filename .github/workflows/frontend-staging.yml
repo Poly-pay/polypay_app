@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - "develop"
+      - "feat/mainnet"
     paths:
       - "packages/nextjs/**"
       - "packages/shared/**"
       - "docker/frontend.Dockerfile"
+      - ".github/workflows/frontend-staging.yaml"
 
 jobs:
   build-and-deploy:
@@ -35,7 +37,7 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_FRONTEND_IMAGE }}-staging
+          GCP_IMAGE: ${{ vars.GCP_FRONTEND_NAME }} 
         run: |
           docker build \
             --platform linux/amd64 \
@@ -51,9 +53,10 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_FRONTEND_IMAGE }}-staging
+          GCP_IMAGE: ${{ vars.GCP_FRONTEND_NAME }}
+          CLOUD_RUN_SERVICE: ${{ vars.GCP_FRONTEND_NAME }}
         run: |
-          gcloud run deploy ${{ vars.GCP_FRONTEND_SERVICE }} \
+          gcloud run deploy ${CLOUD_RUN_SERVICE} \
             --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
             --region ${GCP_LOCATION} \
             --platform managed \

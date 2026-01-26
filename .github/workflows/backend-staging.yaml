@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - "develop"
+      - "feat/mainnet"
     paths:
       - "packages/backend/**"
       - "packages/shared/**"
       - "docker/backend.Dockerfile"
+      - ".github/workflows/backend-staging.yaml"
 
 jobs:
   build-and-deploy:
@@ -35,7 +37,7 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_BACKEND_IMAGE }}-staging
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
           docker build \
             --platform linux/amd64 \
@@ -49,9 +51,10 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_BACKEND_IMAGE }}-staging
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+          CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
-          gcloud run deploy ${{ vars.GCP_BACKEND_SERVICE }} \
+          gcloud run deploy ${CLOUD_RUN_SERVICE} \
             --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
             --region ${GCP_LOCATION} \
             --platform managed \

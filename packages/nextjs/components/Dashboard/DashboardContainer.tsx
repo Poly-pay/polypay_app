@@ -20,7 +20,7 @@ export interface WalletData {
 function Header() {
   return (
     <div className="flex flex-col items-start justify-between w-full">
-      <p className="text-4xl capitalize">Dashboard</p>
+      <p className="text-4xl capitalize">Dashboardddd</p>
       <InfoCardContainer />
     </div>
   );

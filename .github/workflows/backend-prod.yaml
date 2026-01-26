@@ -53,7 +53,7 @@ jobs:
           GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
           CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
-          gcloud run deploy ${{ vars.GCP_BACKEND_NAME }} \
+          gcloud run deploy ${CLOUD_RUN_SERVICE} \
             --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
             --region ${GCP_LOCATION} \
             --platform managed \
