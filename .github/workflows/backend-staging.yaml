@@ -59,4 +59,4 @@ jobs:
             --region ${GCP_LOCATION} \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars NETWORK=${{ vars.NETWORK }}
+            --update-env-vars NETWORK=${{ vars.NETWORK }}
