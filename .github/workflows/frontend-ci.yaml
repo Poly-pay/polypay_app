@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "main"
-      - "feature/update-workflow"
+      - "develop"
     paths:
       - "packages/nextjs/**"
       - "packages/shared/**"
@@ -64,3 +64,21 @@ jobs:
             --region ${GCP_LOCATION} \
             --platform managed \
             --allow-unauthenticated
+
+      - name: Notify Success to Slack Channel
+        if: success()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "✅ Frontend Deployment Successful!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify Failure to Slack Channel
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "❌ Frontend Deployment Failed!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
