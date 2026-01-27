@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "main"
-      - "feat/mainnet"      
     paths:
       - "packages/nextjs/**"
       - "packages/shared/**"
@@ -32,6 +31,9 @@ jobs:
       - name: Configure Docker
         run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}-docker.pkg.dev
 
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Build and push image
         env:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
@@ -44,9 +46,10 @@ jobs:
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
             --build-arg NEXT_PUBLIC_NETWORK=${{ vars.NEXT_PUBLIC_NETWORK }} \
             -f docker/frontend.Dockerfile \
-            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
+            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             .
-          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA}
+
+          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA}
 
       - name: Deploy to Cloud Run
         env:
@@ -57,7 +60,25 @@ jobs:
           CLOUD_RUN_SERVICE: polypay-frontend
         run: |
           gcloud run deploy ${CLOUD_RUN_SERVICE} \
-            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             --region ${GCP_LOCATION} \
             --platform managed \
             --allow-unauthenticated
+
+      - name: Notify Success to Slack Channel
+        if: success()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "✅ Frontend Deployment Successful!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify Failure to Slack Channel
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "❌ Frontend Deployment Failed!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
