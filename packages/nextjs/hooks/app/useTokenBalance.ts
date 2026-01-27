@@ -1,8 +1,5 @@
-import { useEffect } from "react";
-import { useTargetNetwork } from "../scaffold-eth";
 import { NATIVE_ETH, SUPPORTED_TOKENS, formatTokenAmount } from "@polypay/shared";
-import { useBlockNumber, useReadContracts } from "wagmi";
-import { useWatchBalance } from "~~/hooks/scaffold-eth/useWatchBalance";
+import { useBalance, useReadContracts } from "wagmi";
 
 const ERC20_ABI = [
   {
@@ -18,12 +15,14 @@ export function useTokenBalances(accountAddress: string | undefined) {
   // Filter out native ETH for ERC20 calls
   const erc20Tokens = SUPPORTED_TOKENS.filter(token => token.address !== NATIVE_ETH.address);
 
-  const { targetNetwork } = useTargetNetwork();
-  const { data: blockNumber } = useBlockNumber({ watch: true, chainId: targetNetwork.id });
-
-  // Fetch native ETH balance
-  const { data: nativeBalance, isLoading: isLoadingNative } = useWatchBalance({
+  const { data: nativeBalance, isLoading: isLoadingNative } = useBalance({
     address: accountAddress as `0x${string}`,
+    query: {
+      enabled: !!accountAddress,
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchInterval: 30 * 1000,
+    },
   });
 
   // Fetch ERC20 balances
@@ -42,6 +41,9 @@ export function useTokenBalances(accountAddress: string | undefined) {
     contracts,
     query: {
       enabled: !!accountAddress,
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchInterval: 30 * 1000,
     },
   });
 
@@ -66,13 +68,6 @@ export function useTokenBalances(accountAddress: string | undefined) {
   });
 
   const isLoading = isLoadingNative || isLoadingErc20;
-
-  useEffect(() => {
-    if (blockNumber && accountAddress) {
-      refetch();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blockNumber]);
 
   return { balances, isLoading, refetch };
 }

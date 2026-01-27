@@ -20,8 +20,8 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: groups = [] } = useGroups(accountId);
-  const { data: contacts = [], isLoading } = useContacts(accountId, selectedGroupId || undefined);
+  const { data: groups = [] } = useGroups(isOpen ? accountId : null);
+  const { data: contacts = [], isLoading } = useContacts(isOpen ? accountId : null, selectedGroupId || undefined);
 
   useEffect(() => {
     if (isOpen && buttonRef.current && dropdownRef.current) {
