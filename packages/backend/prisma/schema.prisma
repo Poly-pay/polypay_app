@@ -17,10 +17,6 @@ model User {
   batchItems            BatchItem[]
   receivedNotifications Notification[]  @relation("ReceivedNotifications")
   sentNotifications     Notification[]  @relation("SentNotifications")
-  cicd_test_field  String?
-  cicd_test_field2  String?
-  cicd_test_field3  String?
-  cicd_test_field4  String?
 
   @@map("users")
 }
