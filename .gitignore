@@ -24,5 +24,10 @@ dist
 
 # docker
 /docker/.env
+.env
+.env.local
+.env*.local
+.env.example
+
 
 .claude

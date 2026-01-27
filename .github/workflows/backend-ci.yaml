@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "main"
-      - "developer"
+      - "develop"
     paths:
       - "packages/backend/**"
       - "packages/shared/**"
@@ -32,6 +32,9 @@ jobs:
       - name: Configure Docker
         run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}-docker.pkg.dev
 
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Build and push image
         env:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
@@ -42,10 +45,25 @@ jobs:
           docker build \
             --platform linux/amd64 \
             -f docker/backend.Dockerfile \
-            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
+            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             .
 
-          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA}
+          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA}
+
+      - name: Update and Run Prisma Migration Job
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+        run: |
+          gcloud run jobs update ${{ vars.GCP_BACKEND_NAME }} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
+            --region ${{ vars.GCP_LOCATION }}
+
+          gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
+            --region ${{ vars.GCP_LOCATION }} \
+            --wait
 
       - name: Deploy to Cloud Run
         env:
@@ -53,10 +71,10 @@ jobs:
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
           GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
-          CLOUD_RUN_SERVICE: polypay-backend
+          CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
           gcloud run deploy ${CLOUD_RUN_SERVICE} \
-            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${GITHUB_SHA} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             --region ${GCP_LOCATION} \
             --platform managed \
             --allow-unauthenticated
