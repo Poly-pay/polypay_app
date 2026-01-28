@@ -74,10 +74,10 @@ export const useContacts = (accountId: string | null, groupId?: string) => {
     queryKey: addressBookKeys.contacts(accountId || "", groupId),
     queryFn: () => contactBookApi.contacts.getAll(accountId!, groupId),
     enabled: !!accountId,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
