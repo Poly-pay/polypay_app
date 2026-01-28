@@ -2,10 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ZKVERIFY_EXPLORER = 'https://zkverify-testnet.subscan.io/tx';
-const HORIZEN_EXPLORER_ADDRESS =
-  'https://horizen-explorer-testnet.appchain.base.org/address';
-const HORIZEN_EXPLORER_TX =
-  'https://horizen-explorer-testnet.appchain.base.org/tx';
+const HORIZEN_EXPLORER_ADDRESS = 'https://horizen-testnet.explorer.caldera.xyz/address';
+const HORIZEN_EXPLORER_TX = 'https://horizen-testnet.explorer.caldera.xyz/tx';
 
 interface LoginRecord {
   timestamp: string;
