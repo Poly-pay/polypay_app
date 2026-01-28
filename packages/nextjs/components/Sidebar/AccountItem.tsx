@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Account, AccountSigner, NATIVE_ETH, NetworkValue, SUPPORTED_TOKENS } from "@polypay/shared";
+import { Account, AccountSigner, SUPPORTED_TOKENS } from "@polypay/shared";
 import { ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~~/components/ui/tooltip";
 import { useModalApp } from "~~/hooks";
@@ -13,7 +13,6 @@ import { useAccountStore } from "~~/services/store";
 import { getAvatarByAccountId } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
-import { network } from "~~/utils/network-config";
 
 interface AccountItemProps {
   account: Account;

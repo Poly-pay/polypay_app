@@ -2,8 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { NATIVE_ETH, NetworkValue, SUPPORTED_TOKENS, Token } from "@polypay/shared";
-import { network } from "~~/utils/network-config";
+import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
 
 interface TokenSelectorProps {
   selectedToken: Token;

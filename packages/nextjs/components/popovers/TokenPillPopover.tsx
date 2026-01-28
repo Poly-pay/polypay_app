@@ -2,10 +2,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { NATIVE_ETH, NetworkValue, SUPPORTED_TOKENS, Token } from "@polypay/shared";
+import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
 import { useMetaMultiSigWallet, useTokenPrices } from "~~/hooks";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
-import { network } from "~~/utils/network-config";
 
 interface TokenPillPopoverProps {
   selectedToken: Token;

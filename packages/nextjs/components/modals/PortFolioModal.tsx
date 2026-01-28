@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
-import { NATIVE_ETH, NetworkValue, SUPPORTED_TOKENS, Token } from "@polypay/shared";
+import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
 import { Eye, EyeOff, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
 import { useMetaMultiSigWallet } from "~~/hooks";
@@ -12,7 +12,6 @@ import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
-import { network } from "~~/utils/network-config";
 
 interface PortfolioModalProps {
   children: React.ReactNode;
