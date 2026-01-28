@@ -231,7 +231,6 @@ enum ProofStatus {
 enum NotificationType {
   COMMITMENT_RECEIVED
 }
-<<<<<<< HEAD
 
 model FeatureRequest {
   id        String   @id @default(cuid())
@@ -253,5 +252,3 @@ model LoginHistory {
   @@index([walletAddress])
   @@map("login_history")
 }
-=======
->>>>>>> main
