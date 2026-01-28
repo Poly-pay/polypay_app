@@ -10,6 +10,7 @@ import { useAccountStore } from "~~/services/store";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
 import { notification } from "~~/utils/scaffold-eth";
+import { isDuplicateCommitment, isValidCommitment } from "~~/utils/signer";
 
 const EditStep: React.FC<EditStepProps> = ({
   pendingAdds,
@@ -42,6 +43,39 @@ const EditStep: React.FC<EditStepProps> = ({
   const totalSignersAfterChanges = existingSigners.length + pendingAdds.length - pendingRemoves.length;
   const visibleExistingSigners = existingSigners.filter(s => !pendingRemoves.includes(s.commitment));
 
+  // Validation errors for pending adds
+  const pendingAddErrors = useMemo(() => {
+    return pendingAdds.map((signer, index) => {
+      const commitment = signer.commitment.trim();
+
+      // Empty then no show error
+      if (!commitment) return null;
+
+      // Check invalid (have letter)
+      if (!isValidCommitment(commitment)) {
+        return "invalid";
+      }
+
+      // Check duplicate with pendingAdds
+      if (isDuplicateCommitment(pendingAdds, index)) {
+        return "duplicate";
+      }
+
+      // Check duplicate with existingSigners
+      const isDuplicateWithExisting = existingSigners.some(s => s.commitment.trim() === commitment);
+      if (isDuplicateWithExisting) {
+        return "duplicate";
+      }
+
+      return null;
+    });
+  }, [pendingAdds, existingSigners]);
+
+  // Check if any validation error exists
+  const hasValidationErrors = useMemo(() => {
+    return pendingAddErrors.some(error => error !== null);
+  }, [pendingAddErrors]);
+
   // Validation
   const isValid = useMemo(() => {
     if (totalSignersAfterChanges < 1) return false;
@@ -52,11 +86,14 @@ const EditStep: React.FC<EditStepProps> = ({
       if (!allValid) return false;
     }
 
+    // Thêm check validation errors
+    if (hasValidationErrors) return false;
+
     const hasChanges = pendingAdds.length > 0 || pendingRemoves.length > 0 || threshold !== originalThreshold;
     if (!hasChanges) return false;
 
     return true;
-  }, [totalSignersAfterChanges, threshold, pendingAdds, pendingRemoves, originalThreshold]);
+  }, [totalSignersAfterChanges, threshold, pendingAdds, pendingRemoves, originalThreshold, hasValidationErrors]);
 
   // Handlers
   const handleAddNewSigner = () => {
@@ -213,8 +250,9 @@ const EditStep: React.FC<EditStepProps> = ({
                 <Input
                   value={signer.commitment}
                   onChange={e => handleUpdatePendingAdd(index, "commitment", e.target.value)}
-                  placeholder="0x..."
-                  className="flex-1 h-[38px] px-4 text-sm font-medium tracking-tight font-mono rounded-[10px] bg-grey-50 border-grey-200 text-grey-950 placeholder:text-grey-500"
+                  className={`flex-1 h-[38px] px-4 text-sm font-medium tracking-tight font-mono rounded-[10px] bg-grey-50 text-grey-950 placeholder:text-grey-500 ${
+                    pendingAddErrors[index] ? "border-red-500 border" : "border-grey-200 border"
+                  }`}
                   disabled={loading}
                 />
 

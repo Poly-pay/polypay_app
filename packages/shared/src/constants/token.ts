@@ -37,7 +37,7 @@ export const SUPPORTED_TOKENS: Token[] = [
     coingeckoId: "tether",
   },
   {
-    address: "0xFac500d99a2e696e4781D6960A1fDD0189A0c85a",
+    address: "0xFac500d99a2e696e4781D6960A1fDD0189A0c85a", // DAI Horizen testnet address
     symbol: "DAI",
     name: "Dai Stablecoin",
     decimals: 18,

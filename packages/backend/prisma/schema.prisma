@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider     = "prisma-client"
   output       = "../src/generated/prisma"
@@ -14,13 +8,11 @@ datasource db {
   provider = "postgresql"
 }
 
-// User is repersent for wallet client
 model User {
-  id         String   @id @default(cuid())
-  commitment String   @unique
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
+  id                    String          @id @default(cuid())
+  commitment            String          @unique
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
   accounts              AccountSigner[]
   batchItems            BatchItem[]
   receivedNotifications Notification[]  @relation("ReceivedNotifications")
@@ -30,17 +22,16 @@ model User {
 }
 
 model Account {
-  id        String   @id @default(cuid())
-  address   String   @unique
-  name      String
-  threshold Int
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  id            String          @id @default(cuid())
+  address       String          @unique
+  name          String
+  threshold     Int
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
   signers       AccountSigner[]
-  transactions  Transaction[]
   contactGroups ContactGroup[]
   contacts      Contact[]
+  transactions  Transaction[]
 
   @@map("accounts")
 }
@@ -52,54 +43,36 @@ model AccountSigner {
   isCreator   Boolean  @default(false) @map("is_creator")
   displayName String?  @map("display_name")
   createdAt   DateTime @default(now()) @map("created_at")
-
-  user    User    @relation(fields: [userId], references: [id])
-  account Account @relation(fields: [accountId], references: [id])
+  account     Account  @relation(fields: [accountId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, accountId])
   @@map("account_signers")
 }
 
 model Transaction {
-  id     String   @id @default(cuid())
-  txId   Int      @unique @default(autoincrement()) @map("tx_id")
-  type   TxType
-  status TxStatus @default(PENDING)
-  nonce  Int // unique per wallet
-
-  // Transfer (ETH only)
-  to           String?
-  value        String?
-  tokenAddress String? @map("token_address") // null for ETH, address for ERC20 
-
-  accountAddress String  @map("account_address")
-  account        Account @relation(fields: [accountAddress], references: [address])
-
-  // Link to contact for display name (optional)
-  contactId String?  @map("contact_id")
-  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
-
-  // Add/Remove Signer
-  signerData String? @map("signer_data") // JSON array of {commitment, name}
-
-  // Set Threshold
-  newThreshold Int? @map("new_threshold")
-
-  // Batch data (JSON string of recipients + amounts)
-  batchData String? @map("batch_data")
-
-  // Metadata
-  createdBy String @map("created_by") // commitment initial
-  threshold Int // approval threshold at the time of creation
-
-  // Execution
-  txHash     String?   @map("tx_hash")
-  executedAt DateTime? @map("executed_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  votes Vote[]
+  id             String    @id @default(cuid())
+  txId           Int       @unique @default(autoincrement()) @map("tx_id")
+  type           TxType
+  status         TxStatus  @default(PENDING)
+  nonce          Int
+  to             String?
+  value          String?
+  tokenAddress   String?   @map("token_address")
+  accountAddress String    @map("account_address")
+  contactId      String?   @map("contact_id")
+  signerData     String?   @map("signer_data")
+  newThreshold   Int?      @map("new_threshold")
+  batchData      String?   @map("batch_data")
+  createdBy      String    @map("created_by")
+  threshold      Int
+  txHash         String?   @map("tx_hash")
+  executedAt     DateTime? @map("executed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  account        Account   @relation(fields: [accountAddress], references: [address])
+  contact        Contact?  @relation(fields: [contactId], references: [id])
+  votes          Vote[]
 
   @@unique([accountAddress, nonce])
   @@index([status])
@@ -149,49 +122,45 @@ model Vote {
 }
 
 model BatchItem {
-  id           String  @id @default(cuid())
-  userId       String  @map("user_id")
-  contactId    String? @map("contact_id")
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  contactId    String?  @map("contact_id")
   recipient    String
   amount       String
-  tokenAddress String? @map("token_address") // null for ETH, address for ERC20 
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  tokenAddress String?  @map("token_address")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  contact      Contact? @relation(fields: [contactId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("batch_items")
 }
 
 model ContactGroup {
-  id        String   @id @default(cuid())
-  accountId String   @map("account_id")
+  id        String              @id @default(cuid())
+  accountId String              @map("account_id")
   name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  account  Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  contacts ContactGroupEntry[]
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  contacts  ContactGroupEntry[]
+  account   Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, name])
   @@map("contact_groups")
 }
 
 model Contact {
-  id        String   @id @default(uuid())
-  accountId String   @map("account_id")
-  name      String
-  address   String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  groups       ContactGroupEntry[]
-  transactions Transaction[]
+  id           String              @id @default(uuid())
+  accountId    String              @map("account_id")
+  name         String
+  address      String
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
   batchItems   BatchItem[]
+  groups       ContactGroupEntry[]
+  account      Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
 
   @@unique([accountId, name])
   @@unique([accountId, address])
@@ -199,33 +168,37 @@ model Contact {
 }
 
 model ContactGroupEntry {
-  contactId String @map("contact_id")
-  groupId   String @map("group_id")
-
-  contact Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  group   ContactGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  contactId String       @map("contact_id")
+  groupId   String       @map("group_id")
+  contact   Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  group     ContactGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@id([contactId, groupId])
   @@map("contact_group_entries")
 }
 
 model Notification {
-  id String @id @default(cuid())
-
-  recipientId String @map("recipient_id")
-  recipient   User   @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
-
-  senderId String @map("sender_id")
-  sender   User   @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
-
-  type      NotificationType
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now()) @map("created_at")
+  id          String           @id @default(cuid())
+  recipientId String           @map("recipient_id")
+  senderId    String           @map("sender_id")
+  type        NotificationType
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  recipient   User             @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender      User             @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([recipientId])
   @@index([senderId])
   @@index([read])
   @@map("notifications")
+}
+
+model FeatureRequest {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feature_requests")
 }
 
 enum TxType {
@@ -238,9 +211,9 @@ enum TxType {
 
 enum TxStatus {
   PENDING
-  EXECUTING // DEPRECATED: No longer needed. Check realtime on frontend instead
+  EXECUTING
   EXECUTED
-  OUTDATED // DEPRECATED: No longer needed with txId as nonce. Kept for backward compatibility.
+  OUTDATED
   FAILED
 }
 
@@ -258,6 +231,7 @@ enum ProofStatus {
 enum NotificationType {
   COMMITMENT_RECEIVED
 }
+<<<<<<< HEAD
 
 model FeatureRequest {
   id        String   @id @default(cuid())
@@ -279,3 +253,5 @@ model LoginHistory {
   @@index([walletAddress])
   @@map("login_history")
 }
+=======
+>>>>>>> main

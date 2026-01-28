@@ -27,4 +27,5 @@ export type ModalName =
   | "requestFeature"
   | "removeSigner"
   | "signerList"
-  | "switchAccount";
+  | "switchAccount"
+  | "disclaimer";

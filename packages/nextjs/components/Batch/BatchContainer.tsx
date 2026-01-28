@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Fragment } from "react";
 import Image from "next/image";
 import EditBatchPopover from "../popovers/EditBatchPopover";
 import TransactionSummary from "./TransactionSummary";
+import { TransactionSummaryDrawer } from "./TransactionSummaryDrawer";
 import { BatchItem, Token, parseTokenAmount } from "@polypay/shared";
 import { getTokenByAddress } from "@polypay/shared";
 import AddressNamedTooltip from "~~/components/tooltips/AddressNamedTooltip";
@@ -268,6 +269,7 @@ export default function BatchContainer() {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [isExiting] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Get accountId from current account
   const accountId = currentAccount?.id || null;
@@ -279,80 +281,114 @@ export default function BatchContainer() {
   } = useBatchTransaction({
     onSuccess: async () => {
       setSelectedItems(new Set());
+      setIsDrawerOpen(false);
       await refetchBatchItems();
     },
   });
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (selectedItems.size === batchItems.length) {
       setSelectedItems(new Set());
+      setIsDrawerOpen(false);
     } else {
       setSelectedItems(new Set(batchItems.map((item: BatchItem) => item.id)));
+      setIsDrawerOpen(true);
     }
-  };
+  }, [selectedItems.size, batchItems]);
 
-  const handleSelectItem = (id: string) => {
-    const newSelected = new Set(selectedItems);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedItems(newSelected);
-  };
-
-  // Remove item handler
-  const handleRemove = async (id: string) => {
-    try {
-      await deleteBatchItem(id);
-      // Remove from selected if it was selected
-      const newSelected = new Set(selectedItems);
-      newSelected.delete(id);
-      setSelectedItems(newSelected);
-      // Clear active if it was active
-      if (activeItem === id) {
-        setActiveItem(null);
+  const handleSelectItem = useCallback((id: string) => {
+    setSelectedItems(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+        if (newSelected.size === 0) {
+          setIsDrawerOpen(false);
+        }
+      } else {
+        newSelected.add(id);
+        setIsDrawerOpen(true);
       }
-      notification.success("Batch item removed successfully");
-    } catch (error) {
-      console.error("Failed to remove batch item:", error);
-    }
-  };
+      return newSelected;
+    });
+  }, []);
 
-  const handleEdit = async (
-    id: string,
-    data: { recipient: string; amount: string; token: Token; contactId?: string },
-  ) => {
-    try {
-      const amountInSmallestUnit = parseTokenAmount(data.amount, data.token.decimals);
+  const handleRemove = useCallback(
+    async (id: string) => {
+      try {
+        await deleteBatchItem(id);
 
-      await updateBatchItem({
-        id,
-        data: {
-          recipient: data.recipient,
-          amount: amountInSmallestUnit,
-          tokenAddress: data.token.address,
-          contactId: data.contactId,
-        },
-      });
+        setSelectedItems(prev => {
+          const newSelected = new Set(prev);
+          newSelected.delete(id);
+          if (newSelected.size === 0) {
+            setIsDrawerOpen(false);
+          }
+          return newSelected;
+        });
 
-      notification.success("Batch item updated successfully");
+        if (activeItem === id) {
+          setActiveItem(null);
+        }
 
-      await refetchBatchItems();
-    } catch (error) {
-      console.error("Failed to update batch item:", error);
-      notification.error("Failed to update batch item");
-    }
-  };
+        notification.success("Batch item removed successfully");
+      } catch (error) {
+        console.error("Failed to remove batch item:", error);
+      }
+    },
+    [deleteBatchItem, activeItem],
+  );
 
-  // Propose batch transaction handler
-  const handleProposeBatch = async () => {
+  const handleEdit = useCallback(
+    async (id: string, data: { recipient: string; amount: string; token: Token; contactId?: string }) => {
+      try {
+        const amountInSmallestUnit = parseTokenAmount(data.amount, data.token.decimals);
+
+        await updateBatchItem({
+          id,
+          data: {
+            recipient: data.recipient,
+            amount: amountInSmallestUnit,
+            tokenAddress: data.token.address,
+            contactId: data.contactId,
+          },
+        });
+
+        notification.success("Batch item updated successfully");
+        await refetchBatchItems();
+      } catch (error) {
+        console.error("Failed to update batch item:", error);
+        notification.error("Failed to update batch item");
+      }
+    },
+    [updateBatchItem, refetchBatchItems],
+  );
+
+  const handleProposeBatch = useCallback(async () => {
     const selectedBatchItems = batchItems.filter(item => selectedItems.has(item.id));
     await proposeBatch(selectedBatchItems);
-  };
+  }, [batchItems, selectedItems, proposeBatch]);
 
-  // Get selected batch items for summary
-  const selectedBatchItems = batchItems.filter((item: BatchItem) => selectedItems.has(item.id));
+  const selectedBatchItems = useMemo(
+    () => batchItems.filter((item: BatchItem) => selectedItems.has(item.id)),
+    [batchItems, selectedItems],
+  );
+
+  const transactionsSummary = useMemo(
+    () =>
+      selectedBatchItems.map(item => ({
+        id: item.id,
+        amount: formatAmount(item.amount, item.tokenAddress),
+        recipient: item.recipient,
+        contactName: item.contact?.name,
+        tokenIcon: getTokenByAddress(item.tokenAddress).icon,
+        tokenSymbol: getTokenByAddress(item.tokenAddress).symbol,
+      })),
+    [selectedBatchItems],
+  );
+
+  const handleCloseDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+  }, []);
 
   return (
     <div className="flex flex-row gap-1 w-full h-full bg-[#ECEDEC]">
@@ -363,10 +399,7 @@ export default function BatchContainer() {
           background: "rgba(255, 255, 255, 0.70)",
         }}
       >
-        {/* Header */}
         <Header />
-
-        {/* Batch Items List */}
         <BatchTransactions
           batchItems={batchItems}
           selectedItems={selectedItems}
@@ -381,19 +414,12 @@ export default function BatchContainer() {
         />
       </div>
 
-      {/* Transaction Summary Sidebar */}
+      {/* Transaction Summary Sidebar - Desktop Only */}
       {selectedItems.size > 0 && (
-        <div className={`overflow-hidden ${isExiting ? "animate-slide-out" : "animate-slide-in"}`}>
+        <div className={`hidden lg:block overflow-hidden ${isExiting ? "animate-slide-out" : "animate-slide-in"}`}>
           <TransactionSummary
-            className="xl:w-[500px] w-[250px]"
-            transactions={selectedBatchItems.map(item => ({
-              id: item.id,
-              amount: formatAmount(item.amount, item.tokenAddress),
-              recipient: item.recipient,
-              contactName: item.contact?.name,
-              tokenIcon: getTokenByAddress(item.tokenAddress).icon,
-              tokenSymbol: getTokenByAddress(item.tokenAddress).symbol,
-            }))}
+            className="xl:w-[420px] w-[250px]"
+            transactions={transactionsSummary}
             onConfirm={handleProposeBatch}
             isLoading={isProposing}
             loadingState={loadingState}
@@ -401,6 +427,17 @@ export default function BatchContainer() {
           />
         </div>
       )}
+
+      {/* Transaction Summary Drawer - Mobile Only */}
+      <TransactionSummaryDrawer
+        isOpen={isDrawerOpen}
+        onClose={handleCloseDrawer}
+        transactions={transactionsSummary}
+        onConfirm={handleProposeBatch}
+        isLoading={isProposing}
+        loadingState={loadingState}
+        accountId={accountId}
+      />
     </div>
   );
 }
