@@ -89,31 +89,18 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
 
           {/* Token list */}
           <div className="flex flex-col">
-            {network === NetworkValue.mainnet ? (
+            {SUPPORTED_TOKENS.map(token => (
               <div
-                key={NATIVE_ETH.address}
-                onClick={() => handleTokenSelect(NATIVE_ETH)}
+                key={token.address}
+                onClick={() => handleTokenSelect(token)}
                 className={`flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors ${
-                  NATIVE_ETH.address === selectedToken.address ? "bg-gray-50" : ""
+                  token.address === selectedToken.address ? "bg-gray-50" : ""
                 }`}
               >
-                <Image src={NATIVE_ETH.icon} alt={NATIVE_ETH.symbol} width={20} height={20} />
-                <span className="text-sm font-medium">{NATIVE_ETH.symbol}</span>
+                <Image src={token.icon} alt={token.symbol} width={20} height={20} />
+                <span className="text-sm font-medium">{token.symbol}</span>
               </div>
-            ) : (
-              SUPPORTED_TOKENS.map(token => (
-                <div
-                  key={token.address}
-                  onClick={() => handleTokenSelect(token)}
-                  className={`flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    token.address === selectedToken.address ? "bg-gray-50" : ""
-                  }`}
-                >
-                  <Image src={token.icon} alt={token.symbol} width={20} height={20} />
-                  <span className="text-sm font-medium">{token.symbol}</span>
-                </div>
-              ))
-            )}
+            ))}
           </div>
         </div>
       )}

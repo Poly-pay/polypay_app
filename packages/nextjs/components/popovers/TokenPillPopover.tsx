@@ -86,55 +86,30 @@ export function TokenPillPopover({
           />
 
           <div className="py-1 xl:min-w-[300px] min-w-[220px]">
-            {network === NetworkValue.mainnet ? (
+            {SUPPORTED_TOKENS.map(token => (
               <div
-                key={NATIVE_ETH.address}
+                key={token.address}
                 onClick={() => {
-                  onSelect(NATIVE_ETH.address);
+                  onSelect(token.address);
                   setOpen(false);
                 }}
                 className="flex items-center gap-2 px-3 py-2 hover:bg-[#FF7CEB1A] cursor-pointer first:rounded-t-lg last:rounded-b-lg"
               >
-                <Image key={NATIVE_ETH.address} src={NATIVE_ETH.icon} alt={NATIVE_ETH.symbol} width={32} height={32} />
+                <Image key={token.address} src={token.icon} alt={token.symbol} width={32} height={32} />
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{NATIVE_ETH.name}</p>
-                  <p className="text-grey-800 text-xs">{NATIVE_ETH.symbol}</p>
+                  <p className="text-sm font-medium">{token.name}</p>
+                  <p className="text-grey-800 text-xs">{token.symbol}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-grey-950 font-medium">
-                    <span className="text-grey-300">$</span> {isLoadingPrices ? "..." : getTokenUsdValue(NATIVE_ETH)}
+                    <span className="text-grey-300">$</span> {isLoadingPrices ? "..." : getTokenUsdValue(token)}
                   </p>
                   <p className="text-grey-800 text-xs">
-                    {balances[NATIVE_ETH.address] || "0"} {NATIVE_ETH.symbol}
+                    {balances[token.address] || "0"} {token.symbol}
                   </p>
                 </div>
               </div>
-            ) : (
-              SUPPORTED_TOKENS.filter(token => token.address !== selectedToken.address).map(token => (
-                <div
-                  key={token.address}
-                  onClick={() => {
-                    onSelect(token.address);
-                    setOpen(false);
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-[#FF7CEB1A] cursor-pointer first:rounded-t-lg last:rounded-b-lg"
-                >
-                  <Image key={token.address} src={token.icon} alt={token.symbol} width={32} height={32} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{token.name}</p>
-                    <p className="text-grey-800 text-xs">{token.symbol}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-grey-950 font-medium">
-                      <span className="text-grey-300">$</span> {isLoadingPrices ? "..." : getTokenUsdValue(token)}
-                    </p>
-                    <p className="text-grey-800 text-xs">
-                      {balances[token.address] || "0"} {token.symbol}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
+            ))}
           </div>
         </div>
       )}

@@ -43,20 +43,12 @@ export default function AccountItem({ account, isSelected, isExpanded, onSelect,
 
   // Calculate total USD value
   const totalUsdValue = React.useMemo(() => {
-    if (network === NetworkValue.mainnet) {
-      // Mainnet: only native ETH
-      const balance = balances[NATIVE_ETH.address] || "0";
-      const price = getPriceBySymbol(NATIVE_ETH.symbol);
-      return parseFloat(balance) * price;
-    }
-
-    // Testnet: all supported tokens
     return SUPPORTED_TOKENS.reduce((sum, token) => {
       const balance = balances[token.address] || "0";
       const price = getPriceBySymbol(token.symbol);
       return sum + parseFloat(balance) * price;
     }, 0);
-  }, [balances, getPriceBySymbol, network]);
+  }, [balances, getPriceBySymbol]);
 
   const formattedTotalUsd = totalUsdValue.toLocaleString("en-US", {
     minimumFractionDigits: 0,
