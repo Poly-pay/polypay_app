@@ -5,6 +5,7 @@ export const CONFIG_KEYS = {
   APP_CORS_ORIGIN: 'app.corsOrigin',
   APP_API_PREFIX: 'app.apiPrefix',
   APP_LOG_LEVEL: 'app.logLevel',
+  APP_NETWORK: 'app.network',
 
   // Database
   DATABASE_URL: 'database.url',

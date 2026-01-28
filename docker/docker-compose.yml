@@ -25,6 +25,8 @@ services:
     build:
       context: ..
       dockerfile: docker/backend.Dockerfile
+    environment:
+      - NETWORK=${NETWORK:-testnet}
     env_file:
       - .env
     depends_on:
@@ -32,6 +34,7 @@ services:
         condition: service_healthy
     ports:
       - "4000:4000"
+    command: sh -c "npx prisma migrate deploy && yarn start:prod"
 
   frontend:
     restart: unless-stopped 
@@ -42,6 +45,7 @@ services:
       dockerfile: docker/frontend.Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_NETWORK: ${NEXT_PUBLIC_NETWORK:-testnet}
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     depends_on:

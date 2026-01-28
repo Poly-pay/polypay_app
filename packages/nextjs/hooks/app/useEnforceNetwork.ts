@@ -1,16 +1,16 @@
 import { useEffect } from "react";
-import { horizenTestnet } from "@polypay/shared";
 import { useChainId, useSwitchChain } from "wagmi";
+import { chain } from "~~/utils/network-config";
 
 export const useEnforceNetwork = () => {
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
 
   useEffect(() => {
-    if (chainId && chainId !== horizenTestnet.id) {
-      switchChain({ chainId: horizenTestnet.id });
+    if (chainId && chainId !== chain.id) {
+      switchChain({ chainId: chain.id });
     }
   }, [chainId, switchChain]);
 
-  return chainId === horizenTestnet.id;
+  return chainId === chain.id;
 };

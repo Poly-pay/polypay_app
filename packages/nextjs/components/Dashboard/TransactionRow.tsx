@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { Transaction, TxStatus, TxType, VoteType, horizenTestnet } from "@polypay/shared";
+import { Transaction, TxStatus, TxType, VoteType } from "@polypay/shared";
 import { getTokenByAddress } from "@polypay/shared";
 import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import {
@@ -15,6 +15,7 @@ import {
   useWalletThreshold,
 } from "~~/hooks";
 import { formatAddress, formatAmount } from "~~/utils/format";
+import { chain } from "~~/utils/network-config";
 
 // ============ Helper: Convert API Transaction to Row Data ============
 export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
@@ -33,7 +34,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     : null;
 
   // Calculate approve count
-  const approveCount = tx.votes.filter(v => v.voteType === "APPROVE").length;
+  const approveCount = tx.votes.filter(v => v.voteType === VoteType.APPROVE).length;
 
   // Parse batchData if exists
   let batchData: BatchTransfer[] | undefined;
@@ -135,7 +136,7 @@ function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) 
   if (status === TxStatus.EXECUTED) {
     return (
       <a
-        href={txHash ? `${horizenTestnet.blockExplorers.default.url}/tx/${txHash}` : "#"}
+        href={txHash ? `${chain.blockExplorers.default.url}/tx/${txHash}` : "#"}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1 px-3 py-1 text-sm font-semibold text-grey-900 bg-lime-50 rounded-md tracking-tight hover:opacity-80 transition-opacity"

@@ -39,7 +39,7 @@ export const useAuth = () => {
         commitment: proofResult.commitment,
         proof: proofResult.proof,
         publicInputs: proofResult.publicInputs,
-        vk: Buffer.from(proofResult.vk).toString("base64"),
+        vk: proofResult?.vk ? Buffer.from(proofResult.vk).toString("base64") : undefined,
       });
 
       // 3. Store tokens and identity
