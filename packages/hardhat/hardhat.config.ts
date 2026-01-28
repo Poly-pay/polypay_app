@@ -37,9 +37,7 @@ const config: HardhatUserConfig = {
       },
     ],
   },
-  // defaultNetwork: "horizenMainnet",
   defaultNetwork: "horizenTestnet",
-  // defaultNetwork: "localhost",
   namedAccounts: {
     deployer: {
       // By default, it will take the first Hardhat account as the deployer
