@@ -1,0 +1,98 @@
+name: Backend Production
+
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "packages/backend/**"
+      - "packages/shared/**"
+      - "docker/backend.Dockerfile"
+      - ".github/workflows/backend-prod.yaml"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: "google-github-actions/auth@v3"
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: "projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ vars.GCP_WIF_POOL }}/providers/${{ vars.GCP_WIF_PROVIDER }}"
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}-docker.pkg.dev
+
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Build and push image
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -f docker/backend.Dockerfile \
+            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
+            .
+
+          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA}
+
+      - name: Update and Run Prisma Migration Job
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+        run: |
+          gcloud run jobs update ${{ vars.GCP_BACKEND_NAME }} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
+            --region ${{ vars.GCP_LOCATION }}
+
+          gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
+            --region ${{ vars.GCP_LOCATION }} \
+            --wait
+
+      - name: Deploy to Cloud Run
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+          CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
+        run: |
+          gcloud run deploy ${CLOUD_RUN_SERVICE} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
+            --region ${GCP_LOCATION} \
+            --platform managed \
+            --allow-unauthenticated \
+            --update-env-vars NETWORK=${{ vars.NETWORK }}
+
+      - name: Notify Success to Slack Channel
+        if: success()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "✅ Backend Deployment Successful!\nRepository: polypay-backend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify Failure to Slack Channel
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: "❌ Backend Deployment Failed!\nRepository: polypay-backend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

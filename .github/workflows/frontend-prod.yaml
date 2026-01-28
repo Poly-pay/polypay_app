@@ -1,18 +1,17 @@
-name: Backend CI
+name: Frontend Production
 
 on:
   push:
     branches:
       - "main"
-      - "develop"
     paths:
-      - "packages/backend/**"
+      - "packages/nextjs/**"
       - "packages/shared/**"
-      - "docker/backend.Dockerfile"
-      - ".github/workflows/backend-ci.yaml"
+      - "docker/frontend.Dockerfile"
+      - ".github/workflows/frontend-prod.yaml"
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
     environment: prod
 
@@ -40,38 +39,25 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+          GCP_IMAGE: ${{ vars.GCP_FRONTEND_NAME }}
         run: |
           docker build \
             --platform linux/amd64 \
-            -f docker/backend.Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_NETWORK=${{ vars.NEXT_PUBLIC_NETWORK }} \
+            -f docker/frontend.Dockerfile \
             -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             .
 
           docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA}
-
-      - name: Update and Run Prisma Migration Job
-        env:
-          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
-          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
-        run: |
-          gcloud run jobs update ${{ vars.GCP_BACKEND_NAME }} \
-            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
-            --region ${{ vars.GCP_LOCATION }}
-
-          gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
-            --region ${{ vars.GCP_LOCATION }} \
-            --wait
 
       - name: Deploy to Cloud Run
         env:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
-          CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
+          GCP_IMAGE: ${{ vars.GCP_FRONTEND_NAME }}
+          CLOUD_RUN_SERVICE: polypay-frontend
         run: |
           gcloud run deploy ${CLOUD_RUN_SERVICE} \
             --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
@@ -84,7 +70,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-message: "✅ Backend Deployment Successful!\nRepository: polypay-backend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+          slack-message: "✅ Frontend Deployment Successful!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
@@ -93,6 +79,6 @@ jobs:
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-message: "❌ Backend Deployment Failed!\nRepository: polypay-backend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+          slack-message: "❌ Frontend Deployment Failed!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

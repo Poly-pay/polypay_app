@@ -20,30 +20,30 @@ export const NATIVE_ETH: Token = {
 // Horizen testnet tokens
 export const SUPPORTED_TOKENS: Token[] = [
   NATIVE_ETH,
-  {
-    address: "0x01c7AEb2A0428b4159c0E333712f40e127aF639E", // USDC Horizen testnet address
-    symbol: "USDC",
-    name: "USD Coin",
-    decimals: 6,
-    icon: "/token/usdc.svg",
-    coingeckoId: "usd-coin",
-  },
-  {
-    address: "0x15d70535a71Dba52b572EbF746c7C2F5806ACd0e", // USDT Horizen testnet address
-    symbol: "USDT",
-    name: "Tether USD",
-    decimals: 6,
-    icon: "/token/usdt.svg",
-    coingeckoId: "tether",
-  },
-  {
-    address: "0xFac500d99a2e696e4781D6960A1fDD0189A0c85a", // DAI Horizen testnet address
-    symbol: "DAI",
-    name: "Dai Stablecoin",
-    decimals: 18,
-    icon: "/token/dai.svg",
-    coingeckoId: "dai",
-  },
+  // {
+  //   address: "0x01c7AEb2A0428b4159c0E333712f40e127aF639E", // USDC Horizen testnet address
+  //   symbol: "USDC",
+  //   name: "USD Coin",
+  //   decimals: 6,
+  //   icon: "/token/usdc.svg",
+  //   coingeckoId: "usd-coin",
+  // },
+  // {
+  //   address: "0x15d70535a71Dba52b572EbF746c7C2F5806ACd0e", // USDT Horizen testnet address
+  //   symbol: "USDT",
+  //   name: "Tether USD",
+  //   decimals: 6,
+  //   icon: "/token/usdt.svg",
+  //   coingeckoId: "tether",
+  // },
+  // {
+  //   address: "0xFac500d99a2e696e4781D6960A1fDD0189A0c85a", // DAI Horizen testnet address
+  //   symbol: "DAI",
+  //   name: "Dai Stablecoin",
+  //   decimals: 18,
+  //   icon: "/token/dai.svg",
+  //   coingeckoId: "dai",
+  // },
 ];
 
 // Helper: Get all coingecko IDs
