@@ -1,9 +1,30 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const ZKVERIFY_EXPLORER = 'https://zkverify-testnet.subscan.io/tx';
-const HORIZEN_EXPLORER_ADDRESS = 'https://horizen-testnet.explorer.caldera.xyz/address';
-const HORIZEN_EXPLORER_TX = 'https://horizen-testnet.explorer.caldera.xyz/tx';
+// Determine network from environment variable (defaults to testnet)
+const NETWORK = process.env.NETWORK || 'testnet';
+
+// Explorer URLs configuration
+const EXPLORER_CONFIG = {
+  mainnet: {
+    ZKVERIFY_EXPLORER: 'https://zkverify.subscan.io/tx',
+    HORIZEN_EXPLORER_ADDRESS: 'https://horizen.calderaexplorer.xyz/address',
+    HORIZEN_EXPLORER_TX: 'https://horizen.calderaexplorer.xyz/tx',
+  },
+  testnet: {
+    ZKVERIFY_EXPLORER: 'https://zkverify-testnet.subscan.io/tx',
+    HORIZEN_EXPLORER_ADDRESS:
+      'https://horizen-testnet.explorer.caldera.xyz/address',
+    HORIZEN_EXPLORER_TX: 'https://horizen-testnet.explorer.caldera.xyz/tx',
+  },
+};
+
+const config =
+  EXPLORER_CONFIG[NETWORK as keyof typeof EXPLORER_CONFIG] ||
+  EXPLORER_CONFIG.testnet;
+const ZKVERIFY_EXPLORER = config.ZKVERIFY_EXPLORER;
+const HORIZEN_EXPLORER_ADDRESS = config.HORIZEN_EXPLORER_ADDRESS;
+const HORIZEN_EXPLORER_TX = config.HORIZEN_EXPLORER_TX;
 
 interface LoginRecord {
   timestamp: string;
@@ -70,7 +91,7 @@ function generateCombinedCSV(
   filename: string,
 ) {
   const header =
-    'Timestamp,Action,User Address,Multisig Wallet,Nonce,TxHash,Explorer Link\n';
+    'Timestamp,Action,User Address,Multisig Wallet,TxHash,Explorer Link\n';
 
   const allRecords: string[] = [];
 
@@ -80,7 +101,7 @@ function generateCombinedCSV(
         ? `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`
         : 'PENDING';
     allRecords.push(
-      `${record.timestamp},LOGIN,${record.address},,,${record.zkVerifyTxHash},${explorerLink}`,
+      `${record.timestamp},LOGIN,${record.address},,${record.zkVerifyTxHash},${explorerLink}`,
     );
   });
 
@@ -98,7 +119,7 @@ function generateCombinedCSV(
     }
 
     allRecords.push(
-      `${record.timestamp},${record.action},${record.userAddress},${record.multisigWallet},${record.nonce},${record.zkVerifyTxHash},${explorerLink}`,
+      `${record.timestamp},${record.action},${record.userAddress},${record.multisigWallet},${record.zkVerifyTxHash},${explorerLink}`,
     );
   });
 
