@@ -69,7 +69,6 @@ export class AuthService {
 
     return {
       user,
-      message: "Login successful",
       ...tokens,
     };
   }
