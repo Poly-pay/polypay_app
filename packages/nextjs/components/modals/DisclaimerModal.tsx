@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import ModalContainer from "./ModalContainer";
 import { Button } from "~~/components/ui/button";
+import { DecoreCircleIcon } from "~~/icons/DecoreCircleIcon";
 import { useDisclaimerStore } from "~~/services/store/disclaimerStore";
 import { ModalProps } from "~~/types/modal";
 
@@ -27,7 +28,7 @@ const DisclaimerModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       <div className="flex flex-col items-center bg-white rounded-2xl overflow-hidden border border-grey-200 -mx-1.5 -my-4">
         {/* Header */}
         <div className="flex items-center w-full px-3 py-4 gap-4">
-          <Image src="/icons/misc/icon-modal-notice.svg" width={36} height={36} alt="icon" />
+          <DecoreCircleIcon width={36} height={36} color="#FF2323" />
           <span className="font-semibold text-[16px] text-grey-950 uppercase tracking-[-0.03em]">Notice</span>
         </div>
 
