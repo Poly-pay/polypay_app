@@ -90,36 +90,41 @@ function generateCombinedCSV(
   onchainActions: OnchainRecord[],
   filename: string,
 ) {
-  const header =
-    'Timestamp,Action,User Address,Multisig Wallet,TxHash,Explorer Link\n';
+  const header = 'Timestamp,Action,User Address,Multisig Wallet,TX Hash\n';
 
   const allRecords: string[] = [];
 
   logins.forEach((record) => {
-    const explorerLink =
+    const userAddressLink = `${HORIZEN_EXPLORER_ADDRESS}/${record.address}`;
+    const txHashLink =
       record.zkVerifyTxHash !== 'PENDING'
         ? `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`
         : 'PENDING';
     allRecords.push(
-      `${record.timestamp},LOGIN,${record.address},,${record.zkVerifyTxHash},${explorerLink}`,
+      `${record.timestamp},LOGIN,${userAddressLink},,${txHashLink}`,
     );
   });
 
   onchainActions.forEach((record) => {
-    let explorerLink = 'PENDING';
+    const userAddressLink = `${HORIZEN_EXPLORER_ADDRESS}/${record.userAddress}`;
+    const multisigWalletLink = record.multisigWallet
+      ? `${HORIZEN_EXPLORER_ADDRESS}/${record.multisigWallet}`
+      : '';
+
+    let txHashLink = 'PENDING';
 
     if (record.zkVerifyTxHash !== 'PENDING') {
       if (record.action === 'CREATE_ACCOUNT') {
-        explorerLink = `${HORIZEN_EXPLORER_ADDRESS}/${record.multisigWallet}`;
+        txHashLink = `${HORIZEN_EXPLORER_ADDRESS}/${record.multisigWallet}`;
       } else if (record.action === 'EXECUTE') {
-        explorerLink = `${HORIZEN_EXPLORER_TX}/${record.zkVerifyTxHash}`;
+        txHashLink = `${HORIZEN_EXPLORER_TX}/${record.zkVerifyTxHash}`;
       } else {
-        explorerLink = `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`;
+        txHashLink = `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`;
       }
     }
 
     allRecords.push(
-      `${record.timestamp},${record.action},${record.userAddress},${record.multisigWallet},${record.zkVerifyTxHash},${explorerLink}`,
+      `${record.timestamp},${record.action},${userAddressLink},${multisigWalletLink},${txHashLink}`,
     );
   });
 
