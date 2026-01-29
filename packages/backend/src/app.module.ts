@@ -13,6 +13,7 @@ import { NotificationModule } from './notification/notification.module';
 import { AuthModule } from './auth/auth.module';
 import { PriceModule } from './price/price.module';
 import { FeatureRequestModule } from './feature-request/feature-request.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { FeatureRequestModule } from './feature-request/feature-request.module';
     AuthModule,
     PriceModule,
     FeatureRequestModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
