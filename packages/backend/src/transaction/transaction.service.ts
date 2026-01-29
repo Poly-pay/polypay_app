@@ -33,7 +33,6 @@ import {
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
 import {
-  DOMAIN_ID_HORIZEN_TESTNET,
   NOT_MEMBER_OF_ACCOUNT,
 } from '@/common/constants';
 import { EventsService } from '@/events/events.service';
@@ -174,7 +173,7 @@ export class TransactionService {
           nullifier: dto.nullifier,
           jobId: proofResult.jobId,
           proofStatus: 'PENDING',
-          domainId: DOMAIN_ID_HORIZEN_TESTNET,
+          domainId: getDomainId(),
           zkVerifyTxHash: proofResult.txHash,
         },
       });
@@ -320,7 +319,7 @@ export class TransactionService {
         nullifier: dto.nullifier,
         jobId: proofResult.jobId,
         proofStatus: ProofStatus.PENDING,
-        domainId: DOMAIN_ID_HORIZEN_TESTNET,
+        domainId: getDomainId(),
         zkVerifyTxHash: proofResult.txHash,
       },
     });
