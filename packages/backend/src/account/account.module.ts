@@ -5,11 +5,12 @@ import { DatabaseModule } from '@/database/database.module';
 import { UserModule } from '@/user/user.module';
 import { RelayerModule } from '@/relayer-wallet/relayer-wallet.module';
 import { EventsModule } from '@/events/events.module';
+import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 
 @Module({
   imports: [DatabaseModule, UserModule, RelayerModule, EventsModule],
   controllers: [AccountController],
-  providers: [AccountService],
+  providers: [AccountService, AnalyticsLoggerService],
   exports: [AccountService],
 })
 export class AccountModule {}

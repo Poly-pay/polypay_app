@@ -85,4 +85,8 @@ export class CreateTransactionDto {
   @IsOptional()
   @IsString()
   vk?: string;
+
+  @IsOptional()
+  @IsString()
+  userAddress?: string;
 }

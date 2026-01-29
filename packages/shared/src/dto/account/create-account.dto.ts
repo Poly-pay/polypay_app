@@ -3,6 +3,7 @@ import {
   IsArray,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Min,
 } from "class-validator";
@@ -21,4 +22,8 @@ export class CreateAccountDto {
   @IsArray()
   @ArrayMinSize(1)
   signers: SignerData[];
+
+  @IsOptional()
+  @IsString()
+  userAddress?: string;
 }

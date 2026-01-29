@@ -91,6 +91,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
         publicInputs,
         nullifier: nullifier.toString(),
         batchItemIds: selectedIds,
+        userAddress: walletClient.account.address,
       });
 
       if (result) {
