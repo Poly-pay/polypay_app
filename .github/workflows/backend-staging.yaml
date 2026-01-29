@@ -1,20 +1,19 @@
-name: Frontend CI
+name: Backend Staging
 
 on:
   push:
     branches:
-      - "main"
       - "develop"
     paths:
-      - "packages/nextjs/**"
+      - "packages/backend/**"
       - "packages/shared/**"
-      - "docker/frontend.Dockerfile"
-      - ".github/workflows/frontend-ci.yaml"
+      - "docker/backend.Dockerfile"
+      - ".github/workflows/backend-staging.yaml"
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    environment: prod
+    environment: staging
 
     permissions:
       contents: read
@@ -40,37 +39,51 @@ jobs:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_FRONTEND_NAME }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
           docker build \
             --platform linux/amd64 \
-            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
-            -f docker/frontend.Dockerfile \
+            -f docker/backend.Dockerfile \
             -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             .
-
           docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA}
+
+      - name: Update and Run Prisma Migration Job
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+        run: |
+          gcloud run jobs update ${{ vars.GCP_BACKEND_NAME }} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
+            --region ${{ vars.GCP_LOCATION }}
+
+          gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
+            --region ${{ vars.GCP_LOCATION }} \
+            --wait
 
       - name: Deploy to Cloud Run
         env:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-          GCP_IMAGE: ${{ vars.GCP_FRONTEND_NAME }}
-          CLOUD_RUN_SERVICE: polypay-frontend
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+          CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
           gcloud run deploy ${CLOUD_RUN_SERVICE} \
             --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             --region ${GCP_LOCATION} \
             --platform managed \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --update-env-vars NETWORK=${{ vars.NETWORK }}
 
       - name: Notify Success to Slack Channel
         if: success()
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-message: "✅ Frontend Deployment Successful!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+          slack-message: "✅ [STAGING] Backend Deployment Successful!\nRepository: polypay-backend\nBranch: ${{ github.ref_name }}\nEnvironment: staging\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
@@ -79,6 +92,6 @@ jobs:
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
-          slack-message: "❌ Frontend Deployment Failed!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: prod\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
+          slack-message: "❌ [STAGING] Backend Deployment Failed!\nRepository: polypay-backend\nBranch: ${{ github.ref_name }}\nEnvironment: staging\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

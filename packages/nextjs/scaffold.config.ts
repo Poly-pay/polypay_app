@@ -1,3 +1,4 @@
+import { NetworkValue } from "@polypay/shared";
 import { defineChain } from "viem";
 import * as chains from "viem/chains";
 
@@ -26,6 +27,29 @@ const horizenTestnet = defineChain({
   testnet: true,
 });
 
+export const horizenMainnet = defineChain({
+  id: 26514,
+  name: "Horizen Mainnet",
+  nativeCurrency: {
+    name: "Ethereum",
+    symbol: "ETH",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://horizen.calderachain.xyz/http"],
+      webSocket: ["wss://horizen.calderachain.xyz/ws"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Horizen Explorer",
+      url: "https://horizen.calderaexplorer.xyz",
+    },
+  },
+  testnet: false,
+});
+
 export type BaseConfig = {
   targetNetworks: readonly chains.Chain[];
   pollingInterval: number;
@@ -43,7 +67,7 @@ const scaffoldConfig = {
   // The networks on which your DApp is live
   // targetNetworks: [chains.sepolia],
   // targetNetworks: [chains.hardhat],
-  targetNetworks: [horizenTestnet],
+  targetNetworks: [process.env.NEXT_PUBLIC_NETWORK === NetworkValue.mainnet ? horizenMainnet : horizenTestnet],
   // The interval at which your front-end polls the RPC servers for new data (it has no effect if you only target the local network (default is 4000))
   pollingInterval: 30000,
   // This is ours Alchemy's default API key.

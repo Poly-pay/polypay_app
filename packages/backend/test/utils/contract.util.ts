@@ -1,5 +1,5 @@
 import { createPublicClient, http, type Hex, parseEther } from 'viem';
-import { horizenTestnet, METAMULTISIG_ABI } from '@polypay/shared';
+import { horizenMainnet, horizenTestnet, METAMULTISIG_ABI, NetworkValue } from '@polypay/shared';
 import { TestSigner } from './signer.util';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
 
@@ -7,8 +7,9 @@ import { waitForReceiptWithRetry } from '@/common/utils/retry';
  * Create public client for reading contract
  */
 export function createTestPublicClient() {
+  const network = process.env.NETWORK;
   return createPublicClient({
-    chain: horizenTestnet,
+    chain: network === NetworkValue.mainnet ? horizenMainnet : horizenTestnet,
     transport: http(),
   });
 }

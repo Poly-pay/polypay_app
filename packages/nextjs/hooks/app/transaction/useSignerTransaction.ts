@@ -53,7 +53,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       callData,
     ])) as `0x${string}`;
 
-    const { proof, publicInputs, nullifier } = await generateProof(txHash);
+    const { proof, publicInputs, nullifier, vk } = await generateProof(txHash);
 
     setLoadingState("Submitting to backend...");
 
@@ -66,6 +66,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       publicInputs,
       nullifier,
       userAddress: walletClient.account.address,
+      vk: vk ? Buffer.from(vk).toString("base64") : undefined,
       ...txPayload,
     });
 

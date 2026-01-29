@@ -1,6 +1,6 @@
 import { SUPPORTED_TOKENS } from "@polypay/shared";
 import { useQuery } from "@tanstack/react-query";
-import { TokenPrices, priceApi } from "~~/services/api/priceApi";
+import { priceApi } from "~~/services/api/priceApi";
 
 export const priceKeys = {
   all: ["prices"] as const,

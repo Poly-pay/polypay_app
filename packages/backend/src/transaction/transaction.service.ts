@@ -39,6 +39,7 @@ import {
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
+import { getDomainId } from '@/common/utils/proof';
 
 @Injectable()
 export class TransactionService {
@@ -638,7 +639,7 @@ export class TransactionService {
       commitment: vote.voterCommitment,
       nullifier: vote.nullifier,
       aggregationId: vote.aggregationId,
-      domainId: vote.domainId ?? DOMAIN_ID_HORIZEN_TESTNET,
+      domainId: vote.domainId,
       zkMerklePath: vote.merkleProof,
       leafCount: vote.leafCount,
       index: vote.leafIndex,
@@ -1210,7 +1211,7 @@ export class TransactionService {
   private async aggregateProofs(
     txId: number,
     maxAttempts = 30,
-    intervalMs = 5000,
+    intervalMs = 10000,
   ) {
     let hasRecentAggregation = false;
     const TWO_MINUTES_MS = 2 * 60 * 1000;

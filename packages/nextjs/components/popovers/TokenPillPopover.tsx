@@ -85,7 +85,7 @@ export function TokenPillPopover({
           />
 
           <div className="py-1 xl:min-w-[300px] min-w-[220px]">
-            {SUPPORTED_TOKENS.filter(token => token.address !== selectedToken.address).map(token => (
+            {SUPPORTED_TOKENS.map(token => (
               <div
                 key={token.address}
                 onClick={() => {
