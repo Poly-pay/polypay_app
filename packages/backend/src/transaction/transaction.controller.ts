@@ -21,6 +21,8 @@ import { TransactionService } from './transaction.service';
 import {
   CreateTransactionDto,
   ApproveTransactionDto,
+  DenyTransactionDto,
+  ExecuteTransactionDto,
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
 } from '@polypay/shared';
@@ -242,8 +244,9 @@ export class TransactionController {
   async deny(
     @CurrentUser() user: User,
     @Param('txId', ParseIntPipe) txId: number,
+    @Body() dto: DenyTransactionDto,
   ) {
-    return this.transactionService.deny(txId, user.commitment);
+    return this.transactionService.deny(txId, user.commitment, dto.userAddress);
   }
 
   /**
@@ -278,8 +281,11 @@ export class TransactionController {
     description: 'Forbidden - Not an account signer',
   })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
-  async executeOnChain(@Param('txId', ParseIntPipe) txId: number) {
-    return this.transactionService.executeOnChain(txId);
+  async executeOnChain(
+    @Param('txId', ParseIntPipe) txId: number,
+    @Body() dto: ExecuteTransactionDto,
+  ) {
+    return this.transactionService.executeOnChain(txId, dto.userAddress);
   }
 
   /**

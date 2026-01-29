@@ -12,6 +12,7 @@ import {
   ACCOUNT_CREATED_EVENT,
   AccountCreatedEventData,
 } from '@polypay/shared';
+import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 
 @Injectable()
 export class AccountService {
@@ -21,12 +22,14 @@ export class AccountService {
     private prisma: PrismaService,
     private relayerService: RelayerService,
     private readonly eventsService: EventsService,
+    private readonly analyticsLogger: AnalyticsLoggerService,
   ) {}
 
-  /**
-   * Create new multisig account with signers
-   */
-  async create(dto: CreateAccountDto, creatorCommitment: string) {
+  async create(
+    dto: CreateAccountDto,
+    creatorCommitment: string,
+    userAddress?: string,
+  ) {
     // 1. Validate creator is in signers list
     const commitments = dto.signers.map((s) => s.commitment);
     if (!commitments.includes(creatorCommitment)) {
@@ -48,7 +51,8 @@ export class AccountService {
 
     this.logger.log(`Account deployed at ${address}, txHash: ${txHash}`);
 
-    // 4. Create account + users in transaction
+    this.analyticsLogger.logCreateAccount(userAddress, address);
+
     const account = await this.prisma.$transaction(async (prisma) => {
       // Upsert all users (update name only if null)
       const users = await Promise.all(

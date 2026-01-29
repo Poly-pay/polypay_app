@@ -6,6 +6,7 @@ import AccountName from "./AccountName";
 import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
+import { useWalletClient } from "wagmi";
 import { useCreateAccount } from "~~/hooks/api";
 import { useZodForm } from "~~/hooks/form";
 import { CreateAccountFormData, createAccountSchema } from "~~/lib/form";
@@ -17,6 +18,7 @@ import { getValidSigners } from "~~/utils/signer";
 export default function NewAccountContainer() {
   const { commitment } = useIdentityStore();
   const { setCurrentAccount } = useAccountStore();
+  const { data: walletClient } = useWalletClient();
 
   const { mutateAsync: createAccount, isPending: isCreating } = useCreateAccount();
 
@@ -72,6 +74,7 @@ export default function NewAccountContainer() {
         name: formData.name,
         signers: validSigners,
         threshold: formData.threshold,
+        userAddress: walletClient?.account?.address,
       });
 
       setCurrentAccount(account);

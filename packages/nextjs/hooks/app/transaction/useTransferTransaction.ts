@@ -92,6 +92,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
         proof: Array.from(proof),
         publicInputs,
         nullifier: nullifier.toString(),
+        userAddress: walletClient.account.address,
       });
 
       if (result) {

@@ -1,6 +1,15 @@
 import { apiClient } from "./apiClient";
 import { API_ENDPOINTS, PaginatedResponse, PaginationParams } from "@polypay/shared";
-import { ApproveTransactionDto, CreateTransactionDto, Transaction, TxStatus, TxType, VoteType } from "@polypay/shared";
+import {
+  ApproveTransactionDto,
+  CreateTransactionDto,
+  DenyTransactionDto,
+  ExecuteTransactionDto,
+  Transaction,
+  TxStatus,
+  TxType,
+  VoteType,
+} from "@polypay/shared";
 
 export const transactionApi = {
   create: async (
@@ -63,13 +72,14 @@ export const transactionApi = {
 
   deny: async (
     txId: number,
+    dto: DenyTransactionDto,
   ): Promise<{
     txId: number;
     voteType: VoteType;
     status: TxStatus;
     denyCount: number;
   }> => {
-    const { data } = await apiClient.post(API_ENDPOINTS.transactions.deny(txId));
+    const { data } = await apiClient.post(API_ENDPOINTS.transactions.deny(txId), dto);
     return data;
   },
 
@@ -80,12 +90,13 @@ export const transactionApi = {
 
   execute: async (
     txId: number,
+    dto: ExecuteTransactionDto,
   ): Promise<{
     txId: number;
     txHash: string;
     status: TxStatus;
   }> => {
-    const { data } = await apiClient.post(API_ENDPOINTS.transactions.execute(txId));
+    const { data } = await apiClient.post(API_ENDPOINTS.transactions.execute(txId), dto);
     return data;
   },
 

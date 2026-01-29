@@ -6,6 +6,7 @@ import { DatabaseModule } from '@/database/database.module';
 import { RelayerModule } from '@/relayer-wallet/relayer-wallet.module';
 import { BatchItemModule } from '@/batch-item/batch-item.module';
 import { EventsModule } from '@/events/events.module';
+import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { EventsModule } from '@/events/events.module';
     EventsModule,
   ],
   controllers: [TransactionController],
-  providers: [TransactionService],
+  providers: [TransactionService, AnalyticsLoggerService],
   exports: [TransactionService],
 })
 export class TransactionModule {}

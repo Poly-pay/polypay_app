@@ -17,4 +17,8 @@ export class LoginDto {
   @IsOptional()
   @IsString()
   vk?: string;
+
+  @IsOptional()
+  @IsString()
+  walletAddress?: string; // For analytics only - NOT stored in database
 }
