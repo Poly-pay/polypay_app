@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Headers,
-  UnauthorizedException,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -17,17 +11,9 @@ export class AdminController {
     'user-analytics.log',
   );
 
+  // TODO: Add ADMIN_API_KEY authentication later
   @Get('analytics-log')
-  getAnalyticsLog(
-    @Headers('x-admin-key') adminKey: string,
-    @Res() res: Response,
-  ) {
-    const expectedKey = process.env.ADMIN_API_KEY;
-
-    if (!expectedKey || adminKey !== expectedKey) {
-      throw new UnauthorizedException('Invalid admin key');
-    }
-
+  getAnalyticsLog(@Res() res: Response) {
     if (!fs.existsSync(this.logPath)) {
       return res.status(404).send('Log file not found');
     }
