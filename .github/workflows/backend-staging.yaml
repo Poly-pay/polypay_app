@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "develop"
+      - "feat/admin-analytics-endpoint"
     paths:
       - "packages/backend/**"
       - "packages/shared/**"
