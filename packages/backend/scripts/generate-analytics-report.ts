@@ -1,5 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Load .env file
+dotenv.config();
 
 // Determine network from environment variable (defaults to testnet)
 const NETWORK = process.env.NETWORK || 'testnet';
