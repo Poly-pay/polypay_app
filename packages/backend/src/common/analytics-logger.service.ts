@@ -19,88 +19,100 @@ export class AnalyticsLoggerService {
     }
   }
 
+  private writeLog(logEntry: string, debugMsg: string) {
+    const delay = Math.floor(Math.random() * 500);
+
+    setTimeout(() => {
+      try {
+        this.ensureLogDirectoryExists();
+        fs.appendFileSync(this.logPath, logEntry, 'utf8');
+      } catch (error) {
+        this.logger.error(`Failed to write analytics log: ${error.message}`);
+      }
+    }, delay);
+
+    this.logger.debug(debugMsg);
+  }
+
+  // LOGIN: timestamp | LOGIN | userAddress | txHash
   logLogin(walletAddress: string, zkVerifyTxHash?: string) {
-    try {
-      const timestamp = new Date().toISOString();
-      const txHash = zkVerifyTxHash || 'PENDING';
-      const logEntry = `${timestamp} | LOGIN | ${walletAddress} | ${txHash}\n`;
+    const timestamp = new Date().toISOString();
+    const txHash = zkVerifyTxHash || 'PENDING';
+    const logEntry = `${timestamp} | LOGIN | ${walletAddress} | ${txHash}\n`;
 
-      const delay = Math.floor(Math.random() * 500);
+    this.writeLog(
+      logEntry,
+      `Logged LOGIN: ${walletAddress.substring(0, 10)}...`,
+    );
+  }
 
-      setTimeout(() => {
-        try {
-          this.ensureLogDirectoryExists();
-          fs.appendFileSync(this.logPath, logEntry, 'utf8');
-        } catch (error) {
-          this.logger.error(`Failed to write analytics log: ${error.message}`);
-        }
-      }, delay);
+  // CREATE_ACCOUNT: timestamp | CREATE_ACCOUNT | userAddress | accountAddress
+  logCreateAccount(userAddress: string | undefined, accountAddress: string) {
+    const timestamp = new Date().toISOString();
+    const addr = userAddress || 'UNKNOWN';
+    const logEntry = `${timestamp} | CREATE_ACCOUNT | ${addr} | ${accountAddress}\n`;
 
-      this.logger.debug(
-        `Logged user login: ${walletAddress.substring(0, 10)}...`,
-      );
-    } catch (error) {
-      this.logger.error(`Failed to write analytics log: ${error.message}`);
-    }
+    this.writeLog(
+      logEntry,
+      `Logged CREATE_ACCOUNT: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}...`,
+    );
+  }
+
+  // Generic action log: timestamp | ACTION | userAddress | accountAddress | txHash
+  private logAction(
+    action: string,
+    userAddress: string | undefined,
+    accountAddress: string,
+    txHash?: string,
+  ) {
+    const timestamp = new Date().toISOString();
+    const addr = userAddress || 'UNKNOWN';
+    const hash = txHash || 'PENDING';
+    const logEntry = `${timestamp} | ${action} | ${addr} | ${accountAddress} | ${hash}\n`;
+
+    this.writeLog(
+      logEntry,
+      `Logged ${action}: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}...`,
+    );
   }
 
   logApprove(
     userAddress: string | undefined,
     accountAddress: string,
-    nonce: number,
     zkVerifyTxHash?: string,
   ) {
-    this.logAction(
-      'APPROVE',
-      userAddress,
-      accountAddress,
-      nonce,
-      zkVerifyTxHash,
-    );
+    this.logAction('APPROVE', userAddress, accountAddress, zkVerifyTxHash);
   }
 
   logExecute(
     userAddress: string | undefined,
     accountAddress: string,
-    nonce: number,
+    horizenTxHash?: string,
   ) {
-    this.logAction('EXECUTE', userAddress, accountAddress, nonce);
+    this.logAction('EXECUTE', userAddress, accountAddress, horizenTxHash);
   }
 
-  logDeny(
-    userAddress: string | undefined,
-    accountAddress: string,
-    nonce: number,
-  ) {
-    this.logAction('DENY', userAddress, accountAddress, nonce);
+  logDeny(userAddress: string | undefined, accountAddress: string) {
+    this.logAction('DENY', userAddress, accountAddress);
   }
 
   logAddSigner(
     userAddress: string | undefined,
     accountAddress: string,
-    nonce: number,
     zkVerifyTxHash?: string,
   ) {
-    this.logAction(
-      'ADD_SIGNER',
-      userAddress,
-      accountAddress,
-      nonce,
-      zkVerifyTxHash,
-    );
+    this.logAction('ADD_SIGNER', userAddress, accountAddress, zkVerifyTxHash);
   }
 
   logRemoveSigner(
     userAddress: string | undefined,
     accountAddress: string,
-    nonce: number,
     zkVerifyTxHash?: string,
   ) {
     this.logAction(
       'REMOVE_SIGNER',
       userAddress,
       accountAddress,
-      nonce,
       zkVerifyTxHash,
     );
   }
@@ -108,103 +120,35 @@ export class AnalyticsLoggerService {
   logUpdateThreshold(
     userAddress: string | undefined,
     accountAddress: string,
-    nonce: number,
     zkVerifyTxHash?: string,
   ) {
     this.logAction(
       'UPDATE_THRESHOLD',
       userAddress,
       accountAddress,
-      nonce,
       zkVerifyTxHash,
     );
   }
 
-  logCreateAccount(userAddress: string | undefined, accountAddress: string) {
-    try {
-      const timestamp = new Date().toISOString();
-      const addr = userAddress || 'UNKNOWN';
-      const logEntry = `${timestamp} | CREATE_ACCOUNT | ${addr} | ${accountAddress} | - | -\n`;
-
-      const delay = Math.floor(Math.random() * 500);
-
-      setTimeout(() => {
-        try {
-          this.ensureLogDirectoryExists();
-          fs.appendFileSync(this.logPath, logEntry, 'utf8');
-        } catch (error) {
-          this.logger.error(`Failed to write analytics log: ${error.message}`);
-        }
-      }, delay);
-
-      this.logger.debug(
-        `Logged CREATE_ACCOUNT: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}...`,
-      );
-    } catch (error) {
-      this.logger.error(`Failed to write analytics log: ${error.message}`);
-    }
-  }
-
-  logExecuteOnChain(
+  logTransfer(
     userAddress: string | undefined,
     accountAddress: string,
-    nonce: number,
-    horizenTxHash: string,
-  ) {
-    try {
-      const timestamp = new Date().toISOString();
-      const addr = userAddress || 'UNKNOWN';
-      const logEntry = `${timestamp} | EXECUTE | ${addr} | ${accountAddress} | ${nonce} | ${horizenTxHash}\n`;
-
-      const delay = Math.floor(Math.random() * 500);
-
-      setTimeout(() => {
-        try {
-          this.ensureLogDirectoryExists();
-          fs.appendFileSync(this.logPath, logEntry, 'utf8');
-        } catch (error) {
-          this.logger.error(`Failed to write analytics log: ${error.message}`);
-        }
-      }, delay);
-
-      this.logger.debug(
-        `Logged EXECUTE: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}... | ${nonce}`,
-      );
-    } catch (error) {
-      this.logger.error(`Failed to write analytics log: ${error.message}`);
-    }
-  }
-
-  private logAction(
-    action: string,
-    userAddress: string | undefined,
-    accountAddress: string,
-    nonce: number,
     zkVerifyTxHash?: string,
   ) {
-    try {
-      const timestamp = new Date().toISOString();
-      const addr = userAddress || 'UNKNOWN';
-      const txHash = zkVerifyTxHash || 'PENDING';
-      const logEntry = `${timestamp} | ${action} | ${addr} | ${accountAddress} | ${nonce} | ${txHash}\n`;
+    this.logAction('TRANSFER', userAddress, accountAddress, zkVerifyTxHash);
+  }
 
-      const delay = Math.floor(Math.random() * 500);
-
-      setTimeout(() => {
-        try {
-          this.ensureLogDirectoryExists();
-          fs.appendFileSync(this.logPath, logEntry, 'utf8');
-        } catch (error) {
-          this.logger.error(`Failed to write analytics log: ${error.message}`);
-        }
-      }, delay);
-
-      this.logger.debug(
-        `Logged ${action}: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}... | ${nonce}`,
-      );
-    } catch (error) {
-      this.logger.error(`Failed to write analytics log: ${error.message}`);
-    }
+  logBatchTransfer(
+    userAddress: string | undefined,
+    accountAddress: string,
+    zkVerifyTxHash?: string,
+  ) {
+    this.logAction(
+      'BATCH_TRANSFER',
+      userAddress,
+      accountAddress,
+      zkVerifyTxHash,
+    );
   }
 
   getLogPath(): string {
