@@ -2,7 +2,7 @@
 
 ### What is PolyPay?
 
-PolyPay is a privacy-preserving payroll platform built on Horizen. It enables organizations, DAOs, and global teams to run payroll privately while staying on their preferred blockchain.
+PolyPay is a privacy-preserving payroll platform built on Horizen. It enables organizations, DAOs, and global teams to run payroll privately.
 
 ### The Problem
 
@@ -16,11 +16,11 @@ This lack of privacy prevents businesses from adopting crypto payroll.
 
 ### Our Solution
 
-PolyPay combines **Horizen's privacy layer** with **cross-chain settlement** to provide:
+PolyPay uses **Horizen's privacy layer** and **zero-knowledge proofs** to provide:
 
 * **Private Payments**: Salary amounts and recipients stay confidential
 * **Private Multisig**: Team approvals without exposing signer identities
-* **Flexible Payment Logic**: Escrow, milestone-based, and recurring transfers
+* **Flexible Payment Logic**: Single and batch transfers
 
 ### Who Is It For?
 
@@ -28,3 +28,10 @@ PolyPay combines **Horizen's privacy layer** with **cross-chain settlement** to 
 * DAOs managing contributor payments
 * Traditional businesses entering crypto
 * Teams using Safe or Squads who want privacy upgrades
+
+### Roadmap
+
+* Cross-chain settlement
+* Fiat on/off-ramp integration
+* Escrow and milestone-based payments
+* Recurring transfers
