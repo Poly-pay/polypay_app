@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import AccountSidebar from "./AccountSidebar";
 import ManageAccountsSidebar from "./ManageAccountsSidebar";
+import Routes from "~~/configs/routes.config";
 import { useMyAccounts } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
@@ -12,27 +13,26 @@ import { useAccountStore, useIdentityStore, useSidebarStore } from "~~/services/
 import { ModalName } from "~~/types/modal";
 import { notification } from "~~/utils/scaffold-eth";
 
-const SIDEBAR_LINKS = {
-  DASHBOARD: "/dashboard",
-  CONTACT_BOOK: "/contact-book",
-  TRANSFER: "/transfer",
-  TRANSACTIONS: "/transactions",
-  BATCH: "/batch",
-};
-
 const sectionItems = [
   {
     label: "Quick Access",
     menuItems: [
-      { icon: "/sidebar/dashboard.svg", label: "Dashboard", link: SIDEBAR_LINKS.DASHBOARD },
-      { icon: "/sidebar/contact-book.svg", label: "Contact Book", link: SIDEBAR_LINKS.CONTACT_BOOK },
+      { icon: Routes.DASHBOARD.icon, label: Routes.DASHBOARD.title, link: Routes.DASHBOARD.path },
+      { icon: Routes.CONTACT_BOOK.icon, label: Routes.CONTACT_BOOK.title, link: Routes.CONTACT_BOOK.path },
     ],
   },
   {
     label: "Payments",
     menuItems: [
-      { icon: "/sidebar/transfer.svg", label: "Transfer", link: SIDEBAR_LINKS.TRANSFER },
-      { icon: "/sidebar/batch.svg", label: "Batch", link: SIDEBAR_LINKS.BATCH },
+      { icon: Routes.TRANSFER.icon, label: Routes.TRANSFER.title, link: Routes.TRANSFER.path },
+      { icon: Routes.BATCH.icon, label: Routes.BATCH.title, link: Routes.BATCH.path },
+    ],
+  },
+  {
+    label: "Quest",
+    menuItems: [
+      { icon: Routes.QUEST.icon, label: Routes.QUEST.title, link: Routes.QUEST.path },
+      { icon: Routes.LEADERBOARD.icon, label: Routes.LEADERBOARD.title, link: Routes.LEADERBOARD.path },
     ],
   },
 ];
