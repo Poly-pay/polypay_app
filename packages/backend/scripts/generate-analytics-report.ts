@@ -33,7 +33,7 @@ const HORIZEN_EXPLORER_TX = config.HORIZEN_EXPLORER_TX;
 interface LoginRecord {
   timestamp: string;
   address: string;
-  zkVerifyTxHash: string;
+  txHash: string;
 }
 
 interface OnchainRecord {
@@ -41,8 +41,7 @@ interface OnchainRecord {
   action: string;
   userAddress: string;
   multisigWallet: string;
-  nonce: string;
-  zkVerifyTxHash: string;
+  txHash: string;
 }
 
 function parseLogFile(logPath: string): {
@@ -72,16 +71,15 @@ function parseLogFile(logPath: string): {
       logins.push({
         timestamp,
         address: parts[2],
-        zkVerifyTxHash: parts[3],
+        txHash: parts[3],
       });
-    } else if (parts.length >= 6) {
+    } else if (parts.length >= 5) {
       onchainActions.push({
         timestamp,
         action,
         userAddress: parts[2],
         multisigWallet: parts[3],
-        nonce: parts[4],
-        zkVerifyTxHash: parts[5],
+        txHash: parts[4],
       });
     }
   }
@@ -101,8 +99,8 @@ function generateCombinedCSV(
   logins.forEach((record) => {
     const userAddressLink = `${HORIZEN_EXPLORER_ADDRESS}/${record.address}`;
     const txHashLink =
-      record.zkVerifyTxHash !== 'PENDING'
-        ? `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`
+      record.txHash !== 'PENDING'
+        ? `${ZKVERIFY_EXPLORER}/${record.txHash}`
         : 'PENDING';
     allRecords.push(
       `${record.timestamp},LOGIN,${userAddressLink},,${txHashLink}`,
@@ -117,13 +115,13 @@ function generateCombinedCSV(
 
     let txHashLink = 'PENDING';
 
-    if (record.zkVerifyTxHash !== 'PENDING') {
+    if (record.txHash !== 'PENDING') {
       if (record.action === 'CREATE_ACCOUNT') {
         txHashLink = `${HORIZEN_EXPLORER_ADDRESS}/${record.multisigWallet}`;
       } else if (record.action === 'EXECUTE') {
-        txHashLink = `${HORIZEN_EXPLORER_TX}/${record.zkVerifyTxHash}`;
+        txHashLink = `${HORIZEN_EXPLORER_TX}/${record.txHash}`;
       } else {
-        txHashLink = `${ZKVERIFY_EXPLORER}/${record.zkVerifyTxHash}`;
+        txHashLink = `${ZKVERIFY_EXPLORER}/${record.txHash}`;
       }
     }
 

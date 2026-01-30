@@ -32,9 +32,7 @@ import {
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
-import {
-  NOT_MEMBER_OF_ACCOUNT,
-} from '@/common/constants';
+import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
@@ -195,7 +193,6 @@ export class TransactionService {
     this.analyticsLogger.logApprove(
       dto.userAddress,
       transaction.accountAddress,
-      transaction.nonce,
       proofResult.txHash,
     );
 
@@ -203,21 +200,30 @@ export class TransactionService {
       this.analyticsLogger.logAddSigner(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         proofResult.txHash,
       );
     } else if (dto.type === TxType.REMOVE_SIGNER) {
       this.analyticsLogger.logRemoveSigner(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         proofResult.txHash,
       );
     } else if (dto.type === TxType.SET_THRESHOLD) {
       this.analyticsLogger.logUpdateThreshold(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
+        proofResult.txHash,
+      );
+    } else if (dto.type === TxType.TRANSFER) {
+      this.analyticsLogger.logTransfer(
+        dto.userAddress,
+        transaction.accountAddress,
+        proofResult.txHash,
+      );
+    } else if (dto.type === TxType.BATCH) {
+      this.analyticsLogger.logBatchTransfer(
+        dto.userAddress,
+        transaction.accountAddress,
         proofResult.txHash,
       );
     }
@@ -329,7 +335,6 @@ export class TransactionService {
     this.analyticsLogger.logApprove(
       dto.userAddress,
       transaction.accountAddress,
-      transaction.nonce,
       proofResult.txHash,
     );
 
@@ -337,21 +342,30 @@ export class TransactionService {
       this.analyticsLogger.logAddSigner(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         proofResult.txHash,
       );
     } else if (transaction.type === TxType.REMOVE_SIGNER) {
       this.analyticsLogger.logRemoveSigner(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         proofResult.txHash,
       );
     } else if (transaction.type === TxType.SET_THRESHOLD) {
       this.analyticsLogger.logUpdateThreshold(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
+        proofResult.txHash,
+      );
+    } else if (transaction.type === TxType.TRANSFER) {
+      this.analyticsLogger.logTransfer(
+        dto.userAddress,
+        transaction.accountAddress,
+        proofResult.txHash,
+      );
+    } else if (transaction.type === TxType.BATCH) {
+      this.analyticsLogger.logBatchTransfer(
+        dto.userAddress,
+        transaction.accountAddress,
         proofResult.txHash,
       );
     }
@@ -435,11 +449,7 @@ export class TransactionService {
 
     this.logger.log(`Vote DENY added for txId: ${txId}`);
 
-    this.analyticsLogger.logDeny(
-      userAddress,
-      transaction.accountAddress,
-      transaction.nonce,
-    );
+    this.analyticsLogger.logDeny(userAddress, transaction.accountAddress);
 
     // 4. Check if transaction should fail
     await this.checkIfFailed(txId);
@@ -888,10 +898,9 @@ export class TransactionService {
       // 3. Mark as executed only on success
       await this.markExecuted(txId, txHash);
 
-      this.analyticsLogger.logExecuteOnChain(
+      this.analyticsLogger.logExecute(
         userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         txHash,
       );
 

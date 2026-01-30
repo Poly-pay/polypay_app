@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
+import { WrongNetwork } from "../scaffold-eth/RainbowKitCustomConnectButton/WrongNetwork";
 import { useQueryClient } from "@tanstack/react-query";
 import { Address } from "viem";
 import { useAccount, useDisconnect, useWalletClient } from "wagmi";
@@ -25,7 +26,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
   const { data: walletClient } = useWalletClient();
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
-  const { connector } = useAccount();
+  const { connector, chain } = useAccount();
   const queryClient = useQueryClient();
 
   const { openModal } = useModalApp();
@@ -55,6 +56,15 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
           <span className="hidden xl:block text-sm">Connect your wallet to power up your journal.</span>
           <MultisigConnectButton />
         </div>
+      </div>
+    );
+  }
+
+  // Wrong network state
+  if (chain?.id !== targetNetwork.id) {
+    return (
+      <div className="flex justify-center p-3 bg-main-white border border-grey-200 rounded-xl">
+        <WrongNetwork />
       </div>
     );
   }

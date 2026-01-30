@@ -108,5 +108,5 @@ This two-step verification ensures only authorized signers can sign transactions
 ## Learn More
 
 - [Noir Language Documentation](https://noir-lang.org/docs)
-- [UltraPlonk Proving System](https://docs.aztec.network/aztec/protocol/specifications/proving-system/ultraplonk)
+- [UltraPlonk Proving System](https://rknhr-uec.github.io/aztec-protocol-spec/protocol-specs/cryptography/proving-system/overview)
 - [zkVerify Documentation](https://docs.zkverify.io)

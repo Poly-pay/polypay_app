@@ -100,6 +100,7 @@ const config: Config = {
         },
         orange: {
           50: "var(--color-orange-50)",
+          100: "var(--color-orange-100)",
           500: "var(--color-orange-500)",
         },
       },
