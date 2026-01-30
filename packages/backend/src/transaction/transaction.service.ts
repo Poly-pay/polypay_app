@@ -33,9 +33,7 @@ import {
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
-import {
-  NOT_MEMBER_OF_ACCOUNT,
-} from '@/common/constants';
+import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
