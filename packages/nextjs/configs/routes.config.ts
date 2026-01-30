@@ -24,11 +24,29 @@ const Routes = {
     title: "Transfer",
     icon: "/sidebar/transfer.svg",
   },
+  TRANSACTIONS: {
+    path: "/transactions",
+    name: "transactions",
+    title: "Transactions",
+    icon: "/sidebar/transactions.svg",
+  },
   BATCH: {
     path: "/batch",
     name: "batch",
     title: "Batch",
     icon: "/sidebar/batch.svg",
+  },
+  QUEST: {
+    path: "/quest",
+    name: "quest",
+    title: "Quest",
+    icon: "/sidebar/quest-icon.svg",
+  },
+  LEADERBOARD: {
+    path: "/leaderboard",
+    name: "leader-board",
+    title: "Leader Board",
+    icon: "/sidebar/leader-board-icon.svg",
   },
   MOBILE: {
     path: "/mobile",
