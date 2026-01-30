@@ -5,6 +5,7 @@ import ModalContainer from "./ModalContainer";
 import { Contact } from "@polypay/shared";
 import { X } from "lucide-react";
 import { useDeleteContact } from "~~/hooks";
+import { DecoreCircleIcon } from "~~/icons/DecoreCircleIcon";
 import { formatAddress } from "~~/utils/format";
 
 interface DeleteContactModalProps {
@@ -54,7 +55,7 @@ const DeleteContactModal = ({
       preventClose={isPending}
     >
       <div className="flex items-center gap-3 p-5">
-        <Image src={"/contact-book/remove-modal-icon.svg"} alt="icon" width={36} height={36} />
+        <DecoreCircleIcon width={36} height={36} color="#6D2EFF" />
         <div className="flex-1 flex items-center justify-between">
           <div>
             <h3 className="uppercase text-lg font-medium text-grey-950">CONFIRMATION</h3>
@@ -71,7 +72,7 @@ const DeleteContactModal = ({
         </div>
       </div>
       <div className="flex flex-col justify-center items-center gap-4 py-6 px-3">
-        <Image src={"/contact-book/remove-contact.png"} width={200} height={200} alt="remove-contact" />
+        <Image src={"/modals/remove.svg"} width={200} height={200} alt="remove-contact" />
         <div className="flex items-center justify-between gap-2 w-60 rounded-full px-3 py-1.5 bg-red-50 border border-red-500">
           <p className="text-sm truncate">{selectedContact.name}</p>
           <p className="bg-red-500 text-sm px-2 py-1 rounded-full text-white">{formattedAddress}</p>

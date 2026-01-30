@@ -92,7 +92,7 @@ const SwitchAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           ) : (
             <>
               {/* Account Cards Container - with overflow hidden for animation */}
-              <div className="relative w-full h-[248px] overflow-hidden mt-5">
+              <div className="relative w-full h-[248px] overflow-hidden mt-5 flex items-center justify-center">
                 <div
                   className="flex gap-4 absolute transition-transform duration-300 ease-in-out"
                   style={{
