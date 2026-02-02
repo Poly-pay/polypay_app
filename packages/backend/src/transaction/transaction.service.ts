@@ -37,6 +37,7 @@ import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 import { getDomainId } from '@/common/utils/proof';
+import { QuestService } from '@/quest/quest.service';
 
 @Injectable()
 export class TransactionService {
@@ -49,6 +50,7 @@ export class TransactionService {
     private batchItemService: BatchItemService,
     private readonly eventsService: EventsService,
     private readonly analyticsLogger: AnalyticsLoggerService,
+    private readonly questService: QuestService,
   ) {}
 
   /**
@@ -844,6 +846,18 @@ export class TransactionService {
           executedAt: new Date(),
         },
       });
+
+      // Award quest points
+      try {
+        await this.questService.awardSuccessfulTx(txId, transaction.createdBy);
+        await this.questService.awardAccountFirstTx(
+          transaction.accountAddress,
+          txId,
+        );
+      } catch (error) {
+        this.logger.error(`Failed to award quest points: ${error.message}`);
+        // Don't throw - quest points should not block transaction
+      }
 
       // Emit event for status update
       const eventData: TxStatusEventData = {

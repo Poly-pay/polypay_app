@@ -17,6 +17,7 @@ model User {
   batchItems            BatchItem[]
   receivedNotifications Notification[]  @relation("ReceivedNotifications")
   sentNotifications     Notification[]  @relation("SentNotifications")
+  pointHistories        PointHistory[]
 
   @@map("users")
 }
@@ -99,10 +100,10 @@ model Vote {
   voteType        VoteType @map("vote_type")
 
   // ZK Proof (only APPROVE)
-  nullifier      String?  @map("nullifier") // This unique on-chain, but on our backend, it can be duplicate across tx (because txs can have same nonce)
-  jobId          String?  @unique @map("job_id")
+  nullifier      String?      @map("nullifier") // This unique on-chain, but on our backend, it can be duplicate across tx (because txs can have same nonce)
+  jobId          String?      @unique @map("job_id")
   proofStatus    ProofStatus? @map("proof_status")
-  zkVerifyTxHash String?  @map("zkverify_tx_hash")
+  zkVerifyTxHash String?      @map("zkverify_tx_hash")
 
   aggregationId String?  @map("aggregation_id")
   domainId      Int?     @default(175) @map("domain_id")
@@ -201,6 +202,52 @@ model FeatureRequest {
   @@map("feature_requests")
 }
 
+model Quest {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  name        String
+  description String?
+  points      Int
+  type        QuestCategory
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  pointHistories PointHistory[]
+
+  @@map("quests")
+}
+
+model PointHistory {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  questId   String   @map("quest_id")
+  points    Int
+  accountId String?  @map("account_id")
+  txId      Int?     @map("tx_id")
+  earnedAt  DateTime @default(now()) @map("earned_at")
+
+  user  User  @relation(fields: [userId], references: [id])
+  quest Quest @relation(fields: [questId], references: [id])
+
+  @@index([userId])
+  @@index([questId])
+  @@index([earnedAt])
+  @@map("point_histories")
+}
+
+model LoginHistory {
+  id             String   @id @default(cuid())
+  commitment     String
+  walletAddress  String   @map("wallet_address")
+  jobId          String   @map("job_id")
+  zkVerifyTxHash String?  @map("zkverify_tx_hash")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([commitment])
+  @@index([walletAddress])
+  @@map("login_history")
+}
+
 enum TxType {
   TRANSFER
   ADD_SIGNER
@@ -232,15 +279,7 @@ enum NotificationType {
   COMMITMENT_RECEIVED
 }
 
-model LoginHistory {
-  id             String   @id @default(cuid())
-  commitment     String
-  walletAddress  String   @map("wallet_address")
-  jobId          String   @map("job_id")
-  zkVerifyTxHash String?  @map("zkverify_tx_hash")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  @@index([commitment])
-  @@index([walletAddress])
-  @@map("login_history")
+enum QuestCategory {
+  RECURRING
+  DAILY
 }

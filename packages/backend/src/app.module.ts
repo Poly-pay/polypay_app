@@ -14,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
 import { PriceModule } from './price/price.module';
 import { FeatureRequestModule } from './feature-request/feature-request.module';
 import { AdminModule } from './admin/admin.module';
+import { QuestModule } from './quest/quest.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AdminModule } from './admin/admin.module';
     PriceModule,
     FeatureRequestModule,
     AdminModule,
+    QuestModule,
   ],
 })
 export class AppModule {}

@@ -8,3 +8,4 @@ export * from "./notification";
 export * from "./socket-events";
 export * from "./auth";
 export * from "./feature-request";
+export * from "./quest";
