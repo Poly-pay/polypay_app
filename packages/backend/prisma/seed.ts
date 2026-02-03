@@ -14,14 +14,14 @@ async function seedQuests() {
     {
       code: QuestCode.ACCOUNT_FIRST_TX,
       name: 'First Transaction',
-      description: 'Create account and execute first transaction',
+      description: 'Create account and execute first transaction', // TODO: change description
       points: 100,
       type: QuestCategory.RECURRING,
     },
     {
       code: QuestCode.SUCCESSFUL_TX,
       name: 'Successful Transaction',
-      description: 'Execute a successful transaction',
+      description: 'Execute a successful transaction', // TODO: change description
       points: 50,
       type: QuestCategory.RECURRING,
     },

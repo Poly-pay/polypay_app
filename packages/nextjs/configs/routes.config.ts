@@ -24,12 +24,6 @@ const Routes = {
     title: "Transfer",
     icon: "/sidebar/transfer.svg",
   },
-  TRANSACTIONS: {
-    path: "/transactions",
-    name: "transactions",
-    title: "Transactions",
-    icon: "/sidebar/transactions.svg",
-  },
   BATCH: {
     path: "/batch",
     name: "batch",
@@ -45,7 +39,7 @@ const Routes = {
   LEADERBOARD: {
     path: "/leaderboard",
     name: "leader-board",
-    title: "Leader Board",
+    title: "Leaderboard",
     icon: "/sidebar/leader-board-icon.svg",
   },
   MOBILE: {
