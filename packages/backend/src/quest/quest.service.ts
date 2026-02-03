@@ -1,12 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { QuestCode, TxStatus } from '@polypay/shared';
+import { CAMPAIGN_START } from '@/common/constants';
 
 @Injectable()
 export class QuestService {
   private readonly logger = new Logger(QuestService.name);
 
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Get week date range
+   */
+  private getWeekDateRange(week: number): { start: Date; end: Date } {
+    const startDate = new Date(CAMPAIGN_START);
+    startDate.setDate(startDate.getDate() + (week - 1) * 7);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 7);
+    endDate.setHours(0, 0, 0, 0);
+
+    return { start: startDate, end: endDate };
+  }
 
   /**
    * Award points for first successful transaction of an account
@@ -138,9 +154,25 @@ export class QuestService {
   /**
    * Get leaderboard - top users by total points
    */
-  async getLeaderboard(limit: number = 10) {
+  async getLeaderboard(
+    limit: number = 25,
+    filter: 'weekly' | 'all-time' = 'all-time',
+    week: number = 1,
+  ) {
+    // Build date filter for weekly
+    const dateFilter =
+      filter === 'weekly'
+        ? {
+            earnedAt: {
+              gte: this.getWeekDateRange(week).start,
+              lt: this.getWeekDateRange(week).end,
+            },
+          }
+        : {};
+
     const results = await this.prisma.pointHistory.groupBy({
       by: ['userId'],
+      where: dateFilter,
       _sum: { points: true },
       orderBy: { _sum: { points: 'desc' } },
       take: limit,
@@ -166,14 +198,29 @@ export class QuestService {
   /**
    * Get total points for a user
    */
-  async getUserPoints(userId: string) {
+  async getUserPoints(
+    userId: string,
+    filter: 'weekly' | 'all-time' = 'all-time',
+    week: number = 1,
+  ) {
+    // Build date filter for weekly
+    const dateFilter =
+      filter === 'weekly'
+        ? {
+            earnedAt: {
+              gte: this.getWeekDateRange(week).start,
+              lt: this.getWeekDateRange(week).end,
+            },
+          }
+        : {};
+
     const result = await this.prisma.pointHistory.aggregate({
-      where: { userId },
+      where: { userId, ...dateFilter },
       _sum: { points: true },
     });
 
     const history = await this.prisma.pointHistory.findMany({
-      where: { userId },
+      where: { userId, ...dateFilter },
       include: { quest: true },
       orderBy: { earnedAt: 'desc' },
     });
@@ -187,9 +234,25 @@ export class QuestService {
   /**
    * Get user rank in leaderboard
    */
-  async getUserRank(userId: string): Promise<number | null> {
+  async getUserRank(
+    userId: string,
+    filter: 'weekly' | 'all-time' = 'all-time',
+    week: number = 1,
+  ): Promise<number | null> {
+    // Build date filter for weekly
+    const dateFilter =
+      filter === 'weekly'
+        ? {
+            earnedAt: {
+              gte: this.getWeekDateRange(week).start,
+              lt: this.getWeekDateRange(week).end,
+            },
+          }
+        : {};
+
     const allUsers = await this.prisma.pointHistory.groupBy({
       by: ['userId'],
+      where: dateFilter,
       _sum: { points: true },
       orderBy: { _sum: { points: 'desc' } },
     });

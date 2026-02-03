@@ -1,12 +1,13 @@
 import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
+import type { LeaderboardFilter } from "@polypay/shared";
 import { useQuery } from "@tanstack/react-query";
 import { questApi } from "~~/services/api/questApi";
 
 export const questKeys = {
   all: ["quests"] as const,
   list: ["quests", "list"] as const,
-  leaderboard: (limit?: number) => ["quests", "leaderboard", limit] as const,
-  myPoints: ["quests", "my-points"] as const,
+  leaderboard: (filter: LeaderboardFilter, week?: number) => ["quests", "leaderboard", filter, week] as const,
+  myPoints: (filter: LeaderboardFilter, week?: number) => ["quests", "my-points", filter, week] as const,
 };
 
 export const useQuests = () => {
@@ -16,16 +17,16 @@ export const useQuests = () => {
   });
 };
 
-export const useLeaderboard = (limit?: number) => {
+export const useLeaderboard = (filter: LeaderboardFilter = "all-time", week?: number, limit: number = 25) => {
   return useQuery({
-    queryKey: questKeys.leaderboard(limit),
-    queryFn: () => questApi.getLeaderboard(limit),
+    queryKey: questKeys.leaderboard(filter, week),
+    queryFn: () => questApi.getLeaderboard(filter, week, limit),
   });
 };
 
-export const useMyPoints = () => {
+export const useMyPoints = (filter: LeaderboardFilter = "all-time", week?: number) => {
   return useAuthenticatedQuery({
-    queryKey: questKeys.myPoints,
-    queryFn: () => questApi.getMyPoints(),
+    queryKey: questKeys.myPoints(filter, week),
+    queryFn: () => questApi.getMyPoints(filter, week),
   });
 };

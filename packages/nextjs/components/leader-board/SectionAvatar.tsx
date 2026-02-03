@@ -1,16 +1,42 @@
+import type { LeaderboardEntry } from "@polypay/shared";
 import { AvatarRating } from "./AvatarRating";
-import { LeaderBoardRank, MOCK_LEADER_BOARD_USERS } from "~~/mock-data";
 
-export const SectionAvatar = () => {
-  const sortedUsers = [...MOCK_LEADER_BOARD_USERS].sort((a, b) => {
-    const order: Record<LeaderBoardRank, number> = { second: 0, first: 1, third: 2 };
-    return order[a.rank] - order[b.rank];
-  });
+interface SectionAvatarProps {
+  data: LeaderboardEntry[];
+  isLoading?: boolean;
+}
+
+type LeaderBoardRank = "first" | "second" | "third";
+
+export const SectionAvatar = ({ data, isLoading = false }: SectionAvatarProps) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[200px]">
+        <div className="animate-spin w-8 h-8 border-2 border-main-pink border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!data || data.length < 3) {
+    return <div className="flex items-center justify-center h-[200px] text-grey-500">Not enough data for top 3</div>;
+  }
+
+  // Map top 3 to display order: second | first | third
+  const top3: { rank: LeaderBoardRank; data: LeaderboardEntry }[] = [
+    { rank: "second", data: data[1] },
+    { rank: "first", data: data[0] },
+    { rank: "third", data: data[2] },
+  ];
 
   return (
-    <div className="flex items-end gap-16 px-12">
-      {sortedUsers.map((user, index) => (
-        <AvatarRating key={index} rank={user.rank} address={user.address} points={user.points} />
+    <div className="flex items-end justify-center gap-16 px-12">
+      {top3.map(item => (
+        <AvatarRating
+          key={item.data.userId}
+          rank={item.rank}
+          commitment={item.data.commitment || ""}
+          points={item.data.totalPoints}
+        />
       ))}
     </div>
   );

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import type { LeaderboardFilter } from "@polypay/shared";
 import { NextPage } from "next";
 import { SectionAvatar } from "~~/components/leader-board";
 import { LeaderBoardTable } from "~~/components/leader-board/LeaderBoardTable";
 import { useModalApp } from "~~/hooks";
-
-type LeaderboardFilter = "weekly" | "all-time";
+import { useLeaderboard, useMyPoints } from "~~/hooks/api/useQuest";
 
 const WEEKS = [1, 2, 3, 4, 5, 6];
 
@@ -14,12 +14,26 @@ const LeaderBoardPage: NextPage = () => {
   const [filter, setFilter] = useState<LeaderboardFilter>("weekly");
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [isClaimed, setIsClaimed] = useState(false);
-
   const { openModal } = useModalApp();
 
+  // Fetch data
+  const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard(
+    filter,
+    filter === "weekly" ? selectedWeek : undefined,
+  );
+
+  const { data: myPoints, isLoading: isMyPointsLoading } = useMyPoints(
+    filter,
+    filter === "weekly" ? selectedWeek : undefined,
+  );
+
+  const isLoading = isLeaderboardLoading || isMyPointsLoading;
+
   const handleClaim = () => {
-    openModal?.("claimReward", {
+    openModal("claimReward", {
       amount: 100,
+      tokenSymbol: "ZEN",
+      toAddress: myPoints?.commitment || "Unknown",
       onConfirm: () => {
         console.log("Claim confirmed");
         setIsClaimed(true);
@@ -81,8 +95,14 @@ const LeaderBoardPage: NextPage = () => {
 
       {/* Content */}
       <div className="p-10 rounded-3xl bg-white border border-grey-100 space-y-10">
-        <SectionAvatar />
-        <LeaderBoardTable isClaimed={isClaimed} onClaim={handleClaim} />
+        <SectionAvatar data={leaderboard || []} isLoading={isLoading} />
+        <LeaderBoardTable
+          data={leaderboard || []}
+          currentUser={myPoints}
+          isLoading={isLoading}
+          isClaimed={isClaimed}
+          onClaim={handleClaim}
+        />
       </div>
     </div>
   );

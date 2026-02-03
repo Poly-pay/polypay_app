@@ -18,7 +18,6 @@ export interface PointHistory {
   points: number;
   accountId?: string | null;
   txId?: number | null;
-  earnedAt: string;
   quest?: Quest;
 }
 
@@ -32,5 +31,8 @@ export interface LeaderboardEntry {
 export interface UserPoints {
   totalPoints: number;
   rank: number | null;
+  commitment: string;
   history: PointHistory[];
 }
+
+export type LeaderboardFilter = "weekly" | "all-time";

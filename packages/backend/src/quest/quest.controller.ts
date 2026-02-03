@@ -45,10 +45,28 @@ export class QuestController {
     description: 'Number of top users to return',
     example: 10,
   })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    description: 'Filter by time period',
+    enum: ['weekly', 'all-time'],
+    example: 'all-time',
+  })
+  @ApiQuery({
+    name: 'week',
+    required: false,
+    description: 'Week number (1-6), only used when filter=weekly',
+    example: 1,
+  })
   @ApiResponse({ status: 200, description: 'Leaderboard data' })
-  async getLeaderboard(@Query('limit') limitParam?: string) {
-    const limit = parseInt(limitParam || '10', 10) || 10;
-    return this.questService.getLeaderboard(limit);
+  async getLeaderboard(
+    @Query('limit') limitParam?: string,
+    @Query('filter') filter?: 'weekly' | 'all-time',
+    @Query('week') weekParam?: string,
+  ) {
+    const limit = parseInt(limitParam || '25', 10) || 25;
+    const week = parseInt(weekParam || '1', 10) || 1;
+    return this.questService.getLeaderboard(limit, filter || 'all-time', week);
   }
 
   /**
@@ -63,15 +81,40 @@ export class QuestController {
     description:
       'Retrieve total points and point history for the authenticated user',
   })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    description: 'Filter by time period',
+    enum: ['weekly', 'all-time'],
+    example: 'all-time',
+  })
+  @ApiQuery({
+    name: 'week',
+    required: false,
+    description: 'Week number (1-6), only used when filter=weekly',
+    example: 1,
+  })
   @ApiResponse({ status: 200, description: 'User points data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getMyPoints(@CurrentUser() user: User) {
-    const points = await this.questService.getUserPoints(user.id);
-    const rank = await this.questService.getUserRank(user.id);
+  async getMyPoints(
+    @CurrentUser() user: User,
+    @Query('filter') filter?: 'weekly' | 'all-time',
+    @Query('week') weekParam?: string,
+  ) {
+    const week = parseInt(weekParam || '1', 10) || 1;
+    const filterType = filter || 'all-time';
+
+    const points = await this.questService.getUserPoints(
+      user.id,
+      filterType,
+      week,
+    );
+    const rank = await this.questService.getUserRank(user.id, filterType, week);
 
     return {
       ...points,
       rank,
+      commitment: user.commitment,
     };
   }
 }

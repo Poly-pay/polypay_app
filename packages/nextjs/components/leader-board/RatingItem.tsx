@@ -1,12 +1,11 @@
 import Image from "next/image";
 import { RankBadge } from "./RankBadge";
 import { getAvatarByCommitment } from "~~/utils/avatar";
+import { formatAddress } from "~~/utils/format";
 
 interface RatingItemProps {
   rank: number;
   commitment: string;
-  name: string;
-  address: string;
   points: number;
   isCurrentUser?: boolean;
   isClaimed?: boolean;
@@ -16,14 +15,15 @@ interface RatingItemProps {
 export const RatingItem = ({
   rank,
   commitment,
-  name,
-  address,
   points,
   isCurrentUser = false,
   isClaimed = false,
   onClaim,
 }: RatingItemProps) => {
   const avatarSrc = getAvatarByCommitment(commitment);
+
+  // Shorten commitment for display
+  const shortCommitment = commitment ? formatAddress(commitment, { start: 4, end: 4 }) : "Unknown";
 
   return (
     <div
@@ -42,8 +42,8 @@ export const RatingItem = ({
         />
       )}
 
-      {/* Rank - 10% */}
-      <div className="w-[10%] flex items-center justify-center">
+      {/* Rank - 15% */}
+      <div className="w-[15%] flex items-center justify-center">
         {isCurrentUser ? (
           <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
             <span className="font-barlow font-semibold text-xs text-grey-1000">{rank}</span>
@@ -53,11 +53,11 @@ export const RatingItem = ({
         )}
       </div>
 
-      {/* Commitment - 25% */}
-      <div className="w-[25%] flex items-center gap-2 px-2">
+      {/* Commitment - 45% */}
+      <div className="w-[45%] flex items-center gap-2 px-2">
         <Image src={avatarSrc} width={24} height={24} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
         <span className="font-barlow font-semibold text-base tracking-[-0.005em] text-grey-1000 truncate">
-          {commitment}
+          {shortCommitment}
         </span>
         {isCurrentUser && (
           <span className="text-sm font-barlow font-semibold bg-lime-50 px-3 py-1 rounded-md text-grey-1000 flex-shrink-0">
@@ -66,19 +66,8 @@ export const RatingItem = ({
         )}
       </div>
 
-      {/* Name + Address - 30% */}
-      <div className="w-[30%] flex items-center px-2">
-        <span
-          className={`font-barlow font-semibold text-base tracking-[-0.005em] truncate ${
-            isCurrentUser ? "text-white" : "text-grey-1000"
-          }`}
-        >
-          {name} ({address})
-        </span>
-      </div>
-
-      {/* Points - 20% */}
-      <div className="w-[20%] flex items-center justify-end gap-1 px-2">
+      {/* Points - 25% */}
+      <div className="w-[25%] flex items-center justify-end gap-1 px-2">
         <Image src="/leader-board/star-point.svg" width={24} height={24} alt="points" />
         <span className="font-barlow font-semibold text-base tracking-[-0.005em] text-grey-1000">
           {points.toLocaleString()}
