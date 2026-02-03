@@ -10,6 +10,7 @@ import { QuestService } from './quest.service';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { User } from '@/generated/prisma/client';
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@polypay/shared';
 
 @ApiTags('quests')
 @Controller('quests')
@@ -31,19 +32,14 @@ export class QuestController {
   }
 
   /**
-   * Get leaderboard
-   * GET /api/quests/leaderboard
+   * Get top 3 leaderboard entries
+   * GET /api/quests/leaderboard/top
+   * Note: Must be defined BEFORE /leaderboard to avoid route conflict
    */
-  @Get('leaderboard')
+  @Get('leaderboard/top')
   @ApiOperation({
-    summary: 'Get leaderboard',
-    description: 'Retrieve top users ranked by total points',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Number of top users to return',
-    example: 10,
+    summary: 'Get top 3 leaderboard entries',
+    description: 'Retrieve top 3 users for podium display',
   })
   @ApiQuery({
     name: 'filter',
@@ -58,15 +54,107 @@ export class QuestController {
     description: 'Week number (1-6), only used when filter=weekly',
     example: 1,
   })
-  @ApiResponse({ status: 200, description: 'Leaderboard data' })
-  async getLeaderboard(
-    @Query('limit') limitParam?: string,
+  @ApiResponse({ status: 200, description: 'Top 3 leaderboard entries' })
+  async getLeaderboardTop(
     @Query('filter') filter?: 'weekly' | 'all-time',
     @Query('week') weekParam?: string,
   ) {
-    const limit = parseInt(limitParam || '25', 10) || 25;
     const week = parseInt(weekParam || '1', 10) || 1;
-    return this.questService.getLeaderboard(limit, filter || 'all-time', week);
+    return this.questService.getLeaderboardTop(filter || 'all-time', week);
+  }
+
+  /**
+   * Get current user's leaderboard position
+   * GET /api/quests/leaderboard/me
+   */
+  @Get('leaderboard/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get current user leaderboard position',
+    description: 'Retrieve rank and points for the authenticated user',
+  })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    description: 'Filter by time period',
+    enum: ['weekly', 'all-time'],
+    example: 'all-time',
+  })
+  @ApiQuery({
+    name: 'week',
+    required: false,
+    description: 'Week number (1-6), only used when filter=weekly',
+    example: 1,
+  })
+  @ApiResponse({ status: 200, description: 'Current user rank and points' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getLeaderboardMe(
+    @CurrentUser() user: User,
+    @Query('filter') filter?: 'weekly' | 'all-time',
+    @Query('week') weekParam?: string,
+  ) {
+    const week = parseInt(weekParam || '1', 10) || 1;
+    return this.questService.getLeaderboardMe(
+      user.id,
+      user.commitment,
+      filter || 'all-time',
+      week,
+    );
+  }
+
+  /**
+   * Get paginated leaderboard
+   * GET /api/quests/leaderboard
+   */
+  @Get('leaderboard')
+  @ApiOperation({
+    summary: 'Get paginated leaderboard',
+    description: 'Retrieve users ranked by total points with cursor pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Cursor for pagination (rank number)',
+  })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    description: 'Filter by time period',
+    enum: ['weekly', 'all-time'],
+    example: 'all-time',
+  })
+  @ApiQuery({
+    name: 'week',
+    required: false,
+    description: 'Week number (1-6), only used when filter=weekly',
+    example: 1,
+  })
+  @ApiResponse({ status: 200, description: 'Paginated leaderboard data' })
+  async getLeaderboard(
+    @Query('limit') limitParam?: string,
+    @Query('cursor') cursor?: string,
+    @Query('filter') filter?: 'weekly' | 'all-time',
+    @Query('week') weekParam?: string,
+  ) {
+    const limit = Math.min(
+      parseInt(limitParam || String(DEFAULT_PAGE_SIZE), 10) ||
+        DEFAULT_PAGE_SIZE,
+      MAX_PAGE_SIZE,
+    );
+    const week = parseInt(weekParam || '1', 10) || 1;
+    return this.questService.getLeaderboard(
+      limit,
+      filter || 'all-time',
+      week,
+      cursor,
+    );
   }
 
   /**

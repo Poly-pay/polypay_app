@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
-import { QuestCode, TxStatus } from '@polypay/shared';
+import {
+  QuestCode,
+  TxStatus,
+  PaginatedResponse,
+  LeaderboardEntry,
+  LeaderboardMeResponse,
+} from '@polypay/shared';
 import { CAMPAIGN_START } from '@/common/constants';
 
 @Injectable()
@@ -22,6 +28,22 @@ export class QuestService {
     endDate.setHours(0, 0, 0, 0);
 
     return { start: startDate, end: endDate };
+  }
+
+  /**
+   * Build date filter object
+   */
+  private buildDateFilter(filter: 'weekly' | 'all-time', week: number) {
+    if (filter === 'weekly') {
+      const { start, end } = this.getWeekDateRange(week);
+      return {
+        earnedAt: {
+          gte: start,
+          lt: end,
+        },
+      };
+    }
+    return {};
   }
 
   /**
@@ -152,30 +174,20 @@ export class QuestService {
   }
 
   /**
-   * Get leaderboard - top users by total points
+   * Get top 3 leaderboard entries
    */
-  async getLeaderboard(
-    limit: number = 25,
+  async getLeaderboardTop(
     filter: 'weekly' | 'all-time' = 'all-time',
     week: number = 1,
-  ) {
-    // Build date filter for weekly
-    const dateFilter =
-      filter === 'weekly'
-        ? {
-            earnedAt: {
-              gte: this.getWeekDateRange(week).start,
-              lt: this.getWeekDateRange(week).end,
-            },
-          }
-        : {};
+  ): Promise<LeaderboardEntry[]> {
+    const dateFilter = this.buildDateFilter(filter, week);
 
     const results = await this.prisma.pointHistory.groupBy({
       by: ['userId'],
       where: dateFilter,
       _sum: { points: true },
       orderBy: { _sum: { points: 'desc' } },
-      take: limit,
+      take: 3,
     });
 
     // Get user details
@@ -196,6 +208,95 @@ export class QuestService {
   }
 
   /**
+   * Get current user's leaderboard position
+   */
+  async getLeaderboardMe(
+    userId: string,
+    commitment: string,
+    filter: 'weekly' | 'all-time' = 'all-time',
+    week: number = 1,
+  ): Promise<LeaderboardMeResponse> {
+    const dateFilter = this.buildDateFilter(filter, week);
+
+    // Get user's total points
+    const userPoints = await this.prisma.pointHistory.aggregate({
+      where: { userId, ...dateFilter },
+      _sum: { points: true },
+    });
+
+    const totalPoints = userPoints._sum.points || 0;
+
+    // Get rank
+    const rank = await this.getUserRank(userId, filter, week);
+
+    return {
+      rank,
+      commitment,
+      totalPoints,
+    };
+  }
+
+  /**
+   * Get paginated leaderboard
+   */
+  async getLeaderboard(
+    limit: number = 20,
+    filter: 'weekly' | 'all-time' = 'all-time',
+    week: number = 1,
+    cursor?: string,
+  ): Promise<PaginatedResponse<LeaderboardEntry>> {
+    const dateFilter = this.buildDateFilter(filter, week);
+
+    // Get all aggregated points (sorted by points desc)
+    const results = await this.prisma.pointHistory.groupBy({
+      by: ['userId'],
+      where: dateFilter,
+      _sum: { points: true },
+      orderBy: { _sum: { points: 'desc' } },
+    });
+
+    // Get user details
+    const userIds = results.map((r) => r.userId);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, commitment: true },
+    });
+
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    // Build full leaderboard with ranks
+    const fullLeaderboard: LeaderboardEntry[] = results.map((r, index) => ({
+      rank: index + 1,
+      userId: r.userId,
+      commitment: userMap.get(r.userId)?.commitment || null,
+      totalPoints: r._sum.points || 0,
+    }));
+
+    // Apply cursor-based pagination (cursor = rank number as string)
+    let startIndex = 0;
+    if (cursor) {
+      const cursorRank = parseInt(cursor, 10);
+      if (!isNaN(cursorRank) && cursorRank > 0) {
+        startIndex = cursorRank; // rank is 1-indexed, so rank N means start from index N
+      }
+    }
+
+    // Fetch limit + 1 to check if there are more items
+    const paginatedData = fullLeaderboard.slice(
+      startIndex,
+      startIndex + limit + 1,
+    );
+    const hasMore = paginatedData.length > limit;
+    const data = hasMore ? paginatedData.slice(0, limit) : paginatedData;
+
+    // Next cursor is the last item's rank
+    const nextCursor =
+      hasMore && data.length > 0 ? String(data[data.length - 1].rank) : null;
+
+    return { data, nextCursor, hasMore };
+  }
+
+  /**
    * Get total points for a user
    */
   async getUserPoints(
@@ -203,16 +304,7 @@ export class QuestService {
     filter: 'weekly' | 'all-time' = 'all-time',
     week: number = 1,
   ) {
-    // Build date filter for weekly
-    const dateFilter =
-      filter === 'weekly'
-        ? {
-            earnedAt: {
-              gte: this.getWeekDateRange(week).start,
-              lt: this.getWeekDateRange(week).end,
-            },
-          }
-        : {};
+    const dateFilter = this.buildDateFilter(filter, week);
 
     const result = await this.prisma.pointHistory.aggregate({
       where: { userId, ...dateFilter },
@@ -239,16 +331,7 @@ export class QuestService {
     filter: 'weekly' | 'all-time' = 'all-time',
     week: number = 1,
   ): Promise<number | null> {
-    // Build date filter for weekly
-    const dateFilter =
-      filter === 'weekly'
-        ? {
-            earnedAt: {
-              gte: this.getWeekDateRange(week).start,
-              lt: this.getWeekDateRange(week).end,
-            },
-          }
-        : {};
+    const dateFilter = this.buildDateFilter(filter, week);
 
     const allUsers = await this.prisma.pointHistory.groupBy({
       by: ['userId'],

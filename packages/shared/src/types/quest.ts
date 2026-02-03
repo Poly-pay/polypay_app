@@ -35,4 +35,10 @@ export interface UserPoints {
   history: PointHistory[];
 }
 
+export interface LeaderboardMeResponse {
+  rank: number | null;
+  commitment: string;
+  totalPoints: number;
+}
+
 export type LeaderboardFilter = "weekly" | "all-time";

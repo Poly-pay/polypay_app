@@ -1,14 +1,19 @@
-import type { LeaderboardEntry } from "@polypay/shared";
+"use client";
+
 import { AvatarRating } from "./AvatarRating";
+import type { LeaderboardEntry, LeaderboardFilter } from "@polypay/shared";
+import { useLeaderboardTop } from "~~/hooks/api/useQuest";
 
 interface SectionAvatarProps {
-  data: LeaderboardEntry[];
-  isLoading?: boolean;
+  filter: LeaderboardFilter;
+  week?: number;
 }
 
 type LeaderBoardRank = "first" | "second" | "third";
 
-export const SectionAvatar = ({ data, isLoading = false }: SectionAvatarProps) => {
+export const SectionAvatar = ({ filter, week }: SectionAvatarProps) => {
+  const { data, isLoading } = useLeaderboardTop(filter, week);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[200px]">

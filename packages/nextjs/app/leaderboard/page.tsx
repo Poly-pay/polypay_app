@@ -6,7 +6,7 @@ import { NextPage } from "next";
 import { SectionAvatar } from "~~/components/leader-board";
 import { LeaderBoardTable } from "~~/components/leader-board/LeaderBoardTable";
 import { useModalApp } from "~~/hooks";
-import { useLeaderboard, useMyPoints } from "~~/hooks/api/useQuest";
+import { useLeaderboardMe } from "~~/hooks/api/useQuest";
 
 const WEEKS = [1, 2, 3, 4, 5, 6];
 
@@ -16,18 +16,11 @@ const LeaderBoardPage: NextPage = () => {
   const [isClaimed, setIsClaimed] = useState(false);
   const { openModal } = useModalApp();
 
-  // Fetch data
-  const { data: leaderboard, isLoading: isLeaderboardLoading } = useLeaderboard(
-    filter,
-    filter === "weekly" ? selectedWeek : undefined,
-  );
+  // Get week param only when filter is weekly
+  const weekParam = filter === "weekly" ? selectedWeek : undefined;
 
-  const { data: myPoints, isLoading: isMyPointsLoading } = useMyPoints(
-    filter,
-    filter === "weekly" ? selectedWeek : undefined,
-  );
-
-  const isLoading = isLeaderboardLoading || isMyPointsLoading;
+  // Fetch current user for claim modal
+  const { data: myPoints } = useLeaderboardMe(filter, weekParam);
 
   const handleClaim = () => {
     openModal("claimReward", {
@@ -95,14 +88,8 @@ const LeaderBoardPage: NextPage = () => {
 
       {/* Content */}
       <div className="p-10 rounded-3xl bg-white border border-grey-100 space-y-10">
-        <SectionAvatar data={leaderboard || []} isLoading={isLoading} />
-        <LeaderBoardTable
-          data={leaderboard || []}
-          currentUser={myPoints}
-          isLoading={isLoading}
-          isClaimed={isClaimed}
-          onClaim={handleClaim}
-        />
+        <SectionAvatar filter={filter} week={weekParam} />
+        <LeaderBoardTable filter={filter} week={weekParam} isClaimed={isClaimed} onClaim={handleClaim} />
       </div>
     </div>
   );
