@@ -19,7 +19,7 @@ export const LEADER_BOARD_CONFIG: Record<
 > = {
   first: {
     size: 135,
-    image: "/leader-board/first-class.svg",
+    image: "/leader-board/first-class.png",
     className: "avatar-leader-board-first",
     addressClass: "italic text-main-black text-xl",
     iconSize: 32,
@@ -27,7 +27,7 @@ export const LEADER_BOARD_CONFIG: Record<
   },
   second: {
     size: 120,
-    image: "/leader-board/second-class.svg",
+    image: "/leader-board/second-class.png",
     className: "avatar-leader-board-second",
     addressClass: "italic text-main-black",
     iconSize: 22,
@@ -35,7 +35,7 @@ export const LEADER_BOARD_CONFIG: Record<
   },
   third: {
     size: 120,
-    image: "/leader-board/third-class.svg",
+    image: "/leader-board/third-class.png",
     className: "avatar-leader-board-third",
     addressClass: "italic text-main-black",
     iconSize: 22,

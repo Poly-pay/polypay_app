@@ -1,14 +1,6 @@
-import { useMemo } from "react";
 import Image from "next/image";
-import { LeaderBoardCommitmentIcon } from "../icons/LeaderBoardCommitmentIcon";
 import { RankBadge } from "./RankBadge";
-
-const COMMITMENT_COLORS = [
-  { bg: "#00CC6A", icon: "#00733C" },
-  { bg: "#FFE97D", icon: "#B49600" },
-  { bg: "#5EA1FF", icon: "#004AB1" },
-  { bg: "#FF6EE9", icon: "#C32DAC" },
-];
+import { getAvatarByCommitment } from "~~/utils/avatar";
 
 interface RatingItemProps {
   rank: number;
@@ -17,18 +9,29 @@ interface RatingItemProps {
   address: string;
   points: number;
   isCurrentUser?: boolean;
+  isClaimed?: boolean;
+  onClaim?: () => void;
 }
 
-export const RatingItem = ({ rank, commitment, name, address, points, isCurrentUser = false }: RatingItemProps) => {
-  const colorIndex = useMemo(() => rank % COMMITMENT_COLORS.length, [rank]);
-  const commitmentColor = COMMITMENT_COLORS[colorIndex];
+export const RatingItem = ({
+  rank,
+  commitment,
+  name,
+  address,
+  points,
+  isCurrentUser = false,
+  isClaimed = false,
+  onClaim,
+}: RatingItemProps) => {
+  const avatarSrc = getAvatarByCommitment(commitment);
 
   return (
     <div
-      className={`relative rounded-lg h-14 px-6 flex items-center cursor-pointer transition-colors ${
+      className={`relative rounded-lg h-14 px-3 flex items-center transition-colors ${
         isCurrentUser ? "bg-main-pink" : "bg-grey-50 hover:bg-grey-100"
       }`}
     >
+      {/* Pointer for current user */}
       {isCurrentUser && (
         <Image
           src="/leader-board/pointer.svg"
@@ -38,30 +41,63 @@ export const RatingItem = ({ rank, commitment, name, address, points, isCurrentU
           className="absolute -left-3 top-1/2 -translate-y-1/2 z-50"
         />
       )}
-      <div className="w-[10%] flex items-center">
-        <RankBadge rank={rank} />
-      </div>
-      <div className="w-[35%] flex items-center gap-2">
-        {isCurrentUser && <div className="w-6 h-6 rounded-full bg-white"></div>}
-        {!isCurrentUser && (
-          <div
-            className="rounded-full w-6 h-6 flex items-center justify-center"
-            style={{ backgroundColor: commitmentColor.bg }}
-          >
-            <LeaderBoardCommitmentIcon width={12} height={12} style={{ color: commitmentColor.icon }} />
+
+      {/* Rank - 10% */}
+      <div className="w-[10%] flex items-center justify-center">
+        {isCurrentUser ? (
+          <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
+            <span className="font-barlow font-semibold text-xs text-grey-1000">{rank}</span>
           </div>
+        ) : (
+          <RankBadge rank={rank} />
         )}
-        <span className="font-semibold">{commitment}</span>
-        {isCurrentUser && <span className="text-sm font-semibold bg-lime-50 px-3 py-1 rounded-lg">You</span>}
       </div>
-      <div className="w-[30%] flex items-center">
-        <span className={`font-semibold ${isCurrentUser ? "text-white" : ""}`}>
+
+      {/* Commitment - 25% */}
+      <div className="w-[25%] flex items-center gap-2 px-2">
+        <Image src={avatarSrc} width={24} height={24} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
+        <span className="font-barlow font-semibold text-base tracking-[-0.005em] text-grey-1000 truncate">
+          {commitment}
+        </span>
+        {isCurrentUser && (
+          <span className="text-sm font-barlow font-semibold bg-lime-50 px-3 py-1 rounded-md text-grey-1000 flex-shrink-0">
+            You
+          </span>
+        )}
+      </div>
+
+      {/* Name + Address - 30% */}
+      <div className="w-[30%] flex items-center px-2">
+        <span
+          className={`font-barlow font-semibold text-base tracking-[-0.005em] truncate ${
+            isCurrentUser ? "text-white" : "text-grey-1000"
+          }`}
+        >
           {name} ({address})
         </span>
       </div>
-      <div className="w-[25%] flex items-center justify-end gap-1.5">
-        <Image src="/leader-board/star-point.svg" width={18} height={18} alt="points" />
-        <span className="font-semibold">{points.toLocaleString()}</span>
+
+      {/* Points - 20% */}
+      <div className="w-[20%] flex items-center justify-end gap-1 px-2">
+        <Image src="/leader-board/star-point.svg" width={24} height={24} alt="points" />
+        <span className="font-barlow font-semibold text-base tracking-[-0.005em] text-grey-1000">
+          {points.toLocaleString()}
+        </span>
+      </div>
+
+      {/* Claim Button - 15% (only for current user) */}
+      <div className="w-[15%] flex items-center justify-center px-2">
+        {isCurrentUser && (
+          <button
+            onClick={onClaim}
+            disabled={isClaimed}
+            className={`px-6 py-2 rounded-lg font-barlow font-medium text-sm leading-5 tracking-[-0.04em] transition-colors bg-grey-1000 text-white ${
+              isClaimed ? "opacity-50 cursor-not-allowed" : "hover:bg-grey-950"
+            }`}
+          >
+            {isClaimed ? "Claimed" : "Claim"}
+          </button>
+        )}
       </div>
     </div>
   );
