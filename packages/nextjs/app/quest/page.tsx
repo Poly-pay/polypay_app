@@ -1,14 +1,26 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { QuestCategory } from "@polypay/shared";
 import { ComingSoon, QuestCard, QuestSection } from "~~/components/quest";
 import { useQuests } from "~~/hooks/api";
+import QuestIntroModal from "~~/services/store/QuestIntroModal";
+import { useQuestIntroStore } from "~~/services/store/questIntroStore";
 
 export default function QuestPage() {
   const { data: quests, isLoading } = useQuests();
+  const { hasSeenIntro, _hasHydrated } = useQuestIntroStore();
+  const [showIntroModal, setShowIntroModal] = useState(false);
 
   const featuredQuests = quests?.filter(q => q.type === QuestCategory.RECURRING) ?? [];
   const dailyQuests = quests?.filter(q => q.type === QuestCategory.DAILY) ?? [];
+
+  // Show intro modal on first visit
+  useEffect(() => {
+    if (_hasHydrated && !hasSeenIntro) {
+      setShowIntroModal(true);
+    }
+  }, [_hasHydrated, hasSeenIntro]);
 
   if (isLoading) {
     return (
@@ -50,6 +62,9 @@ export default function QuestPage() {
           <ComingSoon />
         )}
       </QuestSection>
+
+      {/* Intro Modal TODO: move to modal layout if appear on click */}
+      <QuestIntroModal isOpen={showIntroModal} onClose={() => setShowIntroModal(false)} />
     </div>
   );
 }
