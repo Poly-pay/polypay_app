@@ -4,6 +4,7 @@ import { useState } from "react";
 import { NextPage } from "next";
 import { SectionAvatar } from "~~/components/leader-board";
 import { LeaderBoardTable } from "~~/components/leader-board/LeaderBoardTable";
+import { useModalApp } from "~~/hooks";
 
 type LeaderboardFilter = "weekly" | "all-time";
 
@@ -14,10 +15,16 @@ const LeaderBoardPage: NextPage = () => {
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [isClaimed, setIsClaimed] = useState(false);
 
+  const { openModal } = useModalApp();
+
   const handleClaim = () => {
-    // TODO: Implement claim logic
-    console.log("Claim clicked");
-    setIsClaimed(true);
+    openModal?.("claimReward", {
+      amount: 100,
+      onConfirm: () => {
+        console.log("Claim confirmed");
+        setIsClaimed(true);
+      },
+    });
   };
 
   return (

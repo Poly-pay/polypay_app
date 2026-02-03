@@ -13,10 +13,10 @@ import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
+import { getAvatarByCommitment } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
-import { getAvatarByCommitment } from "~~/utils/avatar";
 
 interface AccountSidebarProps {
   onOpenManageAccounts: () => void;
