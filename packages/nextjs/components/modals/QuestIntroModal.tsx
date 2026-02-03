@@ -7,22 +7,82 @@ import { Button } from "~~/components/ui/button";
 import { useQuestIntroStore } from "~~/services/store/questIntroStore";
 import { ModalProps } from "~~/types/modal";
 
-// TODO: Change description text
 const STEPS = [
   {
-    title: "1. REGISTER YOUR CAMPAIGN ACCOUNT",
-    description:
-      "Create a Campaign Account and bind your X (Twitter) account + wallet. Note: 1 X account can be connected to multiple wallet addresses. Your Campaign Account is used to calculate your final points and rewards. You may bind your X account and wallets at any time during the campaign, but once bound, they cannot be unbound.",
+    image: "/quest/intro-step-1.png",
+    title: "1. START YOUR JOURNEY",
+    content: (
+      <ul className="list-disc list-inside space-y-2 text-grey-800">
+        <li>
+          Just <span className="font-semibold text-grey-1000">Connect your Wallet</span>
+        </li>
+        <li>
+          Generate your <span className="font-semibold text-grey-1000">Commitment</span> and you are eligible to
+          participate
+        </li>
+      </ul>
+    ),
   },
   {
-    title: "2. COMPLETE QUESTS TO EARN POINTS",
-    description:
-      "Complete various quests to earn points. Points will be calculated and distributed based on your activities. Featured quests are always available, while daily quests refresh every day. The more quests you complete, the more points you earn!",
+    image: "/quest/intro-step-2.png",
+    title: "2. COMPLETE ON-CHAIN TASKS",
+    content: (
+      <div className="space-y-3 text-grey-800">
+        <p>There are 2 main tasks you can perform:</p>
+
+        {/* Account creation */}
+        <div className="space-y-1">
+          <p className="flex items-start gap-2">
+            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-grey-800 flex-shrink-0" />
+            <span className="font-semibold text-grey-1000">Account creation:</span>
+          </p>
+          <div className="pl-4 space-y-1">
+            <p>
+              + User earn <span className="font-semibold text-grey-1000">100 points</span> per Account created
+            </p>
+            <p>
+              + An eligible Account is defined as an Account with{" "}
+              <span className="font-semibold text-grey-1000">at least 1 successful transaction</span>.
+            </p>
+            <p className="text-grey-600 italic">*Note: a transaction does not include adding or removing signers</p>
+          </div>
+        </div>
+
+        {/* Perform transaction */}
+        <div className="space-y-1">
+          <p className="flex items-start gap-2">
+            <span className="mt-2 w-1.5 h-1.5 rounded-full bg-grey-800 flex-shrink-0" />
+            <span className="font-semibold text-grey-1000">Perform transaction:</span>
+          </p>
+          <div className="pl-4 space-y-1">
+            <p>
+              + Each transfer or batch payment transaction earned{" "}
+              <span className="font-semibold text-grey-1000">50 points</span> for user
+            </p>
+            <p>
+              + Perform more transaction (except for adding or removing signers) within an Account to unlock Milestone
+              Reward
+            </p>
+            <p>+ Points are credited to the address that initiates the transaction</p>
+          </div>
+        </div>
+      </div>
+    ),
   },
   {
-    title: "3. CLAIM YOUR REWARDS",
-    description:
-      "At the end of the campaign, claim your rewards based on your total points earned. Rewards will be distributed proportionally based on your ranking on the leaderboard. Stay active and climb the ranks to maximize your rewards!",
+    image: "/quest/intro-step-3.png",
+    title: "3. RECEIVE REWARDS",
+    content: (
+      <ul className="list-disc list-inside space-y-2 text-grey-800">
+        <li>
+          Rewards are distributed <span className="font-semibold text-grey-1000">Weekly</span> once Accumulated
+          Milestone thresholds are reached
+        </li>
+        <li>
+          The reward pool will be shared among <span className="font-semibold text-grey-1000">top 100 each week</span>
+        </li>
+      </ul>
+    ),
   },
 ];
 
@@ -31,6 +91,7 @@ const QuestIntroModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const markAsSeen = useQuestIntroStore(state => state.markAsSeen);
 
   const isLastStep = currentStep === STEPS.length - 1;
+  const step = STEPS[currentStep];
 
   const handleClose = () => {
     markAsSeen();
@@ -77,18 +138,18 @@ const QuestIntroModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         {/* Content */}
         <div className="flex flex-col items-center px-10 gap-4 w-full">
           {/* Image */}
-          <div className="flex justify-center items-center w-full h-[200px]">
-            <Image src="/quest/intro.svg" alt="Quest Intro" width={160} height={160} />
+          <div className="w-full rounded-2xl overflow-hidden">
+            <Image src={step.image} alt={step.title} width={640} height={200} className="w-full h-auto object-cover" />
           </div>
 
           {/* Text Content */}
           <div className="flex flex-col items-start gap-4 w-full">
             <h2 className="font-barlow font-medium text-2xl leading-[100%] tracking-[-0.03em] uppercase text-grey-1000 w-full">
-              {STEPS[currentStep].title}
+              {step.title}
             </h2>
-            <p className="font-barlow font-normal text-base leading-[155%] tracking-[-0.03em] text-grey-800 w-full">
-              {STEPS[currentStep].description}
-            </p>
+            <div className="font-barlow font-normal text-base leading-[155%] tracking-[-0.03em] w-full">
+              {step.content}
+            </div>
           </div>
 
           {/* Pagination */}
@@ -116,7 +177,7 @@ const QuestIntroModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             onClick={handleNext}
             className="flex-1 h-9 bg-grey-1000 hover:bg-grey-950 text-white font-barlow font-medium text-sm leading-5 tracking-[-0.04em] rounded-lg transition-colors"
           >
-            {isLastStep ? "Let's go" : "Next"}
+            {isLastStep ? "Get Started!" : "Next"}
           </Button>
         </div>
       </div>

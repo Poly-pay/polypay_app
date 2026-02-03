@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { QuestCategory } from "@polypay/shared";
+import QuestIntroModal from "~~/components/modals/QuestIntroModal";
 import { ComingSoon, QuestCard, QuestSection } from "~~/components/quest";
 import { useQuests } from "~~/hooks/api";
-import QuestIntroModal from "~~/services/store/QuestIntroModal";
 import { useQuestIntroStore } from "~~/services/store/questIntroStore";
 
 export default function QuestPage() {
