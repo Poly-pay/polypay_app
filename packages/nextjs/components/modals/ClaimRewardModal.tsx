@@ -8,11 +8,14 @@ import { Button } from "~~/components/ui/button";
 import { useClaimRewards, useClaimSummary } from "~~/hooks/api/useClaim";
 import { ModalProps } from "~~/types/modal";
 import { chain } from "~~/utils/network-config";
-import { getBlockExplorerTxLink } from "~~/utils/scaffold-eth";
 
 type ModalState = "default" | "loading" | "success" | "error";
 
-const ClaimRewardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
+interface ClaimRewardModalProps extends ModalProps {
+  week?: number;
+}
+
+const ClaimRewardModal: React.FC<ClaimRewardModalProps> = ({ isOpen, onClose, week }) => {
   const [state, setState] = useState<ModalState>("default");
   const [txHash, setTxHash] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -23,8 +26,9 @@ const ClaimRewardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
   const address = walletClient?.account?.address;
 
-  // Filter unclaimed weeks
-  const unclaimedWeeks = claimSummary?.weeks.filter(w => !w.isClaimed) ?? [];
+  // Get specific week data
+  const weekData = claimSummary?.weeks.find(w => w.week === week);
+  const zenPrice = claimSummary?.zenPrice ?? 0;
 
   const handleClose = () => {
     setState("default");
@@ -40,8 +44,14 @@ const ClaimRewardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    if (!claimSummary || claimSummary.totalZen <= 0) {
-      setErrorMessage("No rewards to claim");
+    if (!week || !weekData || weekData.rewardZen <= 0) {
+      setErrorMessage("No rewards to claim for this week");
+      setState("error");
+      return;
+    }
+
+    if (weekData.isClaimed) {
+      setErrorMessage("This week has already been claimed");
       setState("error");
       return;
     }
@@ -49,7 +59,7 @@ const ClaimRewardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     setState("loading");
 
     try {
-      const result = await claimMutation.mutateAsync({ toAddress: address });
+      const result = await claimMutation.mutateAsync({ toAddress: address, week });
       setTxHash(result.txHash);
       setState("success");
     } catch (error: any) {
@@ -111,48 +121,50 @@ const ClaimRewardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           {/* Default State */}
           {state === "default" && (
             <>
-              {/* Breakdown */}
-              {unclaimedWeeks.length > 0 && (
-                <div className="flex flex-col gap-2 w-full max-w-[400px] max-h-[120px] overflow-y-auto">
-                  {unclaimedWeeks.map(week => (
-                    <div key={week.week} className="flex items-center justify-between px-3 py-2 bg-white/50 rounded-lg">
-                      <span className="font-barlow font-medium text-sm text-grey-1000">Week {week.week}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-barlow text-sm text-grey-600">${week.rewardUsd.toFixed(2)}</span>
-                        <span className="font-barlow text-sm text-grey-400">→</span>
-                        <span className="font-barlow font-medium text-sm text-grey-1000">
-                          {week.rewardZen.toFixed(4)} ZEN
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Total */}
-              {unclaimedWeeks.length > 0 ? (
+              {weekData && !weekData.isClaimed ? (
                 <>
+                  {/* Week Badge */}
+                  <div className="px-6 py-2 bg-white rounded-lg border border-grey-200">
+                    <span className="font-barlow font-medium text-base text-grey-1000">Week {week}</span>
+                  </div>
+
+                  {/* You will receive */}
                   <span className="font-barlow font-medium text-base leading-[100%] tracking-[-0.03em] text-grey-1000">
                     You will receive
                   </span>
+
+                  {/* Amount */}
                   <div className="flex items-center gap-2">
-                    <Image src="/token/zen.svg" alt="ZEN" width={32} height={32} className="rounded-full" />
-                    <span className="font-barlow font-medium text-[40px] leading-[100%] tracking-[-0.03em] text-grey-1000">
-                      {claimSummary?.totalZen.toFixed(4)} ZEN
+                    <Image src="/token/zen.svg" alt="ZEN" width={40} height={40} className="rounded-full" />
+                    <span className="font-barlow font-medium text-[48px] leading-[100%] tracking-[-0.03em] text-grey-1000">
+                      {weekData.rewardZen.toFixed(4)}
+                    </span>
+                    <span className="font-barlow font-medium text-[48px] leading-[100%] tracking-[-0.03em] text-grey-1000">
+                      ZEN
                     </span>
                   </div>
-                  <span className="font-barlow text-xs text-grey-600">
-                    ≈ ${claimSummary?.totalUsd.toFixed(2)} (ZEN @ ${claimSummary?.zenPrice.toFixed(2)})
+
+                  {/* Price info */}
+                  <span className="font-barlow text-base text-grey-600">
+                    ~${weekData.rewardUsd.toFixed(2)} (1 ZEN = ${zenPrice.toFixed(2)})
                   </span>
-                  <span className="font-barlow font-medium text-base leading-[120%] tracking-[-0.03em] text-grey-800 opacity-50">
-                    To
-                  </span>
-                  <span className="font-barlow font-medium text-base leading-[100%] tracking-[-0.03em] text-grey-1000">
+
+                  {/* Divider with "To" */}
+                  <div className="flex items-center gap-3 w-full max-w-[400px]">
+                    <div className="flex-1 h-px bg-grey-300" />
+                    <span className="font-barlow text-base text-grey-500">To</span>
+                    <div className="flex-1 h-px bg-grey-300" />
+                  </div>
+
+                  {/* Address */}
+                  <span className="font-barlow font-medium text-base leading-[100%] tracking-[-0.03em] text-grey-1000 break-all text-center px-4">
                     {address || "Connect wallet"}
                   </span>
                 </>
               ) : (
-                <span className="font-barlow font-medium text-base text-grey-600">No rewards to claim</span>
+                <span className="font-barlow font-medium text-base text-grey-600">
+                  {weekData?.isClaimed ? "This week has already been claimed" : "No rewards to claim for this week"}
+                </span>
               )}
             </>
           )}
@@ -185,7 +197,7 @@ const ClaimRewardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                 Your ZEN tokens have been sent to your wallet
               </span>
               <a
-                href={getBlockExplorerTxLink(chain.id, txHash)}
+                href={`${chain.blockExplorers.default.url}/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-barlow text-sm text-violet-500 hover:text-violet-600 underline"
@@ -227,7 +239,7 @@ const ClaimRewardModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               </Button>
               <Button
                 onClick={handleConfirm}
-                disabled={!address || unclaimedWeeks.length === 0}
+                disabled={!address || !weekData || weekData.isClaimed || weekData.rewardZen <= 0}
                 className="flex-1 h-9 bg-main-pink hover:bg-main-pink/90 text-grey-1000 font-barlow font-medium text-sm leading-5 tracking-[-0.04em] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirm

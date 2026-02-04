@@ -32,6 +32,6 @@ export interface ClaimSummary {
 export interface ClaimResponse {
   success: boolean;
   txHash: string;
-  totalZen: number;
-  weeksClaimed: number[];
+  rewardZen: number;
+  weekClaimed: number;
 }

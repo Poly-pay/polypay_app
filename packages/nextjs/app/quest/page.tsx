@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { QuestCategory } from "@polypay/shared";
 import QuestIntroModal from "~~/components/modals/QuestIntroModal";
 import { ComingSoon, QuestCard, QuestSection } from "~~/components/quest";
+import { QuestFloatingButton } from "~~/components/quest/QuestFloatingButton";
 import { useQuests } from "~~/hooks/api";
 import { useQuestIntroStore } from "~~/services/store/questIntroStore";
 
@@ -63,8 +64,8 @@ export default function QuestPage() {
         )}
       </QuestSection>
 
-      {/* Intro Modal TODO: move to modal layout if appear on click */}
       <QuestIntroModal isOpen={showIntroModal} onClose={() => setShowIntroModal(false)} />
+      <QuestFloatingButton />
     </div>
   );
 }

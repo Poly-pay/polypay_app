@@ -847,16 +847,23 @@ export class TransactionService {
         },
       });
 
-      // Award quest points
-      try {
-        await this.questService.awardSuccessfulTx(txId, transaction.createdBy);
-        await this.questService.awardAccountFirstTx(
-          transaction.accountAddress,
-          txId,
-        );
-      } catch (error) {
-        this.logger.error(`Failed to award quest points: ${error.message}`);
-        // Don't throw - quest points should not block transaction
+      // Award quest points (only for TRANSFER and BATCH transactions)
+      if (
+        transaction.type === TxType.TRANSFER ||
+        transaction.type === TxType.BATCH
+      ) {
+        try {
+          await this.questService.awardSuccessfulTx(
+            txId,
+            transaction.createdBy,
+          );
+          await this.questService.awardAccountFirstTx(
+            transaction.accountAddress,
+            txId,
+          );
+        } catch (error) {
+          this.logger.error(`Failed to award quest points: ${error.message}`);
+        }
       }
 
       // Emit event for status update

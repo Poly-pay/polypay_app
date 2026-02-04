@@ -68,8 +68,12 @@ export const RatingItem = ({
         )}
       </div>
 
-      {/* Points - 25% */}
-      <div className="w-[25%] flex items-center justify-end gap-1 px-2">
+      {/* Points - flex-1 when no claim button, 25% when has claim button */}
+      <div
+        className={`flex items-center justify-end gap-1 px-2 ${
+          isCurrentUser && showClaimButton ? "w-[25%]" : "flex-1"
+        }`}
+      >
         <Image src="/leader-board/star-point.svg" width={24} height={24} alt="points" />
         <span className="font-barlow font-semibold text-base tracking-[-0.005em] text-grey-1000">
           {points.toLocaleString()}
@@ -77,8 +81,8 @@ export const RatingItem = ({
       </div>
 
       {/* Claim Button - only show when isCurrentUser AND showClaimButton */}
-      <div className="w-[15%] flex items-center justify-center px-2">
-        {isCurrentUser && showClaimButton && (
+      {isCurrentUser && showClaimButton && (
+        <div className="w-[15%] flex items-center justify-center px-2">
           <button
             onClick={onClaim}
             disabled={isClaimed}
@@ -88,8 +92,8 @@ export const RatingItem = ({
           >
             {isClaimed ? "Claimed" : "Claim"}
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

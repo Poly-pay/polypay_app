@@ -53,6 +53,7 @@ const modals: ModalRegistry = {
   switchAccount: dynamic(() => import("./SwitchAccountModal"), { ssr: false }),
   disclaimer: dynamic(() => import("./DisclaimerModal"), { ssr: false }),
   claimReward: dynamic(() => import("./ClaimRewardModal"), { ssr: false }),
+  questIntro: dynamic(() => import("./QuestIntroModal"), { ssr: false }),
 };
 
 type ModalInstance = {

@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  TOTAL_CAMPAIGN_WEEKS,
-  formatCampaignStartDate,
-  getAvailableWeeks,
-  getCurrentWeek,
-  getLastCompletedWeek,
-} from "@polypay/shared";
+import { useState } from "react";
+import { formatCampaignStartDate, getAvailableWeeks, getCurrentWeek, getLastCompletedWeek } from "@polypay/shared";
 import type { LeaderboardFilter } from "@polypay/shared";
 import { NextPage } from "next";
 import { SectionAvatar } from "~~/components/leader-board";
@@ -31,30 +25,29 @@ const LeaderBoardPage: NextPage = () => {
   const availableWeeks = getAvailableWeeks();
   const lastCompletedWeek = getLastCompletedWeek();
   const campaignNotStarted = currentWeek === 0;
-  const campaignEnded = currentWeek > TOTAL_CAMPAIGN_WEEKS;
 
   // Fetch claim summary to check if user has claimed
   const { data: claimSummary } = useClaimSummary();
 
-  // Check if current selected week is already claimed
-  const isWeekClaimed = claimSummary?.weeks.find(w => w.week === selectedWeek)?.isClaimed ?? false;
+  // Check if selected week has unclaimed reward
+  const selectedWeekData = claimSummary?.weeks.find(w => w.week === selectedWeek);
+  const isWeekClaimed = selectedWeekData?.isClaimed ?? false;
+  const hasUnclaimedRewardForSelectedWeek =
+    selectedWeekData && !selectedWeekData.isClaimed && selectedWeekData.rewardZen > 0;
 
-  // Check if user has any unclaimed rewards
-  const hasUnclaimedRewards = (claimSummary?.totalZen ?? 0) > 0;
-
-  // Show claim button only when:
-  // 1. Filter is weekly
-  // 2. Viewing last completed week
-  // 3. User has unclaimed rewards
-  const showClaimButton = filter === "weekly" && selectedWeek === lastCompletedWeek && hasUnclaimedRewards;
+  // Show claim button when viewing a completed week that has unclaimed reward
+  const showClaimButton =
+    filter === "weekly" &&
+    lastCompletedWeek !== null &&
+    selectedWeek <= lastCompletedWeek &&
+    hasUnclaimedRewardForSelectedWeek;
 
   // Get week param only when filter is weekly
   const weekParam = filter === "weekly" ? selectedWeek : undefined;
 
   const handleClaim = () => {
     if (!claimSummary) return;
-
-    openModal("claimReward");
+    openModal("claimReward", { week: selectedWeek });
   };
 
   return (
@@ -105,12 +98,17 @@ const LeaderBoardPage: NextPage = () => {
                 const isAvailable = availableWeeks.includes(week);
                 const isSelected = selectedWeek === week;
 
+                // Check if this week has unclaimed reward (for pink dot)
+                const weekData = claimSummary?.weeks.find(w => w.week === week);
+                const isCompleted = lastCompletedWeek !== null && week <= lastCompletedWeek;
+                const showPinkDot = isCompleted && weekData && !weekData.isClaimed && weekData.rewardZen > 0;
+
                 return (
                   <button
                     key={week}
                     onClick={() => isAvailable && setSelectedWeek(week)}
                     disabled={!isAvailable}
-                    className={`px-4 py-2 rounded-lg font-barlow font-medium text-sm leading-5 tracking-[-0.04em] transition-colors ${
+                    className={`relative px-4 py-2 rounded-lg font-barlow font-medium text-sm leading-5 tracking-[-0.04em] transition-colors ${
                       isSelected
                         ? "bg-grey-1000 text-white"
                         : isAvailable
@@ -119,6 +117,8 @@ const LeaderBoardPage: NextPage = () => {
                     }`}
                   >
                     Week {week}
+                    {/* Pink dot indicator for unclaimed reward */}
+                    {showPinkDot && <span className="absolute -top-1 -right-1 w-3 h-3 bg-main-pink rounded-full" />}
                   </button>
                 );
               })}
@@ -128,7 +128,7 @@ const LeaderBoardPage: NextPage = () => {
       </div>
 
       {/* Content */}
-      <div className="p-10 rounded-3xl bg-white border border-grey-100 space-y-10">
+      <div className=" w-[650px] p-10 rounded-3xl bg-white border border-grey-100 space-y-10">
         {campaignNotStarted ? (
           <div className="flex items-center justify-center h-[300px] text-grey-500">
             Campaign has not started yet. Please check back on {formatCampaignStartDate()}.

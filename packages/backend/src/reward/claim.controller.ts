@@ -52,20 +52,20 @@ export class ClaimController {
   }
 
   /**
-   * Claim all unclaimed rewards
+   * Claim reward for a specific week
    * POST /api/claims
    */
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Claim rewards',
-    description: 'Claim all unclaimed rewards and receive ZEN tokens',
+    summary: 'Claim reward for a specific week',
+    description: 'Claim reward for a specific week and receive ZEN tokens',
   })
   @ApiResponse({ status: 200, description: 'Claim successful' })
   @ApiResponse({
     status: 400,
-    description: 'Bad request - no rewards or invalid address',
+    description: 'Bad request - no reward, already claimed, or invalid address',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 500, description: 'Transfer failed' })
@@ -73,7 +73,7 @@ export class ClaimController {
     @CurrentUser() user: User,
     @Body() claimRequest: ClaimRequest,
   ): Promise<ClaimResponse> {
-    const { toAddress } = claimRequest;
+    const { toAddress, week } = claimRequest;
 
     // Validate address
     if (!isAddress(toAddress)) {
@@ -83,19 +83,23 @@ export class ClaimController {
     // Get claim summary
     const summary = await this.rewardService.getClaimSummary(user.commitment);
 
-    // Get unclaimed weeks
-    const unclaimedWeeks = summary.weeks.filter((w) => !w.isClaimed);
+    // Find the specific week
+    const weekData = summary.weeks.find((w) => w.week === week);
 
-    if (unclaimedWeeks.length === 0) {
-      throw new BadRequestException('No rewards to claim');
+    if (!weekData) {
+      throw new BadRequestException(`No reward found for week ${week}`);
     }
 
-    if (summary.totalZen <= 0) {
-      throw new BadRequestException('Total reward amount is zero');
+    if (weekData.isClaimed) {
+      throw new BadRequestException(`Week ${week} already claimed`);
+    }
+
+    if (weekData.rewardZen <= 0) {
+      throw new BadRequestException(`No reward amount for week ${week}`);
     }
 
     this.logger.log(
-      `User ${user.commitment} claiming ${summary.totalZen} ZEN for weeks: ${unclaimedWeeks.map((w) => w.week).join(', ')}`,
+      `User ${user.commitment} claiming ${weekData.rewardZen} ZEN for week ${week}`,
     );
 
     // Send ZEN
@@ -103,7 +107,7 @@ export class ClaimController {
     try {
       txHash = await this.zenTransferService.sendZen(
         toAddress,
-        summary.totalZen,
+        weekData.rewardZen,
       );
     } catch (error: any) {
       this.logger.error(`ZEN transfer failed: ${error.message}`);
@@ -112,40 +116,35 @@ export class ClaimController {
       );
     }
 
-    // Create ClaimHistory records for each week
-    const weeksClaimed: number[] = [];
-
-    for (const week of unclaimedWeeks) {
-      try {
-        await this.prisma.claimHistory.create({
-          data: {
-            userId: user.id,
-            week: week.week,
-            rank: week.rank,
-            rewardUsd: week.rewardUsd,
-            rewardZen: week.rewardZen,
-            toAddress: toAddress,
-            txHash: txHash,
-          },
-        });
-        weeksClaimed.push(week.week);
-      } catch (error: any) {
-        // Log but don't fail - ZEN already sent
-        this.logger.error(
-          `Failed to create ClaimHistory for week ${week.week}: ${error.message}`,
-        );
-      }
+    // Create ClaimHistory record
+    try {
+      await this.prisma.claimHistory.create({
+        data: {
+          userId: user.id,
+          week: weekData.week,
+          rank: weekData.rank,
+          rewardUsd: weekData.rewardUsd,
+          rewardZen: weekData.rewardZen,
+          toAddress: toAddress,
+          txHash: txHash,
+        },
+      });
+    } catch (error: any) {
+      // Log but don't fail - ZEN already sent
+      this.logger.error(
+        `Failed to create ClaimHistory for week ${week}: ${error.message}`,
+      );
     }
 
     this.logger.log(
-      `Claim successful. TxHash: ${txHash}, Weeks: ${weeksClaimed.join(', ')}, Total ZEN: ${summary.totalZen}`,
+      `Claim successful. TxHash: ${txHash}, Week: ${week}, ZEN: ${weekData.rewardZen}`,
     );
 
     return {
       success: true,
       txHash,
-      totalZen: summary.totalZen,
-      weeksClaimed,
+      rewardZen: weekData.rewardZen,
+      weekClaimed: week,
     };
   }
 }

@@ -29,4 +29,5 @@ export type ModalName =
   | "signerList"
   | "switchAccount"
   | "disclaimer"
-  | "claimReward";
+  | "claimReward"
+  | "questIntro";
