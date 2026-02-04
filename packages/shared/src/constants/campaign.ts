@@ -126,10 +126,10 @@ export function isWeekAvailable(week: number): boolean {
  * Format campaign start date for display
  */
 export function formatCampaignStartDate(): string {
-  return CAMPAIGN_START.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
+  return CAMPAIGN_START.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
 }
 

@@ -51,7 +51,9 @@ export class ZenTransferService {
     ) as `0x${string}`;
 
     if (!privateKey) {
-      this.logger.warn('REWARD_WALLET_KEY is not set - ZEN transfers will fail');
+      this.logger.warn(
+        'REWARD_WALLET_KEY is not set - ZEN transfers will fail',
+      );
       return;
     }
 
@@ -169,7 +171,10 @@ export class ZenTransferService {
         this.logger.log(`Transaction sent: ${txHash} (attempt ${attempt})`);
 
         // Wait for receipt
-        const receipt = await waitForReceiptWithRetry(this.publicClient, txHash);
+        const receipt = await waitForReceiptWithRetry(
+          this.publicClient,
+          txHash,
+        );
 
         if (receipt.status === 'reverted') {
           throw new Error(`Transaction reverted on-chain. TxHash: ${txHash}`);

@@ -49,7 +49,7 @@ export const LeaderBoardTable = ({
   }
 
   return (
-    <div className="relative flex flex-col gap-2 max-h-[500px] overflow-y-auto">
+    <div className="relative flex flex-col gap-2 max-h-[70vh] overflow-y-auto">
       {/* Sticky Current User */}
       {currentUser && currentUser.rank && (
         <div className="sticky top-0 z-10">

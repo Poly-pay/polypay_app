@@ -63,7 +63,10 @@ export class ClaimController {
     description: 'Claim all unclaimed rewards and receive ZEN tokens',
   })
   @ApiResponse({ status: 200, description: 'Claim successful' })
-  @ApiResponse({ status: 400, description: 'Bad request - no rewards or invalid address' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - no rewards or invalid address',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 500, description: 'Transfer failed' })
   async claimRewards(
@@ -98,7 +101,10 @@ export class ClaimController {
     // Send ZEN
     let txHash: string;
     try {
-      txHash = await this.zenTransferService.sendZen(toAddress, summary.totalZen);
+      txHash = await this.zenTransferService.sendZen(
+        toAddress,
+        summary.totalZen,
+      );
     } catch (error: any) {
       this.logger.error(`ZEN transfer failed: ${error.message}`);
       throw new InternalServerErrorException(

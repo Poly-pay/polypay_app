@@ -35,7 +35,7 @@ import { RewardModule } from './reward/reward.module';
     FeatureRequestModule,
     AdminModule,
     QuestModule,
-    RewardModule
+    RewardModule,
   ],
 })
 export class AppModule {}

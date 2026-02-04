@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { claimApi } from "~~/services/api/claimApi";
 import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import type { ClaimRequest } from "@polypay/shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { claimApi } from "~~/services/api/claimApi";
 
 export const claimKeys = {
   summary: ["claims", "summary"] as const,

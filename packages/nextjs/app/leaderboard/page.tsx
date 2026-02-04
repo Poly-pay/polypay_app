@@ -19,7 +19,11 @@ const WEEKS = [1, 2, 3, 4, 5, 6];
 
 const LeaderBoardPage: NextPage = () => {
   const [filter, setFilter] = useState<LeaderboardFilter>("weekly");
-  const [selectedWeek, setSelectedWeek] = useState<number>(1);
+  const [selectedWeek, setSelectedWeek] = useState<number>(() => {
+    const lastCompleted = getLastCompletedWeek();
+    const available = getAvailableWeeks();
+    return lastCompleted || available[0] || 1;
+  });
   const { openModal } = useModalApp();
 
   // Get campaign state
@@ -43,15 +47,6 @@ const LeaderBoardPage: NextPage = () => {
   // 2. Viewing last completed week
   // 3. User has unclaimed rewards
   const showClaimButton = filter === "weekly" && selectedWeek === lastCompletedWeek && hasUnclaimedRewards;
-
-  // Set default selected week on mount
-  useEffect(() => {
-    if (lastCompletedWeek) {
-      setSelectedWeek(lastCompletedWeek);
-    } else if (availableWeeks.length > 0) {
-      setSelectedWeek(availableWeeks[0]);
-    }
-  }, [lastCompletedWeek, availableWeeks]);
 
   // Get week param only when filter is weekly
   const weekParam = filter === "weekly" ? selectedWeek : undefined;
