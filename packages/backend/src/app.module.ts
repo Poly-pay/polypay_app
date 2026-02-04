@@ -15,6 +15,7 @@ import { PriceModule } from './price/price.module';
 import { FeatureRequestModule } from './feature-request/feature-request.module';
 import { AdminModule } from './admin/admin.module';
 import { QuestModule } from './quest/quest.module';
+import { RewardModule } from './reward/reward.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { QuestModule } from './quest/quest.module';
     FeatureRequestModule,
     AdminModule,
     QuestModule,
+    RewardModule
   ],
 })
 export class AppModule {}

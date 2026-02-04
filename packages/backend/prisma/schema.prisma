@@ -18,6 +18,7 @@ model User {
   receivedNotifications Notification[]  @relation("ReceivedNotifications")
   sentNotifications     Notification[]  @relation("SentNotifications")
   pointHistories        PointHistory[]
+  claimHistories        ClaimHistory[]
 
   @@map("users")
 }
@@ -246,6 +247,24 @@ model LoginHistory {
   @@index([commitment])
   @@index([walletAddress])
   @@map("login_history")
+}
+
+model ClaimHistory {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  week      Int
+  rank      Int
+  rewardUsd Float    @map("reward_usd")
+  rewardZen Float    @map("reward_zen")
+  toAddress String   @map("to_address") // TODO: discuss to remove this one or not?
+  txHash    String   @map("tx_hash")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, week])
+  @@index([userId])
+  @@map("claim_histories")
 }
 
 enum TxType {
