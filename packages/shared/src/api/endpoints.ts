@@ -79,4 +79,9 @@ export const API_ENDPOINTS = {
     leaderboard: "/api/quests/leaderboard",
     myPoints: "/api/quests/my-points",
   },
+
+  claims: {
+    base: "/api/claims",
+    summary: "/api/claims/summary",
+  },
 } as const;

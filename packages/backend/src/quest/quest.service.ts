@@ -6,8 +6,8 @@ import {
   PaginatedResponse,
   LeaderboardEntry,
   LeaderboardMeResponse,
+  CAMPAIGN_START,
 } from '@polypay/shared';
-import { CAMPAIGN_START } from '@/common/constants';
 
 @Injectable()
 export class QuestService {

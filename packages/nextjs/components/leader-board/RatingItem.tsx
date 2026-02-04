@@ -9,6 +9,7 @@ interface RatingItemProps {
   points: number;
   isCurrentUser?: boolean;
   isClaimed?: boolean;
+  showClaimButton?: boolean;
   onClaim?: () => void;
 }
 
@@ -18,6 +19,7 @@ export const RatingItem = ({
   points,
   isCurrentUser = false,
   isClaimed = false,
+  showClaimButton = false,
   onClaim,
 }: RatingItemProps) => {
   const avatarSrc = getAvatarByCommitment(commitment);
@@ -74,9 +76,9 @@ export const RatingItem = ({
         </span>
       </div>
 
-      {/* Claim Button - 15% (only for current user) */}
+      {/* Claim Button - only show when isCurrentUser AND showClaimButton */}
       <div className="w-[15%] flex items-center justify-center px-2">
-        {isCurrentUser && (
+        {isCurrentUser && showClaimButton && (
           <button
             onClick={onClaim}
             disabled={isClaimed}

@@ -2,11 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { PriceService } from '@/price/price.service';
 import {
+  ClaimableWeek,
+  ClaimSummary,
   CAMPAIGN_START,
   TOTAL_CAMPAIGN_WEEKS,
   calculateRewardUsd,
-} from '@/common/constants';
-import type { ClaimableWeek, ClaimSummary } from '@polypay/shared';
+} from '@polypay/shared';
 
 @Injectable()
 export class RewardService {
@@ -99,7 +100,9 @@ export class RewardService {
     });
 
     // Find user's rank
-    const userIndex = leaderboard.findIndex((entry) => entry.userId === user.id);
+    const userIndex = leaderboard.findIndex(
+      (entry) => entry.userId === user.id,
+    );
 
     if (userIndex === -1) return null;
 

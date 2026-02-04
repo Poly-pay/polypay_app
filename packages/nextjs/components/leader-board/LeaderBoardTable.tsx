@@ -10,10 +10,17 @@ interface LeaderBoardTableProps {
   filter: LeaderboardFilter;
   week?: number;
   isClaimed?: boolean;
+  showClaimButton?: boolean;
   onClaim?: () => void;
 }
 
-export const LeaderBoardTable = ({ filter, week, isClaimed = false, onClaim }: LeaderBoardTableProps) => {
+export const LeaderBoardTable = ({
+  filter,
+  week,
+  isClaimed = false,
+  showClaimButton = false,
+  onClaim,
+}: LeaderBoardTableProps) => {
   const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useLeaderboardInfinite(filter, week);
 
   const { data: currentUser, isLoading: isLoadingMe } = useLeaderboardMe(filter, week);
@@ -52,6 +59,7 @@ export const LeaderBoardTable = ({ filter, week, isClaimed = false, onClaim }: L
             points={currentUser.totalPoints}
             isCurrentUser
             isClaimed={isClaimed}
+            showClaimButton={showClaimButton}
             onClaim={onClaim}
           />
           {/* Gradient overlay */}
@@ -74,6 +82,7 @@ export const LeaderBoardTable = ({ filter, week, isClaimed = false, onClaim }: L
             points={item.totalPoints}
             isCurrentUser={currentUser?.commitment === item.commitment}
             isClaimed={currentUser?.commitment === item.commitment ? isClaimed : undefined}
+            showClaimButton={currentUser?.commitment === item.commitment ? showClaimButton : false}
             onClaim={currentUser?.commitment === item.commitment ? onClaim : undefined}
           />
         ))}

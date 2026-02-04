@@ -1,37 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  TOTAL_CAMPAIGN_WEEKS,
+  formatCampaignStartDate,
+  getAvailableWeeks,
+  getCurrentWeek,
+  getLastCompletedWeek,
+} from "@polypay/shared";
 import type { LeaderboardFilter } from "@polypay/shared";
 import { NextPage } from "next";
 import { SectionAvatar } from "~~/components/leader-board";
 import { LeaderBoardTable } from "~~/components/leader-board/LeaderBoardTable";
 import { useModalApp } from "~~/hooks";
-import { useLeaderboardMe } from "~~/hooks/api/useQuest";
+import { useClaimSummary } from "~~/hooks/api/useClaim";
 
 const WEEKS = [1, 2, 3, 4, 5, 6];
 
 const LeaderBoardPage: NextPage = () => {
   const [filter, setFilter] = useState<LeaderboardFilter>("weekly");
-  const [selectedWeek, setSelectedWeek] = useState(1);
-  const [isClaimed, setIsClaimed] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const { openModal } = useModalApp();
+
+  // Get campaign state
+  const currentWeek = getCurrentWeek();
+  const availableWeeks = getAvailableWeeks();
+  const lastCompletedWeek = getLastCompletedWeek();
+  const campaignNotStarted = currentWeek === 0;
+  const campaignEnded = currentWeek > TOTAL_CAMPAIGN_WEEKS;
+
+  // Fetch claim summary to check if user has claimed
+  const { data: claimSummary } = useClaimSummary();
+
+  // Check if current selected week is already claimed
+  const isWeekClaimed = claimSummary?.weeks.find(w => w.week === selectedWeek)?.isClaimed ?? false;
+
+  // Check if user has any unclaimed rewards
+  const hasUnclaimedRewards = (claimSummary?.totalZen ?? 0) > 0;
+
+  // Show claim button only when:
+  // 1. Filter is weekly
+  // 2. Viewing last completed week
+  // 3. User has unclaimed rewards
+  const showClaimButton = filter === "weekly" && selectedWeek === lastCompletedWeek && hasUnclaimedRewards;
+
+  // Set default selected week on mount
+  useEffect(() => {
+    if (lastCompletedWeek) {
+      setSelectedWeek(lastCompletedWeek);
+    } else if (availableWeeks.length > 0) {
+      setSelectedWeek(availableWeeks[0]);
+    }
+  }, [lastCompletedWeek, availableWeeks]);
 
   // Get week param only when filter is weekly
   const weekParam = filter === "weekly" ? selectedWeek : undefined;
 
-  // Fetch current user for claim modal
-  const { data: myPoints } = useLeaderboardMe(filter, weekParam);
-
   const handleClaim = () => {
-    openModal("claimReward", {
-      amount: 100,
-      tokenSymbol: "ZEN",
-      toAddress: myPoints?.commitment || "Unknown",
-      onConfirm: () => {
-        console.log("Claim confirmed");
-        setIsClaimed(true);
-      },
-    });
+    if (!claimSummary) return;
+
+    openModal("claimReward");
   };
 
   return (
@@ -70,26 +98,58 @@ const LeaderBoardPage: NextPage = () => {
 
         {/* Week Buttons - Only show when filter is "weekly" */}
         {filter === "weekly" && (
-          <div className="flex items-start gap-4">
-            {WEEKS.map(week => (
-              <button
-                key={week}
-                onClick={() => setSelectedWeek(week)}
-                className={`px-4 py-2 rounded-lg font-barlow font-medium text-sm leading-5 tracking-[-0.04em] transition-colors ${
-                  selectedWeek === week ? "bg-grey-1000 text-white" : "bg-grey-100 text-grey-1000 hover:bg-grey-200"
-                }`}
-              >
-                Week {week}
-              </button>
-            ))}
+          <div className="flex flex-col gap-3">
+            {/* Campaign not started message */}
+            {campaignNotStarted && (
+              <div className="text-grey-600 text-sm">Campaign starts on {formatCampaignStartDate()}</div>
+            )}
+
+            {/* Week buttons */}
+            <div className="flex items-start gap-4">
+              {WEEKS.map(week => {
+                const isAvailable = availableWeeks.includes(week);
+                const isSelected = selectedWeek === week;
+
+                return (
+                  <button
+                    key={week}
+                    onClick={() => isAvailable && setSelectedWeek(week)}
+                    disabled={!isAvailable}
+                    className={`px-4 py-2 rounded-lg font-barlow font-medium text-sm leading-5 tracking-[-0.04em] transition-colors ${
+                      isSelected
+                        ? "bg-grey-1000 text-white"
+                        : isAvailable
+                          ? "bg-grey-100 text-grey-1000 hover:bg-grey-200"
+                          : "bg-grey-50 text-grey-400 cursor-not-allowed"
+                    }`}
+                  >
+                    Week {week}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
 
       {/* Content */}
       <div className="p-10 rounded-3xl bg-white border border-grey-100 space-y-10">
-        <SectionAvatar filter={filter} week={weekParam} />
-        <LeaderBoardTable filter={filter} week={weekParam} isClaimed={isClaimed} onClaim={handleClaim} />
+        {campaignNotStarted ? (
+          <div className="flex items-center justify-center h-[300px] text-grey-500">
+            Campaign has not started yet. Please check back on {formatCampaignStartDate()}.
+          </div>
+        ) : (
+          <>
+            <SectionAvatar filter={filter} week={weekParam} />
+            <LeaderBoardTable
+              filter={filter}
+              week={weekParam}
+              isClaimed={isWeekClaimed}
+              showClaimButton={showClaimButton}
+              onClaim={handleClaim}
+            />
+          </>
+        )}
       </div>
     </div>
   );
