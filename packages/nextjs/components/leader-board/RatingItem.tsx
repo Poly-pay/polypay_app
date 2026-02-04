@@ -82,7 +82,7 @@ export const RatingItem = ({
 
       {/* Claim Button - only show when isCurrentUser AND showClaimButton */}
       {isCurrentUser && showClaimButton && (
-        <div className="w-[15%] flex items-center justify-center px-2">
+        <div className="w-[15%] flex items-center justify-center px-2 ml-2">
           <button
             onClick={onClaim}
             disabled={isClaimed}

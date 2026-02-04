@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { QuestCode, CAMPAIGN_START } from '@polypay/shared';
+import { QuestCode, QuestCategory, CAMPAIGN_START } from '@polypay/shared';
 import { PrismaClient } from '@/generated/prisma/client';
 
 const adapter = new PrismaPg({
@@ -47,6 +47,54 @@ function randomBetween(min: number, max: number): number {
 }
 
 /**
+ * Seed quests
+ */
+async function seedQuests() {
+  console.log('🎯 Seeding quests...');
+
+  const quests = [
+    {
+      code: QuestCode.ACCOUNT_FIRST_TX,
+      name: 'Account creation',
+      description:
+        'Each account created and performed 1 successful transaction will receive 100 points link to the wallet addresses use for signin',
+      points: 100,
+      type: QuestCategory.RECURRING,
+    },
+    {
+      code: QuestCode.SUCCESSFUL_TX,
+      name: 'Transaction',
+      description:
+        'Each successful transaction by an account earns 50 points, credited to the address that initiates the transaction.',
+      points: 50,
+      type: QuestCategory.RECURRING,
+    },
+  ];
+
+  for (const quest of quests) {
+    await prisma.quest.upsert({
+      where: { code: quest.code },
+      update: {
+        name: quest.name,
+        description: quest.description,
+        points: quest.points,
+        type: quest.type,
+      },
+      create: {
+        code: quest.code,
+        name: quest.name,
+        description: quest.description,
+        points: quest.points,
+        type: quest.type,
+        isActive: true,
+      },
+    });
+  }
+
+  console.log('✅ Seeded quests');
+}
+
+/**
  * Seed leaderboard test data
  */
 async function seedLeaderboardData() {
@@ -58,7 +106,7 @@ async function seedLeaderboardData() {
   });
 
   if (quests.length === 0) {
-    console.log('⚠️ No quests found. Quests will be auto-seeded on app start.');
+    console.log('⚠️ No quests found.');
     return;
   }
 
@@ -138,10 +186,8 @@ async function seedLeaderboardData() {
     });
 
     // Week 1: Distribute points to create ranking
-    // First 10 users: 100-400 pts (above your 500 -> you rank ~5-10)
-    // Rest: 50-400 pts
+    // First 4 users: 600-800 pts (above your 500 -> you rank ~5)
     if (i < 4) {
-      // 4 users with more points than you (600-800) -> you rank ~5
       const numRecords = randomBetween(6, 8);
       for (let j = 0; j < numRecords; j++) {
         await prisma.pointHistory.create({
@@ -154,7 +200,7 @@ async function seedLeaderboardData() {
         });
       }
     } else {
-      // Other users: 50-400 pts
+      // Other users: 100-400 pts
       const numRecords = randomBetween(1, 4);
       for (let j = 0; j < numRecords; j++) {
         await prisma.pointHistory.create({
@@ -223,6 +269,7 @@ async function main() {
   console.log('🌱 Starting seed...');
   console.log(`📅 Campaign start: ${CAMPAIGN_START.toISOString()}`);
 
+  await seedQuests();
   await seedLeaderboardData();
 
   console.log('🌱 Seed completed');

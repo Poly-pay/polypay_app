@@ -29,18 +29,14 @@ const LeaderBoardPage: NextPage = () => {
   // Fetch claim summary to check if user has claimed
   const { data: claimSummary } = useClaimSummary();
 
-  // Check if selected week has unclaimed reward
+  // Check if selected week has reward (claimed or not)
   const selectedWeekData = claimSummary?.weeks.find(w => w.week === selectedWeek);
   const isWeekClaimed = selectedWeekData?.isClaimed ?? false;
-  const hasUnclaimedRewardForSelectedWeek =
-    selectedWeekData && !selectedWeekData.isClaimed && selectedWeekData.rewardZen > 0;
+  const hasRewardForSelectedWeek = selectedWeekData && selectedWeekData.rewardZen > 0;
 
-  // Show claim button when viewing a completed week that has unclaimed reward
+  // Show claim button when viewing a completed week that has reward (show "Claimed" if already claimed)
   const showClaimButton =
-    filter === "weekly" &&
-    lastCompletedWeek !== null &&
-    selectedWeek <= lastCompletedWeek &&
-    hasUnclaimedRewardForSelectedWeek;
+    filter === "weekly" && lastCompletedWeek !== null && selectedWeek <= lastCompletedWeek && hasRewardForSelectedWeek;
 
   // Get week param only when filter is weekly
   const weekParam = filter === "weekly" ? selectedWeek : undefined;
