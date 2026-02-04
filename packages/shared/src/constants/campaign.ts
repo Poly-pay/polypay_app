@@ -2,7 +2,8 @@
 
 // Campaign start date
 // Note: TODO: Update this for production
-export const CAMPAIGN_START = new Date('2026-02-06');
+// export const CAMPAIGN_START = new Date('2026-02-06');
+export const CAMPAIGN_START = new Date('2026-01-20');
 
 // Total campaign weeks
 export const TOTAL_CAMPAIGN_WEEKS = 6;

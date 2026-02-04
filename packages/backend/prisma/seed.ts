@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { QuestCategory, QuestCode } from '@polypay/shared';
+import { QuestCode, CAMPAIGN_START } from '@polypay/shared';
 import { PrismaClient } from '@/generated/prisma/client';
 
 const adapter = new PrismaPg({
@@ -9,9 +9,9 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter });
 
-// Campaign start date (same as quest.service.ts)
-// const CAMPAIGN_START = new Date('2026-01-06'); // Production
-const CAMPAIGN_START = new Date(); // Testing - uses today
+// TODO: Change this to your commitment for testing
+const MY_COMMITMENT =
+  '7777412979265397193925220040726445950599854595059203997869095364409346949110';
 
 /**
  * Generate random commitment (76-77 digit number string)
@@ -28,75 +28,94 @@ function generateCommitment(): string {
 }
 
 /**
- * Generate random date within campaign period (6 weeks)
+ * Get date in specific week
+ * @param week Week number (1-6)
+ * @param dayOffset Day offset within the week (0-6)
  */
-function generateRandomEarnedAt(): Date {
-  const maxDays = 42; // 6 weeks
-  const randomDays = Math.floor(Math.random() * maxDays);
-  const randomHours = Math.floor(Math.random() * 24);
-  const randomMinutes = Math.floor(Math.random() * 60);
-
+function getDateInWeek(week: number, dayOffset: number = 0): Date {
   const date = new Date(CAMPAIGN_START);
-  date.setDate(date.getDate() + randomDays);
-  date.setHours(randomHours, randomMinutes, 0, 0);
-
+  date.setDate(date.getDate() + (week - 1) * 7 + dayOffset);
+  date.setHours(12, 0, 0, 0);
   return date;
 }
 
-async function seedQuests() {
-  const quests = [
-    {
-      code: QuestCode.ACCOUNT_FIRST_TX,
-      name: 'First Transaction',
-      description: 'Create account and execute first transaction',
-      points: 100,
-      type: QuestCategory.RECURRING,
-    },
-    {
-      code: QuestCode.SUCCESSFUL_TX,
-      name: 'Successful Transaction',
-      description: 'Execute a successful transaction',
-      points: 50,
-      type: QuestCategory.RECURRING,
-    },
-  ];
-
-  for (const quest of quests) {
-    await prisma.quest.upsert({
-      where: { code: quest.code },
-      update: {
-        name: quest.name,
-        description: quest.description,
-        points: quest.points,
-        type: quest.type,
-      },
-      create: quest,
-    });
-  }
-
-  console.log('✅ Seeded quests');
+/**
+ * Random number between min and max (inclusive)
+ */
+function randomBetween(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/**
+ * Seed leaderboard test data
+ */
 async function seedLeaderboardData() {
   // Get quests
   const quests = await prisma.quest.findMany({
     where: {
-      code: {
-        in: [QuestCode.ACCOUNT_FIRST_TX, QuestCode.SUCCESSFUL_TX],
-      },
+      code: { in: [QuestCode.ACCOUNT_FIRST_TX, QuestCode.SUCCESSFUL_TX] },
     },
   });
 
   if (quests.length === 0) {
-    console.log('⚠️ No quests found. Run seedQuests first.');
+    console.log('⚠️ No quests found. Quests will be auto-seeded on app start.');
     return;
   }
 
+  const questFirstTx = quests.find(
+    (q) => q.code === QuestCode.ACCOUNT_FIRST_TX,
+  )!;
+  const questSuccessfulTx = quests.find(
+    (q) => q.code === QuestCode.SUCCESSFUL_TX,
+  )!;
+
   console.log(`📊 Found ${quests.length} quests`);
 
+  // 1. Create YOUR user
+  console.log('👤 Creating your user...');
+  const myUser = await prisma.user.upsert({
+    where: { commitment: MY_COMMITMENT },
+    create: { commitment: MY_COMMITMENT },
+    update: {},
+  });
+
+  // Delete existing point histories for your user (for re-seeding)
+  await prisma.pointHistory.deleteMany({
+    where: { userId: myUser.id },
+  });
+
+  // Week 1: 500 points (5 x 100 pts) -> rank ~5
+  for (let i = 0; i < 5; i++) {
+    await prisma.pointHistory.create({
+      data: {
+        userId: myUser.id,
+        questId: questFirstTx.id,
+        points: questFirstTx.points,
+        earnedAt: getDateInWeek(1, i),
+      },
+    });
+  }
+
+  // Week 2: 150 points (3 x 50 pts) -> rank ~35
+  for (let i = 0; i < 3; i++) {
+    await prisma.pointHistory.create({
+      data: {
+        userId: myUser.id,
+        questId: questSuccessfulTx.id,
+        points: questSuccessfulTx.points,
+        earnedAt: getDateInWeek(2, i),
+      },
+    });
+  }
+
+  // Week 3: 0 points -> no reward
+  console.log(
+    '✅ Your user created with: Week1=500pts, Week2=150pts, Week3=0pts',
+  );
+
+  // 2. Create 120 random users
+  console.log('👥 Creating 120 random users...');
   const TOTAL_USERS = 120;
-  let createdUsers = 0;
-  let createdPointHistories = 0;
 
   for (let i = 0; i < TOTAL_USERS; i++) {
     // Generate unique commitment
@@ -115,28 +134,80 @@ async function seedLeaderboardData() {
 
     // Create user
     const user = await prisma.user.create({
-      data: {
-        commitment: commitment!,
-      },
+      data: { commitment: commitment! },
     });
-    createdUsers++;
 
-    // Random 1-5 point history records per user
-    const numRecords = Math.floor(Math.random() * 5) + 1;
+    // Week 1: Distribute points to create ranking
+    // First 10 users: 100-400 pts (above your 500 -> you rank ~5-10)
+    // Rest: 50-400 pts
+    if (i < 4) {
+      // 4 users with more points than you (600-800) -> you rank ~5
+      const numRecords = randomBetween(6, 8);
+      for (let j = 0; j < numRecords; j++) {
+        await prisma.pointHistory.create({
+          data: {
+            userId: user.id,
+            questId: questFirstTx.id,
+            points: questFirstTx.points,
+            earnedAt: getDateInWeek(1, randomBetween(0, 6)),
+          },
+        });
+      }
+    } else {
+      // Other users: 50-400 pts
+      const numRecords = randomBetween(1, 4);
+      for (let j = 0; j < numRecords; j++) {
+        await prisma.pointHistory.create({
+          data: {
+            userId: user.id,
+            questId: questFirstTx.id,
+            points: questFirstTx.points,
+            earnedAt: getDateInWeek(1, randomBetween(0, 6)),
+          },
+        });
+      }
+    }
 
-    for (let j = 0; j < numRecords; j++) {
-      // Random quest
-      const quest = quests[Math.floor(Math.random() * quests.length)];
+    // Week 2: Distribute points
+    // ~30 users with more points than you (150) -> you rank ~35
+    if (i < 30) {
+      const numRecords = randomBetween(4, 8);
+      for (let j = 0; j < numRecords; j++) {
+        await prisma.pointHistory.create({
+          data: {
+            userId: user.id,
+            questId: questSuccessfulTx.id,
+            points: questSuccessfulTx.points,
+            earnedAt: getDateInWeek(2, randomBetween(0, 6)),
+          },
+        });
+      }
+    } else {
+      const numRecords = randomBetween(0, 2);
+      for (let j = 0; j < numRecords; j++) {
+        await prisma.pointHistory.create({
+          data: {
+            userId: user.id,
+            questId: questSuccessfulTx.id,
+            points: questSuccessfulTx.points,
+            earnedAt: getDateInWeek(2, randomBetween(0, 6)),
+          },
+        });
+      }
+    }
 
+    // Week 3: Random points
+    const week3Records = randomBetween(0, 3);
+    for (let j = 0; j < week3Records; j++) {
+      const quest = Math.random() > 0.5 ? questFirstTx : questSuccessfulTx;
       await prisma.pointHistory.create({
         data: {
           userId: user.id,
           questId: quest.id,
           points: quest.points,
-          earnedAt: generateRandomEarnedAt(),
+          earnedAt: getDateInWeek(3, randomBetween(0, 6)),
         },
       });
-      createdPointHistories++;
     }
 
     // Log progress every 20 users
@@ -145,16 +216,13 @@ async function seedLeaderboardData() {
     }
   }
 
-  console.log(`✅ Seeded leaderboard data:`);
-  console.log(`   - ${createdUsers} users`);
-  console.log(`   - ${createdPointHistories} point histories`);
+  console.log(`✅ Seeded ${TOTAL_USERS} random users`);
 }
 
 async function main() {
   console.log('🌱 Starting seed...');
   console.log(`📅 Campaign start: ${CAMPAIGN_START.toISOString()}`);
 
-  await seedQuests();
   await seedLeaderboardData();
 
   console.log('🌱 Seed completed');
