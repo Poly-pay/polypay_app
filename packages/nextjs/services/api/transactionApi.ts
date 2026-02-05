@@ -95,6 +95,7 @@ export const transactionApi = {
     txId: number;
     txHash: string;
     status: TxStatus;
+    pointsAwarded?: number;
   }> => {
     const { data } = await apiClient.post(API_ENDPOINTS.transactions.execute(txId), dto);
     return data;

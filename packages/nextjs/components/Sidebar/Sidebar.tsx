@@ -200,10 +200,7 @@ export default function Sidebar() {
         {/* Top Section */}
         <div className="flex flex-col">
           {/* Header - Logo */}
-          <div
-            className="flex items-center gap-[11px] py-[1px] cursor-pointer"
-            onClick={handleLogoClick}
-          >
+          <div className="flex items-center gap-[11px] py-[1px] cursor-pointer" onClick={handleLogoClick}>
             {/* Logo */}
             <div className="flex items-center gap-[4.85px]">
               <Image src="/logo/polypay-icon.svg" alt="logo" width={32} height={28} />

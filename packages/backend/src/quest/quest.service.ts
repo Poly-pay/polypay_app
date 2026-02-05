@@ -49,11 +49,12 @@ export class QuestService {
   /**
    * Award points for first successful transaction of an account
    * Only creator (isCreator: true) receives points
+   * @returns points awarded (0 if not awarded)
    */
   async awardAccountFirstTx(
     accountAddress: string,
     currentTxId: number,
-  ): Promise<void> {
+  ): Promise<number> {
     // Check if this is the first executed tx for this account
     const executedCount = await this.prisma.transaction.count({
       where: {
@@ -65,7 +66,7 @@ export class QuestService {
 
     if (executedCount > 0) {
       // Not the first tx
-      return;
+      return 0;
     }
 
     // Get quest
@@ -74,7 +75,7 @@ export class QuestService {
     });
 
     if (!quest || !quest.isActive) {
-      return;
+      return 0;
     }
 
     // Get account and creator
@@ -89,7 +90,7 @@ export class QuestService {
     });
 
     if (!account || account.signers.length === 0) {
-      return;
+      return 0;
     }
 
     const creator = account.signers[0];
@@ -104,7 +105,7 @@ export class QuestService {
     });
 
     if (existing) {
-      return;
+      return 0;
     }
 
     // Award points
@@ -121,22 +122,25 @@ export class QuestService {
     this.logger.log(
       `Awarded ${quest.points} points to user ${creator.userId} for ACCOUNT_FIRST_TX (account: ${accountAddress})`,
     );
+
+    return quest.points;
   }
 
   /**
    * Award points for successful transaction to proposer
+   * @returns points awarded (0 if not awarded)
    */
   async awardSuccessfulTx(
     txId: number,
     proposerCommitment: string,
-  ): Promise<void> {
+  ): Promise<number> {
     // Get quest
     const quest = await this.prisma.quest.findUnique({
       where: { code: QuestCode.SUCCESSFUL_TX },
     });
 
     if (!quest || !quest.isActive) {
-      return;
+      return 0;
     }
 
     // Get user by commitment
@@ -145,7 +149,7 @@ export class QuestService {
     });
 
     if (!user) {
-      return;
+      return 0;
     }
 
     // Award points
@@ -161,6 +165,8 @@ export class QuestService {
     this.logger.log(
       `Awarded ${quest.points} points to user ${user.id} for SUCCESSFUL_TX (txId: ${txId})`,
     );
+
+    return quest.points;
   }
 
   /**

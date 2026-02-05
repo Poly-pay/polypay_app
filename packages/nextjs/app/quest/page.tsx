@@ -1,17 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { QuestCategory } from "@polypay/shared";
+import { QuestCategory, QuestCode } from "@polypay/shared";
 import QuestIntroModal from "~~/components/modals/QuestIntroModal";
 import { ComingSoon, QuestCard, QuestSection } from "~~/components/quest";
 import { QuestFloatingButton } from "~~/components/quest/QuestFloatingButton";
-import { useQuests } from "~~/hooks/api";
+import { useMyAccounts, useQuests } from "~~/hooks/api";
+import { useAppRouter } from "~~/hooks/app/useRouteApp";
+import { useIdentityStore } from "~~/services/store";
 import { useQuestIntroStore } from "~~/services/store/questIntroStore";
+import { notification } from "~~/utils/scaffold-eth";
 
 export default function QuestPage() {
   const { data: quests, isLoading } = useQuests();
   const { hasSeenIntro, _hasHydrated } = useQuestIntroStore();
   const [showIntroModal, setShowIntroModal] = useState(false);
+
+  const { commitment } = useIdentityStore();
+  const { data: accounts = [] } = useMyAccounts();
+  const router = useAppRouter();
 
   const featuredQuests = quests?.filter(q => q.type === QuestCategory.RECURRING) ?? [];
   const dailyQuests = quests?.filter(q => q.type === QuestCategory.DAILY) ?? [];
@@ -22,6 +29,30 @@ export default function QuestPage() {
       setShowIntroModal(true);
     }
   }, [_hasHydrated, hasSeenIntro]);
+
+  const handleQuestClick = (code: string) => {
+    if (!commitment) {
+      notification.info("Please sign in to continue");
+      return;
+    }
+
+    if (accounts.length === 0) {
+      notification.info("Please create an account first");
+      router.goToDashboardNewAccount();
+      return;
+    }
+
+    switch (code) {
+      case QuestCode.ACCOUNT_FIRST_TX:
+        router.goToDashboardNewAccount();
+        break;
+      case QuestCode.SUCCESSFUL_TX:
+        router.goToTransfer();
+        break;
+      default:
+        break;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -43,7 +74,13 @@ export default function QuestPage() {
         <div className="flex flex-row gap-4">
           {featuredQuests.length > 0 ? (
             featuredQuests.map(quest => (
-              <QuestCard key={quest.id} name={quest.name} description={quest.description ?? ""} points={quest.points} />
+              <QuestCard
+                key={quest.id}
+                name={quest.name}
+                description={quest.description ?? ""}
+                points={quest.points}
+                onClick={() => handleQuestClick(quest.code)}
+              />
             ))
           ) : (
             <p className="text-grey-500">No featured quests available</p>
@@ -56,7 +93,13 @@ export default function QuestPage() {
         {dailyQuests.length > 0 ? (
           <div className="flex flex-row gap-4">
             {dailyQuests.map(quest => (
-              <QuestCard key={quest.id} name={quest.name} description={quest.description ?? ""} points={quest.points} />
+              <QuestCard
+                key={quest.id}
+                name={quest.name}
+                description={quest.description ?? ""}
+                points={quest.points}
+                onClick={() => handleQuestClick(quest.code)}
+              />
             ))}
           </div>
         ) : (

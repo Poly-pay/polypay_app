@@ -74,18 +74,21 @@ export const LeaderBoardTable = ({
 
       {/* List Items */}
       <div className="flex flex-col gap-2">
-        {leaderboardData.map(item => (
-          <RatingItem
-            key={item.userId}
-            rank={item.rank}
-            commitment={item.commitment || ""}
-            points={item.totalPoints}
-            isCurrentUser={currentUser?.commitment === item.commitment}
-            isClaimed={currentUser?.commitment === item.commitment ? isClaimed : undefined}
-            showClaimButton={currentUser?.commitment === item.commitment ? showClaimButton : false}
-            onClaim={currentUser?.commitment === item.commitment ? onClaim : undefined}
-          />
-        ))}
+        {leaderboardData.map(item => {
+          const isCurrentUserItem = currentUser?.commitment === item.commitment;
+          return (
+            <RatingItem
+              key={item.userId}
+              rank={item.rank}
+              commitment={item.commitment || ""}
+              points={item.totalPoints}
+              isCurrentUser={isCurrentUserItem}
+              isClaimed={isCurrentUserItem ? isClaimed : undefined}
+              showClaimButton={false}
+              onClaim={undefined}
+            />
+          );
+        })}
 
         {/* Infinite scroll trigger */}
         <div ref={ref} className="py-4 text-center">

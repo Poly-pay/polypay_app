@@ -848,19 +848,21 @@ export class TransactionService {
       });
 
       // Award quest points (only for TRANSFER and BATCH transactions)
+      let pointsAwarded = 0;
       if (
         transaction.type === TxType.TRANSFER ||
         transaction.type === TxType.BATCH
       ) {
         try {
-          await this.questService.awardSuccessfulTx(
+          const successfulTxPoints = await this.questService.awardSuccessfulTx(
             txId,
             transaction.createdBy,
           );
-          await this.questService.awardAccountFirstTx(
+          const firstTxPoints = await this.questService.awardAccountFirstTx(
             transaction.accountAddress,
             txId,
           );
+          pointsAwarded = successfulTxPoints + firstTxPoints;
         } catch (error) {
           this.logger.error(`Failed to award quest points: ${error.message}`);
         }
@@ -878,7 +880,8 @@ export class TransactionService {
         eventData,
       );
 
-      return updatedTx;
+      const result = await updatedTx;
+      return { ...result, pointsAwarded };
     });
   }
 
@@ -917,7 +920,7 @@ export class TransactionService {
       );
 
       // 3. Mark as executed only on success
-      await this.markExecuted(txId, txHash);
+      const { pointsAwarded } = await this.markExecuted(txId, txHash);
 
       this.analyticsLogger.logExecute(
         userAddress,
@@ -925,7 +928,7 @@ export class TransactionService {
         txHash,
       );
 
-      return { txId, txHash, status: 'EXECUTED' };
+      return { txId, txHash, status: 'EXECUTED', pointsAwarded };
     } catch (error) {
       this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
 
