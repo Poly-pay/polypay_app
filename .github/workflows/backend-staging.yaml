@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "develop"
-      - "test-staging"
     paths:
       - "packages/backend/**"
       - "packages/shared/**"
