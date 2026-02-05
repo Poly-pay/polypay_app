@@ -5,6 +5,17 @@ import { userApi } from "~~/services/api";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { ErrorCode, handleError, parseError } from "~~/utils/errorHandler";
 
+// Routes that don't require an account (only need login/commitment)
+const ROUTES_WITHOUT_ACCOUNT = [
+  Routes.QUEST.path,
+  Routes.LEADERBOARD.path,
+];
+
+// Helper function to check if route requires account
+const requiresAccount = (pathname: string) => {
+  return !ROUTES_WITHOUT_ACCOUNT.includes(pathname as any);
+};
+
 export const useInitializeApp = () => {
   const router = useAppRouter();
   const { logout, accessToken } = useIdentityStore();
@@ -33,20 +44,20 @@ export const useInitializeApp = () => {
       }
       abortControllerRef.current = new AbortController();
 
-      // Case 1: No accessToken - clear state and redirect
+      // Case 1: No accessToken - clear state and redirect if needed
       if (!accessToken) {
         clearCurrentAccount();
         setIsLoading(false);
         setIsInitialized(true);
 
-        // Redirect to new-account if on dashboard
-        if (router.pathname === Routes.DASHBOARD.path) {
+        // Only redirect if on a route that requires account
+        if (requiresAccount(router.pathname)) {
           router.goToDashboardNewAccount();
         }
         return;
       }
 
-      // Case 2: Has commitment, fetch accounts
+      // Case 2: Has accessToken, fetch accounts
       try {
         const accounts = await userApi.getMyAccounts();
 
@@ -70,8 +81,10 @@ export const useInitializeApp = () => {
           // No accounts
           clearCurrentAccount();
 
-          // Redirect to new-account if not have account
-          router.goToDashboardNewAccount();
+          // Only redirect if on a route that requires account
+          if (requiresAccount(router.pathname)) {
+            router.goToDashboardNewAccount();
+          }
         }
       } catch (error: any) {
         // Check if request was aborted
@@ -86,11 +99,17 @@ export const useInitializeApp = () => {
           // Token expired, logout user
           logout();
           clearCurrentAccount();
-          router.goToDashboardNewAccount();
+          
+          // Only redirect if on a route that requires account
+          if (requiresAccount(router.pathname)) {
+            router.goToDashboardNewAccount();
+          }
         } else if (appError.code === ErrorCode.NOT_FOUND) {
           // Treat as no accounts
           clearCurrentAccount();
-          if (router.pathname === Routes.DASHBOARD.path) {
+          
+          // Only redirect if on a route that requires account
+          if (requiresAccount(router.pathname)) {
             router.goToDashboardNewAccount();
           }
         } else {

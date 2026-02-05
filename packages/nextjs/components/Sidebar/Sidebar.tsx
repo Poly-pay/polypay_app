@@ -16,6 +16,7 @@ import { notification } from "~~/utils/scaffold-eth";
 const sectionItems = [
   {
     label: "Quick Access",
+    requireAccount: true,
     menuItems: [
       { icon: Routes.DASHBOARD.icon, label: Routes.DASHBOARD.title, link: Routes.DASHBOARD.path },
       { icon: Routes.CONTACT_BOOK.icon, label: Routes.CONTACT_BOOK.title, link: Routes.CONTACT_BOOK.path },
@@ -23,6 +24,7 @@ const sectionItems = [
   },
   {
     label: "Payments",
+    requireAccount: true,
     menuItems: [
       { icon: Routes.TRANSFER.icon, label: Routes.TRANSFER.title, link: Routes.TRANSFER.path },
       { icon: Routes.BATCH.icon, label: Routes.BATCH.title, link: Routes.BATCH.path },
@@ -30,6 +32,7 @@ const sectionItems = [
   },
   {
     label: "Quest",
+    requireAccount: false,
     menuItems: [
       { icon: Routes.QUEST.icon, label: Routes.QUEST.title, link: Routes.QUEST.path },
       { icon: Routes.LEADERBOARD.icon, label: Routes.LEADERBOARD.title, link: Routes.LEADERBOARD.path },
@@ -42,20 +45,49 @@ const SectionItem = ({
   menuItems,
   showDivider,
   openModal,
-  disabled = false,
+  requireAccount = true,
+  hasAccount = false,
+  hasCommitment = false,
 }: {
   label: string;
   menuItems: { icon: string; label: string; link: string }[];
   showDivider?: boolean;
   openModal: (name: ModalName, props?: Record<string, any>) => void;
-  disabled?: boolean;
+  requireAccount?: boolean;
+  hasAccount?: boolean;
+  hasCommitment?: boolean;
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
-  const itemComponent = (item: { icon: string; label: string; link: string }) => {
+  // Determine if this section is disabled
+  // - If requireAccount: need commitment + account
+  // - If !requireAccount: only need commitment
+  const isSectionDisabled = !hasCommitment || (requireAccount && !hasAccount);
+
+  const handleItemClick = (item: { icon: string; label: string; link: string }) => {
     const isDevelopingFeature = ["swap", "ai assistant"].includes(item.label.toLowerCase());
+
+    // Check if section is disabled and show appropriate notification
+    if (isSectionDisabled) {
+      if (!hasCommitment) {
+        notification.info("Please sign in to continue");
+      } else if (requireAccount && !hasAccount) {
+        notification.info("Please create an account to access this feature");
+      }
+      return;
+    }
+
+    if (isDevelopingFeature) {
+      openModal("developingFeature");
+      return;
+    }
+
+    router.push(item.link);
+  };
+
+  const itemComponent = (item: { icon: string; label: string; link: string }) => {
     const isActive = pathname === item.link;
     const isHovered = hoveredItem === item.link;
 
@@ -63,19 +95,13 @@ const SectionItem = ({
       <div
         key={item.label}
         className={`
-          flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl cursor-pointer
-          ${disabled ? "opacity-50 pointer-events-none cursor-not-allowed" : "cursor-pointer"}
+          flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl
+          ${isSectionDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           ${isActive ? "bg-main-white border-b border-grey-500" : ""}
-          ${!isActive && isHovered ? "bg-main-white/50" : ""}
+          ${!isActive && isHovered && !isSectionDisabled ? "bg-main-white/50" : ""}
         `}
-        onClick={() => {
-          if (isDevelopingFeature) {
-            openModal("developingFeature");
-            return;
-          }
-          router.push(item.link);
-        }}
-        onMouseEnter={() => setHoveredItem(item.link)}
+        onClick={() => handleItemClick(item)}
+        onMouseEnter={() => !isSectionDisabled && setHoveredItem(item.link)}
         onMouseLeave={() => setHoveredItem(null)}
       >
         <div className="flex items-center gap-2">
@@ -88,7 +114,7 @@ const SectionItem = ({
               height={24}
               style={{
                 filter:
-                  isActive || isHovered
+                  isActive || (isHovered && !isSectionDisabled)
                     ? "brightness(0) saturate(100%) invert(62%) sepia(85%) saturate(1295%) hue-rotate(288deg) brightness(101%) contrast(104%)"
                     : "none",
               }}
@@ -122,11 +148,7 @@ const SectionItem = ({
   );
 };
 
-interface SidebarProps {
-  disabled?: boolean;
-}
-
-export default function Sidebar({ disabled = false }: SidebarProps) {
+export default function Sidebar() {
   const { openModal } = useModalApp();
   const router = useAppRouter();
   const { data: accounts = [], isLoading: isLoadingAccounts } = useMyAccounts();
@@ -136,6 +158,19 @@ export default function Sidebar({ disabled = false }: SidebarProps) {
 
   // Manage Accounts Sidebar state
   const selectedAccountId = currentAccount?.id || accounts[0]?.id || "";
+
+  const handleLogoClick = () => {
+    if (!commitment) {
+      notification.info("Please sign in to continue");
+      return;
+    }
+    if (accounts.length === 0) {
+      notification.info("Please create an account to continue");
+      router.goToDashboardNewAccount();
+      return;
+    }
+    router.goToDashboard();
+  };
 
   const handleOpenManageAccounts = () => {
     openManageAccounts();
@@ -163,18 +198,11 @@ export default function Sidebar({ disabled = false }: SidebarProps) {
       {/* Main Sidebar */}
       <div className="xl:w-[272px] w-[68px] h-full bg-grey-100 border border-grey-100 rounded-lg flex flex-col justify-between p-3">
         {/* Top Section */}
-        <div
-          className="flex flex-col"
-          onClick={() => {
-            if (disabled) notification.info("You need to login first!!");
-          }}
-        >
+        <div className="flex flex-col">
           {/* Header - Logo */}
           <div
             className="flex items-center gap-[11px] py-[1px] cursor-pointer"
-            onClick={() => {
-              if (!disabled) router.goToDashboard();
-            }}
+            onClick={handleLogoClick}
           >
             {/* Logo */}
             <div className="flex items-center gap-[4.85px]">
@@ -199,7 +227,9 @@ export default function Sidebar({ disabled = false }: SidebarProps) {
                 menuItems={item.menuItems}
                 showDivider={index < sectionItems.length - 1}
                 openModal={openModal}
-                disabled={disabled}
+                requireAccount={item.requireAccount}
+                hasAccount={accounts.length > 0}
+                hasCommitment={!!commitment}
               />
             ))}
           </div>
