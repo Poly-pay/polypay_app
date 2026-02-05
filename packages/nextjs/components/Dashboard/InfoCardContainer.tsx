@@ -39,7 +39,7 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
           <div className="flex flex-row justify-between items-start">
             <span className="text-main-black text-sm font-medium capitalize">Account</span>
             {/* switch account modal */}
-            <span className="cursor-pointer" onClick={() => openModal("switchAccount")}>
+            <span className="cursor-pointer">
               <Image src="/icons/actions/rotate-360.svg" alt="Refresh" width={18} height={18} />
             </span>
           </div>

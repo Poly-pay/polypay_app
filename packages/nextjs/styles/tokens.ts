@@ -57,6 +57,7 @@ export const colorTokens = {
     50: "#FBF3FF",
     75: "#FFE0FA",
     100: "#F7E7FF",
+    125: "#FFA5F1",
     150: "#FFACF2",
     175: "#FF0ADA",
     200: "#EFCFFF",

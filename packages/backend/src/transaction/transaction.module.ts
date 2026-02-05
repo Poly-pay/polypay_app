@@ -7,6 +7,7 @@ import { RelayerModule } from '@/relayer-wallet/relayer-wallet.module';
 import { BatchItemModule } from '@/batch-item/batch-item.module';
 import { EventsModule } from '@/events/events.module';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
+import { QuestModule } from '@/quest/quest.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
     RelayerModule,
     BatchItemModule,
     EventsModule,
+    QuestModule,
   ],
   controllers: [TransactionController],
   providers: [TransactionService, AnalyticsLoggerService],

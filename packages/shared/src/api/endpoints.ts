@@ -73,4 +73,15 @@ export const API_ENDPOINTS = {
   featureRequests: {
     base: "/api/feature-requests",
   },
+
+  quests: {
+    base: "/api/quests",
+    leaderboard: "/api/quests/leaderboard",
+    myPoints: "/api/quests/my-points",
+  },
+
+  claims: {
+    base: "/api/claims",
+    summary: "/api/claims/summary",
+  },
 } as const;

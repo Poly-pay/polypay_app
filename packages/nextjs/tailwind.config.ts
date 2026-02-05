@@ -67,6 +67,7 @@ const config: Config = {
           50: "var(--color-pink-50)",
           75: "var(--color-pink-75)",
           100: "var(--color-pink-100)",
+          125: "var(--color-pink-125)",
           150: "var(--color-pink-150)",
           175: "var(--color-pink-175)",
           200: "var(--color-pink-200)",

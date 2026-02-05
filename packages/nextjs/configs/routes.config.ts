@@ -30,6 +30,18 @@ const Routes = {
     title: "Batch",
     icon: "/sidebar/batch.svg",
   },
+  QUEST: {
+    path: "/quest",
+    name: "quest",
+    title: "Quest",
+    icon: "/sidebar/quest-icon.svg",
+  },
+  LEADERBOARD: {
+    path: "/leaderboard",
+    name: "leader-board",
+    title: "Leaderboard",
+    icon: "/sidebar/leader-board-icon.svg",
+  },
   MOBILE: {
     path: "/mobile",
     name: "mobile",

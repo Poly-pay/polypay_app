@@ -37,6 +37,7 @@ import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 import { getDomainId } from '@/common/utils/proof';
+import { QuestService } from '@/quest/quest.service';
 
 @Injectable()
 export class TransactionService {
@@ -49,6 +50,7 @@ export class TransactionService {
     private batchItemService: BatchItemService,
     private readonly eventsService: EventsService,
     private readonly analyticsLogger: AnalyticsLoggerService,
+    private readonly questService: QuestService,
   ) {}
 
   /**
@@ -845,6 +847,27 @@ export class TransactionService {
         },
       });
 
+      // Award quest points (only for TRANSFER and BATCH transactions)
+      let pointsAwarded = 0;
+      if (
+        transaction.type === TxType.TRANSFER ||
+        transaction.type === TxType.BATCH
+      ) {
+        try {
+          const successfulTxPoints = await this.questService.awardSuccessfulTx(
+            txId,
+            transaction.createdBy,
+          );
+          const firstTxPoints = await this.questService.awardAccountFirstTx(
+            transaction.accountAddress,
+            txId,
+          );
+          pointsAwarded = successfulTxPoints + firstTxPoints;
+        } catch (error) {
+          this.logger.error(`Failed to award quest points: ${error.message}`);
+        }
+      }
+
       // Emit event for status update
       const eventData: TxStatusEventData = {
         txId,
@@ -857,7 +880,8 @@ export class TransactionService {
         eventData,
       );
 
-      return updatedTx;
+      const result = await updatedTx;
+      return { ...result, pointsAwarded };
     });
   }
 
@@ -896,7 +920,7 @@ export class TransactionService {
       );
 
       // 3. Mark as executed only on success
-      await this.markExecuted(txId, txHash);
+      const { pointsAwarded } = await this.markExecuted(txId, txHash);
 
       this.analyticsLogger.logExecute(
         userAddress,
@@ -904,7 +928,7 @@ export class TransactionService {
         txHash,
       );
 
-      return { txId, txHash, status: 'EXECUTED' };
+      return { txId, txHash, status: 'EXECUTED', pointsAwarded };
     } catch (error) {
       this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
 

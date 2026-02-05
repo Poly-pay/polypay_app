@@ -13,6 +13,7 @@ import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
+import { getAvatarByCommitment } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
@@ -101,7 +102,9 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                 <span className="text-sm font-medium text-main-pink truncate max-w-[60px] tracking-[-0.04em]">
                   {currentAccount?.name || "My Account"}
                 </span>
-                <span className="text-xs font-medium text-main-black tracking-[-0.04em]">{shortAddress}</span>
+                <span className="text-xs font-medium text-main-black tracking-[-0.04em]">
+                  {formatAddress(currentAccount?.address ?? "", { start: 3, end: 3 })}
+                </span>
                 <Image
                   src="/icons/actions/copy-purple.svg"
                   alt="Copy"
@@ -116,14 +119,14 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
               </div>
               <div className="flex items-center gap-1">
                 <Image
-                  src="/avatars/user-avatar-empty-square.svg"
+                  src={getAvatarByCommitment(mySigner?.commitment ?? "")}
                   alt="Signer"
                   width={12}
                   height={12}
                   className="rounded-lg"
                 />
                 <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
-                  {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"}
+                  {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"} ({shortAddress})
                 </span>
               </div>
             </>

@@ -65,6 +65,7 @@
   --color-pink-50: #fbf3ff;
   --color-pink-75: #ffe0fa;
   --color-pink-100: #f7e7ff;
+  --color-pink-125: #ffa5f1;
   --color-pink-150: #ffacf2;
   --color-pink-175: #ff0ada;
   --color-pink-200: #efcfff;
@@ -249,4 +250,25 @@ button {
   background: #dedede;
   width: 232px;
   height: 280px;
+}
+
+.avatar-leader-board-third {
+  fill: linear-gradient(180deg, rgba(255, 110, 233, 0.1) 0%, rgba(255, 110, 233, 0.02) 100%);
+  stroke-width: 2.627px;
+  stroke: #b595ff;
+  backdrop-filter: blur(40.093017578125px);
+}
+
+.avatar-leader-board-second {
+  fill: linear-gradient(180deg, rgba(255, 110, 233, 0.1) 0%, rgba(255, 110, 233, 0.02) 100%);
+  stroke-width: 2.627px;
+  stroke: #60cfff;
+  backdrop-filter: blur(40.093017578125px);
+}
+
+.avatar-leader-board-first {
+  fill: linear-gradient(180deg, rgba(255, 110, 233, 0.1) 0%, rgba(255, 110, 233, 0.02) 100%);
+  stroke-width: 3px;
+  stroke: #ff6ee9;
+  backdrop-filter: blur(45.77786636352539px);
 }
