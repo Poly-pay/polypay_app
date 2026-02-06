@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { formatCampaignStartDate, getAvailableWeeks, getCurrentWeek, getLastCompletedWeek } from "@polypay/shared";
 import type { LeaderboardFilter } from "@polypay/shared";
 import { NextPage } from "next";
@@ -83,11 +84,6 @@ const LeaderBoardPage: NextPage = () => {
         {/* Week Buttons - Only show when filter is "weekly" */}
         {filter === "weekly" && (
           <div className="flex flex-col gap-3">
-            {/* Campaign not started message */}
-            {campaignNotStarted && (
-              <div className="text-grey-600 text-sm">Campaign starts on {formatCampaignStartDate()}</div>
-            )}
-
             {/* Week buttons */}
             <div className="flex items-start gap-4">
               {WEEKS.map(week => {
@@ -126,8 +122,12 @@ const LeaderBoardPage: NextPage = () => {
       {/* Content */}
       <div className=" w-[650px] p-10 rounded-3xl bg-white border border-grey-100 space-y-10">
         {campaignNotStarted ? (
-          <div className="flex items-center justify-center h-[300px] text-grey-500">
-            Campaign has not started yet. Please check back on {formatCampaignStartDate()}.
+          <div className="flex flex-col items-center justify-center h-[400px] gap-6">
+            <Image src="/leader-board/empty-leader-board.svg" alt="Campaign not started" width={150} height={150} />
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-xl font-semibold text-main-violet">Campaign has not started yet</span>
+              <span className="text-grey-500">Please check back on {formatCampaignStartDate()}</span>
+            </div>
           </div>
         ) : (
           <>

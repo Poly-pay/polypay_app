@@ -163,7 +163,9 @@ export default function AccountItem({ account, isSelected, isExpanded, onSelect,
                     className="text-[15px] font-medium text-grey-950 tracking-[-0.03em] bg-transparent border-b border-main-pink outline-none w-[100px]"
                   />
                 ) : (
-                  <span className="text-[15px] font-medium text-grey-950 tracking-[-0.03em]">{account.name}</span>
+                  <span className="text-[15px] font-medium text-grey-950 truncate max-w-40 tracking-[-0.03em]">
+                    {account.name}
+                  </span>
                 )}
                 {isSelected && (
                   <Image
@@ -282,7 +284,7 @@ function SignerRow({ signer, isLast, copyToClipboard }: SignerRowProps) {
 
   return (
     <div className={`flex items-center justify-between px-3 py-3 ${!isLast ? "border-b border-grey-100" : ""}`}>
-      <span className="text-sm font-medium text-grey-1000 tracking-[-0.03em]">{displayName}</span>
+      <span className="text-sm font-medium text-grey-1000 tracking-[-0.03em] truncate max-w-45">{displayName}</span>
 
       <Tooltip>
         <TooltipTrigger asChild>

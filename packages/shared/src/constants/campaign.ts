@@ -1,8 +1,7 @@
 // ==================== Campaign Config ====================
 
 // Campaign start date
-// TODO: Change it when deploy production
-export const CAMPAIGN_START = new Date("2026-02-06T11:00:00.000Z");
+export const CAMPAIGN_START = new Date("2026-02-06T10:00:00.000Z");
 
 // Total campaign weeks
 export const TOTAL_CAMPAIGN_WEEKS = 6;
@@ -126,13 +125,16 @@ export function isWeekAvailable(week: number): boolean {
  * Format campaign start date for display
  */
 export function formatCampaignStartDate(): string {
-  return CAMPAIGN_START.toLocaleDateString("en-US", {
+  return CAMPAIGN_START.toLocaleString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZoneName: "short",
   });
 }
-
 /**
  * Get week date range
  */
