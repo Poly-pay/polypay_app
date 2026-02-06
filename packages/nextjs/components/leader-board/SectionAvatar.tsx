@@ -34,7 +34,7 @@ export const SectionAvatar = ({ filter, week }: SectionAvatarProps) => {
   ];
 
   return (
-    <div className="flex items-end justify-center gap-16 px-12">
+    <div className="flex items-end justify-center gap-16 px-8 mb-8">
       {top3.map(item => (
         <AvatarRating
           key={item.data.userId}

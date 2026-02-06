@@ -8,6 +8,7 @@ interface RatingItemProps {
   commitment: string;
   points: number;
   isCurrentUser?: boolean;
+  isSticky?: boolean;
   isClaimed?: boolean;
   showClaimButton?: boolean;
   onClaim?: () => void;
@@ -18,6 +19,7 @@ export const RatingItem = ({
   commitment,
   points,
   isCurrentUser = false,
+  isSticky = false,
   isClaimed = false,
   showClaimButton = false,
   onClaim,
@@ -27,14 +29,20 @@ export const RatingItem = ({
   // Shorten commitment for display
   const shortCommitment = commitment ? formatAddress(commitment, { start: 4, end: 4 }) : "Unknown";
 
+  // Determine background color
+  // - Sticky current user: pink
+  // - Normal users: grey-50
+  const getBgClass = () => {
+    if (isCurrentUser && isSticky) {
+      return "bg-main-pink";
+    }
+    return "bg-grey-50 hover:bg-grey-100";
+  };
+
   return (
-    <div
-      className={`relative rounded-lg h-14 px-3 flex items-center transition-colors ${
-        isCurrentUser ? "bg-main-pink" : "bg-grey-50 hover:bg-grey-100"
-      }`}
-    >
-      {/* Pointer for current user */}
-      {isCurrentUser && (
+    <div className={`relative rounded-lg h-14 px-3 flex items-center transition-colors ${getBgClass()}`}>
+      {/* Pointer for current user (only sticky) */}
+      {isCurrentUser && isSticky && (
         <Image
           src="/leader-board/pointer.svg"
           width={24}
@@ -46,7 +54,7 @@ export const RatingItem = ({
 
       {/* Rank - 15% */}
       <div className="w-[15%] flex items-center justify-center">
-        {isCurrentUser ? (
+        {isCurrentUser && isSticky ? (
           <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
             <span className="font-barlow font-semibold text-xs text-grey-1000">{rank}</span>
           </div>
@@ -71,7 +79,7 @@ export const RatingItem = ({
       {/* Points - flex-1 when no claim button, 25% when has claim button */}
       <div
         className={`flex items-center justify-end gap-1 px-2 ${
-          isCurrentUser && showClaimButton ? "w-[25%]" : "flex-1"
+          isCurrentUser && isSticky && showClaimButton ? "w-[25%]" : "flex-1"
         }`}
       >
         <Image src="/leader-board/star-point.svg" width={24} height={24} alt="points" />
@@ -80,13 +88,13 @@ export const RatingItem = ({
         </span>
       </div>
 
-      {/* Claim Button - only show when isCurrentUser AND showClaimButton */}
-      {isCurrentUser && showClaimButton && (
+      {/* Claim Button - only show when isCurrentUser AND isSticky AND showClaimButton */}
+      {isCurrentUser && isSticky && showClaimButton && (
         <div className="w-[15%] flex items-center justify-center px-2 ml-2">
           <button
             onClick={onClaim}
             disabled={isClaimed}
-            className={`px-6 py-2 rounded-lg font-barlow font-medium text-sm leading-5 tracking-[-0.04em] transition-colors bg-grey-1000 text-white ${
+            className={`min-w-[90px] h-[36px] py-2 rounded-lg font-barlow font-medium text-sm leading-5 tracking-[-0.04em] transition-colors bg-grey-1000 text-white ${
               isClaimed ? "opacity-50 cursor-not-allowed" : "hover:bg-grey-950"
             }`}
           >

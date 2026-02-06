@@ -2,7 +2,7 @@
 
 // Campaign start date
 // TODO: Change it when deploy production
-export const CAMPAIGN_START = new Date("2026-01-06");
+export const CAMPAIGN_START = new Date("2026-02-06T11:00:00.000Z");
 
 // Total campaign weeks
 export const TOTAL_CAMPAIGN_WEEKS = 6;
