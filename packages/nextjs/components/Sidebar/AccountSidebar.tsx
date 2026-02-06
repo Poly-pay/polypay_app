@@ -15,7 +15,6 @@ import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { getAvatarByCommitment } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
-import { formatAddress } from "~~/utils/format";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
 
 interface AccountSidebarProps {
@@ -99,23 +98,9 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
             // Have account - 2 lines
             <>
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-medium text-main-pink truncate max-w-[60px] tracking-[-0.04em]">
+                <span className="text-sm font-medium text-main-pink truncate max-w-[120px] tracking-[-0.04em]">
                   {currentAccount?.name || "My Account"}
                 </span>
-                <span className="text-xs font-medium text-main-black tracking-[-0.04em]">
-                  {formatAddress(currentAccount?.address ?? "", { start: 3, end: 3 })}
-                </span>
-                <Image
-                  src="/icons/actions/copy-purple.svg"
-                  alt="Copy"
-                  width={16}
-                  height={16}
-                  className="opacity-40 cursor-pointer hover:opacity-100"
-                  onClick={e => {
-                    e.stopPropagation();
-                    copyToClipboard(walletClient.account.address, "Address copied to clipboard");
-                  }}
-                />
               </div>
               <div className="flex items-center gap-1">
                 <Image
@@ -125,11 +110,8 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                   height={12}
                   className="rounded-lg"
                 />
-                <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
-                  {mySigner
-                    ? (mySigner.name ?? formatAddress(mySigner.commitment, { start: 4, end: 4 }))
-                    : "Signer name"}{" "}
-                  ({shortAddress})
+                <span className="text-xs font-normal text-grey-850 truncate max-w-[120px] tracking-[-0.04em]">
+                  {mySigner?.name ? `${mySigner?.name} (${shortAddress})` : shortAddress}
                 </span>
               </div>
             </>
