@@ -232,6 +232,12 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
 
       console.log("Transaction executed:", result.txHash);
       notification.success("Transaction executed successfully!");
+
+      // Show points notification if awarded
+      if (result.pointsAwarded && result.pointsAwarded > 0) {
+        notification.info(`⭐ Claimed ${result.pointsAwarded} points`);
+      }
+
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       queryClient.invalidateQueries({
         queryKey: accountKeys.byAddress(metaMultiSigWallet?.address || ""),

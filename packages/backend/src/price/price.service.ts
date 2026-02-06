@@ -4,6 +4,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { firstValueFrom } from 'rxjs';
 import { getCoingeckoIds } from '@polypay/shared';
+import { ZEN_COINGECKO_ID } from '@/common/constants';
 
 export interface TokenPrices {
   [coingeckoId: string]: number;
@@ -34,9 +35,21 @@ export class PriceService {
     return this.fetchPrices();
   }
 
+  /**
+   * Get ZEN price in USD
+   */
+  async getZenPrice(): Promise<number> {
+    const prices = await this.getPrices();
+    return prices[ZEN_COINGECKO_ID] || 0;
+  }
+
   private async fetchPrices(): Promise<TokenPrices> {
     try {
-      const ids = getCoingeckoIds().join(',');
+      // Get token IDs from shared + add ZEN
+      const sharedIds = getCoingeckoIds();
+      const allIds = [...new Set([...sharedIds, ZEN_COINGECKO_ID])];
+      const ids = allIds.join(',');
+
       const url = `${this.COINGECKO_API}?ids=${ids}&vs_currencies=usd`;
 
       this.logger.log(`Fetching prices from CoinGecko: ${ids}`);

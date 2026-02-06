@@ -2,7 +2,7 @@
 
 ## Polypay App (Beta v0.1)
 
-Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web application that allows you to create and manage a multisig account on **Horizen testnet** with a focus on privacy. It is not yet production ready. Current version includes the following features:
+Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web application that allows you to create and manage a multisig account on **Horizen mainnet** with a focus on privacy. Current version includes the following features:
 
 - Create and manage a multisig account
 - Hide signers(multisig account owners) identities with ZK proofs
@@ -13,7 +13,7 @@ Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web
 
 ### User Workflow
 
-1. **Connect Wallet**: Connect your Ethereum wallet
+1. **Connect Wallet**: Connect your wallet
 2. **Generate Identity**: Sign a message to create your secret
 3. **Create/Join Account**: Deploy new multisig or join existing one
 4. **Propose Transaction**: Create transfer and generate ZK proof
@@ -22,7 +22,7 @@ Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web
 
 ### Video Demo
 
-TODO: Add video demo
+[Watch on X (Twitter)](https://x.com/poly_pay/status/2013907209982267721)
 
 ### Screenshots
 

@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Fragment } from "react";
 import Image from "next/image";
 import EditBatchPopover from "../popovers/EditBatchPopover";
+import { BatchSekeletons } from "../skeletons/BatchSkeletons";
 import TransactionSummary from "./TransactionSummary";
 import { TransactionSummaryDrawer } from "./TransactionSummaryDrawer";
 import { BatchItem, Token, parseTokenAmount } from "@polypay/shared";
@@ -76,11 +77,7 @@ function BatchTransactions({
     return refs;
   }, [batchItems]);
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-text-secondary">Loading batch items...</div>
-      </div>
-    );
+    return <BatchSekeletons />;
   }
 
   if (batchItems.length === 0) {

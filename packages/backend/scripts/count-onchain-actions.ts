@@ -16,6 +16,8 @@ interface AllStats {
   addSigner: ActionStats;
   removeSigner: ActionStats;
   updateThreshold: ActionStats;
+  transfer: ActionStats;
+  batchTransfer: ActionStats;
 }
 
 function createEmptyStats(): ActionStats {
@@ -36,6 +38,8 @@ function parseLogFile(logPath: string): AllStats {
     addSigner: createEmptyStats(),
     removeSigner: createEmptyStats(),
     updateThreshold: createEmptyStats(),
+    transfer: createEmptyStats(),
+    batchTransfer: createEmptyStats(),
   };
 
   if (!fs.existsSync(logPath)) {
@@ -48,7 +52,7 @@ function parseLogFile(logPath: string): AllStats {
 
   for (const line of lines) {
     const parts = line.split(' | ');
-    if (parts.length < 6) continue;
+    if (parts.length < 5) continue;
 
     const action = parts[1];
     const userAddress = parts[2];
@@ -74,6 +78,12 @@ function parseLogFile(logPath: string): AllStats {
         break;
       case 'UPDATE_THRESHOLD':
         actionStats = stats.updateThreshold;
+        break;
+      case 'TRANSFER':
+        actionStats = stats.transfer;
+        break;
+      case 'BATCH_TRANSFER':
+        actionStats = stats.batchTransfer;
         break;
       default:
         continue;
@@ -119,6 +129,12 @@ function printStats(stats: AllStats) {
   );
   console.log(
     `🔧 UPDATE_THRESHOLD | Users: ${stats.updateThreshold.uniqueUsers.size.toString().padStart(3)} | Wallets: ${stats.updateThreshold.uniqueWallets.size.toString().padStart(3)} | Actions: ${stats.updateThreshold.totalActions}`,
+  );
+  console.log(
+    `💸 TRANSFER        | Users: ${stats.transfer.uniqueUsers.size.toString().padStart(3)} | Wallets: ${stats.transfer.uniqueWallets.size.toString().padStart(3)} | Actions: ${stats.transfer.totalActions}`,
+  );
+  console.log(
+    `📦 BATCH_TRANSFER  | Users: ${stats.batchTransfer.uniqueUsers.size.toString().padStart(3)} | Wallets: ${stats.batchTransfer.uniqueWallets.size.toString().padStart(3)} | Actions: ${stats.batchTransfer.totalActions}`,
   );
 
   const allUsers = new Set<string>();

@@ -21,7 +21,7 @@ Your identity is based on a **secret** derived from your wallet:
 
 | Step | Action |
 | ---- | ------ |
-| 1 | User generate secret |
+| 1 | User generates secret |
 | 2 | Client generates ZK proof: "I know a secret that hashes to this commitment" |
 | 3 | Proof submitted to zkVerify network |
 | 4 | Backend verifies attestation from zkVerify |

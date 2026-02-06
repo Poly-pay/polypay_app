@@ -7,3 +7,4 @@ export * from "./notification";
 export * from "./auth";
 export * from "./feature-request";
 export * from "./pagination.dto";
+export * from "./reward";

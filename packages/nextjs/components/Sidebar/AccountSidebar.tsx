@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
+import { WrongNetwork } from "../scaffold-eth/RainbowKitCustomConnectButton/WrongNetwork";
 import { useQueryClient } from "@tanstack/react-query";
 import { Address } from "viem";
 import { useAccount, useDisconnect, useWalletClient } from "wagmi";
@@ -12,8 +13,8 @@ import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
+import { getAvatarByCommitment } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
-import { formatAddress } from "~~/utils/format";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
 
 interface AccountSidebarProps {
@@ -25,7 +26,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
   const { data: walletClient } = useWalletClient();
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
-  const { connector } = useAccount();
+  const { connector, chain } = useAccount();
   const queryClient = useQueryClient();
 
   const { openModal } = useModalApp();
@@ -59,6 +60,15 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
     );
   }
 
+  // Wrong network state
+  if (chain?.id !== targetNetwork.id) {
+    return (
+      <div className="flex justify-center p-3 bg-main-white border border-grey-200 rounded-xl">
+        <WrongNetwork />
+      </div>
+    );
+  }
+
   // Format address
   const shortAddress = `${walletClient.account.address.slice(0, 4)}...${walletClient.account.address.slice(-3)}`;
   const shortCommitment = commitment ? `${commitment.slice(0, 4)}...${commitment.slice(-4)}` : null;
@@ -88,32 +98,20 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
             // Have account - 2 lines
             <>
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-medium text-main-pink truncate max-w-[60px] tracking-[-0.04em]">
+                <span className="text-sm font-medium text-main-pink truncate max-w-[120px] tracking-[-0.04em]">
                   {currentAccount?.name || "My Account"}
                 </span>
-                <span className="text-xs font-medium text-main-black tracking-[-0.04em]">{shortAddress}</span>
-                <Image
-                  src="/icons/actions/copy-purple.svg"
-                  alt="Copy"
-                  width={16}
-                  height={16}
-                  className="opacity-40 cursor-pointer hover:opacity-100"
-                  onClick={e => {
-                    e.stopPropagation();
-                    copyToClipboard(walletClient.account.address, "Address copied to clipboard");
-                  }}
-                />
               </div>
               <div className="flex items-center gap-1">
                 <Image
-                  src="/avatars/user-avatar-empty-square.svg"
+                  src={getAvatarByCommitment(mySigner?.commitment ?? "")}
                   alt="Signer"
                   width={12}
                   height={12}
                   className="rounded-lg"
                 />
-                <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
-                  {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"}
+                <span className="text-xs font-normal text-grey-850 truncate max-w-[120px] tracking-[-0.04em]">
+                  {mySigner?.name ? `${mySigner?.name} (${shortAddress})` : shortAddress}
                 </span>
               </div>
             </>

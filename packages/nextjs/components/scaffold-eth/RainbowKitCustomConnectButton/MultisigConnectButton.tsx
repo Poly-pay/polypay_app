@@ -1,16 +1,12 @@
 "use client";
 
 // @refresh reset
-import { WrongNetworkDropdown } from "./WrongNetworkDropdown";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 
 /**
  * Custom Wagmi Connect Button (watch balance + custom design)
  */
 export const MultisigConnectButton = () => {
-  const { targetNetwork } = useTargetNetwork();
-
   return (
     <ConnectButton.Custom>
       {({ account, chain, openConnectModal, mounted }) => {
@@ -25,10 +21,6 @@ export const MultisigConnectButton = () => {
                     <span className="hidden xl:block">Connect Wallet</span>
                   </button>
                 );
-              }
-
-              if (chain.unsupported || chain.id !== targetNetwork.id) {
-                return <WrongNetworkDropdown />;
               }
             })()}
           </>

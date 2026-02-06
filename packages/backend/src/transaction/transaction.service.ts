@@ -32,13 +32,12 @@ import {
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
-import {
-  NOT_MEMBER_OF_ACCOUNT,
-} from '@/common/constants';
+import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 import { getDomainId } from '@/common/utils/proof';
+import { QuestService } from '@/quest/quest.service';
 
 @Injectable()
 export class TransactionService {
@@ -51,6 +50,7 @@ export class TransactionService {
     private batchItemService: BatchItemService,
     private readonly eventsService: EventsService,
     private readonly analyticsLogger: AnalyticsLoggerService,
+    private readonly questService: QuestService,
   ) {}
 
   /**
@@ -195,7 +195,6 @@ export class TransactionService {
     this.analyticsLogger.logApprove(
       dto.userAddress,
       transaction.accountAddress,
-      transaction.nonce,
       proofResult.txHash,
     );
 
@@ -203,21 +202,30 @@ export class TransactionService {
       this.analyticsLogger.logAddSigner(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         proofResult.txHash,
       );
     } else if (dto.type === TxType.REMOVE_SIGNER) {
       this.analyticsLogger.logRemoveSigner(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         proofResult.txHash,
       );
     } else if (dto.type === TxType.SET_THRESHOLD) {
       this.analyticsLogger.logUpdateThreshold(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
+        proofResult.txHash,
+      );
+    } else if (dto.type === TxType.TRANSFER) {
+      this.analyticsLogger.logTransfer(
+        dto.userAddress,
+        transaction.accountAddress,
+        proofResult.txHash,
+      );
+    } else if (dto.type === TxType.BATCH) {
+      this.analyticsLogger.logBatchTransfer(
+        dto.userAddress,
+        transaction.accountAddress,
         proofResult.txHash,
       );
     }
@@ -329,7 +337,6 @@ export class TransactionService {
     this.analyticsLogger.logApprove(
       dto.userAddress,
       transaction.accountAddress,
-      transaction.nonce,
       proofResult.txHash,
     );
 
@@ -337,21 +344,30 @@ export class TransactionService {
       this.analyticsLogger.logAddSigner(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         proofResult.txHash,
       );
     } else if (transaction.type === TxType.REMOVE_SIGNER) {
       this.analyticsLogger.logRemoveSigner(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         proofResult.txHash,
       );
     } else if (transaction.type === TxType.SET_THRESHOLD) {
       this.analyticsLogger.logUpdateThreshold(
         dto.userAddress,
         transaction.accountAddress,
-        transaction.nonce,
+        proofResult.txHash,
+      );
+    } else if (transaction.type === TxType.TRANSFER) {
+      this.analyticsLogger.logTransfer(
+        dto.userAddress,
+        transaction.accountAddress,
+        proofResult.txHash,
+      );
+    } else if (transaction.type === TxType.BATCH) {
+      this.analyticsLogger.logBatchTransfer(
+        dto.userAddress,
+        transaction.accountAddress,
         proofResult.txHash,
       );
     }
@@ -435,11 +451,7 @@ export class TransactionService {
 
     this.logger.log(`Vote DENY added for txId: ${txId}`);
 
-    this.analyticsLogger.logDeny(
-      userAddress,
-      transaction.accountAddress,
-      transaction.nonce,
-    );
+    this.analyticsLogger.logDeny(userAddress, transaction.accountAddress);
 
     // 4. Check if transaction should fail
     await this.checkIfFailed(txId);
@@ -835,6 +847,27 @@ export class TransactionService {
         },
       });
 
+      // Award quest points (only for TRANSFER and BATCH transactions)
+      let pointsAwarded = 0;
+      if (
+        transaction.type === TxType.TRANSFER ||
+        transaction.type === TxType.BATCH
+      ) {
+        try {
+          const successfulTxPoints = await this.questService.awardSuccessfulTx(
+            txId,
+            transaction.createdBy,
+          );
+          const firstTxPoints = await this.questService.awardAccountFirstTx(
+            transaction.accountAddress,
+            txId,
+          );
+          pointsAwarded = successfulTxPoints + firstTxPoints;
+        } catch (error) {
+          this.logger.error(`Failed to award quest points: ${error.message}`);
+        }
+      }
+
       // Emit event for status update
       const eventData: TxStatusEventData = {
         txId,
@@ -847,7 +880,8 @@ export class TransactionService {
         eventData,
       );
 
-      return updatedTx;
+      const result = await updatedTx;
+      return { ...result, pointsAwarded };
     });
   }
 
@@ -886,16 +920,15 @@ export class TransactionService {
       );
 
       // 3. Mark as executed only on success
-      await this.markExecuted(txId, txHash);
+      const { pointsAwarded } = await this.markExecuted(txId, txHash);
 
-      this.analyticsLogger.logExecuteOnChain(
+      this.analyticsLogger.logExecute(
         userAddress,
         transaction.accountAddress,
-        transaction.nonce,
         txHash,
       );
 
-      return { txId, txHash, status: 'EXECUTED' };
+      return { txId, txHash, status: 'EXECUTED', pointsAwarded };
     } catch (error) {
       this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
 

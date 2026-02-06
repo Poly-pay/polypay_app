@@ -49,6 +49,7 @@ export const colorTokens = {
     600: "#0C9352",
     700: "#097343",
     800: "#0A5B36",
+    850: "#88ff00",
     900: "#094B2E",
     950: "#042A1A",
   },
@@ -57,6 +58,7 @@ export const colorTokens = {
     50: "#FBF3FF",
     75: "#FFE0FA",
     100: "#F7E7FF",
+    125: "#FFA5F1",
     150: "#FFACF2",
     175: "#FF0ADA",
     200: "#EFCFFF",
@@ -90,6 +92,7 @@ export const colorTokens = {
   },
   orange: {
     50: "rgba(255, 135, 71, 0.08)",
+    100: "#FF61001F",
     500: "#FF762C",
   },
 } as const;

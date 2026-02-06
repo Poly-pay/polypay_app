@@ -8,3 +8,5 @@ export { notificationApi } from "./notificationApi";
 export { authApi } from "./authApi";
 export { featureRequestApi } from "./featureRequestApi";
 export { queryClient } from "../queryClient";
+export { questApi } from "./questApi";
+export { claimApi } from "./claimApi";

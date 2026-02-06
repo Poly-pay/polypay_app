@@ -37,8 +37,6 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   const wasOnboarding = initialAccountCountRef.current === 0;
   // hide sidebar if on new account page and user has at least one account
   const shouldHideSidebar = isNewAccountPage && !wasOnboarding && accounts && accounts.length > 0 && commitment;
-  // disable sidebar interactions if on new account page and user has no accounts
-  const shouldDisableSidebar = (isNewAccountPage && accounts?.length === 0) || !commitment;
 
   useEffect(() => {
     if (isNewAccountPage && accounts !== undefined) {
@@ -58,7 +56,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
           {/* Sidebar - hidden when on new account page and user has accounts */}
           {!shouldHideSidebar && (
             <aside className="shrink-0 max-h-screen p-3">
-              <Sidebar disabled={shouldDisableSidebar} />
+              <Sidebar />
             </aside>
           )}
 

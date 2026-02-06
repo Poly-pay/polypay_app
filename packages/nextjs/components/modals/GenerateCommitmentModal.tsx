@@ -7,6 +7,7 @@ import ModalContainer from "./ModalContainer";
 import { X } from "lucide-react";
 import DecryptedText from "~~/components/effects/DecryptedText";
 import { useAuth } from "~~/hooks";
+import { DecoreCircleIcon } from "~~/icons/DecoreCircleIcon";
 import { ModalProps } from "~~/types/modal";
 import { copyToClipboard } from "~~/utils/copy";
 import { notification } from "~~/utils/scaffold-eth";
@@ -31,7 +32,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       <div className="flex flex-col bg-white rounded-lg overflow-hidden -mx-1.5 -my-4">
         <div className="flex items-center justify-between p-4 pb-2 border-b bg-gray-100">
           <div className="flex items-center gap-2">
-            <Image src={"/icons/misc/icon-modal.svg"} width={36} height={36} alt="icon" />
+            <DecoreCircleIcon width={36} height={36} color="#6D2EFF" />
             <span className="flex flex-col">
               <span className="font-semibold text-gray-900 uppercase">Generate commitment</span>
             </span>

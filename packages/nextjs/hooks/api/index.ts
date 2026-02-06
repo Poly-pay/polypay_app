@@ -5,3 +5,5 @@ export * from "./useBatchItem";
 export * from "./useContactBook";
 export * from "./useNotification";
 export * from "./usePrice";
+export * from "./useQuest";
+export * from "./useClaim";

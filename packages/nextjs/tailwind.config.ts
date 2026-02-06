@@ -59,6 +59,7 @@ const config: Config = {
           600: "var(--color-green-600)",
           700: "var(--color-green-700)",
           800: "var(--color-green-800)",
+          850: "var(--color-green-850)",
           900: "var(--color-green-900)",
           950: "var(--color-green-950)",
         },
@@ -67,6 +68,7 @@ const config: Config = {
           50: "var(--color-pink-50)",
           75: "var(--color-pink-75)",
           100: "var(--color-pink-100)",
+          125: "var(--color-pink-125)",
           150: "var(--color-pink-150)",
           175: "var(--color-pink-175)",
           200: "var(--color-pink-200)",
@@ -100,6 +102,7 @@ const config: Config = {
         },
         orange: {
           50: "var(--color-orange-50)",
+          100: "var(--color-orange-100)",
           500: "var(--color-orange-500)",
         },
       },
