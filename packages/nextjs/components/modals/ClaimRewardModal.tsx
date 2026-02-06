@@ -181,11 +181,11 @@ const ClaimRewardModal: React.FC<ClaimRewardModalProps> = ({ isOpen, onClose, we
           {/* Success State */}
           {state === "success" && (
             <>
-              <div className="w-16 h-16 flex items-center justify-center bg-green-100 rounded-full">
+              <div className="w-12 h-12 flex items-center justify-center bg-green-850 rounded-full">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
                     d="M5 13L9 17L19 7"
-                    stroke="#22C55E"
+                    stroke="#000"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"

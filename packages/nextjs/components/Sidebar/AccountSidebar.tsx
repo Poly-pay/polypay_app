@@ -126,7 +126,10 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                   className="rounded-lg"
                 />
                 <span className="text-xs font-normal text-grey-850 tracking-[-0.04em]">
-                  {mySigner ? (mySigner.name ?? formatAddress(mySigner.commitment)) : "Signer name"} ({shortAddress})
+                  {mySigner
+                    ? (mySigner.name ?? formatAddress(mySigner.commitment, { start: 4, end: 4 }))
+                    : "Signer name"}{" "}
+                  ({shortAddress})
                 </span>
               </div>
             </>
