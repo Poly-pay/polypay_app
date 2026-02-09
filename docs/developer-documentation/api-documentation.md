@@ -170,6 +170,34 @@ http://localhost:4000/api
 | PATCH | `/contact-book/contacts/:id` | Update contact | Yes |
 | DELETE | `/contact-book/contacts/:id` | Delete contact | Yes |
 
+#### Prices (`/api/prices`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/prices` | Get token prices | No |
+
+#### Feature Requests (`/api/feature-requests`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/feature-requests` | Submit feature request | Yes |
+
+#### Quests (`/api/quests`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/quests` | List active quests | No |
+| GET | `/quests/leaderboard` | Get paginated leaderboard | No |
+| GET | `/quests/leaderboard/top` | Get top 3 users | No |
+| GET | `/quests/leaderboard/me` | Get current user rank & points | Yes |
+| GET | `/quests/my-points` | Get current user points & history | Yes |
+
+#### Claims (`/api/claims`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/claims/summary` | Get claim summary for all weeks | Yes |
+| POST | `/claims` | Claim weekly reward | Yes |
 ## Authentication
 
 PolyPay uses JWT (JSON Web Tokens) for authentication.

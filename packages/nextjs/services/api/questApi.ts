@@ -29,7 +29,7 @@ export const questApi = {
     }
 
     const { data } = await apiClient.get<LeaderboardEntry[]>(
-      `${API_ENDPOINTS.quests.leaderboard}/top?${params.toString()}`,
+      `${API_ENDPOINTS.quests.leaderboardTop}?${params.toString()}`,
     );
     return data;
   },
@@ -45,7 +45,7 @@ export const questApi = {
     }
 
     const { data } = await apiClient.get<LeaderboardMeResponse>(
-      `${API_ENDPOINTS.quests.leaderboard}/me?${params.toString()}`,
+      `${API_ENDPOINTS.quests.leaderboardMe}?${params.toString()}`,
     );
     return data;
   },
@@ -85,7 +85,9 @@ export const questApi = {
       params.append("week", week.toString());
     }
 
-    const { data } = await apiClient.get<UserPoints>(`${API_ENDPOINTS.quests.myPoints}?${params.toString()}`);
+    const { data } = await apiClient.get<UserPoints>(
+      `${API_ENDPOINTS.quests.myPoints}?${params.toString()}`,
+    );
     return data;
   },
 };
