@@ -1,29 +1,35 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
-import * as fs from 'fs';
-import * as path from 'path';
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { AdminService } from './admin.service';
+import { AdminGuard } from '@/auth/guards/admin.guard';
 
+@ApiTags('admin')
 @Controller('admin')
 export class AdminController {
-  private readonly logPath = path.join(
-    process.cwd(),
-    'logs',
-    'user-analytics.log',
-  );
+  constructor(private readonly adminService: AdminService) {}
 
-  // TODO: Add ADMIN_API_KEY authentication later
-  @Get('analytics-log')
-  getAnalyticsLog(@Res() res: Response) {
-    if (!fs.existsSync(this.logPath)) {
-      return res.status(404).send('Log file not found');
-    }
+  @Get('analytics-report')
+  @UseGuards(AdminGuard)
+  @ApiOperation({
+    summary: 'Get analytics report CSV',
+    description: 'Generate analytics report from database. Requires admin API key.',
+  })
+  @ApiHeader({
+    name: 'X-Admin-Key',
+    description: 'Admin API key',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: 'CSV file' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid API key' })
+  async getAnalyticsReport(@Res() res: Response) {
+    const csv = await this.adminService.generateAnalyticsReport();
 
-    const content = fs.readFileSync(this.logPath, 'utf8');
-    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename=user-analytics.log',
+      'attachment; filename=analytics-report.csv',
     );
-    return res.send(content);
+    return res.send(csv);
   }
 }

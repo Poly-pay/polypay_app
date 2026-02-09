@@ -2,9 +2,11 @@
 
 - [Introduction](README.md)
 - [How to use Polypay App](how-to-use-polipay-app.md)
+- [Quest & Leaderboard](quest-and-leaderboard.md)
 - [Privacy Architecture](privacy-architecture.md)
 - [Zero-Knowledge Implementation](zero-knowledge-implementation.md)
 - [ZK Authentication](zk-authentication.md)
+- [zkVerify & Horizen Integration](zkverify-horizen-integration.md)
 - [Architecture](architecture.md)
 - [Developer Documentation](developer-documentation/README.md)
   - [Getting Started](developer-documentation/getting-started.md)

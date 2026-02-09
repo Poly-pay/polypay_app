@@ -10,6 +10,11 @@ Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web
 - View transaction history
 - View multisig account balance
 - View multisig account address
+- Earn points through Quest system
+- Compete on weekly Leaderboard
+- Claim ZEN token rewards
+
+For details, see [Quest & Leaderboard](quest-and-leaderboard.md).
 
 ### User Workflow
 

@@ -77,6 +77,8 @@ export const API_ENDPOINTS = {
   quests: {
     base: "/api/quests",
     leaderboard: "/api/quests/leaderboard",
+    leaderboardTop: "/api/quests/leaderboard/top",
+    leaderboardMe: "/api/quests/leaderboard/me",
     myPoints: "/api/quests/my-points",
   },
 
