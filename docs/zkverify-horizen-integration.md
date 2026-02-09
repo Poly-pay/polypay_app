@@ -13,7 +13,7 @@ PolyPay uses two blockchain layers for privacy-preserving multisig operations:
 |--------|-----------|-------------|
 | LOGIN | zkVerify | ZK auth proof verified on zkVerify |
 | CREATE_ACCOUNT | Horizen | `MetaMultiSigWallet` contract deployed on Horizen |
-| PROPOSE (create tx) | zkVerify | Creator's approval proof submitted to zkVerify |
+| PROPOSE | zkVerify | Creates a new transaction (TRANSFER, BATCH_TRANSFER, ADD_SIGNER, REMOVE_SIGNER, or UPDATE_THRESHOLD) and submits the creator's ZK approval proof to zkVerify |
 | APPROVE | zkVerify | Signer's approval proof submitted to zkVerify |
 | DENY | None | Off-chain vote, no proof or on-chain interaction |
 | EXECUTE | zkVerify + Horizen | Proofs aggregated on zkVerify, then executed on Horizen |
@@ -69,7 +69,7 @@ When threshold is met, execute the transaction on Horizen using aggregated proof
 ![Execute Flow](.gitbook/assets/zkverify-horizen/execute-flow.png)
 
 - **zkVerify**: Provide aggregation data (merkle proofs) from job-ids
-- **Horizen**: Verify aggregated proofs via zkVerify oracle + execute transaction
+- **Horizen**: Verify aggregated proofs + execute transaction
 
 ### 4. Transaction Types
 
