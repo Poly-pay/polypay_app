@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/database/prisma.service';
+import { TxType } from '@/generated/prisma/client';
 
 interface AnalyticsRecord {
   timestamp: Date;
@@ -40,6 +41,41 @@ export class AdminService {
     };
 
     this.explorerConfig = configs[network] || configs.mainnet;
+  }
+
+  /**
+   * Map TxType to Action name
+   */
+  private mapTxTypeToAction(txType: TxType): string {
+    switch (txType) {
+      case TxType.TRANSFER:
+        return 'TRANSFER';
+      case TxType.BATCH:
+        return 'BATCH_TRANSFER';
+      case TxType.ADD_SIGNER:
+        return 'ADD_SIGNER';
+      case TxType.REMOVE_SIGNER:
+        return 'REMOVE_SIGNER';
+      case TxType.SET_THRESHOLD:
+        return 'UPDATE_THRESHOLD';
+      default:
+        return 'UNKNOWN';
+    }
+  }
+
+  /**
+   * Get blockchain based on action
+   */
+  private getBlockchain(action: string): string {
+    switch (action) {
+      case 'EXECUTE':
+      case 'CREATE_ACCOUNT':
+        return 'Horizen';
+      case 'DENY':
+        return '';
+      default:
+        return 'zkVerify';
+    }
   }
 
   async generateAnalyticsReport(): Promise<string> {
@@ -86,30 +122,55 @@ export class AdminService {
         action: 'CREATE_ACCOUNT',
         userAddress: loginHistory?.walletAddress || 'UNKNOWN',
         multisigWallet: account.address,
-        txHash: account.address, // Use multisig address as link
+        txHash: account.address,
       });
     }
 
-    // 3. APPROVE records
+    // 3. APPROVE votes (includes TRANSFER, BATCH_TRANSFER, ADD_SIGNER, etc.)
     const approveVotes = await this.prisma.vote.findMany({
       where: { voteType: 'APPROVE' },
       include: { transaction: true },
       orderBy: { createdAt: 'asc' },
     });
 
+    // Group votes by txId to find first vote (proposer)
+    const votesByTx: Record<number, typeof approveVotes> = {};
     for (const vote of approveVotes) {
-      const loginHistory = await this.prisma.loginHistory.findFirst({
-        where: { commitment: vote.voterCommitment },
-        orderBy: { createdAt: 'desc' },
-      });
+      if (!votesByTx[vote.txId]) {
+        votesByTx[vote.txId] = [];
+      }
+      votesByTx[vote.txId].push(vote);
+    }
 
-      records.push({
-        timestamp: vote.createdAt,
-        action: 'APPROVE',
-        userAddress: loginHistory?.walletAddress || 'UNKNOWN',
-        multisigWallet: vote.transaction.accountAddress,
-        txHash: vote.zkVerifyTxHash || 'PENDING',
-      });
+    // Sort each group by createdAt and determine action
+    for (const txId in votesByTx) {
+      const votes = votesByTx[txId].sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      );
+
+      for (let i = 0; i < votes.length; i++) {
+        const vote = votes[i];
+        const isFirstVote = i === 0;
+
+        // First vote = propose action (TRANSFER, ADD_SIGNER, etc.)
+        // Subsequent votes = APPROVE
+        const action = isFirstVote
+          ? this.mapTxTypeToAction(vote.transaction.type)
+          : 'APPROVE';
+
+        const loginHistory = await this.prisma.loginHistory.findFirst({
+          where: { commitment: vote.voterCommitment },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        records.push({
+          timestamp: vote.createdAt,
+          action: action,
+          userAddress: loginHistory?.walletAddress || 'UNKNOWN',
+          multisigWallet: vote.transaction.accountAddress,
+          txHash: vote.zkVerifyTxHash || 'PENDING',
+        });
+      }
     }
 
     // 4. DENY records
@@ -163,11 +224,12 @@ export class AdminService {
   }
 
   private generateCSV(records: AnalyticsRecord[]): string {
-    const header = 'Timestamp,Action,User Address,Multisig Wallet,TX Hash';
+    const header = 'Timestamp,Action,User Address,Multisig Wallet,Blockchain,TX Hash';
 
     const rows = records.map((record) => {
       const timestamp = record.timestamp.toISOString();
       const action = record.action;
+      const blockchain = this.getBlockchain(record.action);
       const userAddress = record.userAddress
         ? `${this.explorerConfig.HORIZEN_EXPLORER_ADDRESS}/${record.userAddress}`
         : '';
@@ -177,7 +239,10 @@ export class AdminService {
 
       let txHash = '';
       if (record.txHash && record.txHash !== 'PENDING') {
-        if (record.action === 'LOGIN' || record.action === 'APPROVE') {
+        if (record.action === 'LOGIN' || record.action === 'APPROVE' ||
+            record.action === 'TRANSFER' || record.action === 'BATCH_TRANSFER' ||
+            record.action === 'ADD_SIGNER' || record.action === 'REMOVE_SIGNER' ||
+            record.action === 'UPDATE_THRESHOLD') {
           txHash = `${this.explorerConfig.ZKVERIFY_EXPLORER}/${record.txHash}`;
         } else if (record.action === 'CREATE_ACCOUNT') {
           txHash = `${this.explorerConfig.HORIZEN_EXPLORER_ADDRESS}/${record.txHash}`;
@@ -188,7 +253,7 @@ export class AdminService {
         txHash = 'PENDING';
       }
 
-      return `"${timestamp}","${action}","${userAddress}","${multisigWallet}","${txHash}"`;
+      return `"${timestamp}","${action}","${userAddress}","${multisigWallet}","${blockchain}","${txHash}"`;
     });
 
     return [header, ...rows].join('\n');
