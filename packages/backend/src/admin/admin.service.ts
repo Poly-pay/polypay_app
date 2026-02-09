@@ -35,7 +35,8 @@ export class AdminService {
         ZKVERIFY_EXPLORER: 'https://zkverify-testnet.subscan.io/tx',
         HORIZEN_EXPLORER_ADDRESS:
           'https://horizen-testnet.explorer.caldera.xyz/address',
-        HORIZEN_EXPLORER_TX: 'https://horizen-testnet.explorer.caldera.xyz/tx',
+        HORIZEN_EXPLORER_TX:
+          'https://horizen-testnet.explorer.caldera.xyz/tx',
       },
     };
 
