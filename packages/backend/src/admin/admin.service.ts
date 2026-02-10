@@ -35,8 +35,7 @@ export class AdminService {
         ZKVERIFY_EXPLORER: 'https://zkverify-testnet.subscan.io/tx',
         HORIZEN_EXPLORER_ADDRESS:
           'https://horizen-testnet.explorer.caldera.xyz/address',
-        HORIZEN_EXPLORER_TX:
-          'https://horizen-testnet.explorer.caldera.xyz/tx',
+        HORIZEN_EXPLORER_TX: 'https://horizen-testnet.explorer.caldera.xyz/tx',
       },
     };
 
@@ -81,20 +80,21 @@ export class AdminService {
   async generateAnalyticsReport(): Promise<string> {
     const records: AnalyticsRecord[] = [];
 
+    // Dont need LOGIN records for now
     // 1. LOGIN records
-    const loginRecords = await this.prisma.loginHistory.findMany({
-      orderBy: { createdAt: 'asc' },
-    });
+    // const loginRecords = await this.prisma.loginHistory.findMany({
+    //   orderBy: { createdAt: 'asc' },
+    // });
 
-    for (const login of loginRecords) {
-      records.push({
-        timestamp: login.createdAt,
-        action: 'LOGIN',
-        userAddress: login.walletAddress,
-        multisigWallet: null,
-        txHash: login.zkVerifyTxHash || 'PENDING',
-      });
-    }
+    // for (const login of loginRecords) {
+    //   records.push({
+    //     timestamp: login.createdAt,
+    //     action: 'LOGIN',
+    //     userAddress: login.walletAddress,
+    //     multisigWallet: null,
+    //     txHash: login.zkVerifyTxHash || 'PENDING',
+    //   });
+    // }
 
     // 2. CREATE_ACCOUNT records
     const accounts = await this.prisma.account.findMany({
@@ -173,27 +173,28 @@ export class AdminService {
       }
     }
 
-    // 4. DENY records
-    const denyVotes = await this.prisma.vote.findMany({
-      where: { voteType: 'DENY' },
-      include: { transaction: true },
-      orderBy: { createdAt: 'asc' },
-    });
+    // Dont need DENY records for now
+    // // 4. DENY records
+    // const denyVotes = await this.prisma.vote.findMany({
+    //   where: { voteType: 'DENY' },
+    //   include: { transaction: true },
+    //   orderBy: { createdAt: 'asc' },
+    // });
 
-    for (const vote of denyVotes) {
-      const loginHistory = await this.prisma.loginHistory.findFirst({
-        where: { commitment: vote.voterCommitment },
-        orderBy: { createdAt: 'desc' },
-      });
+    // for (const vote of denyVotes) {
+    //   const loginHistory = await this.prisma.loginHistory.findFirst({
+    //     where: { commitment: vote.voterCommitment },
+    //     orderBy: { createdAt: 'desc' },
+    //   });
 
-      records.push({
-        timestamp: vote.createdAt,
-        action: 'DENY',
-        userAddress: loginHistory?.walletAddress || 'UNKNOWN',
-        multisigWallet: vote.transaction.accountAddress,
-        txHash: null,
-      });
-    }
+    //   records.push({
+    //     timestamp: vote.createdAt,
+    //     action: 'DENY',
+    //     userAddress: loginHistory?.walletAddress || 'UNKNOWN',
+    //     multisigWallet: vote.transaction.accountAddress,
+    //     txHash: null,
+    //   });
+    // }
 
     // 5. EXECUTE records
     const executedTxs = await this.prisma.transaction.findMany({
@@ -224,7 +225,8 @@ export class AdminService {
   }
 
   private generateCSV(records: AnalyticsRecord[]): string {
-    const header = 'Timestamp,Action,User Address,Multisig Wallet,Blockchain,TX Hash';
+    const header =
+      'Timestamp,Blockchain,Action,User Address,Multisig Wallet,TX Hash';
 
     const rows = records.map((record) => {
       const timestamp = record.timestamp.toISOString();
@@ -239,10 +241,15 @@ export class AdminService {
 
       let txHash = '';
       if (record.txHash && record.txHash !== 'PENDING') {
-        if (record.action === 'LOGIN' || record.action === 'APPROVE' ||
-            record.action === 'TRANSFER' || record.action === 'BATCH_TRANSFER' ||
-            record.action === 'ADD_SIGNER' || record.action === 'REMOVE_SIGNER' ||
-            record.action === 'UPDATE_THRESHOLD') {
+        if (
+          // record.action === 'LOGIN' ||
+          record.action === 'APPROVE' ||
+          record.action === 'TRANSFER' ||
+          record.action === 'BATCH_TRANSFER' ||
+          record.action === 'ADD_SIGNER' ||
+          record.action === 'REMOVE_SIGNER' ||
+          record.action === 'UPDATE_THRESHOLD'
+        ) {
           txHash = `${this.explorerConfig.ZKVERIFY_EXPLORER}/${record.txHash}`;
         } else if (record.action === 'CREATE_ACCOUNT') {
           txHash = `${this.explorerConfig.HORIZEN_EXPLORER_ADDRESS}/${record.txHash}`;
@@ -253,7 +260,7 @@ export class AdminService {
         txHash = 'PENDING';
       }
 
-      return `"${timestamp}","${action}","${userAddress}","${multisigWallet}","${blockchain}","${txHash}"`;
+      return `"${timestamp}","${blockchain}","${action}","${userAddress}","${multisigWallet}","${txHash}"`;
     });
 
     return [header, ...rows].join('\n');
