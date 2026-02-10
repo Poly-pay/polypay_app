@@ -7,6 +7,7 @@ import {
   LeaderboardEntry,
   LeaderboardMeResponse,
   CAMPAIGN_START,
+  TxType,
 } from '@polypay/shared';
 
 @Injectable()
@@ -61,11 +62,12 @@ export class QuestService {
         accountAddress,
         status: TxStatus.EXECUTED,
         txId: { not: currentTxId },
+        type: { in: [TxType.TRANSFER, TxType.BATCH] }, // Only count TRANSFER/BATCH
       },
     });
 
     if (executedCount > 0) {
-      // Not the first tx
+      // Not the first TRANSFER/BATCH. tx
       return 0;
     }
 
