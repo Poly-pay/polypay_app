@@ -14,7 +14,8 @@ export class AdminController {
   @UseGuards(AdminGuard)
   @ApiOperation({
     summary: 'Get analytics report CSV',
-    description: 'Generate analytics report from database. Requires admin API key.',
+    description:
+      'Generate analytics report from database. Requires admin API key.',
   })
   @ApiHeader({
     name: 'X-Admin-Key',
