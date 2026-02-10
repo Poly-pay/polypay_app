@@ -85,7 +85,9 @@ export const questApi = {
       params.append("week", week.toString());
     }
 
-    const { data } = await apiClient.get<UserPoints>(`${API_ENDPOINTS.quests.myPoints}?${params.toString()}`);
+    const { data } = await apiClient.get<UserPoints>(
+      `${API_ENDPOINTS.quests.myPoints}?${params.toString()}`,
+    );
     return data;
   },
 };

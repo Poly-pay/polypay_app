@@ -261,6 +261,7 @@ export class AdminService {
       }
 
       return `"${timestamp}","${blockchain}","${action}","${userAddress}","${multisigWallet}","${txHash}"`;
+
     });
 
     return [header, ...rows].join('\n');
