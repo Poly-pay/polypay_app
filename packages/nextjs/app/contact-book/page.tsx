@@ -218,7 +218,9 @@ export default function AddressBookPage() {
             <div className="flex flex-col items-center justify-center flex-1 gap-2">
               <Image src="/common/empty-avatar.svg" alt="No contact" width={150} height={150} />
               <p className="text-main-violet text-2xl font-semibold">No contact</p>
-              <p className="text-grey-700 text-base">Looks like you don&apos;t have any contacts yet. Let&apos;s add one.</p>
+              <p className="text-grey-700 text-base">
+                Looks like you don&apos;t have any contacts yet. Let&apos;s add one.
+              </p>
             </div>
           )}
         </div>
