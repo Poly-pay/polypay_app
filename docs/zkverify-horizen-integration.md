@@ -4,8 +4,8 @@
 
 PolyPay uses two blockchain layers for privacy-preserving multisig operations:
 
-- **zkVerify**: Verifies zero-knowledge proofs (ultraplonk) off-chain, providing proof verification and aggregation as a service
-- **Horizen**: EVM-compatible L3 blockchain where multisig accounts (`MetaMultiSigWallet` contracts) are deployed and transactions are executed
+- **[zkVerify](https://docs.zkverify.io/)**: Verifies zero-knowledge proofs (ultraplonk) off-chain, providing proof verification and aggregation as a service
+- **[Horizen](https://www.horizen.io/)**: EVM-compatible L3 blockchain where multisig accounts (`MetaMultiSigWallet` contracts) are deployed and transactions are executed
 
 ## Blockchain Classification
 
@@ -93,22 +93,47 @@ PENDING → IncludedInBlock → AggregationPending → Aggregated
                                               Ready for execute()
 ```
 
-| State | Description |
-|-------|-------------|
-| `PENDING` | Proof submitted, waiting for on-chain inclusion |
-| `IncludedInBlock` | Proof verified and finalized on zkVerify |
-| `AggregationPending` | Proof is being aggregated with others |
-| `Aggregated` | Aggregation complete, merkle proof available for Horizen execution |
-| `Failed` | Proof verification failed |
+## Kurier API
+
+[Kurier](https://docs.zkverify.io/overview/getting-started/kurier) is a REST API service built by Horizen Labs that simplifies proof verification on zkVerify. Instead of interacting directly with the zkVerify blockchain, PolyPay uses Kurier to submit and track proofs.
+
+### How PolyPay Uses Kurier
+
+| Step | Kurier Endpoint | Description |
+|------|-----------------|-------------|
+| 1. Register VK | `POST /register-vk` | Register verification key once, get `vkHash` |
+| 2. Submit Proof | `POST /submit-proof` | Submit proof with `vkHash`, get `jobId` |
+| 3. Poll Status | `GET /job-status/{jobId}` | Wait for `Finalized` or `Aggregated` status |
+
+### Kurier Job Status
+
+| Status | Description |
+|--------|-------------|
+| `Queued` | Proof accepted, waiting for processing |
+| `Valid` | Proof passed optimistic verification |
+| `Submitted` | Proof submitted to blockchain/mempool |
+| `IncludedInBlock` | Proof transaction included in a block |
+| `Finalized` | Proof transaction finalized on-chain |
+| `AggregationPending` | Proof ready for aggregation |
+| `Aggregated` | Proof successfully aggregated |
+| `AggregationPublished` | Aggregation published to destination chain |
+| `Failed` | Proof processing failed |
+
+### Kurier Endpoints
+
+| Environment | API URL | Swagger Docs |
+|-------------|---------|--------------|
+| Mainnet | https://api.kurier.xyz | https://api.kurier.xyz/docs |
+| Testnet | https://api-testnet.kurier.xyz | https://api-testnet.kurier.xyz/docs |
 
 ## Explorer Links
 
 ### zkVerify
 
-- **Mainnet**: https://zkverify.subscan.io/
-- **Testnet**: https://zkverify-testnet.subscan.io/
+- **Mainnet**: [zkverify.subscan.io](https://zkverify.subscan.io/)
+- **Testnet**: [zkverify-testnet.subscan.io](https://zkverify-testnet.subscan.io/)
 
 ### Horizen
 
-- **Mainnet**: https://horizen.calderaexplorer.xyz/
-- **Testnet**: https://horizen-testnet.explorer.caldera.xyz/
+- **Mainnet**: [horizen.calderaexplorer.xyz](https://horizen.calderaexplorer.xyz/)
+- **Testnet**: [horizen-testnet.explorer.caldera.xyz](https://horizen-testnet.explorer.caldera.xyz/)
