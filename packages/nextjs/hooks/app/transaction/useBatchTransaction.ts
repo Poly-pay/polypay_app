@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { BatchItem, TxType, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
-import { NATIVE_ETH } from "@polypay/shared";
+import { BatchItem, TxType, ZERO_ADDRESS, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api";
@@ -57,10 +56,10 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       // 3. Prepare batch data
       const recipients = selectedBatchItems.map(item => item.recipient as `0x${string}`);
       const amounts: bigint[] = selectedBatchItems.map(item => BigInt(item.amount));
-      const tokenAddresses = selectedBatchItems.map(item => item.tokenAddress || NATIVE_ETH.address);
+      const tokenAddresses = selectedBatchItems.map(item => item.tokenAddress || ZERO_ADDRESS);
 
       // Check if any ERC20 token in batch
-      const hasERC20 = tokenAddresses.some(addr => addr !== NATIVE_ETH.address);
+      const hasERC20 = tokenAddresses.some(addr => addr !== ZERO_ADDRESS);
 
       // 4. Encode function call based on token types
       const batchTransferData = hasERC20

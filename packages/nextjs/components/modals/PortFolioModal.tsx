@@ -4,12 +4,13 @@ import React from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
-import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
+import { ResolvedToken } from "@polypay/shared";
 import { Eye, EyeOff, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useModalApp } from "~~/hooks/app/useModalApp";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 
@@ -18,7 +19,7 @@ interface PortfolioModalProps {
 }
 
 interface TokenBalanceRowProps {
-  token: Token;
+  token: ResolvedToken;
   balance: string;
   usdValue: number;
   isLoading: boolean;
@@ -62,6 +63,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
   const router = useAppRouter();
   const { openModal } = useModalApp();
   const [showBalance, setShowBalance] = React.useState(true);
+  const { tokens } = useNetworkTokens();
 
   const { balances, isLoading: isLoadingBalances } = useTokenBalances(metaMultiSigWallet?.address);
   const { getPriceBySymbol, isLoading: isLoadingPrices } = useTokenPrices();
@@ -70,22 +72,22 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
 
   // Calculate total portfolio USD value
   const totalUsdValue = React.useMemo(() => {
-    return SUPPORTED_TOKENS.reduce((sum, token) => {
+    return tokens.reduce((sum, token) => {
       const balance = balances[token.address] || "0";
       const price = getPriceBySymbol(token.symbol);
       return sum + parseFloat(balance) * price;
     }, 0);
-  }, [balances, getPriceBySymbol]);
+  }, [balances, getPriceBySymbol, tokens]);
 
   // Get USD value for a specific token
-  const getTokenUsdValue = (token: Token): number => {
+  const getTokenUsdValue = (token: ResolvedToken): number => {
     const balance = balances[token.address] || "0";
     const price = getPriceBySymbol(token.symbol);
     return parseFloat(balance) * price;
   };
 
   // Get balance for a specific token
-  const getTokenBalance = (token: Token): string => {
+  const getTokenBalance = (token: ResolvedToken): string => {
     return balances[token.address] || "0";
   };
 
@@ -176,7 +178,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
             </div>
 
             <div className="flex flex-col">
-              {SUPPORTED_TOKENS.map(token => (
+              {tokens.map(token => (
                 <TokenBalanceRow
                   key={token.address}
                   token={token}

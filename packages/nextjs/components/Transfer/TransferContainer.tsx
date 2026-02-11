@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { NATIVE_ETH, SUPPORTED_TOKENS, Token, parseTokenAmount } from "@polypay/shared";
+import { ResolvedToken, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
-import { useTransferTransaction } from "~~/hooks";
+import { useMetaMultiSigWallet, useTransferTransaction } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
+import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useZodForm } from "~~/hooks/form";
 import { TransferFormData, transferSchema } from "~~/lib/form";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
@@ -15,11 +17,16 @@ import { notification } from "~~/utils/scaffold-eth";
 
 export default function TransferContainer() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const [selectedToken, setSelectedToken] = useState<Token>(NATIVE_ETH);
+  const { tokens, nativeEth } = useNetworkTokens();
+  const [selectedToken, setSelectedToken] = useState<ResolvedToken>(nativeEth);
 
   const { currentAccount: selectedAccount } = useAccountStore();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
+
+  const metaMultiSigWallet = useMetaMultiSigWallet();
+  const { balances, isLoading: isLoadingBalances } = useTokenBalances(metaMultiSigWallet?.address);
+  const currentBalance = balances[selectedToken.address] || "0";
 
   const form = useZodForm({
     schema: transferSchema,
@@ -28,6 +35,10 @@ export default function TransferContainer() {
       amount: "",
     },
   });
+
+  const handleMaxClick = () => {
+    form.setValue("amount", currentBalance, { shouldValidate: true });
+  };
 
   useEffect(() => {
     // Check for recipient data from sessionStorage
@@ -57,7 +68,7 @@ export default function TransferContainer() {
     },
   });
 
-  const isNativeETH = selectedToken.address === NATIVE_ETH.address;
+  const isNativeETH = selectedToken.address === nativeEth.address;
 
   const handleTransfer = async (data: TransferFormData) => {
     await transfer({
@@ -155,9 +166,10 @@ export default function TransferContainer() {
             <TokenPillPopover
               selectedToken={selectedToken}
               onSelect={(tokenAddress: string) => {
-                const token = SUPPORTED_TOKENS.find(t => t.address === tokenAddress);
+                const token = tokens.find(t => t.address === tokenAddress);
                 if (token) {
                   setSelectedToken(token);
+                  form.setValue("amount", "0");
                 }
               }}
             />
@@ -175,6 +187,21 @@ export default function TransferContainer() {
               className="text-text-primary text-[44px] uppercase outline-none w-[150px]"
               disabled={isLoading}
             />
+          </div>
+
+          <div className="flex items-center gap-3 text-grey-500 text-base">
+            <span>Polypay account balance:</span>
+            <span className="font-semibold text-grey-700">
+              {isLoadingBalances ? "..." : currentBalance} {selectedToken.symbol}
+            </span>
+            <button
+              type="button"
+              onClick={handleMaxClick}
+              disabled={isLoading || isLoadingBalances}
+              className="bg-blue-500 text-white rounded-lg px-3 py-1 font-medium text-sm disabled:opacity-50 cursor-pointer"
+            >
+              Max
+            </button>
           </div>
 
           {form.formState.errors.amount && (

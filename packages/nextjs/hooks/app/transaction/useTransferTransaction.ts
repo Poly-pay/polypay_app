@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { TxType, encodeERC20Transfer } from "@polypay/shared";
-import { NATIVE_ETH, Token, parseTokenAmount } from "@polypay/shared";
+import { ResolvedToken, TxType, ZERO_ADDRESS, encodeERC20Transfer, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
@@ -11,7 +10,7 @@ import { notification } from "~~/utils/scaffold-eth";
 interface TransferParams {
   recipient: string;
   amount: string;
-  token: Token;
+  token: ResolvedToken;
   contactId?: string | null;
 }
 
@@ -37,7 +36,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       return;
     }
 
-    const isNativeETH = token.address === NATIVE_ETH.address;
+    const isNativeETH = token.address === ZERO_ADDRESS;
 
     setIsLoading(true);
     try {

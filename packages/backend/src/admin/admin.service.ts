@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/database/prisma.service';
 import { TxType } from '@/generated/prisma/client';
+import { AnalyticsReportDto } from './dto/analytics-report.dto';
 
 interface AnalyticsRecord {
   timestamp: Date;
@@ -77,27 +78,40 @@ export class AdminService {
     }
   }
 
-  async generateAnalyticsReport(): Promise<string> {
+  async generateAnalyticsReport(dto?: AnalyticsReportDto): Promise<string> {
     const records: AnalyticsRecord[] = [];
 
-    // Dont need LOGIN records for now
-    // 1. LOGIN records
-    // const loginRecords = await this.prisma.loginHistory.findMany({
-    //   orderBy: { createdAt: 'asc' },
-    // });
+    // Build date filter
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    if (dto?.startDate) {
+      dateFilter.gte = new Date(dto.startDate + 'T00:00:00.000Z');
+    }
+    if (dto?.endDate) {
+      dateFilter.lte = new Date(dto.endDate + 'T23:59:59.999Z');
+    }
+    const hasDateFilter = Object.keys(dateFilter).length > 0;
 
-    // for (const login of loginRecords) {
-    //   records.push({
-    //     timestamp: login.createdAt,
-    //     action: 'LOGIN',
-    //     userAddress: login.walletAddress,
-    //     multisigWallet: null,
-    //     txHash: login.zkVerifyTxHash || 'PENDING',
-    //   });
-    // }
+    // 1. LOGIN records
+    if (dto?.includeLogin) {
+      const loginRecords = await this.prisma.loginHistory.findMany({
+        where: hasDateFilter ? { createdAt: dateFilter } : undefined,
+        orderBy: { createdAt: 'asc' },
+      });
+
+      for (const login of loginRecords) {
+        records.push({
+          timestamp: login.createdAt,
+          action: 'LOGIN',
+          userAddress: login.walletAddress,
+          multisigWallet: null,
+          txHash: login.zkVerifyTxHash || 'PENDING',
+        });
+      }
+    }
 
     // 2. CREATE_ACCOUNT records
     const accounts = await this.prisma.account.findMany({
+      where: hasDateFilter ? { createdAt: dateFilter } : undefined,
       include: {
         signers: {
           where: { isCreator: true },
@@ -128,7 +142,10 @@ export class AdminService {
 
     // 3. APPROVE votes (includes TRANSFER, BATCH_TRANSFER, ADD_SIGNER, etc.)
     const approveVotes = await this.prisma.vote.findMany({
-      where: { voteType: 'APPROVE' },
+      where: {
+        voteType: 'APPROVE',
+        ...(hasDateFilter ? { createdAt: dateFilter } : {}),
+      },
       include: { transaction: true },
       orderBy: { createdAt: 'asc' },
     });
@@ -173,32 +190,38 @@ export class AdminService {
       }
     }
 
-    // Dont need DENY records for now
-    // // 4. DENY records
-    // const denyVotes = await this.prisma.vote.findMany({
-    //   where: { voteType: 'DENY' },
-    //   include: { transaction: true },
-    //   orderBy: { createdAt: 'asc' },
-    // });
+    if (dto?.includeDeny) {
+      const denyVotes = await this.prisma.vote.findMany({
+        where: {
+          voteType: 'DENY',
+          ...(hasDateFilter ? { createdAt: dateFilter } : {}),
+        },
+        include: { transaction: true },
+        orderBy: { createdAt: 'asc' },
+      });
 
-    // for (const vote of denyVotes) {
-    //   const loginHistory = await this.prisma.loginHistory.findFirst({
-    //     where: { commitment: vote.voterCommitment },
-    //     orderBy: { createdAt: 'desc' },
-    //   });
+      for (const vote of denyVotes) {
+        const loginHistory = await this.prisma.loginHistory.findFirst({
+          where: { commitment: vote.voterCommitment },
+          orderBy: { createdAt: 'desc' },
+        });
 
-    //   records.push({
-    //     timestamp: vote.createdAt,
-    //     action: 'DENY',
-    //     userAddress: loginHistory?.walletAddress || 'UNKNOWN',
-    //     multisigWallet: vote.transaction.accountAddress,
-    //     txHash: null,
-    //   });
-    // }
+        records.push({
+          timestamp: vote.createdAt,
+          action: 'DENY',
+          userAddress: loginHistory?.walletAddress || 'UNKNOWN',
+          multisigWallet: vote.transaction.accountAddress,
+          txHash: null,
+        });
+      }
+    }
 
     // 5. EXECUTE records
     const executedTxs = await this.prisma.transaction.findMany({
-      where: { status: 'EXECUTED' },
+      where: {
+        status: 'EXECUTED',
+        ...(hasDateFilter ? { executedAt: dateFilter } : {}),
+      },
       orderBy: { executedAt: 'asc' },
     });
 
@@ -221,10 +244,29 @@ export class AdminService {
     records.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     // Generate CSV
-    return this.generateCSV(records);
+    // Count totals by blockchain
+    const totalZkVerify = records.filter(
+      (r) => this.getBlockchain(r.action) === 'zkVerify',
+    ).length;
+    const totalHorizen = records.filter(
+      (r) => this.getBlockchain(r.action) === 'Horizen',
+    ).length;
+
+    // Generate CSV
+    return this.generateCSV(records, totalZkVerify, totalHorizen);
   }
 
-  private generateCSV(records: AnalyticsRecord[]): string {
+  private generateCSV(
+    records: AnalyticsRecord[],
+    totalZkVerify: number,
+    totalHorizen: number,
+  ): string {
+    const totalsHeader = [
+      `Total zkVerify,${totalZkVerify}`,
+      `Total Horizen,${totalHorizen}`,
+      '', // empty line
+    ];
+
     const header =
       'Timestamp,Blockchain,Action,User Address,Multisig Wallet,TX Hash';
 
@@ -242,7 +284,7 @@ export class AdminService {
       let txHash = '';
       if (record.txHash && record.txHash !== 'PENDING') {
         if (
-          // record.action === 'LOGIN' ||
+          record.action === 'LOGIN' ||
           record.action === 'APPROVE' ||
           record.action === 'TRANSFER' ||
           record.action === 'BATCH_TRANSFER' ||
@@ -261,9 +303,8 @@ export class AdminService {
       }
 
       return `"${timestamp}","${blockchain}","${action}","${userAddress}","${multisigWallet}","${txHash}"`;
-
     });
 
-    return [header, ...rows].join('\n');
+    return [...totalsHeader, header, ...rows].join('\n');
   }
 }

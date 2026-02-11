@@ -3,10 +3,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { TokenPillPopover } from "./TokenPillPopover";
-import { BatchItem, NATIVE_ETH, Token, getTokenByAddress } from "@polypay/shared";
+import { BatchItem, ResolvedToken, ZERO_ADDRESS, getTokenByAddress } from "@polypay/shared";
 import { formatEther, formatUnits } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { useContacts } from "~~/hooks";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useZodForm } from "~~/hooks/form";
 import { editBatchSchema } from "~~/lib/form";
 import { useAccountStore } from "~~/services/store";
@@ -16,7 +17,7 @@ interface EditBatchPopoverProps {
   item: BatchItem;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { recipient: string; amount: string; token: Token; contactId?: string }) => void;
+  onSave: (data: { recipient: string; amount: string; token: ResolvedToken; contactId?: string }) => void;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
@@ -27,11 +28,14 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { currentAccount: selectedAccount } = useAccountStore();
   const { data: contacts = [] } = useContacts(selectedAccount?.id || null);
+  const { network } = useNetworkTokens();
+
+  const getToken = (address: string | null | undefined) => getTokenByAddress(address, network);
 
   const formatAmountFromWei = (amount: string, tokenAddress: string) => {
     try {
-      const token = getTokenByAddress(tokenAddress);
-      if (token.address === NATIVE_ETH.address) {
+      const token = getToken(tokenAddress);
+      if (token.address === ZERO_ADDRESS) {
         return formatEther(BigInt(amount));
       }
       return formatUnits(BigInt(amount), token.decimals);
@@ -44,8 +48,8 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
     schema: editBatchSchema,
     defaultValues: {
       recipient: item.recipient,
-      amount: formatAmountFromWei(item.amount || "0", item.tokenAddress || NATIVE_ETH.address),
-      tokenAddress: item.tokenAddress || NATIVE_ETH.address,
+      amount: formatAmountFromWei(item.amount || "0", item.tokenAddress || ZERO_ADDRESS),
+      tokenAddress: item.tokenAddress || ZERO_ADDRESS,
       contactId: item.contact?.id || undefined,
       contactName: item.contact?.name || undefined,
     },
@@ -112,7 +116,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
   const watchedTokenAddress = form.watch("tokenAddress");
   const watchedContactName = form.watch("contactName");
   const watchedRecipient = form.watch("recipient");
-  const selectedToken = getTokenByAddress(watchedTokenAddress || NATIVE_ETH.address);
+  const selectedToken = getToken(watchedTokenAddress || ZERO_ADDRESS);
 
   const matchedContact = useMemo(() => {
     if (!watchedRecipient) return null;
@@ -126,7 +130,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
     if (!isValid) return;
 
     const data = form.getValues();
-    const token = getTokenByAddress(data.tokenAddress || NATIVE_ETH.address);
+    const token = getToken(data.tokenAddress || ZERO_ADDRESS);
 
     onSave({
       recipient: data.recipient,

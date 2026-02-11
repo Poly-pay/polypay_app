@@ -9,6 +9,7 @@ export const colorTokens = {
   },
   grey: {
     0: "#FFFFFF",
+    25: "#FAFAFA",
     50: "#F7F7F7",
     100: "#EDEDED",
     200: "#E0E0E0",

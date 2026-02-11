@@ -104,49 +104,20 @@ export default function AddressBookPage() {
     );
   }
 
+  const hasContacts = filteredContacts.length > 0;
+  const hasAnyContacts = contacts.length > 0;
+
   return (
     <section className="grid grid-cols-12 h-full gap-1">
-      <div className="lg:col-span-8 col-span-12 bg-[#FFFFFFB2] rounded-lg border-2 border-white shadow-2xl">
+      <div
+        className={`col-span-12 ${hasAnyContacts ? "lg:col-span-8 shadow-2xl" : ""} bg-[#FFFFFFB2] rounded-lg border-2 border-white`}
+      >
         <div className="lg:mx-auto mx-5 p-6 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-6">
+          {/* Row 1: Title + Buttons */}
+          <div className="flex items-center justify-between mb-4">
             <h1 className="text-4xl text-main-black">Contact Book</h1>
 
             <div className="flex items-center gap-2">
-              <div className="flex items-center border border-[#E0E0E0] rounded-xl gap-3 p-2 mr-2">
-                <div
-                  className="p-2 rounded-lg bg-[#FCFCFC] flex items-center justify-center w-fit"
-                  style={{
-                    boxShadow: "0 0 4px 0 rgba(18, 18, 18, 0.10)",
-                  }}
-                >
-                  <Search size={14} />
-                </div>
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Enter name"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="focus:outline-none w-52"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    ×
-                  </button>
-                )}
-                <div
-                  className="cursor-pointer max-h-6 flex items-center justify-center px-2 rounded-md border border-[#F1F1F1]"
-                  style={{
-                    boxShadow:
-                      " 0 0 0 1px rgba(0, 0, 0, 0.11), 0 2px 0.8px 0 rgba(255, 255, 255, 0.27) inset, 0 -1px 0.6px 0 rgba(0, 0, 0, 0.20) inset, 0 1px 4.2px -1px rgba(0, 0, 0, 0.25)",
-                  }}
-                >
-                  <p className="font-medium text-grey-700 text-sm">⌘ K</p>
-                </div>
-              </div>
               <button
                 className="bg-grey-100 rounded-lg font-medium text-sm text-gray-700 transition-colors cursor-pointer w-28 h-12"
                 onClick={() =>
@@ -174,6 +145,41 @@ export default function AddressBookPage() {
             </div>
           </div>
 
+          {/* Row 2: Search bar */}
+          <div className="flex items-center border border-[#E0E0E0] rounded-xl gap-3 p-2 mb-4 w-fit">
+            <div
+              className="p-2 rounded-lg bg-[#FCFCFC] flex items-center justify-center w-fit"
+              style={{
+                boxShadow: "0 0 4px 0 rgba(18, 18, 18, 0.10)",
+              }}
+            >
+              <Search size={14} />
+            </div>
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Enter name"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="focus:outline-none w-52"
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm("")} className="text-gray-400 hover:text-gray-600">
+                ×
+              </button>
+            )}
+            <div
+              className="cursor-pointer max-h-6 flex items-center justify-center px-2 rounded-md border border-[#F1F1F1]"
+              style={{
+                boxShadow:
+                  "0 0 0 1px rgba(0, 0, 0, 0.11), 0 2px 0.8px 0 rgba(255, 255, 255, 0.27) inset, 0 -1px 0.6px 0 rgba(0, 0, 0, 0.20) inset, 0 1px 4.2px -1px rgba(0, 0, 0, 0.25)",
+              }}
+            >
+              <p className="font-medium text-grey-700 text-sm">⌘ K</p>
+            </div>
+          </div>
+
+          {/* Row 3: Group tabs */}
           <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
             <button
               onClick={() => handleSelectGroup(null)}
@@ -198,108 +204,125 @@ export default function AddressBookPage() {
             ))}
           </div>
 
-          <ContactList
-            contacts={filteredContacts}
-            isLoading={isLoadingContacts}
-            selectedContactId={selectedContact?.id || null}
-            onSelectContact={handleSelectContact}
-          />
+          {/* Content: Contact List or Empty State */}
+          {isLoadingContacts ? (
+            <ContactList contacts={[]} isLoading={true} selectedContactId={null} onSelectContact={() => {}} />
+          ) : hasContacts ? (
+            <ContactList
+              contacts={filteredContacts}
+              isLoading={false}
+              selectedContactId={selectedContact?.id || null}
+              onSelectContact={handleSelectContact}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center flex-1 gap-2">
+              <Image src="/common/empty-avatar.svg" alt="No contact" width={150} height={150} />
+              <p className="text-main-violet text-2xl font-semibold">No contact</p>
+              <p className="text-grey-700 text-base">Looks like you don&apos;t have any contacts yet. Let&apos;s add one.</p>
+            </div>
+          )}
         </div>
       </div>
-      <div className="hidden lg:block lg:col-span-4 relative rounded-lg">
-        {!editing && (
-          <div>
-            <div
-              className="absolute inset-0 w-full rounded-t-lg z-10"
-              style={{
-                height: "40%",
-                background: selectedContact
-                  ? "linear-gradient(180deg, #FF7CEB 0%, #FFF 100%)"
-                  : "linear-gradient(180deg, #BDBDBD 0%, #FFF 100%)",
-              }}
-            ></div>
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center">
-              <div className="w-6 h-64 bg-black py-8 flex flex-col items-center justify-between">
-                {[0, 1, 2].map(index => (
-                  <p key={index} className="text-white text-xs font-medium -rotate-90 max-w-16 truncate">
-                    {selectedContact?.groups[0]?.group?.name || "PolyPay"}
-                  </p>
-                ))}
-              </div>
-              <div className={selectedContact ? "contact-card relative" : "contact-card-empty relative"}>
-                {selectedContact && selectedContact.groups.length > 0 && (
-                  <div className="bg-main-violet rounded-full px-4 py-1.5 absolute top-2 right-2 max-w-40">
-                    <p className="text-white text-sm font-medium truncate whitespace-nowrap">
-                      {selectedContact?.groups[0].group?.name}
-                    </p>
-                  </div>
-                )}
 
-                <div>
-                  <Image
-                    src={`/contact-book/${selectedContact ? "profile-contact.png" : "empty-profile-contact.png"}`}
-                    alt="icon"
-                    width={180}
-                    height={140}
-                    className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/3"
-                  />
-                  {!selectedContact && (
-                    <p className="text-grey-500 text-2xl text-center absolute bottom-10 left-1/2 transform -translate-x-1/2 w-full">
-                      Select contact
+      {/* Right Panel - Contact Detail */}
+      {hasAnyContacts && (
+        <div className="hidden lg:block lg:col-span-4 relative rounded-lg">
+          {!editing && (
+            <div>
+              <div
+                className="absolute inset-0 w-full rounded-t-lg z-10"
+                style={{
+                  height: "40%",
+                  background: selectedContact
+                    ? "linear-gradient(180deg, #FF7CEB 0%, #FFF 100%)"
+                    : "linear-gradient(180deg, #BDBDBD 0%, #FFF 100%)",
+                }}
+              ></div>
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center">
+                <div className="w-6 h-64 bg-black py-8 flex flex-col items-center justify-between">
+                  {[0, 1, 2].map(index => (
+                    <p key={index} className="text-white text-xs font-medium -rotate-90 max-w-16 truncate">
+                      {selectedContact?.groups[0]?.group?.name || "PolyPay"}
                     </p>
-                  )}
+                  ))}
                 </div>
-                {selectedContact && (
-                  <div className="absolute left-2 bottom-4">
-                    <p className="text-2xl text-white mb-1 max-w-[200px] truncate">{selectedContact?.name}</p>
-                    <div className="rounded-full py-0.5 px-1.5 bg-white w-fit">
-                      <p className="text-xs font-medium text-main-navy-blue">
-                        {formatAddress(selectedContact?.address ?? "", { start: 3, end: 3 })}
+                <div className={selectedContact ? "contact-card relative" : "contact-card-empty relative"}>
+                  {selectedContact && selectedContact.groups.length > 0 && (
+                    <div className="bg-main-violet rounded-full px-4 py-1.5 absolute top-2 right-2 max-w-40">
+                      <p className="text-white text-sm font-medium truncate whitespace-nowrap">
+                        {selectedContact?.groups[0].group?.name}
                       </p>
                     </div>
+                  )}
+
+                  <div>
+                    <Image
+                      src={`/contact-book/${selectedContact ? "profile-contact.png" : "empty-profile-contact.png"}`}
+                      alt="icon"
+                      width={180}
+                      height={140}
+                      className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/3"
+                    />
+                    {!selectedContact && (
+                      <p className="text-grey-500 text-2xl text-center absolute bottom-10 left-1/2 transform -translate-x-1/2 w-full">
+                        Select contact
+                      </p>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-            {selectedContact && (
-              <div className="relative z-40 p-4">
-                <div className="flex justify-end">
-                  <button
-                    className="px-6 py-2.5 rounded-xl bg-white w-fit text-main-black text-sm font-medium"
-                    onClick={() => setEditing(true)}
-                  >
-                    Edit
-                  </button>
+                  {selectedContact && (
+                    <div className="absolute left-2 bottom-4">
+                      <p className="text-2xl text-white mb-1 max-w-[200px] truncate">{selectedContact?.name}</p>
+                      <div className="rounded-full py-0.5 px-1.5 bg-white w-fit">
+                        <p className="text-xs font-medium text-main-navy-blue">
+                          {formatAddress(selectedContact?.address ?? "", { start: 3, end: 3 })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
-        )}
-        {editing && selectedContact && (
-          <div className="flex flex-col h-full bg-white rounded-2xl">
-            <EditContact
-              contact={selectedContact}
-              accountId={accountId}
-              onSuccess={() => {
-                refetchContacts();
-              }}
-              onDelete={() => {
-                refetchContacts();
-                setSelectedContact(null);
-                setEditing(false);
-              }}
-              onClose={() => setEditing(false)}
-            />
-          </div>
-        )}
-        {selectedContact && !editing && (
-          <div className="w-full px-5 bg-grey-50 absolute bottom-0 z-50 h-20 rounded-b-lg flex items-center justify-center border-t border-grey-200">
-            <button className="h-12 px-6 rounded-xl font-medium bg-main-pink w-full" onClick={handleTransfer}>
-              Transfer
-            </button>
-          </div>
-        )}
-      </div>
+              {selectedContact && (
+                <div className="relative z-40 p-4">
+                  <div className="flex justify-end">
+                    <button
+                      className="px-6 py-2.5 rounded-xl bg-white w-fit text-main-black text-sm font-medium"
+                      onClick={() => setEditing(true)}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {editing && selectedContact && (
+            <div className="flex flex-col h-full bg-white rounded-2xl">
+              <EditContact
+                contact={selectedContact}
+                accountId={accountId}
+                onSuccess={() => {
+                  refetchContacts();
+                }}
+                onDelete={() => {
+                  refetchContacts();
+                  setSelectedContact(null);
+                  setEditing(false);
+                }}
+                onClose={() => setEditing(false)}
+              />
+            </div>
+          )}
+          {selectedContact && !editing && (
+            <div className="w-full px-5 bg-grey-50 absolute bottom-0 z-50 h-20 rounded-b-lg flex items-center justify-center border-t border-grey-200">
+              <button className="h-12 px-6 rounded-xl font-medium bg-main-pink w-full" onClick={handleTransfer}>
+                Transfer
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mobile Drawer */}
       <ContactDetailDrawer
         isOpen={isDrawerOpen}
         contact={selectedContact}

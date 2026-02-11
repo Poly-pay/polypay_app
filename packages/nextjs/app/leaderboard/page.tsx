@@ -7,6 +7,7 @@ import type { LeaderboardFilter } from "@polypay/shared";
 import { NextPage } from "next";
 import { SectionAvatar } from "~~/components/leader-board";
 import { LeaderBoardTable } from "~~/components/leader-board/LeaderBoardTable";
+import { QuestFloatingButton } from "~~/components/quest/QuestFloatingButton";
 import { useModalApp } from "~~/hooks";
 import { useClaimSummary } from "~~/hooks/api/useClaim";
 
@@ -142,6 +143,8 @@ const LeaderBoardPage: NextPage = () => {
           </>
         )}
       </div>
+
+      <QuestFloatingButton />
     </div>
   );
 };

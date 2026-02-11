@@ -1,4 +1,5 @@
-import { NATIVE_ETH, SUPPORTED_TOKENS, formatTokenAmount } from "@polypay/shared";
+import { useNetworkTokens } from "./useNetworkTokens";
+import { formatTokenAmount } from "@polypay/shared";
 import { useBalance, useReadContracts } from "wagmi";
 
 const ERC20_ABI = [
@@ -12,8 +13,10 @@ const ERC20_ABI = [
 ] as const;
 
 export function useTokenBalances(accountAddress: string | undefined) {
+  const { tokens, nativeEth } = useNetworkTokens();
+
   // Filter out native ETH for ERC20 calls
-  const erc20Tokens = SUPPORTED_TOKENS.filter(token => token.address !== NATIVE_ETH.address);
+  const erc20Tokens = tokens.filter(token => token.address !== nativeEth.address);
 
   const { data: nativeBalance, isLoading: isLoadingNative } = useBalance({
     address: accountAddress as `0x${string}`,
@@ -52,9 +55,9 @@ export function useTokenBalances(accountAddress: string | undefined) {
 
   // Add native ETH balance
   if (nativeBalance) {
-    balances[NATIVE_ETH.address] = formatTokenAmount(nativeBalance.value.toString(), NATIVE_ETH.decimals);
+    balances[nativeEth.address] = formatTokenAmount(nativeBalance.value.toString(), nativeEth.decimals);
   } else {
-    balances[NATIVE_ETH.address] = "0";
+    balances[nativeEth.address] = "0";
   }
 
   // Add ERC20 balances

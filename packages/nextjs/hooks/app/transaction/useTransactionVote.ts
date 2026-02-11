@@ -3,6 +3,7 @@ import {
   SignerData,
   TxStatus,
   TxType,
+  ZERO_ADDRESS,
   encodeAddSigners,
   encodeBatchTransfer,
   encodeBatchTransferMulti,
@@ -10,7 +11,6 @@ import {
   encodeRemoveSigners,
   encodeUpdateThreshold,
 } from "@polypay/shared";
-import { NATIVE_ETH } from "@polypay/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWalletClient } from "wagmi";
 import { accountKeys, useMetaMultiSigWallet, userKeys } from "~~/hooks";
@@ -82,7 +82,7 @@ function buildTransactionParams(tx: TransactionRowData): {
 
   if (tx.type === TxType.TRANSFER) {
     // Check if ERC20 transfer
-    if (tx.tokenAddress && tx.tokenAddress !== NATIVE_ETH.address) {
+    if (tx.tokenAddress && tx.tokenAddress !== ZERO_ADDRESS) {
       to = tx.tokenAddress as `0x${string}`;
       value = 0n;
       callData = encodeERC20Transfer(tx.recipientAddress!, BigInt(tx.amount || "0")) as `0x${string}`;
@@ -103,9 +103,9 @@ function buildTransactionParams(tx: TransactionRowData): {
     } else if (tx.type === TxType.BATCH && tx.batchData) {
       const recipients = tx.batchData.map(item => item.recipient as `0x${string}`);
       const amounts = tx.batchData.map(item => BigInt(item.amount));
-      const tokenAddresses = tx.batchData.map(item => item.tokenAddress || NATIVE_ETH.address);
+      const tokenAddresses = tx.batchData.map(item => item.tokenAddress || ZERO_ADDRESS);
 
-      const hasERC20 = tokenAddresses.some(addr => addr !== NATIVE_ETH.address);
+      const hasERC20 = tokenAddresses.some(addr => addr !== ZERO_ADDRESS);
 
       callData = hasERC20
         ? encodeBatchTransferMulti(recipients, amounts, tokenAddresses)
