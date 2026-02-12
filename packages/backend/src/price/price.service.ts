@@ -45,10 +45,8 @@ export class PriceService {
 
   private async fetchPrices(): Promise<TokenPrices> {
     try {
-      // Get token IDs from shared + add ZEN
-      const sharedIds = getCoingeckoIds();
-      const allIds = [...new Set([...sharedIds, ZEN_COINGECKO_ID])];
-      const ids = allIds.join(',');
+      // Get all token IDs from shared
+      const ids = getCoingeckoIds().join(',');
 
       const url = `${this.COINGECKO_API}?ids=${ids}&vs_currencies=usd`;
 

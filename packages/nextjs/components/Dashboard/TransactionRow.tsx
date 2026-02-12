@@ -10,6 +10,7 @@ import {
   Member,
   TransactionRowData,
   VoteStatus,
+  useNetworkTokens,
   useTransactionVote,
   useWalletCommitments,
   useWalletThreshold,
@@ -235,6 +236,7 @@ function TxHeader({
 }: TxHeaderProps & { initiatorCommitment?: string }) {
   const headerText = getExpandedHeaderText(tx.type);
   const shortCommitment = formatAddress(initiatorCommitment, { start: 4, end: 4 });
+  const { network } = useNetworkTokens();
 
   const renderHeaderRow = () => (
     <div className="flex items-center justify-between mb-4">
@@ -281,12 +283,12 @@ function TxHeader({
         <div className="flex items-center gap-4" key={tx.type}>
           <span className="mr-10">Tranfer</span>
           <Image
-            src={getTokenByAddress(tx.tokenAddress).icon}
-            alt={getTokenByAddress(tx.tokenAddress).symbol}
+            src={getTokenByAddress(tx.tokenAddress, network).icon}
+            alt={getTokenByAddress(tx.tokenAddress, network).symbol}
             width={20}
             height={20}
           />
-          <span>{formatAmount(tx.amount ?? "0", tx.tokenAddress)}</span>
+          <span>{formatAmount(tx.amount ?? "0", network, tx.tokenAddress)}</span>
           <Image src="/icons/arrows/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} className="bg-white" />
         </div>
@@ -381,12 +383,12 @@ function TxHeader({
             <div className="flex items-center gap-4" key={tx.type + index}>
               <span className="mr-10">Tranfer</span>
               <Image
-                src={getTokenByAddress(transfer.tokenAddress).icon}
-                alt={getTokenByAddress(transfer.tokenAddress).symbol}
+                src={getTokenByAddress(transfer.tokenAddress, network).icon}
+                alt={getTokenByAddress(transfer.tokenAddress, network).symbol}
                 width={20}
                 height={20}
               />
-              <span>{formatAmount(transfer.amount ?? "0", transfer.tokenAddress)}</span>
+              <span>{formatAmount(transfer.amount ?? "0", network, transfer.tokenAddress)}</span>
               <Image src="/icons/arrows/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
               <AddressWithContact
                 address={transfer.recipient ?? ""}
@@ -534,18 +536,19 @@ function getExpandedHeaderText(type: TxType): string {
 }
 
 function TxDetails({ tx }: { tx: TransactionRowData }) {
+  const { network } = useNetworkTokens();
   switch (tx.type) {
     case TxType.TRANSFER:
       return (
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Image
-              src={getTokenByAddress(tx.tokenAddress).icon}
-              alt={getTokenByAddress(tx.tokenAddress).symbol}
+              src={getTokenByAddress(tx.tokenAddress, network).icon}
+              alt={getTokenByAddress(tx.tokenAddress, network).symbol}
               width={20}
               height={20}
             />
-            <span className="font-medium">{formatAmount(tx.amount ?? "0", tx.tokenAddress)}</span>
+            <span className="font-medium">{formatAmount(tx.amount ?? "0", network, tx.tokenAddress)}</span>
           </div>
           <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} />
@@ -703,7 +706,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
 
       {/* Main Container */}
       <div
-        className={`flex flex-col p-6 gap-3 bg-white border border-grey-200 rounded-xl ${!expanded ? "pb-0 pt-3" : "pt-3"}`}
+        className={`flex flex-col p-6 gap-3 bg-white border-b border-b-grey-200 rounded-xl ${!expanded ? "pb-0 pt-3" : "pt-3"}`}
         onClick={() => setExpanded(!expanded)}
       >
         {/* Collapsed Row */}

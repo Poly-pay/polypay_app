@@ -2,12 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Account, AccountSigner, SUPPORTED_TOKENS } from "@polypay/shared";
+import { Account, AccountSigner } from "@polypay/shared";
 import { ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~~/components/ui/tooltip";
 import { useModalApp } from "~~/hooks";
 import { useUpdateAccount } from "~~/hooks/api/useAccount";
 import { useTokenPrices } from "~~/hooks/api/usePrice";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useAccountStore } from "~~/services/store";
 import { getAvatarByAccountId } from "~~/utils/avatar";
@@ -27,6 +28,7 @@ export default function AccountItem({ account, isSelected, isExpanded, onSelect,
   const { mutate: updateAccount } = useUpdateAccount();
   const { setCurrentAccount, currentAccount } = useAccountStore();
   const { openModal } = useModalApp();
+  const { tokens } = useNetworkTokens();
 
   // Inline edit state
   const [isEditingName, setIsEditingName] = useState(false);
@@ -42,12 +44,12 @@ export default function AccountItem({ account, isSelected, isExpanded, onSelect,
 
   // Calculate total USD value
   const totalUsdValue = React.useMemo(() => {
-    return SUPPORTED_TOKENS.reduce((sum, token) => {
+    return tokens.reduce((sum, token) => {
       const balance = balances[token.address] || "0";
       const price = getPriceBySymbol(token.symbol);
       return sum + parseFloat(balance) * price;
     }, 0);
-  }, [balances, getPriceBySymbol]);
+  }, [balances, getPriceBySymbol, tokens]);
 
   const formattedTotalUsd = totalUsdValue.toLocaleString("en-US", {
     minimumFractionDigits: 0,

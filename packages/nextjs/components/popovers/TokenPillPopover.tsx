@@ -2,12 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
+import { ResolvedToken } from "@polypay/shared";
 import { useMetaMultiSigWallet, useTokenPrices } from "~~/hooks";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 
 interface TokenPillPopoverProps {
-  selectedToken: Token;
+  selectedToken: ResolvedToken;
   onSelect: (tokenAddress: string) => void;
   arrowSrc?: string;
   arrowWidth?: number;
@@ -29,6 +30,7 @@ export function TokenPillPopover({
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { balances } = useTokenBalances(metaMultiSigWallet?.address);
   const { getPriceBySymbol, isLoading: isLoadingPrices } = useTokenPrices();
+  const { tokens } = useNetworkTokens();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +47,7 @@ export function TokenPillPopover({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  const getTokenUsdValue = (token: Token): string => {
+  const getTokenUsdValue = (token: ResolvedToken): string => {
     const balance = parseFloat(balances[token.address] || "0");
     const price = getPriceBySymbol(token.symbol);
     const usdValue = balance * price;
@@ -85,7 +87,7 @@ export function TokenPillPopover({
           />
 
           <div className="py-1 xl:min-w-[300px] min-w-[220px]">
-            {SUPPORTED_TOKENS.map(token => (
+            {tokens.map(token => (
               <div
                 key={token.address}
                 onClick={() => {
@@ -94,7 +96,7 @@ export function TokenPillPopover({
                 }}
                 className="flex items-center gap-2 px-3 py-2 hover:bg-[#FF7CEB1A] cursor-pointer first:rounded-t-lg last:rounded-b-lg"
               >
-                <Image key={token.address} src={token.icon} alt={token.symbol} width={32} height={32} />
+                <Image src={token.icon} alt={token.symbol} width={32} height={32} />
                 <div className="flex-1">
                   <p className="text-sm font-medium">{token.name}</p>
                   <p className="text-grey-800 text-xs">{token.symbol}</p>

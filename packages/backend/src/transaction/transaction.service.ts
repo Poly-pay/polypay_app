@@ -29,6 +29,7 @@ import {
   encodeAddSigners,
   encodeRemoveSigners,
   SignerData,
+  ZERO_ADDRESS,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -1158,14 +1159,12 @@ export class TransactionService {
         const recipients = batchData.map((item: any) => item.recipient);
         const amounts = batchData.map((item: any) => BigInt(item.amount));
         const tokenAddresses = batchData.map(
-          (item: any) =>
-            item.tokenAddress || '0x0000000000000000000000000000000000000000',
+          (item: any) => item.tokenAddress || ZERO_ADDRESS,
         );
 
         // Check if any ERC20 token in batch
         const hasERC20 = tokenAddresses.some(
-          (addr: string) =>
-            addr !== '0x0000000000000000000000000000000000000000',
+          (addr: string) => addr !== ZERO_ADDRESS,
         );
 
         if (hasERC20) {
