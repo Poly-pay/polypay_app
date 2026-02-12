@@ -3851,6 +3851,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nestjs/schedule@npm:^6.1.1":
+  version: 6.1.1
+  resolution: "@nestjs/schedule@npm:6.1.1"
+  dependencies:
+    cron: 4.4.0
+  peerDependencies:
+    "@nestjs/common": ^10.0.0 || ^11.0.0
+    "@nestjs/core": ^10.0.0 || ^11.0.0
+  checksum: 4749fab228445cfdf7ea81a71a1aac643e6f1d7f355fc5e1ea89c72f395d381b324d96898e6bdf4505e39668e68654376138e31227f6e0b28286df444ad052df
+  languageName: node
+  linkType: hard
+
 "@nestjs/schematics@npm:^11.0.0, @nestjs/schematics@npm:^11.0.1":
   version: 11.0.9
   resolution: "@nestjs/schematics@npm:11.0.9"
@@ -4893,6 +4905,7 @@ __metadata:
     "@nestjs/passport": ^11.0.5
     "@nestjs/platform-express": ^11.0.1
     "@nestjs/platform-socket.io": ^11.1.10
+    "@nestjs/schedule": ^6.1.1
     "@nestjs/schematics": ^11.0.0
     "@nestjs/swagger": ^8.0.7
     "@nestjs/terminus": ^11.0.0
@@ -6963,6 +6976,13 @@ __metadata:
   version: 5.1.1
   resolution: "@types/lru-cache@npm:5.1.1"
   checksum: e1d6c0085f61b16ec5b3073ec76ad1be4844ea036561c3f145fc19f71f084b58a6eb600b14128aa95809d057d28f1d147c910186ae51219f58366ffd2ff2e118
+  languageName: node
+  linkType: hard
+
+"@types/luxon@npm:~3.7.0":
+  version: 3.7.1
+  resolution: "@types/luxon@npm:3.7.1"
+  checksum: ec5181716f9a744d2be1a4a72c3509670e1030a9271736d95e9e04af075ac6f24f6b35f2934f6d7eab496c1eefd9f81b572ad63fd33fd17a100eb2b315702a77
   languageName: node
   linkType: hard
 
@@ -11128,6 +11148,16 @@ __metadata:
   version: 1.1.1
   resolution: "create-require@npm:1.1.1"
   checksum: a9a1503d4390d8b59ad86f4607de7870b39cad43d929813599a23714831e81c520bddf61bcdd1f8e30f05fd3a2b71ae8538e946eb2786dc65c2bbc520f692eff
+  languageName: node
+  linkType: hard
+
+"cron@npm:4.4.0":
+  version: 4.4.0
+  resolution: "cron@npm:4.4.0"
+  dependencies:
+    "@types/luxon": ~3.7.0
+    luxon: ~3.7.0
+  checksum: b49f93029b8de922ab6b0c316ab8831171d368d4ffaf44892fd2d1e9a47945a36288897b48ae7a4b7c2fee40a8180ae0e9581609c75ad23e89f63af679f7dea6
   languageName: node
   linkType: hard
 
@@ -17607,6 +17637,13 @@ __metadata:
   peerDependencies:
     react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
   checksum: b90a2f53f9d8844002996c7f3f8120259a3a49f91d174a1a12402b7467e75cbeb77ec77bb48712c8ec6dbaa7a8550396a85bad29645586d4d65dd3d874109cac
+  languageName: node
+  linkType: hard
+
+"luxon@npm:~3.7.0":
+  version: 3.7.2
+  resolution: "luxon@npm:3.7.2"
+  checksum: fc115fd6a7acc2adb7df3476d20c672beb2985d2a034294282f2c31de8c07f29a15460f5a2b7dd0107797be0dab545ddbc64862662b059fb18c1931a726064f4
   languageName: node
   linkType: hard
 

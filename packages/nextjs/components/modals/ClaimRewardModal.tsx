@@ -28,7 +28,7 @@ const ClaimRewardModal: React.FC<ClaimRewardModalProps> = ({ isOpen, onClose, we
 
   // Get specific week data
   const weekData = claimSummary?.weeks.find(w => w.week === week);
-  const zenPrice = claimSummary?.zenPrice ?? 0;
+  const weekZenPrice = weekData && weekData.rewardZen > 0 ? weekData.rewardUsd / weekData.rewardZen : 0;
 
   const handleClose = () => {
     setState("default");
@@ -146,7 +146,7 @@ const ClaimRewardModal: React.FC<ClaimRewardModalProps> = ({ isOpen, onClose, we
 
                   {/* Price info */}
                   <span className="font-barlow text-base text-grey-600">
-                    ~${weekData.rewardUsd.toFixed(2)} (1 ZEN = ${zenPrice.toFixed(2)})
+                    ~${weekData.rewardUsd.toFixed(2)} (1 ZEN = ${weekZenPrice.toFixed(2)})
                   </span>
 
                   {/* Divider with "To" */}

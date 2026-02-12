@@ -121,7 +121,6 @@ export class RewardService {
     if (!user) return [];
 
     const completedWeeks = this.getCompletedWeeks();
-    const zenPrice = await this.priceService.getZenPrice();
 
     const claimableWeeks: ClaimableWeek[] = [];
 
@@ -142,33 +141,48 @@ export class RewardService {
       // Skip if no rank or rank > 100
       if (!rank || rank > 100) continue;
 
-      const rewardUsd = calculateRewardUsd(rank);
-      const rewardZen = zenPrice > 0 ? rewardUsd / zenPrice : 0;
+      // If already claimed, use data from ClaimHistory
+      if (existingClaim) {
+        claimableWeeks.push({
+          week,
+          rank: existingClaim.rank,
+          rewardUsd: existingClaim.rewardUsd,
+          rewardZen: existingClaim.rewardZen,
+          isClaimed: true,
+          txHash: existingClaim.txHash,
+        });
+      } else {
+        // Not claimed yet, calculate reward
+        const zenPrice = await this.priceService.getZenPriceForWeek(week);
+        const rewardUsd = calculateRewardUsd(rank);
+        const rewardZen = zenPrice > 0 ? rewardUsd / zenPrice : 0;
 
-      claimableWeeks.push({
-        week,
-        rank,
-        rewardUsd,
-        rewardZen,
-        isClaimed: !!existingClaim,
-      });
+        claimableWeeks.push({
+          week,
+          rank,
+          rewardUsd,
+          rewardZen,
+          isClaimed: false,
+        });
+      }
     }
 
     return claimableWeeks;
   }
-
   /**
    * Get claim summary for a user
    */
   async getClaimSummary(commitment: string): Promise<ClaimSummary> {
     const weeks = await this.getClaimableWeeks(commitment);
-    const zenPrice = await this.priceService.getZenPrice();
 
     // Only count unclaimed weeks for totals
     const unclaimedWeeks = weeks.filter((w) => !w.isClaimed);
 
     const totalUsd = unclaimedWeeks.reduce((sum, w) => sum + w.rewardUsd, 0);
     const totalZen = unclaimedWeeks.reduce((sum, w) => sum + w.rewardZen, 0);
+
+    // Get current ZEN price for display (not for calculation)
+    const zenPrice = await this.priceService.getZenPrice();
 
     return {
       weeks,
@@ -181,8 +195,8 @@ export class RewardService {
   /**
    * Convert USD to ZEN
    */
-  async convertUsdToZen(usd: number): Promise<number> {
-    const zenPrice = await this.priceService.getZenPrice();
+  async convertUsdToZen(usd: number, week: number): Promise<number> {
+    const zenPrice = await this.priceService.getZenPriceForWeek(week);
     if (zenPrice <= 0) {
       this.logger.error('ZEN price is 0 or unavailable');
       return 0;

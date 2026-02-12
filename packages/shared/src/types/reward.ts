@@ -7,6 +7,7 @@ export interface ClaimableWeek {
   rewardUsd: number;
   rewardZen: number;
   isClaimed: boolean;
+  txHash?: string;
 }
 
 /**
@@ -18,13 +19,6 @@ export interface ClaimSummary {
   totalZen: number;
   zenPrice: number;
 }
-
-// /**
-//  * Claim request payload
-//  */
-// export interface ClaimRequest {
-//   toAddress: string;
-// }
 
 /**
  * Claim response

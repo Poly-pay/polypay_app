@@ -9,21 +9,9 @@ interface RatingItemProps {
   points: number;
   isCurrentUser?: boolean;
   isSticky?: boolean;
-  isClaimed?: boolean;
-  showClaimButton?: boolean;
-  onClaim?: () => void;
 }
 
-export const RatingItem = ({
-  rank,
-  commitment,
-  points,
-  isCurrentUser = false,
-  isSticky = false,
-  isClaimed = false,
-  showClaimButton = false,
-  onClaim,
-}: RatingItemProps) => {
+export const RatingItem = ({ rank, commitment, points, isCurrentUser = false, isSticky = false }: RatingItemProps) => {
   const avatarSrc = getAvatarByCommitment(commitment);
 
   // Shorten commitment for display
@@ -77,31 +65,12 @@ export const RatingItem = ({
       </div>
 
       {/* Points - flex-1 when no claim button, 25% when has claim button */}
-      <div
-        className={`flex items-center justify-end gap-1 px-2 ${
-          isCurrentUser && isSticky && showClaimButton ? "w-[25%]" : "flex-1"
-        }`}
-      >
+      <div className="flex items-center justify-end gap-1 px-2 flex-1">
         <Image src="/leader-board/star-point.svg" width={24} height={24} alt="points" />
         <span className="font-barlow font-semibold text-base tracking-[-0.005em] text-grey-1000">
           {points.toLocaleString()}
         </span>
       </div>
-
-      {/* Claim Button - only show when isCurrentUser AND isSticky AND showClaimButton */}
-      {isCurrentUser && isSticky && showClaimButton && (
-        <div className="w-[15%] flex items-center justify-center px-2 ml-2">
-          <button
-            onClick={onClaim}
-            disabled={isClaimed}
-            className={`min-w-[90px] h-[36px] py-2 rounded-lg font-barlow font-medium text-sm leading-5 tracking-[-0.04em] transition-colors bg-grey-1000 text-white ${
-              isClaimed ? "opacity-50 cursor-not-allowed" : "hover:bg-grey-950"
-            }`}
-          >
-            {isClaimed ? "Claimed" : "Claim"}
-          </button>
-        </div>
-      )}
     </div>
   );
 };
