@@ -4,6 +4,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import axiosRetry from 'axios-retry';
 import { PriceController } from './price.controller';
 import { PriceService } from './price.service';
+import { PriceScheduler } from './price.scheduler';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { PriceService } from './price.service';
     }),
   ],
   controllers: [PriceController],
-  providers: [PriceService],
+  providers: [PriceService, PriceScheduler],
   exports: [PriceService],
 })
 export class PriceModule {

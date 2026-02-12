@@ -4,7 +4,7 @@
 export const CAMPAIGN_START = new Date("2026-02-06T12:00:00.000Z");
 
 // Total campaign weeks
-export const TOTAL_CAMPAIGN_WEEKS = 6;
+export const TOTAL_CAMPAIGN_WEEKS = 4;
 
 // Weekly reward pool in USD
 export const WEEKLY_REWARD_POOL = 700;

@@ -267,6 +267,16 @@ model ClaimHistory {
   @@map("claim_histories")
 }
 
+model WeeklyZenPrice {
+  id         Int      @id @default(autoincrement())
+  week       Int      @unique
+  price      Float
+  capturedAt DateTime @map("captured_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("weekly_zen_prices")
+}
+
 enum TxType {
   TRANSFER
   ADD_SIGNER

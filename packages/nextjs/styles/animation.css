@@ -25,6 +25,16 @@
   }
 }
 
+/* Progress bar stripe animation */
+@keyframes stripe-move {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 14.14px 0;
+  }
+}
+
 .customtable-animated-div {
   animation-duration: 0.5s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -42,6 +52,10 @@
 /* Smooth height transition for content area */
 .animate-height-smooth {
   transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-stripe {
+  animation: stripe-move 1s linear infinite;
 }
 
 /* Expand/Collapse animation for transaction rows */

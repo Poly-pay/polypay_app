@@ -16,6 +16,7 @@ import { FeatureRequestModule } from './feature-request/feature-request.module';
 import { AdminModule } from './admin/admin.module';
 import { QuestModule } from './quest/quest.module';
 import { RewardModule } from './reward/reward.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { RewardModule } from './reward/reward.module';
     AdminModule,
     QuestModule,
     RewardModule,
+    ScheduleModule.forRoot(),
   ],
 })
 export class AppModule {}
