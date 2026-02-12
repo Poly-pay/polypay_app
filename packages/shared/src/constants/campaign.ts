@@ -1,7 +1,8 @@
 // ==================== Campaign Config ====================
 
 // Campaign start date
-export const CAMPAIGN_START = new Date("2026-01-06T12:00:00.000Z");
+// export const CAMPAIGN_START = new Date("2026-01-06T12:00:00.000Z");
+export const CAMPAIGN_START = new Date("2026-01-23T12:00:00.000Z");
 
 // Total campaign weeks
 export const TOTAL_CAMPAIGN_WEEKS = 4;
