@@ -168,10 +168,11 @@ const QuestIntroModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         {/* Footer */}
         <div className="flex items-center w-full px-4 py-4 pl-5 gap-[7px] bg-grey-50 border-t border-grey-200 mt-4">
           <Button
-            onClick={handleClose}
-            className="flex-1 h-9 bg-grey-100 hover:bg-grey-200 text-grey-1000 font-barlow font-medium text-sm leading-5 tracking-[-0.04em] rounded-lg transition-colors"
+            onClick={() => window.open("https://q3labs.gitbook.io/polypay-docs/quest-and-leaderboard", "_blank")}
+            className="flex-1 h-9 bg-grey-200 hover:bg-grey-300 text-grey-1000 font-barlow font-medium text-sm leading-5 tracking-[-0.04em] rounded-lg transition-colors"
           >
-            Close
+            <Image src={"/icons/misc/book.svg"} width={20} height={20} alt="Book" />
+            Learn more
           </Button>
           <Button
             onClick={handleNext}
