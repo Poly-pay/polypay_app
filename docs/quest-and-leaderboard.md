@@ -2,11 +2,11 @@
 
 ## Overview
 
-Polypay Quest is a 6-week campaign where users earn points by creating accounts and making transactions. Top performers on the weekly leaderboard receive ZEN token rewards.
+Polypay Quest is a 4-week campaign where users earn points by creating accounts and making transactions. Top performers on the weekly leaderboard receive ZEN token rewards.
 
 **Campaign Details:**
 - **Start Date:** February 6, 2026 at 12:00 UTC
-- **Duration:** 6 weeks
+- **Duration:** 4 weeks
 - **Weekly Reward Pool:** $700 USD (paid in ZEN tokens)
 
 ---
@@ -49,7 +49,7 @@ Weekly rewards are distributed to the Top 100 users:
 | 51st - 100th | 0.3% each | $2.10 |
 | > 100th | 0% | $0 |
 
-Rewards are converted to ZEN tokens at the current market price.
+Rewards are converted to ZEN tokens at the fixed price captured at the end of each week.
 
 ---
 
@@ -78,3 +78,6 @@ A: Unclaimed rewards remain available. There is no expiration.
 
 **Q: How is my rank calculated?**
 A: Rank is based on total points earned during that week. Higher points = higher rank.
+
+**Q: How is the ZEN conversion rate determined?**
+A: The ZEN price is captured at 11:00 UTC on the last day of each week (Friday). This fixed price ensures consistent rewards regardless of when you claim.
