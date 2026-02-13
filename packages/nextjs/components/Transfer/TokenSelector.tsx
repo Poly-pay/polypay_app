@@ -2,11 +2,12 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { SUPPORTED_TOKENS, Token } from "@polypay/shared";
+import { ResolvedToken } from "@polypay/shared";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 
 interface TokenSelectorProps {
-  selectedToken: Token;
-  onSelect: (token: Token) => void;
+  selectedToken: ResolvedToken;
+  onSelect: (token: ResolvedToken) => void;
   disabled?: boolean;
 }
 
@@ -16,6 +17,7 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
   const buttonRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { tokens } = useNetworkTokens();
 
   useEffect(() => {
     if (isOpen && buttonRef.current && popoverRef.current) {
@@ -43,7 +45,7 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  const handleTokenSelect = (token: Token) => {
+  const handleTokenSelect = (token: ResolvedToken) => {
     onSelect(token);
     setIsOpen(false);
   };
@@ -88,7 +90,7 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
 
           {/* Token list */}
           <div className="flex flex-col">
-            {SUPPORTED_TOKENS.map(token => (
+            {tokens.map(token => (
               <div
                 key={token.address}
                 onClick={() => handleTokenSelect(token)}

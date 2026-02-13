@@ -6,11 +6,13 @@ import { formatCampaignStartDate, getAvailableWeeks, getCurrentWeek, getLastComp
 import type { LeaderboardFilter } from "@polypay/shared";
 import { NextPage } from "next";
 import { SectionAvatar } from "~~/components/leader-board";
+import { ClaimSection } from "~~/components/leader-board/ClaimSection";
 import { LeaderBoardTable } from "~~/components/leader-board/LeaderBoardTable";
+import { QuestFloatingButton } from "~~/components/quest/QuestFloatingButton";
 import { useModalApp } from "~~/hooks";
 import { useClaimSummary } from "~~/hooks/api/useClaim";
 
-const WEEKS = [1, 2, 3, 4, 5, 6];
+const WEEKS = [1, 2, 3, 4];
 
 const LeaderBoardPage: NextPage = () => {
   const [filter, setFilter] = useState<LeaderboardFilter>("weekly");
@@ -32,12 +34,6 @@ const LeaderBoardPage: NextPage = () => {
 
   // Check if selected week has reward (claimed or not)
   const selectedWeekData = claimSummary?.weeks.find(w => w.week === selectedWeek);
-  const isWeekClaimed = selectedWeekData?.isClaimed ?? false;
-  const hasRewardForSelectedWeek = selectedWeekData && selectedWeekData.rewardZen > 0;
-
-  // Show claim button when viewing a completed week that has reward (show "Claimed" if already claimed)
-  const showClaimButton =
-    filter === "weekly" && lastCompletedWeek !== null && selectedWeek <= lastCompletedWeek && hasRewardForSelectedWeek;
 
   // Get week param only when filter is weekly
   const weekParam = filter === "weekly" ? selectedWeek : undefined;
@@ -117,6 +113,23 @@ const LeaderBoardPage: NextPage = () => {
             </div>
           </div>
         )}
+
+        {/* Claim Section - Only show when filter is "weekly" */}
+        {filter === "weekly" && (
+          <ClaimSection
+            week={selectedWeek}
+            claimData={
+              selectedWeekData
+                ? {
+                    isClaimed: selectedWeekData.isClaimed,
+                    rewardZen: selectedWeekData.rewardZen,
+                    txHash: selectedWeekData.txHash,
+                  }
+                : undefined
+            }
+            onClaim={handleClaim}
+          />
+        )}
       </div>
 
       {/* Content */}
@@ -132,16 +145,12 @@ const LeaderBoardPage: NextPage = () => {
         ) : (
           <>
             <SectionAvatar filter={filter} week={weekParam} />
-            <LeaderBoardTable
-              filter={filter}
-              week={weekParam}
-              isClaimed={isWeekClaimed}
-              showClaimButton={showClaimButton}
-              onClaim={handleClaim}
-            />
+            <LeaderBoardTable filter={filter} week={weekParam} />
           </>
         )}
       </div>
+
+      <QuestFloatingButton />
     </div>
   );
 };

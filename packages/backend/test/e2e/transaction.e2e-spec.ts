@@ -29,7 +29,7 @@ import {
 } from '@polypay/shared';
 
 // Timeout 5 minutes for blockchain calls
-jest.setTimeout(300000);
+jest.setTimeout(600000); 
 
 describe('Transaction E2E', () => {
   let signerA: TestSigner;

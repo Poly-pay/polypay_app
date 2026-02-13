@@ -91,15 +91,42 @@ async function seedQuests() {
 }
 
 /**
+ * Seed weekly ZEN prices for testing
+ */
+async function seedWeeklyZenPrices() {
+  console.log('💰 Seeding weekly ZEN prices...');
+
+  const prices = [
+    { week: 1, price: 8.5 },
+    { week: 2, price: 9.2 },
+  ];
+
+  for (const { week, price } of prices) {
+    await prisma.weeklyZenPrice.upsert({
+      where: { week },
+      update: {
+        price,
+        capturedAt: getDateInWeek(week, 6),
+      },
+      create: {
+        week,
+        price,
+        capturedAt: getDateInWeek(week, 6),
+      },
+    });
+  }
+
+  console.log('✅ Seeded weekly ZEN prices: Week1=$8.5, Week2=$9.2');
+}
+
+/**
  * Seed leaderboard test data
- * 
+ *
  * Test cases covered:
- * - Week 1: Your rank 1 (10% reward)
- * - Week 2: Your rank 5 (4% reward) 
- * - Week 3: Your rank 15 (2% reward - tier 6-20)
- * - Week 4: Your rank 35 (~0.83% reward - tier 21-50)
- * - Week 5: Current week (no claim)
- * - Week 6: Future week (disabled)
+ * - Week 1: Your rank 1 (10% reward = $70 / $8.5 = ~8.24 ZEN)
+ * - Week 2: Your rank 5 (4% reward = $28 / $9.2 = ~3.04 ZEN)
+ * - Week 3: Current week (timer counting, claim disabled)
+ * - Week 4: Future week (disabled)
  */
 async function seedLeaderboardData() {
   const quests = await prisma.quest.findMany({
@@ -113,8 +140,12 @@ async function seedLeaderboardData() {
     return;
   }
 
-  const questFirstTx = quests.find((q) => q.code === QuestCode.ACCOUNT_FIRST_TX)!;
-  const questSuccessfulTx = quests.find((q) => q.code === QuestCode.SUCCESSFUL_TX)!;
+  const questFirstTx = quests.find(
+    (q) => q.code === QuestCode.ACCOUNT_FIRST_TX,
+  )!;
+  const questSuccessfulTx = quests.find(
+    (q) => q.code === QuestCode.SUCCESSFUL_TX,
+  )!;
 
   console.log('📊 Seeding leaderboard data...');
   console.log('📅 Campaign start:', CAMPAIGN_START.toISOString());
@@ -132,7 +163,7 @@ async function seedLeaderboardData() {
     where: { userId: myUser.id },
   });
 
-  // Week 1: 1000 points -> rank 1 (highest)
+  // Week 1: 1000 points -> rank 1 (highest) - COMPLETED, can claim
   for (let i = 0; i < 10; i++) {
     await prisma.pointHistory.create({
       data: {
@@ -144,7 +175,7 @@ async function seedLeaderboardData() {
     });
   }
 
-  // Week 2: 400 points -> rank 5
+  // Week 2: 400 points -> rank 5 - COMPLETED, can claim
   for (let i = 0; i < 4; i++) {
     await prisma.pointHistory.create({
       data: {
@@ -156,7 +187,7 @@ async function seedLeaderboardData() {
     });
   }
 
-  // Week 3: 300 points -> rank 15
+  // Week 3: 300 points - CURRENT WEEK, timer counting
   for (let i = 0; i < 3; i++) {
     await prisma.pointHistory.create({
       data: {
@@ -168,22 +199,11 @@ async function seedLeaderboardData() {
     });
   }
 
-  // Week 4: 200 points -> rank 35
-  for (let i = 0; i < 2; i++) {
-    await prisma.pointHistory.create({
-      data: {
-        userId: myUser.id,
-        questId: questFirstTx.id,
-        points: questFirstTx.points,
-        earnedAt: getDateInWeek(4, i),
-      },
-    });
-  }
+  // Week 4: No points for myUser - FUTURE WEEK
 
-  // Week 5: No points (current week)
-  // Week 6: No points (future week)
-
-  console.log('✅ Your user: Week1=1000pts(#1), Week2=400pts(#5), Week3=300pts(#15), Week4=200pts(#35)');
+  console.log(
+    '✅ Your user: Week1=1000pts(#1), Week2=400pts(#5), Week3=300pts, Week4=0pts',
+  );
 
   // 2. Create 120 random users with distributed points
   console.log('👥 Creating 120 random users...');
@@ -246,72 +266,20 @@ async function seedLeaderboardData() {
       }
     }
 
-    // Week 3: 14 users with 400+ points (your 300 -> rank 15)
-    if (i < 14) {
-      const week3Points = randomBetween(4, 7);
-      for (let j = 0; j < week3Points; j++) {
-        await prisma.pointHistory.create({
-          data: {
-            userId: user.id,
-            questId: questFirstTx.id,
-            points: questFirstTx.points,
-            earnedAt: getDateInWeek(3, randomBetween(0, 6)),
-          },
-        });
-      }
-    } else {
-      const week3Points = randomBetween(0, 2);
-      for (let j = 0; j < week3Points; j++) {
-        await prisma.pointHistory.create({
-          data: {
-            userId: user.id,
-            questId: questFirstTx.id,
-            points: questFirstTx.points,
-            earnedAt: getDateInWeek(3, randomBetween(0, 6)),
-          },
-        });
-      }
-    }
-
-    // Week 4: 34 users with 250+ points (your 200 -> rank 35)
-    if (i < 34) {
-      const week4Points = randomBetween(3, 6);
-      for (let j = 0; j < week4Points; j++) {
-        await prisma.pointHistory.create({
-          data: {
-            userId: user.id,
-            questId: questSuccessfulTx.id,
-            points: questSuccessfulTx.points,
-            earnedAt: getDateInWeek(4, randomBetween(0, 6)),
-          },
-        });
-      }
-    } else {
-      const week4Points = randomBetween(0, 2);
-      for (let j = 0; j < week4Points; j++) {
-        await prisma.pointHistory.create({
-          data: {
-            userId: user.id,
-            questId: questSuccessfulTx.id,
-            points: questSuccessfulTx.points,
-            earnedAt: getDateInWeek(4, randomBetween(0, 6)),
-          },
-        });
-      }
-    }
-
-    // Week 5: Random points (current week)
-    const week5Points = randomBetween(0, 3);
-    for (let j = 0; j < week5Points; j++) {
+    // Week 3: Random points (current week)
+    const week3Points = randomBetween(0, 5);
+    for (let j = 0; j < week3Points; j++) {
       await prisma.pointHistory.create({
         data: {
           userId: user.id,
           questId: questSuccessfulTx.id,
           points: questSuccessfulTx.points,
-          earnedAt: getDateInWeek(5, randomBetween(0, 2)),
+          earnedAt: getDateInWeek(3, randomBetween(0, 2)),
         },
       });
     }
+
+    // Week 4: No points (future week)
 
     if ((i + 1) % 20 === 0) {
       console.log(`   Created ${i + 1}/${TOTAL_USERS} users...`);
@@ -324,16 +292,22 @@ async function seedLeaderboardData() {
 async function main() {
   console.log('🌱 Starting seed...');
   console.log('');
+  console.log('📅 Campaign: 2026-01-23 to 2026-02-20 (4 weeks)');
+  console.log('📅 Today: 2026-02-12 → Week 3 is current');
+  console.log('');
   console.log('📋 Test cases:');
-  console.log('   Week 1: Your rank #1  → 10% reward ($70)');
-  console.log('   Week 2: Your rank #5  → 4% reward ($28)');
-  console.log('   Week 3: Your rank #15 → 2% reward ($14)');
-  console.log('   Week 4: Your rank #35 → ~0.83% reward (~$5.83)');
-  console.log('   Week 5: Current week  → No claim');
-  console.log('   Week 6: Future week   → Disabled');
+  console.log(
+    '   Week 1: Your rank #1  → 10% reward ($70 / $8.5 = ~8.24 ZEN) - CAN CLAIM',
+  );
+  console.log(
+    '   Week 2: Your rank #5  → 4% reward ($28 / $9.2 = ~3.04 ZEN) - CAN CLAIM',
+  );
+  console.log('   Week 3: Current week  → Timer counting down, claim disabled');
+  console.log('   Week 4: Future week   → Disabled');
   console.log('');
 
   await seedQuests();
+  await seedWeeklyZenPrices();
   await seedLeaderboardData();
 
   console.log('');

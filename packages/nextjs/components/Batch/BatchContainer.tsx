@@ -7,11 +7,11 @@ import EditBatchPopover from "../popovers/EditBatchPopover";
 import { BatchSekeletons } from "../skeletons/BatchSkeletons";
 import TransactionSummary from "./TransactionSummary";
 import { TransactionSummaryDrawer } from "./TransactionSummaryDrawer";
-import { BatchItem, Token, parseTokenAmount } from "@polypay/shared";
-import { getTokenByAddress } from "@polypay/shared";
+import { BatchItem, ResolvedToken, getTokenByAddress, parseTokenAmount } from "@polypay/shared";
 import AddressNamedTooltip from "~~/components/tooltips/AddressNamedTooltip";
 import { useBatchTransaction, useContacts, useModalApp } from "~~/hooks";
 import { useDeleteBatchItem, useMyBatchItems, useUpdateBatchItem } from "~~/hooks/api";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useAccountStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
 import { notification } from "~~/utils/scaffold-eth";
@@ -31,11 +31,20 @@ function CustomCheckbox({ checked, onChange }: { checked: boolean; onChange: () 
 // ==================== Header Component ====================
 function Header() {
   return (
-    <section>
-      <h3 className="text-grey-950 text-4xl">Your Batch</h3>
-      <p className="text-grey-700 text-sm max-w-[490px] mt-3 mb-0">
-        Making bulk transactions will save you time as well as transaction costs. Below is a list of transactions that
-        have been recently added.
+    <section className="flex flex-col items-center text-center">
+      <h3 className="text-grey-950 text-5xl font-bold tracking-wide">
+        <span>YOUR</span>
+        <br />
+        <span className="flex items-center justify-center gap-1">
+          B
+          <Image src="/icons/misc/triangle.svg" alt="A" width={60} height={60} />
+          TCH
+        </span>
+      </h3>
+      <p className="text-grey-700 text-sm mt-3 mb-0">
+        Making bulk transactions will save you time as well as transaction costs.
+        <br />
+        Below is a list of transactions that have been recently added.
       </p>
     </section>
   );
@@ -60,14 +69,18 @@ function BatchTransactions({
   onSelectAll: () => void;
   onSelectItem: (id: string) => void;
   onRemove: (id: string) => void;
-  onEdit: (id: string, data: { recipient: string; amount: string; token: Token; contactId?: string }) => void;
+  onEdit: (id: string, data: { recipient: string; amount: string; token: ResolvedToken; contactId?: string }) => void;
   isLoading?: boolean;
   isRemoving?: boolean;
   accountId: string | null;
 }) {
   const { openModal } = useModalApp();
+  const { network } = useNetworkTokens();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const { data: contacts = [] } = useContacts(accountId);
+
+  // Wrapper function for getTokenByAddress with network
+  const getToken = useCallback((address: string | null | undefined) => getTokenByAddress(address, network), [network]);
 
   const editButtonRefs = useMemo<Record<string, React.RefObject<HTMLButtonElement | null>>>(() => {
     const refs: Record<string, React.RefObject<HTMLButtonElement | null>> = {};
@@ -76,6 +89,7 @@ function BatchTransactions({
     });
     return refs;
   }, [batchItems]);
+
   if (isLoading) {
     return <BatchSekeletons />;
   }
@@ -116,6 +130,7 @@ function BatchTransactions({
           const isActive = activeItem === item.id;
           const isSelected = selectedItems.has(item.id);
           const isHighlighted = isSelected || isActive;
+          const token = getToken(item.tokenAddress);
 
           const matchedContact = contacts.find(
             contact => contact.address.toLowerCase() === item.recipient.toLowerCase(),
@@ -147,13 +162,8 @@ function BatchTransactions({
               <div
                 className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isHighlighted ? "text-white" : "text-grey-950 group-hover:text-white"}`}
               >
-                <Image
-                  src={getTokenByAddress(item.tokenAddress).icon}
-                  alt={getTokenByAddress(item.tokenAddress).symbol}
-                  width={20}
-                  height={20}
-                />
-                {formatAmount(item.amount, item.tokenAddress)}
+                <Image src={token.icon} alt={token.symbol} width={20} height={20} />
+                {formatAmount(item.amount, network, item.tokenAddress)}
               </div>
 
               {/* Arrow */}
@@ -262,6 +272,10 @@ export default function BatchContainer() {
   const { mutateAsync: updateBatchItem } = useUpdateBatchItem();
   const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useMyBatchItems();
   const { currentAccount } = useAccountStore();
+  const { network } = useNetworkTokens();
+
+  // Wrapper function for getTokenByAddress with network
+  const getToken = useCallback((address: string | null | undefined) => getTokenByAddress(address, network), [network]);
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
@@ -336,7 +350,7 @@ export default function BatchContainer() {
   );
 
   const handleEdit = useCallback(
-    async (id: string, data: { recipient: string; amount: string; token: Token; contactId?: string }) => {
+    async (id: string, data: { recipient: string; amount: string; token: ResolvedToken; contactId?: string }) => {
       try {
         const amountInSmallestUnit = parseTokenAmount(data.amount, data.token.decimals);
 
@@ -372,15 +386,18 @@ export default function BatchContainer() {
 
   const transactionsSummary = useMemo(
     () =>
-      selectedBatchItems.map(item => ({
-        id: item.id,
-        amount: formatAmount(item.amount, item.tokenAddress),
-        recipient: item.recipient,
-        contactName: item.contact?.name,
-        tokenIcon: getTokenByAddress(item.tokenAddress).icon,
-        tokenSymbol: getTokenByAddress(item.tokenAddress).symbol,
-      })),
-    [selectedBatchItems],
+      selectedBatchItems.map(item => {
+        const token = getToken(item.tokenAddress);
+        return {
+          id: item.id,
+          amount: formatAmount(item.amount, network, item.tokenAddress),
+          recipient: item.recipient,
+          contactName: item.contact?.name,
+          tokenIcon: token.icon,
+          tokenSymbol: token.symbol,
+        };
+      }),
+    [selectedBatchItems, getToken],
   );
 
   const handleCloseDrawer = useCallback(() => {

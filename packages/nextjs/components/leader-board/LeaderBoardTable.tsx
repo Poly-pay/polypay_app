@@ -9,18 +9,9 @@ import { useLeaderboardInfinite, useLeaderboardMe } from "~~/hooks/api/useQuest"
 interface LeaderBoardTableProps {
   filter: LeaderboardFilter;
   week?: number;
-  isClaimed?: boolean;
-  showClaimButton?: boolean;
-  onClaim?: () => void;
 }
 
-export const LeaderBoardTable = ({
-  filter,
-  week,
-  isClaimed = false,
-  showClaimButton = false,
-  onClaim,
-}: LeaderBoardTableProps) => {
+export const LeaderBoardTable = ({ filter, week }: LeaderBoardTableProps) => {
   const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useLeaderboardInfinite(filter, week);
 
   const { data: currentUser, isLoading: isLoadingMe } = useLeaderboardMe(filter, week);
@@ -84,9 +75,6 @@ export const LeaderBoardTable = ({
               points={currentUser.totalPoints}
               isCurrentUser
               isSticky
-              isClaimed={isClaimed}
-              showClaimButton={showClaimButton}
-              onClaim={onClaim}
             />
             {/* Gradient overlay */}
             <div
@@ -110,9 +98,6 @@ export const LeaderBoardTable = ({
                 points={item.totalPoints}
                 isCurrentUser={isCurrentUserItem}
                 isSticky={false}
-                isClaimed={isCurrentUserItem ? isClaimed : undefined}
-                showClaimButton={false}
-                onClaim={undefined}
               />
             );
           })}

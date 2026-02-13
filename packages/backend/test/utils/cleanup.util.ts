@@ -14,6 +14,8 @@ export async function truncateAllTables(app: INestApplication): Promise<void> {
   await prisma.transaction.deleteMany({});
   await prisma.accountSigner.deleteMany({});
   await prisma.account.deleteMany({});
+  await prisma.pointHistory.deleteMany({});
+  await prisma.claimHistory.deleteMany({});
   await prisma.user.deleteMany({});
 
   console.log("All tables truncated");

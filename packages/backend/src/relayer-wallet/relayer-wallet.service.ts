@@ -6,7 +6,12 @@ import {
   decodeFunctionData,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { getChain, getContractConfig, NetworkType } from '@polypay/shared';
+import {
+  getChain,
+  getContractConfig,
+  NetworkType,
+  ZERO_ADDRESS,
+} from '@polypay/shared';
 import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
@@ -203,11 +208,10 @@ export class RelayerService {
         if (decoded.functionName === 'batchTransferMulti') {
           const amounts = decoded.args[1] as bigint[];
           const tokenAddresses = decoded.args[2] as string[];
-          const zeroAddress = '0x0000000000000000000000000000000000000000';
 
           for (let i = 0; i < amounts.length; i++) {
             const tokenAddr = tokenAddresses[i].toLowerCase();
-            if (tokenAddr === zeroAddress) {
+            if (tokenAddr === ZERO_ADDRESS) {
               // Native ETH
               requiredBalance = requiredBalance + amounts[i];
             } else {

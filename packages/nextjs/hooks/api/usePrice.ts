@@ -1,5 +1,5 @@
-import { SUPPORTED_TOKENS } from "@polypay/shared";
 import { useQuery } from "@tanstack/react-query";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { priceApi } from "~~/services/api/priceApi";
 
 export const priceKeys = {
@@ -18,9 +18,10 @@ export const usePrices = () => {
 // Helper hook: Get price utilities
 export const useTokenPrices = () => {
   const { data: prices = {}, isLoading, error } = usePrices();
+  const { tokens } = useNetworkTokens();
 
   const getPriceBySymbol = (symbol: string): number => {
-    const token = SUPPORTED_TOKENS.find(t => t.symbol.toUpperCase() === symbol.toUpperCase());
+    const token = tokens.find(t => t.symbol.toUpperCase() === symbol.toUpperCase());
     if (!token) return 0;
     return prices[token.coingeckoId] || 0;
   };
