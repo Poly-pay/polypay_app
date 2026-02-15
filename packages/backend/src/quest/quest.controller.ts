@@ -51,7 +51,7 @@ export class QuestController {
   @ApiQuery({
     name: 'week',
     required: false,
-    description: 'Week number (1-6), only used when filter=weekly',
+    description: 'Week number (1-2), only used when filter=weekly',
     example: 1,
   })
   @ApiResponse({ status: 200, description: 'Top 3 leaderboard entries' })
@@ -84,7 +84,7 @@ export class QuestController {
   @ApiQuery({
     name: 'week',
     required: false,
-    description: 'Week number (1-6), only used when filter=weekly',
+    description: 'Week number (1-2), only used when filter=weekly',
     example: 1,
   })
   @ApiResponse({ status: 200, description: 'Current user rank and points' })
@@ -133,7 +133,7 @@ export class QuestController {
   @ApiQuery({
     name: 'week',
     required: false,
-    description: 'Week number (1-6), only used when filter=weekly',
+    description: 'Week number (1-2), only used when filter=weekly',
     example: 1,
   })
   @ApiResponse({ status: 200, description: 'Paginated leaderboard data' })
@@ -179,7 +179,7 @@ export class QuestController {
   @ApiQuery({
     name: 'week',
     required: false,
-    description: 'Week number (1-6), only used when filter=weekly',
+    description: 'Week number (1-2), only used when filter=weekly',
     example: 1,
   })
   @ApiResponse({ status: 200, description: 'User points data' })

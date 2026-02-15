@@ -19,7 +19,7 @@ export class RewardService {
   ) {}
 
   /**
-   * Get current week number (1-6)
+   * Get current week number (1-2)
    * Returns 0 if campaign hasn't started
    * Returns 7 if campaign has ended
    */
