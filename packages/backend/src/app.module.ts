@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@/config/config.module';
+import { IpRestrictMiddleware } from '@/common/middleware/ip-restrict.middleware';
 import { DatabaseModule } from '@/database/database.module';
 import { ZkVerifyModule } from './zkverify/zkverify.module';
 import { TransactionModule } from './transaction/transaction.module';
@@ -40,4 +41,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(IpRestrictMiddleware).forRoutes('*');
+  }
+}
