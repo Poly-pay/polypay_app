@@ -12,7 +12,7 @@ import { QuestFloatingButton } from "~~/components/quest/QuestFloatingButton";
 import { useModalApp } from "~~/hooks";
 import { useClaimSummary } from "~~/hooks/api/useClaim";
 
-const WEEKS = [1, 2, 3, 4];
+const WEEKS = [1, 2];
 
 const LeaderBoardPage: NextPage = () => {
   const [filter, setFilter] = useState<LeaderboardFilter>("weekly");
