@@ -9,6 +9,9 @@ export const TOTAL_CAMPAIGN_WEEKS = 2;
 // Weekly reward pool in USD
 export const WEEKLY_REWARD_POOL = 700;
 
+// Claim deadline: number of days after a week ends that rewards can still be claimed
+export const CLAIM_DEADLINE_DAYS = 7;
+
 // ==================== Reward Percentages ====================
 
 // Reward percentages by rank (top 1-5)
@@ -119,6 +122,24 @@ export function getAvailableWeeks(): number[] {
 export function isWeekAvailable(week: number): boolean {
   const availableWeeks = getAvailableWeeks();
   return availableWeeks.includes(week);
+}
+
+/**
+ * Get the claim deadline for a given week.
+ * Users must claim before this date or the reward expires.
+ */
+export function getClaimDeadline(week: number): Date {
+  const { end } = getWeekDateRange(week);
+  end.setDate(end.getDate() + CLAIM_DEADLINE_DAYS);
+  return end;
+}
+
+/**
+ * Check if a week's claim has expired
+ */
+export function isClaimExpired(week: number): boolean {
+  const deadline = getClaimDeadline(week);
+  return new Date() > deadline;
 }
 
 /**

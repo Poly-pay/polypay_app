@@ -7,6 +7,8 @@ export interface ClaimableWeek {
   rewardUsd: number;
   rewardZen: number;
   isClaimed: boolean;
+  isExpired: boolean;
+  claimDeadline: string;
   txHash?: string;
 }
 
