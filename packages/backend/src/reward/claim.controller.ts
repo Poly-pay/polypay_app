@@ -20,7 +20,13 @@ import { User } from '@/generated/prisma/client';
 import { RewardService } from './reward.service';
 import { ZenTransferService } from './zen-transfer.service';
 import { PrismaService } from '@/database/prisma.service';
-import { ClaimRequest, ClaimResponse, ClaimSummary } from '@polypay/shared';
+import {
+  ClaimRequest,
+  ClaimResponse,
+  ClaimSummary,
+  isClaimExpired,
+  getClaimDeadline,
+} from '@polypay/shared';
 import { isAddress } from 'viem';
 
 @ApiTags('claims')
@@ -92,6 +98,13 @@ export class ClaimController {
 
     if (weekData.isClaimed) {
       throw new BadRequestException(`Week ${week} already claimed`);
+    }
+
+    if (isClaimExpired(week)) {
+      const deadline = getClaimDeadline(week);
+      throw new BadRequestException(
+        `Claim for week ${week} has expired. Deadline was ${deadline.toISOString()}`,
+      );
     }
 
     if (weekData.rewardZen <= 0) {
