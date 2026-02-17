@@ -7,6 +7,8 @@ import {
   CAMPAIGN_START,
   TOTAL_CAMPAIGN_WEEKS,
   calculateRewardUsd,
+  getClaimDeadline,
+  isClaimExpired,
 } from '@polypay/shared';
 
 @Injectable()
@@ -141,6 +143,9 @@ export class RewardService {
       // Skip if no rank or rank > 100
       if (!rank || rank > 100) continue;
 
+      const expired = isClaimExpired(week);
+      const claimDeadline = getClaimDeadline(week).toISOString();
+
       // If already claimed, use data from ClaimHistory
       if (existingClaim) {
         claimableWeeks.push({
@@ -149,10 +154,12 @@ export class RewardService {
           rewardUsd: existingClaim.rewardUsd,
           rewardZen: existingClaim.rewardZen,
           isClaimed: true,
+          isExpired: expired,
+          claimDeadline,
           txHash: existingClaim.txHash,
         });
-      } else {
-        // Not claimed yet, calculate reward
+      } else if (!expired) {
+        // Not claimed yet and not expired, calculate reward
         const zenPrice = await this.priceService.getZenPriceForWeek(week);
         const rewardUsd = calculateRewardUsd(rank);
         const rewardZen = zenPrice > 0 ? rewardUsd / zenPrice : 0;
@@ -163,6 +170,8 @@ export class RewardService {
           rewardUsd,
           rewardZen,
           isClaimed: false,
+          isExpired: false,
+          claimDeadline,
         });
       }
     }
