@@ -6,6 +6,7 @@ import ModalContainer from "./ModalContainer";
 import { useWalletClient } from "wagmi";
 import { Button } from "~~/components/ui/button";
 import { useClaimRewards, useClaimSummary } from "~~/hooks/api/useClaim";
+import { formatErrorMessage } from "~~/lib/form/utils";
 import { ModalProps } from "~~/types/modal";
 import { chain } from "~~/utils/network-config";
 
@@ -63,7 +64,7 @@ const ClaimRewardModal: React.FC<ClaimRewardModalProps> = ({ isOpen, onClose, we
       setTxHash(result.txHash);
       setState("success");
     } catch (error: any) {
-      setErrorMessage(error?.message || "Failed to claim rewards. Please try again.");
+      setErrorMessage(formatErrorMessage(error, "Failed to claim rewards. Please try again."));
       setState("error");
     }
   };

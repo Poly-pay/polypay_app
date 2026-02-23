@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { userKeys } from "../api";
 import { useAuthProof } from "./useAuthProof";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatErrorMessage } from "~~/lib/form/utils";
 import { authApi } from "~~/services/api";
 import { useIdentityStore } from "~~/services/store";
 
@@ -52,7 +53,7 @@ export const useAuth = () => {
 
       return true;
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      setError(formatErrorMessage(err, "Login failed"));
       return false;
     } finally {
       setIsLoggingIn(false);

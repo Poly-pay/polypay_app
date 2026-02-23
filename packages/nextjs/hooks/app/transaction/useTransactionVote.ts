@@ -16,6 +16,7 @@ import { useWalletClient } from "wagmi";
 import { accountKeys, useMetaMultiSigWallet, userKeys } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
+import { formatErrorMessage } from "~~/lib/form/utils";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -175,7 +176,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Approve error:", error);
-      notification.error(error.message || "Failed to approve");
+      notification.error(formatErrorMessage(error, "Failed to approve"));
     } finally {
       setIsLoading(false);
       setLoadingState("");
@@ -207,7 +208,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Deny error:", error);
-      notification.error(error.message || "Failed to deny");
+      notification.error(formatErrorMessage(error, "Failed to deny"));
     } finally {
       setIsLoading(false);
       setLoadingState("");
@@ -245,7 +246,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Execute error:", error);
-      notification.error(error.message || "Failed to execute");
+      notification.error(formatErrorMessage(error, "Failed to execute"));
     } finally {
       setIsLoading(false);
       setLoadingState("");

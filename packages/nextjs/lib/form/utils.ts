@@ -94,13 +94,13 @@ export function getDirtyFields<T extends FieldValues>(form: UseFormReturn<T>): P
 /**
  * Format error message for display
  */
-export function formatErrorMessage(error: unknown): string {
+export function formatErrorMessage(error: unknown, defaultMessage?: string): string {
   if (typeof error === "string") return error;
-  if (error instanceof Error) return error.message;
-  if (typeof error === "object" && error !== null && "message" in error) {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error && error.message) {
     return String(error.message);
   }
-  return "An unknown error occurred";
+  return defaultMessage ?? "An unknown error occurred";
 }
 
 /**

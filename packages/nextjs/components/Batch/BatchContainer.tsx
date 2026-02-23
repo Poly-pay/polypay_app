@@ -397,7 +397,7 @@ export default function BatchContainer() {
           tokenSymbol: token.symbol,
         };
       }),
-    [selectedBatchItems, getToken],
+    [selectedBatchItems, getToken, network],
   );
 
   const handleCloseDrawer = useCallback(() => {

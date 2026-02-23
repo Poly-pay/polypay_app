@@ -5,6 +5,7 @@ import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
+import { formatErrorMessage } from "~~/lib/form/utils";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface TransferParams {
@@ -101,7 +102,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Transfer error:", error);
-      notification.error(error.message || "Failed to create transfer");
+      notification.error(formatErrorMessage(error, "Failed to create transfer"));
     } finally {
       setIsLoading(false);
       setLoadingState("");
