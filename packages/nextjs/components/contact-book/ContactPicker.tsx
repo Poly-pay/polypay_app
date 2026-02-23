@@ -4,6 +4,7 @@ import { ContactBookUserIcon } from "../icons/ContactBookUserIcon";
 import { Contact } from "@polypay/shared";
 import { Search, X } from "lucide-react";
 import { useContacts, useGroups } from "~~/hooks";
+import { useClickOutside } from "~~/hooks/useClickOutside";
 
 interface ContactPickerProps {
   accountId: string | null;
@@ -35,22 +36,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
     }
   }, [isOpen]);
 
-  // Close picker when clicking outside
-  useEffect(() => {
-    const handleClickOutside: (event: MouseEvent) => void = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+  useClickOutside(pickerRef, () => setIsOpen(false), { isActive: isOpen });
 
   // Filter contacts by search term
   const filteredContacts = contacts.filter(
