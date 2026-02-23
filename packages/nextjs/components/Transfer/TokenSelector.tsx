@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ResolvedToken } from "@polypay/shared";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
+import { useClickOutside } from "~~/hooks/useClickOutside";
 
 interface TokenSelectorProps {
   selectedToken: ResolvedToken;
@@ -31,19 +32,7 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
     }
   }, [isOpen]);
 
-  // Close popover when clicking outside
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+  useClickOutside(containerRef, () => setIsOpen(false), { isActive: isOpen });
 
   const handleTokenSelect = (token: ResolvedToken) => {
     onSelect(token);

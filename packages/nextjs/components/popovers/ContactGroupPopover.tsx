@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { Checkbox, SearchInput } from "../Common";
 import { ContactGroup } from "@polypay/shared";
 import { useContact, useGroups } from "~~/hooks/api/useContactBook";
+import { useClickOutside } from "~~/hooks/useClickOutside";
 
 interface ContactGroupPopoverProps {
   contactId: string;
@@ -26,7 +27,7 @@ export function ContactGroupPopover({
   selectedGroup,
   selectedGroupIds,
   onSelect,
-  arrowSrc = "/batch/popover-arrow.svg",
+  arrowSrc = "/icons/arrows/popover-arrow.svg",
   arrowWidth = 28,
   arrowHeight = 28,
   popoverClassName,
@@ -38,18 +39,7 @@ export function ContactGroupPopover({
   const [searchTerm, setSearchTerm] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  useClickOutside(rootRef, () => setOpen(false), { isActive: open });
 
   const contactGroupIds = selectedGroupIds || contact?.groups?.map(entry => entry.group?.id).filter(Boolean) || [];
   const isLoading = isLoadingContact || isLoadingGroups;

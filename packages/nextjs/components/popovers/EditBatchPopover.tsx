@@ -9,6 +9,7 @@ import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { useContacts } from "~~/hooks";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useZodForm } from "~~/hooks/form";
+import { useClickOutside } from "~~/hooks/useClickOutside";
 import { editBatchSchema } from "~~/lib/form";
 import { useAccountStore } from "~~/services/store";
 import { formatAddress } from "~~/utils/format";
@@ -67,23 +68,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
     }
   }, [isOpen, triggerRef]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(event.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose, triggerRef]);
+  useClickOutside(popoverRef, onClose, { isActive: isOpen, triggerRef });
 
   const handleContactSelect = (selectedAddress: string, name: string, contactId: string) => {
     form.setValue("recipient", selectedAddress, { shouldValidate: true });
