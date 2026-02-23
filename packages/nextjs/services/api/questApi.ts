@@ -9,6 +9,21 @@ import type {
   UserPoints,
 } from "@polypay/shared";
 
+type LeaderboardParamsExtra = { limit?: number; cursor?: string };
+
+function buildLeaderboardParams(
+  filter: LeaderboardFilter,
+  week?: number,
+  extra?: LeaderboardParamsExtra,
+): URLSearchParams {
+  const params = new URLSearchParams();
+  params.append("filter", filter);
+  if (filter === "weekly" && week != null) params.append("week", week.toString());
+  if (extra?.limit != null) params.append("limit", extra.limit.toString());
+  if (extra?.cursor) params.append("cursor", extra.cursor);
+  return params;
+}
+
 export const questApi = {
   /**
    * Get all active quests
@@ -22,12 +37,7 @@ export const questApi = {
    * Get top 3 leaderboard entries
    */
   getLeaderboardTop: async (filter: LeaderboardFilter = "all-time", week?: number): Promise<LeaderboardEntry[]> => {
-    const params = new URLSearchParams();
-    params.append("filter", filter);
-    if (filter === "weekly" && week) {
-      params.append("week", week.toString());
-    }
-
+    const params = buildLeaderboardParams(filter, week);
     const { data } = await apiClient.get<LeaderboardEntry[]>(
       `${API_ENDPOINTS.quests.leaderboardTop}?${params.toString()}`,
     );
@@ -38,12 +48,7 @@ export const questApi = {
    * Get current user's leaderboard position
    */
   getLeaderboardMe: async (filter: LeaderboardFilter = "all-time", week?: number): Promise<LeaderboardMeResponse> => {
-    const params = new URLSearchParams();
-    params.append("filter", filter);
-    if (filter === "weekly" && week) {
-      params.append("week", week.toString());
-    }
-
+    const params = buildLeaderboardParams(filter, week);
     const { data } = await apiClient.get<LeaderboardMeResponse>(
       `${API_ENDPOINTS.quests.leaderboardMe}?${params.toString()}`,
     );
@@ -59,16 +64,7 @@ export const questApi = {
     limit: number = DEFAULT_PAGE_SIZE,
     cursor?: string,
   ): Promise<PaginatedResponse<LeaderboardEntry>> => {
-    const params = new URLSearchParams();
-    params.append("filter", filter);
-    params.append("limit", limit.toString());
-    if (filter === "weekly" && week) {
-      params.append("week", week.toString());
-    }
-    if (cursor) {
-      params.append("cursor", cursor);
-    }
-
+    const params = buildLeaderboardParams(filter, week, { limit, cursor });
     const { data } = await apiClient.get<PaginatedResponse<LeaderboardEntry>>(
       `${API_ENDPOINTS.quests.leaderboard}?${params.toString()}`,
     );
@@ -79,12 +75,7 @@ export const questApi = {
    * Get current user's points and history
    */
   getMyPoints: async (filter: LeaderboardFilter = "all-time", week?: number): Promise<UserPoints> => {
-    const params = new URLSearchParams();
-    params.append("filter", filter);
-    if (filter === "weekly" && week) {
-      params.append("week", week.toString());
-    }
-
+    const params = buildLeaderboardParams(filter, week);
     const { data } = await apiClient.get<UserPoints>(`${API_ENDPOINTS.quests.myPoints}?${params.toString()}`);
     return data;
   },
