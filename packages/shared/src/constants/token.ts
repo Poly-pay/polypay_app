@@ -46,14 +46,6 @@ export const ZEN_TOKEN: Token = {
 };
 
 // {
-//   address: "0x01c7AEb2A0428b4159c0E333712f40e127aF639E", // USDC Horizen testnet address
-//   symbol: "USDC",
-//   name: "USD Coin",
-//   decimals: 6,
-//   icon: "/token/usdc.svg",
-//   coingeckoId: "usd-coin",
-// },
-// {
 //   address: "0x15d70535a71Dba52b572EbF746c7C2F5806ACd0e", // USDT Horizen testnet address
 //   symbol: "USDT",
 //   name: "Tether USD",
@@ -70,8 +62,25 @@ export const ZEN_TOKEN: Token = {
 //   coingeckoId: "dai",
 // },
 
+// USDC - USD Coin (Horizen testnet / mainnet)
+export const USDC_TOKEN: Token = {
+  addresses: {
+    testnet: "0x01c7AEb2A0428b4159c0E333712f40e127aF639E",
+    mainnet: "0xDF7108f8B10F9b9eC1aba01CCa057268cbf86B6c",
+  },
+  symbol: "USDC",
+  name: "USD Coin",
+  decimals: 6,
+  icon: "/token/usdc.svg",
+  coingeckoId: "usd-coin",
+};
+
 // All supported tokens (base definitions)
-export const SUPPORTED_TOKENS_BASE: Token[] = [NATIVE_ETH, ZEN_TOKEN];
+export const SUPPORTED_TOKENS_BASE: Token[] = [
+  NATIVE_ETH,
+  ZEN_TOKEN,
+  USDC_TOKEN,
+];
 
 // Helper: Get all coingecko IDs
 export function getCoingeckoIds(): string[] {
