@@ -5,7 +5,7 @@ import { Transform } from 'class-transformer';
 export class AnalyticsReportDto {
   @ApiPropertyOptional({
     description: 'Start date (inclusive)',
-    example: '2026-01-01',
+    example: '2026-01-29',
   })
   @IsOptional()
   @IsDateString()
@@ -13,7 +13,7 @@ export class AnalyticsReportDto {
 
   @ApiPropertyOptional({
     description: 'End date (inclusive)',
-    example: '2026-02-01',
+    example: '2027-01-29',
   })
   @IsOptional()
   @IsDateString()

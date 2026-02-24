@@ -4,6 +4,7 @@ import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
+import { formatErrorMessage } from "~~/lib/form/utils";
 import { useIdentityStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -100,7 +101,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Propose batch error:", error);
-      notification.error(error.message || "Failed to propose batch");
+      notification.error(formatErrorMessage(error, "Failed to propose batch"));
     } finally {
       setIsLoading(false);
       setLoadingState("");

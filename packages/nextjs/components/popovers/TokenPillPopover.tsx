@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { ResolvedToken } from "@polypay/shared";
 import { useMetaMultiSigWallet, useTokenPrices } from "~~/hooks";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
+import { useClickOutside } from "~~/hooks/useClickOutside";
 
 interface TokenPillPopoverProps {
   selectedToken: ResolvedToken;
@@ -34,18 +35,7 @@ export function TokenPillPopover({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  useClickOutside(rootRef, () => setOpen(false), { isActive: open });
 
   const getTokenUsdValue = (token: ResolvedToken): string => {
     const balance = parseFloat(balances[token.address] || "0");

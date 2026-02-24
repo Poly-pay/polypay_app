@@ -3,6 +3,7 @@ import { SignerData, TxType, encodeAddSigners, encodeRemoveSigners, encodeUpdate
 import { useWalletClient } from "wagmi";
 import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
+import { formatErrorMessage } from "~~/lib/form/utils";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface UseSignerTransactionOptions {
@@ -107,7 +108,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Failed to add signer:", error);
-      notification.error(error.message || "Failed to add signer");
+      notification.error(formatErrorMessage(error, "Failed to add signer"));
     } finally {
       setIsLoading(false);
       setLoadingState("");
@@ -159,7 +160,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Failed to remove signer:", error);
-      notification.error(error.message || "Failed to remove signer");
+      notification.error(formatErrorMessage(error, "Failed to remove signer"));
     } finally {
       setIsLoading(false);
       setLoadingState("");
@@ -188,7 +189,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Failed to update threshold:", error);
-      notification.error(error.message || "Failed to update threshold");
+      notification.error(formatErrorMessage(error, "Failed to update threshold"));
     } finally {
       setIsLoading(false);
       setLoadingState("");

@@ -7,6 +7,7 @@ import SubmittingStep from "./SubmittingStep";
 import { ActionMode, ExistingSigner, ModalStep, PendingSigner } from "./types";
 import ModalContainer from "~~/components/modals/ModalContainer";
 import { useAccount, useMetaMultiSigWallet, useSignerTransaction } from "~~/hooks";
+import { formatErrorMessage } from "~~/lib/form/utils";
 import { useIdentityStore, useSidebarStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
 import { notification } from "~~/utils/scaffold-eth";
@@ -146,7 +147,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       closeManageAccounts();
     } catch (error: any) {
       console.error("Failed to submit proposal:", error);
-      notification.error(error.message || "Failed to submit proposal");
+      notification.error(formatErrorMessage(error, "Failed to submit proposal"));
       setStep("confirm"); // Back to confirm on error
       setIsSubmitting(false);
     }

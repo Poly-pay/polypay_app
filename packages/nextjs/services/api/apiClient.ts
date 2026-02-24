@@ -2,6 +2,7 @@ import { useIdentityStore } from "../store";
 import { authApi } from "./authApi";
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "~~/constants";
+import { formatErrorMessage } from "~~/lib/form/utils";
 
 const AUTHORIZATION_HEADER = (accessToken: string) => `Bearer ${accessToken}`;
 const ZK_TIMEOUT = 600000; // 10 minutes for ZK proof generation + verification
@@ -103,7 +104,7 @@ apiClient.interceptors.response.use(
       throw new Error("Network Error - Please check your connection");
     } else {
       console.error("❌ Error:", error.message);
-      throw new Error(error.message || "An unexpected error occurred");
+      throw new Error(formatErrorMessage(error, "An unexpected error occurred"));
     }
   },
 );

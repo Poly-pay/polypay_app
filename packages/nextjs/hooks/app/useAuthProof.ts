@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useWalletClient } from "wagmi";
+import { formatErrorMessage } from "~~/lib/form/utils";
 import { createCommitment, createSecret } from "~~/utils/multisig";
 
 interface AuthProofResult {
@@ -69,7 +70,7 @@ export const useAuthProof = () => {
         walletAddress, // For analytics only - NOT stored in database
       };
     } catch (err: any) {
-      setError(err.message || "Failed to generate auth proof");
+      setError(formatErrorMessage(err, "Failed to generate auth proof"));
       return null;
     } finally {
       setIsGenerating(false);
