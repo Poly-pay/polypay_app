@@ -36,4 +36,13 @@ export class AnalyticsReportDto {
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   includeDeny?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Include CLAIM records',
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  includeClaim?: boolean;
 }

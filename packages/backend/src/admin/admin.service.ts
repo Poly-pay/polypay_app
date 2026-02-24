@@ -70,6 +70,7 @@ export class AdminService {
     switch (action) {
       case 'EXECUTE':
       case 'CREATE_ACCOUNT':
+      case 'CLAIM':
         return 'Horizen';
       case 'DENY':
         return '';
@@ -216,6 +217,23 @@ export class AdminService {
       }
     }
 
+    if (dto?.includeClaim) {
+      const claimHistories = await this.prisma.claimHistory.findMany({
+        where: hasDateFilter ? { createdAt: dateFilter } : undefined,
+        orderBy: { createdAt: 'asc' },
+      });
+
+      for (const claim of claimHistories) {
+        records.push({
+          timestamp: claim.createdAt,
+          action: 'CLAIM',
+          userAddress: claim.toAddress,
+          multisigWallet: null,
+          txHash: claim.txHash || 'PENDING',
+        });
+      }
+    }
+
     // 5. EXECUTE records
     const executedTxs = await this.prisma.transaction.findMany({
       where: {
@@ -296,6 +314,8 @@ export class AdminService {
         } else if (record.action === 'CREATE_ACCOUNT') {
           txHash = `${this.explorerConfig.HORIZEN_EXPLORER_ADDRESS}/${record.txHash}`;
         } else if (record.action === 'EXECUTE') {
+          txHash = `${this.explorerConfig.HORIZEN_EXPLORER_TX}/${record.txHash}`;
+        } else if (record.action === 'CLAIM') {
           txHash = `${this.explorerConfig.HORIZEN_EXPLORER_TX}/${record.txHash}`;
         }
       } else if (record.txHash === 'PENDING') {
