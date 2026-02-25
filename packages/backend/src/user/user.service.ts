@@ -81,6 +81,7 @@ export class UserService {
       address: account.address,
       name: account.name,
       threshold: account.threshold,
+      chainId: account.chainId,
       createdAt: account.createdAt,
       updatedAt: account.updatedAt,
       signers: account.signers.map((signer) => ({

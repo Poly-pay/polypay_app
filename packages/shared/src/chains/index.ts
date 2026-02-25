@@ -31,4 +31,3 @@ export const getChainById = (chainId: number) => {
       throw new Error(`Unsupported chainId: ${chainId}`);
   }
 };
-

@@ -174,7 +174,7 @@ export class TransactionService {
           nullifier: dto.nullifier,
           jobId: proofResult.jobId,
           proofStatus: 'PENDING',
-          domainId: getDomainId(),
+          domainId: getDomainId(account.chainId),
           zkVerifyTxHash: proofResult.txHash,
         },
       });
@@ -260,9 +260,10 @@ export class TransactionService {
     dto: ApproveTransactionDto,
     userCommitment: string,
   ) {
-    // 1. Check transaction exists
+    // 1. Check transaction exists (with account for chainId)
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
+      include: { account: true },
     });
 
     if (!transaction) {
@@ -328,7 +329,7 @@ export class TransactionService {
         nullifier: dto.nullifier,
         jobId: proofResult.jobId,
         proofStatus: ProofStatus.PENDING,
-        domainId: getDomainId(),
+        domainId: getDomainId(transaction.account.chainId),
         zkVerifyTxHash: proofResult.txHash,
       },
     });
@@ -410,9 +411,10 @@ export class TransactionService {
    * Deny transaction
    */
   async deny(txId: number, userCommitment: string, userAddress?: string) {
-    // 1. Check transaction exists
+    // 1. Check transaction exists (with account for chainId)
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
+      include: { account: true },
     });
 
     if (!transaction) {
@@ -893,6 +895,7 @@ export class TransactionService {
     // Check transaction exists
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
+      include: { account: true },
     });
 
     if (!transaction) {
@@ -917,6 +920,7 @@ export class TransactionService {
         executionData.to,
         executionData.value,
         executionData.data,
+        transaction.account.chainId,
         executionData.zkProofs,
       );
 

@@ -7,24 +7,31 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import {
-  getChain,
-  getContractConfig,
-  NetworkType,
   ZERO_ADDRESS,
+  getChainById,
+  getContractConfigByChainId,
 } from '@polypay/shared';
 import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
 
+type RelayerChainClient = {
+  chain: any;
+  publicClient: any;
+  walletClient: any;
+  contractConfig: {
+    zkVerifyAddress: `0x${string}`;
+    vkHash: string;
+    poseidonT3Address: `0x${string}` | string;
+  };
+};
+
 @Injectable()
 export class RelayerService {
   private readonly logger = new Logger(RelayerService.name);
-  private account;
-  private publicClient;
-  private walletClient;
-  private chain;
-  private contractConfig;
+  private readonly account;
+  private readonly clientsByChainId = new Map<number, RelayerChainClient>();
 
   constructor(private readonly configService: ConfigService) {
     const privateKey = this.configService.get<string>(
@@ -35,28 +42,47 @@ export class RelayerService {
       throw new Error('RELAYER_WALLET_KEY is not set');
     }
 
-    // Get network config from env
-    const network = (this.configService.get<string>(CONFIG_KEYS.APP_NETWORK) ||
-      'testnet') as NetworkType;
-    this.chain = getChain(network);
-    this.contractConfig = getContractConfig(network);
-
     this.account = privateKeyToAccount(privateKey);
 
-    this.publicClient = createPublicClient({
-      chain: this.chain,
-      transport: http(),
-    });
+    // Initialize clients for all supported chains
+    const supportedChainIds = [2651420, 84532, 26514, 8453];
 
-    this.walletClient = createWalletClient({
-      account: this.account,
-      chain: this.chain,
-      transport: http(),
-    });
+    for (const chainId of supportedChainIds) {
+      const chain = getChainById(chainId);
+      const contractConfig = getContractConfigByChainId(chainId);
+
+      const publicClient = createPublicClient({
+        chain,
+        transport: http(),
+      });
+
+      const walletClient = createWalletClient({
+        account: this.account,
+        chain,
+        transport: http(),
+      });
+
+      this.clientsByChainId.set(chainId, {
+        chain,
+        publicClient,
+        walletClient,
+        contractConfig,
+      });
+    }
 
     this.logger.log(
-      `Relayer initialized with address: ${this.account.address}`,
+      `Relayer initialized with address: ${this.account.address} for chains: ${Array.from(
+        this.clientsByChainId.keys(),
+      ).join(', ')}`,
     );
+  }
+
+  private getChainClient(chainId: number): RelayerChainClient {
+    const client = this.clientsByChainId.get(chainId);
+    if (!client) {
+      throw new Error(`Relayer: unsupported chainId ${chainId}`);
+    }
+    return client;
   }
 
   /**
@@ -65,28 +91,34 @@ export class RelayerService {
   async deployAccount(
     commitments: string[],
     threshold: number,
+    chainId: number,
   ): Promise<{ address: string; txHash: string }> {
+    const { chain, walletClient, publicClient, contractConfig } =
+      this.getChainClient(chainId);
+
     const commitmentsBigInt = commitments.map((c) => BigInt(c));
 
     // Deploy contract
-    const txHash = await this.walletClient.deployContract({
+    const txHash = await walletClient.deployContract({
       abi: METAMULTISIG_ABI,
       bytecode: METAMULTISIG_BYTECODE,
       args: [
-        this.contractConfig.zkVerifyAddress,
-        this.contractConfig.vkHash,
-        BigInt(this.chain.id),
+        contractConfig.zkVerifyAddress,
+        contractConfig.vkHash,
+        BigInt(chain.id),
         commitmentsBigInt,
         BigInt(threshold),
       ],
       account: this.account,
-      chain: this.chain,
+      chain,
     });
 
-    this.logger.log(`Deploy tx sent: ${txHash}`);
+    this.logger.log(
+      `Deploy tx sent on chain ${chainId} for relayer ${this.account.address}: ${txHash}`,
+    );
 
     // Wait for receipt
-    const receipt = await waitForReceiptWithRetry(this.publicClient, txHash);
+    const receipt = await waitForReceiptWithRetry(publicClient, txHash);
 
     if (!receipt.contractAddress) {
       throw new Error('Contract deployment failed - no address returned');
@@ -109,6 +141,7 @@ export class RelayerService {
     to: string,
     value: string,
     data: string,
+    chainId: number,
     zkProofs: {
       commitment: string;
       nullifier: string;
@@ -119,8 +152,10 @@ export class RelayerService {
       index: number;
     }[],
   ): Promise<{ txHash: string }> {
+    const { publicClient, walletClient, chain } = this.getChainClient(chainId);
+
     // 1. Check account ETH balance
-    const balance = await this.publicClient.getBalance({
+    const balance = await publicClient.getBalance({
       address: accountAddress as `0x${string}`,
     });
 
@@ -245,7 +280,7 @@ export class RelayerService {
     for (const [tokenAddress, requiredAmount] of Object.entries(
       erc20Requirements,
     )) {
-      const tokenBalance = await this.publicClient.readContract({
+      const tokenBalance = await publicClient.readContract({
         address: tokenAddress as `0x${string}`,
         abi: [
           {
@@ -291,7 +326,7 @@ export class RelayerService {
     ] as const;
 
     // 3. Estimate gas
-    const gasEstimate = await this.publicClient.estimateContractGas({
+    const gasEstimate = await publicClient.estimateContractGas({
       address: accountAddress as `0x${string}`,
       abi: METAMULTISIG_ABI,
       functionName: 'execute',
@@ -302,20 +337,20 @@ export class RelayerService {
     this.logger.log(`Gas estimate for execute: ${gasEstimate}`);
 
     // 4. Execute
-    const txHash = await this.walletClient.writeContract({
+    const txHash = await walletClient.writeContract({
       address: accountAddress as `0x${string}`,
       abi: METAMULTISIG_ABI,
       functionName: 'execute',
       args,
       account: this.account,
-      chain: this.chain,
+      chain,
       gas: gasEstimate + 50000n,
     });
 
     this.logger.log(`Execute tx sent: ${txHash}`);
 
     // 5. Wait for receipt and verify status
-    const receipt = await waitForReceiptWithRetry(this.publicClient, txHash);
+    const receipt = await waitForReceiptWithRetry(publicClient, txHash);
 
     if (receipt.status === 'reverted') {
       throw new Error(`Transaction reverted on-chain. TxHash: ${txHash}`);
