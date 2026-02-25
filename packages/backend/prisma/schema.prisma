@@ -28,6 +28,7 @@ model Account {
   address       String          @unique
   name          String
   threshold     Int
+  chainId       Int             @default(26514) @map("chain_id")
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
   signers       AccountSigner[]
@@ -107,7 +108,7 @@ model Vote {
   zkVerifyTxHash String?      @map("zkverify_tx_hash")
 
   aggregationId String?  @map("aggregation_id")
-  domainId      Int?     @default(175) @map("domain_id")
+  domainId      Int?     @map("domain_id")
   merkleProof   String[] @map("merkle_proof")
   leafCount     Int?     @map("leaf_count")
   leafIndex     Int?     @map("leaf_index")
