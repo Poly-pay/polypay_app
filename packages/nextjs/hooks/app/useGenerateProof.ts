@@ -2,10 +2,13 @@
 
 import { useCallback } from "react";
 import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
+import { useNetworkGuard } from "./useNetworkGuard";
 import { getPublicKeyXY, hexToByteArray, poseidonHash2 } from "@polypay/shared";
 import { type Hex } from "viem";
-import { useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
+import { useAccountStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
+import { getNetworkMeta } from "~~/utils/network";
 
 export interface GenerateProofResult {
   proof: number[];
@@ -23,6 +26,9 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { secret, commitment } = useIdentityStore();
+  const { currentAccount } = useAccountStore();
+  const { chain } = useAccount();
+  const { isWrongNetwork, targetChainId } = useNetworkGuard();
 
   const { onLoadingStateChange } = options || {};
 
@@ -49,6 +55,15 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
 
       if (!commitment) {
         throw new Error("No commitment found. Please create identity first.");
+      }
+
+      // Ensure wallet is on the same network as the current account before signing.
+      if (currentAccount?.chainId) {
+        const effectiveTargetChainId = targetChainId ?? currentAccount.chainId;
+        if (isWrongNetwork || chain?.id !== effectiveTargetChainId) {
+          const meta = getNetworkMeta(effectiveTargetChainId);
+          throw new Error(`You're on the wrong network. Please switch your wallet to ${meta.name} and try again.`);
+        }
       }
 
       // 1. Verify user is a signer (This is not a proof step, just a UX check. We will check on-chain again)
@@ -115,7 +130,17 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
         // vk
       };
     },
-    [walletClient, metaMultiSigWallet, secret, commitment, setLoadingState],
+    [
+      walletClient,
+      metaMultiSigWallet,
+      secret,
+      commitment,
+      setLoadingState,
+      chain?.id,
+      currentAccount?.chainId,
+      isWrongNetwork,
+      targetChainId,
+    ],
   );
 
   return {

@@ -25,8 +25,15 @@ export default function TransferContainer() {
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
 
+  useEffect(() => {
+    setSelectedToken(nativeEth);
+  }, [nativeEth]);
+
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { balances, isLoading: isLoadingBalances } = useTokenBalances(metaMultiSigWallet?.address);
+  const { balances, isLoading: isLoadingBalances } = useTokenBalances(
+    metaMultiSigWallet?.address,
+    selectedAccount?.chainId,
+  );
   const currentBalance = balances[selectedToken.address] || "0";
 
   const form = useZodForm({

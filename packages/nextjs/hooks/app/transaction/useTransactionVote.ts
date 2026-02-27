@@ -169,6 +169,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
           publicInputs: proofData.publicInputs,
           nullifier: proofData.nullifier,
           userAddress: walletClient.account.address,
+          vk: proofData.vk ? Buffer.from(proofData.vk).toString("base64") : undefined,
         },
       });
 
@@ -234,11 +235,6 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       console.log("Transaction executed:", result.txHash);
       notification.success("Transaction executed successfully!");
 
-      // Show points notification if awarded
-      if (result.pointsAwarded && result.pointsAwarded > 0) {
-        notification.info(`⭐ Claimed ${result.pointsAwarded} points`);
-      }
-
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       queryClient.invalidateQueries({
         queryKey: accountKeys.byAddress(metaMultiSigWallet?.address || ""),
@@ -246,7 +242,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Execute error:", error);
-      notification.error(formatErrorMessage(error, "Failed to execute"));
+      notification.error(formatErrorMessage("Failed to execute"));
     } finally {
       setIsLoading(false);
       setLoadingState("");

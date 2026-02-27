@@ -37,7 +37,7 @@ export default function AccountItem({ account, isSelected, isExpanded, onSelect,
 
   // Balance state
   const [showBalance, setShowBalance] = useState(true);
-  const { balances, isLoading: isLoadingBalances } = useTokenBalances(account.address);
+  const { balances, isLoading: isLoadingBalances } = useTokenBalances(account.address, currentAccount?.chainId);
   const { getPriceBySymbol, isLoading: isLoadingPrices } = useTokenPrices();
 
   const isLoading = isLoadingBalances || isLoadingPrices;

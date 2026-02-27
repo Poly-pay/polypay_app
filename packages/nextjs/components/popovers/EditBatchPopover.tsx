@@ -29,9 +29,9 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { currentAccount: selectedAccount } = useAccountStore();
   const { data: contacts = [] } = useContacts(selectedAccount?.id || null);
-  const { network } = useNetworkTokens();
+  const { chainId } = useNetworkTokens();
 
-  const getToken = (address: string | null | undefined) => getTokenByAddress(address, network);
+  const getToken = (address: string | null | undefined) => getTokenByAddress(address, chainId);
 
   const formatAmountFromWei = (amount: string, tokenAddress: string) => {
     try {

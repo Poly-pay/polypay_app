@@ -1,7 +1,4 @@
-export interface TokenAddresses {
-  testnet: string;
-  mainnet: string;
-}
+export type TokenAddresses = Record<number, string>;
 
 export interface Token {
   addresses: TokenAddresses;
@@ -12,19 +9,27 @@ export interface Token {
   coingeckoId: string;
 }
 
-// Resolved token with single address (for runtime use)
 export interface ResolvedToken extends Omit<Token, "addresses"> {
   address: string;
 }
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-// Native ETH (use zero address to identify)
+// Chain IDs
+const HORIZEN_MAINNET = 26514;
+const HORIZEN_TESTNET = 2651420;
+const BASE_MAINNET = 8453;
+const BASE_SEPOLIA = 84532;
+
+const ALL_CHAIN_IDS = [
+  HORIZEN_MAINNET,
+  HORIZEN_TESTNET,
+  BASE_MAINNET,
+  BASE_SEPOLIA,
+];
+
 export const NATIVE_ETH: Token = {
-  addresses: {
-    testnet: ZERO_ADDRESS,
-    mainnet: ZERO_ADDRESS,
-  },
+  addresses: Object.fromEntries(ALL_CHAIN_IDS.map((id) => [id, ZERO_ADDRESS])),
   symbol: "ETH",
   name: "Ethereum",
   decimals: 18,
@@ -32,11 +37,10 @@ export const NATIVE_ETH: Token = {
   coingeckoId: "ethereum",
 };
 
-// ZEN Token - Horizen native token (wrapped)
 export const ZEN_TOKEN: Token = {
   addresses: {
-    testnet: "0x4b36cb6E7c257E9aA246122a997be0F7Dc1eFCd1",
-    mainnet: "0x57da2D504bf8b83Ef304759d9f2648522D7a9280",
+    [HORIZEN_TESTNET]: "0x4b36cb6E7c257E9aA246122a997be0F7Dc1eFCd1",
+    [HORIZEN_MAINNET]: "0x57da2D504bf8b83Ef304759d9f2648522D7a9280",
   },
   symbol: "ZEN",
   name: "Horizen",
@@ -65,8 +69,10 @@ export const ZEN_TOKEN: Token = {
 // USDC - USD Coin (Horizen testnet / mainnet)
 export const USDC_TOKEN: Token = {
   addresses: {
-    testnet: "0x01c7AEb2A0428b4159c0E333712f40e127aF639E",
-    mainnet: "0xDF7108f8B10F9b9eC1aba01CCa057268cbf86B6c",
+    [HORIZEN_TESTNET]: "0x01c7AEb2A0428b4159c0E333712f40e127aF639E",
+    [HORIZEN_MAINNET]: "0xDF7108f8B10F9b9eC1aba01CCa057268cbf86B6c",
+    [BASE_MAINNET]: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    [BASE_SEPOLIA]: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   },
   symbol: "USDC",
   name: "USD Coin",
@@ -75,71 +81,60 @@ export const USDC_TOKEN: Token = {
   coingeckoId: "usd-coin",
 };
 
-// All supported tokens (base definitions)
 export const SUPPORTED_TOKENS_BASE: Token[] = [
   NATIVE_ETH,
   ZEN_TOKEN,
   USDC_TOKEN,
 ];
 
-// Helper: Get all coingecko IDs
 export function getCoingeckoIds(): string[] {
   return SUPPORTED_TOKENS_BASE.map((t) => t.coingeckoId);
 }
 
-// Helper: Get supported tokens with resolved addresses for a network
-export function getSupportedTokens(
-  network: "testnet" | "mainnet" = "mainnet",
-): ResolvedToken[] {
-  return SUPPORTED_TOKENS_BASE.map((token) => ({
-    address: token.addresses[network],
+function resolveToken(token: Token, chainId: number): ResolvedToken {
+  return {
+    address: token.addresses[chainId],
     symbol: token.symbol,
     name: token.name,
     decimals: token.decimals,
     icon: token.icon,
     coingeckoId: token.coingeckoId,
-  }));
-}
-
-// Helper: Get native ETH with resolved address
-export function getNativeEth(
-  network: "testnet" | "mainnet" = "mainnet",
-): ResolvedToken {
-  return {
-    address: NATIVE_ETH.addresses[network],
-    symbol: NATIVE_ETH.symbol,
-    name: NATIVE_ETH.name,
-    decimals: NATIVE_ETH.decimals,
-    icon: NATIVE_ETH.icon,
-    coingeckoId: NATIVE_ETH.coingeckoId,
   };
 }
 
-// Helper: Get token by address
+export function getSupportedTokens(chainId: number): ResolvedToken[] {
+  return SUPPORTED_TOKENS_BASE.filter(
+    (token) => token.addresses[chainId] !== undefined,
+  ).map((token) => resolveToken(token, chainId));
+}
+
+export function getNativeEth(chainId: number): ResolvedToken {
+  return resolveToken(NATIVE_ETH, chainId);
+}
+
 export function getTokenByAddress(
   address: string | null | undefined,
-  network: "testnet" | "mainnet" = "mainnet",
+  chainId: number,
 ): ResolvedToken {
-  const nativeEth = getNativeEth(network);
+  const nativeEth = getNativeEth(chainId);
 
-  if (!address || address === "0x0000000000000000000000000000000000000000") {
+  if (!address || address === ZERO_ADDRESS) {
     return nativeEth;
   }
 
-  const tokens = getSupportedTokens(network);
+  const tokens = getSupportedTokens(chainId);
   return (
     tokens.find((t) => t.address.toLowerCase() === address.toLowerCase()) ||
     nativeEth
   );
 }
 
-// Helper: Get token by symbol
 export function getTokenBySymbol(
   symbol: string,
-  network: "testnet" | "mainnet" = "mainnet",
+  chainId: number,
 ): ResolvedToken {
-  const tokens = getSupportedTokens(network);
-  const nativeEth = getNativeEth(network);
+  const tokens = getSupportedTokens(chainId);
+  const nativeEth = getNativeEth(chainId);
 
   return (
     tokens.find((t) => t.symbol.toUpperCase() === symbol.toUpperCase()) ||
@@ -147,16 +142,14 @@ export function getTokenBySymbol(
   );
 }
 
-// Helper: Get token by coingecko ID
 export function getTokenByCoingeckoId(
   coingeckoId: string,
-  network: "testnet" | "mainnet" = "mainnet",
+  chainId: number,
 ): ResolvedToken | undefined {
-  const tokens = getSupportedTokens(network);
+  const tokens = getSupportedTokens(chainId);
   return tokens.find((t) => t.coingeckoId === coingeckoId);
 }
 
-// Helper: Format amount with decimals
 export function formatTokenAmount(amount: string, decimals: number): string {
   const value = BigInt(amount);
   const divisor = BigInt(10 ** decimals);
@@ -171,7 +164,6 @@ export function formatTokenAmount(amount: string, decimals: number): string {
   return `${intPart}.${decStr}`;
 }
 
-// Helper: Parse amount to wei/smallest unit
 export function parseTokenAmount(amount: string, decimals: number): string {
   const [intPart, decPart = ""] = amount.split(".");
   const paddedDec = decPart.padEnd(decimals, "0").slice(0, decimals);

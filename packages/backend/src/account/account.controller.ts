@@ -15,7 +15,11 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
-import { CreateAccountDto, UpdateAccountDto } from '@polypay/shared';
+import {
+  CreateAccountDto,
+  CreateAccountBatchDto,
+  UpdateAccountDto,
+} from '@polypay/shared';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
 import { AccountMemberGuard } from '@/auth/guards/account-member.guard';
@@ -69,6 +73,35 @@ export class AccountController {
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
   async create(@CurrentUser() user: User, @Body() dto: CreateAccountDto) {
     return this.accountService.create(dto, user.commitment, dto.userAddress);
+  }
+
+  /**
+   * Batch create multisig accounts on multiple chains
+   * POST /api/accounts/batch
+   */
+  @Post('batch')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Batch create multisig accounts on multiple chains',
+    description:
+      'Deploy multiple multisig accounts with the same configuration across different chains in a single request.',
+  })
+  @ApiBody({
+    type: CreateAccountBatchDto,
+  })
+  @ApiResponse({ status: 201, description: 'Accounts created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' })
+  async createBatch(
+    @CurrentUser() user: User,
+    @Body() dto: CreateAccountBatchDto,
+  ) {
+    return this.accountService.createBatch(
+      dto,
+      user.commitment,
+      dto.userAddress,
+    );
   }
 
   /**
