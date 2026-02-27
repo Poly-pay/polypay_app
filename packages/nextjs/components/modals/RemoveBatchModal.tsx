@@ -2,9 +2,9 @@ import Image from "next/image";
 import { ArrowRightIcon } from "../icons/ArrowRight";
 import ModalContainer from "./ModalContainer";
 import { XIcon } from "lucide-react";
+import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { ModalProps } from "~~/types/modal";
 import { formatAddress, formatAmount } from "~~/utils/format";
-import { network } from "~~/utils/network-config";
 
 interface RemoveBatchModalProps extends ModalProps {
   item?: any;
@@ -12,6 +12,7 @@ interface RemoveBatchModalProps extends ModalProps {
 }
 
 const RemoveBatchModel: React.FC<RemoveBatchModalProps> = ({ isOpen, onClose, item, onRemove }) => {
+  const { chainId } = useNetworkTokens();
   return (
     <ModalContainer
       isOpen={isOpen}
@@ -25,7 +26,7 @@ const RemoveBatchModel: React.FC<RemoveBatchModalProps> = ({ isOpen, onClose, it
           <div className="flex items-center gap-2">
             <span className="text-red-500 text-sm">Delete transaction</span>
             <div className="text-sm flex items-center gap-1">
-              <span>{formatAmount(item.amount, network, item.tokenAddress)}</span>
+              <span>{formatAmount(item.amount, chainId, item.tokenAddress)}</span>
               <ArrowRightIcon />
               <span className="max-w-[100px] overflow-hidden truncate">
                 {item.contact?.name ? (

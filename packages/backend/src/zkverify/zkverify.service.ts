@@ -7,7 +7,12 @@ import {
   ZkVerifySubmitResponse,
   ZkVerifyJobStatusResponse,
 } from './dto/zkverify-response.dto';
-import { getChain, NetworkType, NetworkValue } from '@polypay/shared';
+import {
+  horizenMainnet,
+  horizenTestnet,
+  NetworkType,
+  NetworkValue,
+} from '@polypay/shared';
 import { CONFIG_KEYS } from '@/config/config.keys';
 
 export type CircuitType = 'transaction' | 'auth';
@@ -18,7 +23,7 @@ export class ZkVerifyService {
   private readonly apiUrl;
   private readonly apiKey: string;
   private readonly assetsDir: string;
-  private chain;
+  private readonly defaultChainId: number;
 
   constructor(private configService: ConfigService) {
     this.apiKey = this.configService.get<string>(
@@ -29,7 +34,8 @@ export class ZkVerifyService {
     // Get network config from env
     const network = (this.configService.get<string>(CONFIG_KEYS.APP_NETWORK) ||
       'testnet') as NetworkType;
-    this.chain = getChain(network);
+    this.defaultChainId =
+      network === NetworkValue.mainnet ? horizenMainnet.id : horizenTestnet.id;
     this.apiUrl =
       network === NetworkValue.mainnet
         ? 'https://api.kurier.xyz/api/v1'
@@ -94,6 +100,7 @@ export class ZkVerifyService {
       vk?: string;
     },
     circuitType: CircuitType = 'transaction',
+    chainId?: number,
   ): Promise<{ jobId: string; status: string; txHash?: string }> {
     const proofUint8 = new Uint8Array(dto.proof);
     const numberOfPublicInputs = dto.publicInputs?.length || 1;
@@ -103,10 +110,11 @@ export class ZkVerifyService {
       numberOfPublicInputs,
     );
 
+    const effectiveChainId = chainId ?? this.defaultChainId;
     const params = {
       proofType: 'ultraplonk',
       vkRegistered: true,
-      chainId: this.chain.id,
+      chainId: effectiveChainId,
       proofOptions: {
         numberOfPublicInputs,
       },

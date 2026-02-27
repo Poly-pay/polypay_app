@@ -29,6 +29,22 @@ export const useCreateAccount = () => {
   });
 };
 
+export const useCreateAccountBatch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: accountApi.createBatch,
+    onSuccess: data => {
+      queryClient.invalidateQueries({ queryKey: accountKeys.all });
+      data.forEach(account => {
+        queryClient.setQueryData(accountKeys.byAddress(account.address), account);
+      });
+      queryClient.invalidateQueries({ queryKey: userKeys.meAccounts });
+      queryClient.invalidateQueries({ queryKey: userKeys.me });
+    },
+  });
+};
+
 export const useAccount = (address: string) => {
   return useAuthenticatedQuery({
     queryKey: accountKeys.byAddress(address),

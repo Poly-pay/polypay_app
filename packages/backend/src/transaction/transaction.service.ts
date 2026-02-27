@@ -131,11 +131,15 @@ export class TransactionService {
     }
 
     // 4. Submit proof to zkVerify
-    const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized({
-      proof: dto.proof,
-      publicInputs: dto.publicInputs,
-      vk: dto.vk,
-    });
+    const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized(
+      {
+        proof: dto.proof,
+        publicInputs: dto.publicInputs,
+        vk: dto.vk,
+      },
+      'transaction',
+      account.chainId,
+    );
 
     if (proofResult.status === 'Failed') {
       throw new BadRequestException('Proof verification failed');
@@ -305,11 +309,15 @@ export class TransactionService {
     }
 
     // 4. Submit proof to zkVerify
-    const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized({
-      proof: dto.proof,
-      publicInputs: dto.publicInputs,
-      vk: dto.vk,
-    });
+    const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized(
+      {
+        proof: dto.proof,
+        publicInputs: dto.publicInputs,
+        vk: dto.vk,
+      },
+      'transaction',
+      transaction.account.chainId,
+    );
 
     if (proofResult.status === 'Failed') {
       throw new BadRequestException('Proof verification failed');

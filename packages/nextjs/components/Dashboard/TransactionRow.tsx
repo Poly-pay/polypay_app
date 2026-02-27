@@ -15,8 +15,9 @@ import {
   useWalletCommitments,
   useWalletThreshold,
 } from "~~/hooks";
+import scaffoldConfig from "~~/scaffold.config";
 import { formatAddress, formatAmount } from "~~/utils/format";
-import { chain } from "~~/utils/network-config";
+import { getBlockExplorerTxHashLink, getBlockExplorerTxLink } from "~~/utils/scaffold-eth/networks";
 
 // ============ Helper: Convert API Transaction to Row Data ============
 export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
@@ -134,10 +135,26 @@ function AwaitingBadge() {
 
 // ============ Status Badge Component ============
 function StatusBadge({ status, txHash }: { status: TxStatus; txHash?: string }) {
+  const { chainId } = useNetworkTokens();
+
   if (status === TxStatus.EXECUTED) {
+    let explorerUrl = "#";
+
+    if (txHash && chainId) {
+      // Prefer scaffold-config targetNetworks (includes custom Horizen chain with explorer)
+      const targetNetwork = scaffoldConfig.targetNetworks.find(network => network.id === chainId);
+
+      if (targetNetwork) {
+        explorerUrl = getBlockExplorerTxHashLink(targetNetwork, txHash);
+      } else {
+        // Fallback to generic viem-based lookup for standard chains
+        explorerUrl = getBlockExplorerTxLink(chainId, txHash) || "#";
+      }
+    }
+
     return (
       <a
-        href={txHash ? `${chain.blockExplorers.default.url}/tx/${txHash}` : "#"}
+        href={explorerUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-1 px-3 py-1 text-sm font-semibold text-grey-900 bg-lime-50 rounded-md tracking-tight hover:opacity-80 transition-opacity"
@@ -236,7 +253,7 @@ function TxHeader({
 }: TxHeaderProps & { initiatorCommitment?: string }) {
   const headerText = getExpandedHeaderText(tx.type);
   const shortCommitment = formatAddress(initiatorCommitment, { start: 4, end: 4 });
-  const { network } = useNetworkTokens();
+  const { chainId } = useNetworkTokens();
 
   const renderHeaderRow = () => (
     <div className="flex items-center justify-between mb-4">
@@ -283,12 +300,12 @@ function TxHeader({
         <div className="flex items-center gap-4" key={tx.type}>
           <span className="mr-10">Tranfer</span>
           <Image
-            src={getTokenByAddress(tx.tokenAddress, network).icon}
-            alt={getTokenByAddress(tx.tokenAddress, network).symbol}
+            src={getTokenByAddress(tx.tokenAddress, chainId).icon}
+            alt={getTokenByAddress(tx.tokenAddress, chainId).symbol}
             width={20}
             height={20}
           />
-          <span>{formatAmount(tx.amount ?? "0", network, tx.tokenAddress)}</span>
+          <span>{formatAmount(tx.amount ?? "0", chainId, tx.tokenAddress)}</span>
           <Image src="/icons/arrows/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} className="bg-white" />
         </div>
@@ -383,12 +400,12 @@ function TxHeader({
             <div className="flex items-center gap-4" key={tx.type + index}>
               <span className="mr-10">Tranfer</span>
               <Image
-                src={getTokenByAddress(transfer.tokenAddress, network).icon}
-                alt={getTokenByAddress(transfer.tokenAddress, network).symbol}
+                src={getTokenByAddress(transfer.tokenAddress, chainId).icon}
+                alt={getTokenByAddress(transfer.tokenAddress, chainId).symbol}
                 width={20}
                 height={20}
               />
-              <span>{formatAmount(transfer.amount ?? "0", network, transfer.tokenAddress)}</span>
+              <span>{formatAmount(transfer.amount ?? "0", chainId, transfer.tokenAddress)}</span>
               <Image src="/icons/arrows/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
               <AddressWithContact
                 address={transfer.recipient ?? ""}
@@ -536,19 +553,19 @@ function getExpandedHeaderText(type: TxType): string {
 }
 
 function TxDetails({ tx }: { tx: TransactionRowData }) {
-  const { network } = useNetworkTokens();
+  const { chainId } = useNetworkTokens();
   switch (tx.type) {
     case TxType.TRANSFER:
       return (
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Image
-              src={getTokenByAddress(tx.tokenAddress, network).icon}
-              alt={getTokenByAddress(tx.tokenAddress, network).symbol}
+              src={getTokenByAddress(tx.tokenAddress, chainId).icon}
+              alt={getTokenByAddress(tx.tokenAddress, chainId).symbol}
               width={20}
               height={20}
             />
-            <span className="font-medium">{formatAmount(tx.amount ?? "0", network, tx.tokenAddress)}</span>
+            <span className="font-medium">{formatAmount(tx.amount ?? "0", chainId, tx.tokenAddress)}</span>
           </div>
           <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} />

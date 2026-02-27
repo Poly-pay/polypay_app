@@ -76,7 +76,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       }
 
       // 5. Generate ZK proof
-      const { proof, publicInputs, nullifier } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier, vk } = await generateProof(txHash);
 
       // 6. Submit to backend
       setLoadingState("Submitting to backend...");
@@ -93,6 +93,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
         publicInputs,
         nullifier: nullifier.toString(),
         userAddress: walletClient.account.address,
+        vk: vk ? Buffer.from(vk).toString("base64") : undefined,
       });
 
       if (result) {

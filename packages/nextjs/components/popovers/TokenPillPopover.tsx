@@ -3,10 +3,13 @@
 import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { ResolvedToken } from "@polypay/shared";
+import NetworkBadge from "~~/components/Common/NetworkBadge";
 import { useMetaMultiSigWallet, useTokenPrices } from "~~/hooks";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useClickOutside } from "~~/hooks/useClickOutside";
+import { useAccountStore } from "~~/services/store";
+import { getDefaultChainId } from "~~/utils/network";
 
 interface TokenPillPopoverProps {
   selectedToken: ResolvedToken;
@@ -29,11 +32,14 @@ export function TokenPillPopover({
   popoverClassName,
 }: TokenPillPopoverProps) {
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { balances } = useTokenBalances(metaMultiSigWallet?.address);
   const { getPriceBySymbol, isLoading: isLoadingPrices } = useTokenPrices();
   const { tokens } = useNetworkTokens();
+  const { currentAccount } = useAccountStore();
+  const { balances } = useTokenBalances(metaMultiSigWallet?.address, currentAccount?.chainId);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  const networkChainId = currentAccount?.chainId ?? getDefaultChainId();
 
   useClickOutside(rootRef, () => setOpen(false), { isActive: open });
 
@@ -58,7 +64,12 @@ export function TokenPillPopover({
         style={{ boxShadow: "0 4px 24.5px 0 rgba(46, 119, 255, 0.25)" }}
       >
         <Image src={"/icons/arrows/dropdown.svg"} alt="icon" width={14} height={14} />
-        <Image src={selectedToken.icon} alt={selectedToken.symbol} width={24} height={24} />
+        <div className="relative">
+          <Image src={selectedToken.icon} alt={selectedToken.symbol} width={24} height={24} />
+          <div className="absolute -bottom-1 -right-1">
+            <NetworkBadge chainId={networkChainId} size={14} />
+          </div>
+        </div>
       </div>
 
       {open && (
@@ -86,7 +97,12 @@ export function TokenPillPopover({
                 }}
                 className="flex items-center gap-2 px-3 py-2 hover:bg-[#FF7CEB1A] cursor-pointer first:rounded-t-lg last:rounded-b-lg"
               >
-                <Image src={token.icon} alt={token.symbol} width={32} height={32} />
+                <div className="relative">
+                  <Image src={token.icon} alt={token.symbol} width={32} height={32} />
+                  <div className="absolute -bottom-1 -right-1">
+                    <NetworkBadge chainId={networkChainId} size={16} />
+                  </div>
+                </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium">{token.name}</p>
                   <p className="text-grey-800 text-xs">{token.symbol}</p>

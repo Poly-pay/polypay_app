@@ -75,12 +75,11 @@ function BatchTransactions({
   accountId: string | null;
 }) {
   const { openModal } = useModalApp();
-  const { network } = useNetworkTokens();
+  const { chainId } = useNetworkTokens();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const { data: contacts = [] } = useContacts(accountId);
 
-  // Wrapper function for getTokenByAddress with network
-  const getToken = useCallback((address: string | null | undefined) => getTokenByAddress(address, network), [network]);
+  const getToken = useCallback((address: string | null | undefined) => getTokenByAddress(address, chainId), [chainId]);
 
   const editButtonRefs = useMemo<Record<string, React.RefObject<HTMLButtonElement | null>>>(() => {
     const refs: Record<string, React.RefObject<HTMLButtonElement | null>> = {};
@@ -163,7 +162,7 @@ function BatchTransactions({
                 className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isHighlighted ? "text-white" : "text-grey-950 group-hover:text-white"}`}
               >
                 <Image src={token.icon} alt={token.symbol} width={20} height={20} />
-                {formatAmount(item.amount, network, item.tokenAddress)}
+                {formatAmount(item.amount, chainId, item.tokenAddress)}
               </div>
 
               {/* Arrow */}
@@ -272,10 +271,9 @@ export default function BatchContainer() {
   const { mutateAsync: updateBatchItem } = useUpdateBatchItem();
   const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useMyBatchItems();
   const { currentAccount } = useAccountStore();
-  const { network } = useNetworkTokens();
+  const { chainId } = useNetworkTokens();
 
-  // Wrapper function for getTokenByAddress with network
-  const getToken = useCallback((address: string | null | undefined) => getTokenByAddress(address, network), [network]);
+  const getToken = useCallback((address: string | null | undefined) => getTokenByAddress(address, chainId), [chainId]);
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
@@ -390,14 +388,14 @@ export default function BatchContainer() {
         const token = getToken(item.tokenAddress);
         return {
           id: item.id,
-          amount: formatAmount(item.amount, network, item.tokenAddress),
+          amount: formatAmount(item.amount, chainId, item.tokenAddress),
           recipient: item.recipient,
           contactName: item.contact?.name,
           tokenIcon: token.icon,
           tokenSymbol: token.symbol,
         };
       }),
-    [selectedBatchItems, getToken, network],
+    [selectedBatchItems, getToken, chainId],
   );
 
   const handleCloseDrawer = useCallback(() => {

@@ -5,6 +5,8 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import AccountSidebar from "./AccountSidebar";
 import ManageAccountsSidebar from "./ManageAccountsSidebar";
+import NetworkChooserSidebar from "./NetworkChooserSidebar";
+import { useSwitchChain } from "wagmi";
 import Routes from "~~/configs/routes.config";
 import { useMyAccounts } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
@@ -154,7 +156,15 @@ export default function Sidebar() {
   const { data: accounts = [], isLoading: isLoadingAccounts } = useMyAccounts();
   const { commitment } = useIdentityStore();
   const { currentAccount, setCurrentAccount } = useAccountStore();
-  const { isManageAccountsOpen, openManageAccounts, closeManageAccounts } = useSidebarStore();
+  const { switchChainAsync } = useSwitchChain();
+  const {
+    isManageAccountsOpen,
+    isNetworkChooserOpen,
+    openNetworkChooser,
+    closeManageAccounts,
+    closeNetworkChooser,
+    openManageAccountsForChain,
+  } = useSidebarStore();
 
   // Manage Accounts Sidebar state
   const selectedAccountId = currentAccount?.id || accounts[0]?.id || "";
@@ -173,24 +183,39 @@ export default function Sidebar() {
   };
 
   const handleOpenManageAccounts = () => {
-    openManageAccounts();
+    openNetworkChooser();
   };
 
-  const handleCloseManageAccounts = () => {
+  const handleCloseAllSidebars = () => {
     closeManageAccounts();
+    closeNetworkChooser();
   };
 
-  const handleSelectAccount = (accountId: string) => {
+  const handleSelectAccount = async (accountId: string) => {
     const account = accounts.find(a => a.id === accountId);
     if (account) {
       setCurrentAccount(account);
+
+      if (account.chainId && switchChainAsync) {
+        try {
+          await switchChainAsync({ chainId: account.chainId });
+        } catch (error) {
+          // Keep currentAccount set; wrong-network UI + guards will handle mismatch.
+          console.error("Failed to switch wallet network:", error);
+          notification.error("Failed to switch wallet network. Please switch network in your wallet manually.");
+        }
+      }
     }
-    handleCloseManageAccounts();
+    closeManageAccounts();
   };
 
   const handleCreateAccount = () => {
     router.goToDashboardNewAccount();
-    handleCloseManageAccounts();
+    closeManageAccounts();
+  };
+
+  const handleSelectNetwork = (chainId: number | null) => {
+    openManageAccountsForChain(chainId ?? null);
   };
 
   return (
@@ -258,17 +283,23 @@ export default function Sidebar() {
       </div>
 
       {/* Invisible backdrop for click outside to close */}
-      {isManageAccountsOpen && <div className="fixed inset-0 z-40" onClick={handleCloseManageAccounts} />}
+      {(isManageAccountsOpen || isNetworkChooserOpen) && (
+        <div className="fixed inset-0 z-40" onClick={handleCloseAllSidebars} />
+      )}
 
-      {/* Always render for animation */}
+      {/* Network chooser sidebar */}
+      <NetworkChooserSidebar isOpen={isNetworkChooserOpen} accounts={accounts} onSelectNetwork={handleSelectNetwork} />
+
+      {/* Manage accounts sidebar */}
       <ManageAccountsSidebar
         isOpen={isManageAccountsOpen}
-        onClose={handleCloseManageAccounts}
+        onClose={handleCloseAllSidebars}
         accounts={accounts}
         selectedAccountId={selectedAccountId}
         onSelectAccount={handleSelectAccount}
         onCreateAccount={handleCreateAccount}
         isLoading={isLoadingAccounts}
+        hasNetworkChooser={isNetworkChooserOpen}
       />
     </div>
   );
