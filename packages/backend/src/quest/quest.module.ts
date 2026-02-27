@@ -7,7 +7,7 @@ import { AccountChainIdMigrationService } from './update-chain.service';
 @Module({
   imports: [QuestModule],
   controllers: [QuestController],
-  providers: [QuestService, QuestSeederService, AccountChainIdMigrationService],
+  providers: [QuestService, QuestSeederService],
   exports: [QuestService],
 })
 export class QuestModule {}
