@@ -118,6 +118,7 @@ export default function ManageAccountsSidebar({
               <AccountItem
                 key={account.id}
                 account={account}
+                allAccounts={accounts}
                 isSelected={selectedAccountId === account.id}
                 isExpanded={expandAccountId === account.id}
                 onSelect={onSelectAccount}

@@ -11,20 +11,28 @@ import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useAccountStore } from "~~/services/store";
-import { getAvatarByAccountId } from "~~/utils/avatar";
+import { getAccountAvatar } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
 
 interface AccountItemProps {
   account: Account;
+  allAccounts: Account[];
   isSelected: boolean;
   isExpanded: boolean;
   onSelect: (accountId: string) => void;
   onToggleExpand: (accountId: string) => void;
 }
 
-export default function AccountItem({ account, isSelected, isExpanded, onSelect, onToggleExpand }: AccountItemProps) {
-  const avatarSrc = getAvatarByAccountId(account.id);
+export default function AccountItem({
+  account,
+  allAccounts,
+  isSelected,
+  isExpanded,
+  onSelect,
+  onToggleExpand,
+}: AccountItemProps) {
+  const avatarSrc = getAccountAvatar(account, allAccounts);
   const { mutate: updateAccount } = useUpdateAccount();
   const { setCurrentAccount, currentAccount } = useAccountStore();
   const { openModal } = useModalApp();
