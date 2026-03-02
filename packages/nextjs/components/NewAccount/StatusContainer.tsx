@@ -31,9 +31,9 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
 }) => {
   const validSignersToShow = getValidSigners(signers);
 
-  // Derive section title and content based on current step
   const getSectionTitle = () => {
-    if (currentStep <= 2) return "2.  Choose network";
+    if (currentStep === 1) return "1.  Choose network";
+    if (currentStep === 2) return "2.  Basic setup";
     return `3.  Signers & Confirmations(${validSignersToShow.length})`;
   };
 
@@ -114,14 +114,8 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
           </div>
 
           <div className="flex-1 overflow-auto p-4">
-            {currentStep < 2 ? (
-              /* Step 1 - Placeholder */
-              <div className="flex flex-col gap-3 items-center justify-center h-full">
-                <Image src="/new-account/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
-                <span className="text-grey-1000 text-[14px]">Setup on next step</span>
-              </div>
-            ) : currentStep === 2 ? (
-              /* Step 2 - Network list */
+            {currentStep === 1 ? (
+              /* Step 1 - Network list */
               <div className="flex flex-col gap-3">
                 {selectedChainIds.length > 0 ? (
                   selectedChainIds.map(chainId => {
@@ -141,6 +135,12 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
                     <span className="text-gray-400 text-[14px]">Select at least one network</span>
                   </div>
                 )}
+              </div>
+            ) : currentStep === 2 ? (
+              /* Step 2 - Placeholder for signers */
+              <div className="flex flex-col gap-3 items-center justify-center h-full">
+                <Image src="/new-account/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
+                <span className="text-grey-1000 text-[14px]">Setup on next step</span>
               </div>
             ) : (
               /* Step 3 - Signers list */

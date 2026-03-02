@@ -129,8 +129,9 @@ export default function NewAccountContainer() {
 
   // Validation
   const validSigners = getValidSigners(formData.signers);
-  const isStep1Valid = formData.name.trim().length > 0;
-  const isStep2Valid = validSigners.length >= 2 && formData.threshold >= 2 && formData.threshold <= validSigners.length;
+  const isNameValid = formData.name.trim().length > 0;
+  const isSignersValid =
+    validSigners.length >= 2 && formData.threshold >= 2 && formData.threshold <= validSigners.length;
   const isCreating = isCreatingSingle || isCreatingBatch;
 
   const EarthBackground = (
@@ -157,14 +158,17 @@ export default function NewAccountContainer() {
     <div className="flex flex-row gap-1 w-full h-full bg-grey-100">
       {/* Shared Earth background */}
       <div className="flex-1 overflow-hidden relative flex flex-col rounded-lg bg-background border border-divider">
-        {/* Only show Earth background on steps 1 & 3 */}
-        {currentStep !== 2 && EarthBackground}
+        {/* Show Earth background on steps 2 (name) & 3 (signers), not on step 1 (network) */}
+        {currentStep !== 1 && EarthBackground}
 
-        <div className={currentStep === 2 ? "flex-1 bg-white rounded-lg relative z-10" : "flex-1 relative z-10"}>
+        <div
+          className={
+            currentStep === 1
+              ? "flex-1 overflow-y-auto bg-white rounded-lg relative z-10"
+              : "flex-1 overflow-y-auto relative z-10"
+          }
+        >
           {currentStep === 1 && (
-            <AccountName className="flex-1" form={form} onNextStep={handleNextStep} isValid={isStep1Valid} />
-          )}
-          {currentStep === 2 && (
             <ChooseNetwork
               className="flex-1"
               selectedChainIds={selectedChainIds}
@@ -173,8 +177,16 @@ export default function NewAccountContainer() {
                   prev.includes(chainId) ? prev.filter(id => id !== chainId) : [...prev, chainId],
                 )
               }
+              onNextStep={() => setCurrentStep(2)}
+            />
+          )}
+          {currentStep === 2 && (
+            <AccountName
+              className="flex-1"
+              form={form}
+              onNextStep={handleNextStep}
               onGoBack={handleGoBack}
-              onNextStep={() => setCurrentStep(3)}
+              isValid={isNameValid}
             />
           )}
           {currentStep === 3 && <SignersConfirmations className="flex-1" form={form} onGoBack={handleGoBack} />}
@@ -190,7 +202,7 @@ export default function NewAccountContainer() {
         selectedChainIds={selectedChainIds}
         onCreateAccount={handleCreateAccount}
         loading={isCreating}
-        isFormValid={isStep2Valid}
+        isFormValid={isSignersValid}
       />
     </div>
   );
