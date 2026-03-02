@@ -15,7 +15,7 @@ import { useNetworkGuard } from "~~/hooks/app/useNetworkGuard";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
-import { getAvatarByCommitment } from "~~/utils/avatar";
+import { getAccountAvatar, getAvatarByCommitment } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
 
@@ -90,8 +90,14 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
         {/* Avatar */}
         <div className="relative">
           <div className="rounded-[9px] flex items-center justify-center">
-            {hasAccounts ? (
-              <Image src="/sidebar/account-icon.svg" alt="Account" width={40} height={40} />
+            {hasAccounts && currentAccount ? (
+              <Image
+                src={getAccountAvatar(currentAccount, accounts ?? [])}
+                alt="Account"
+                width={40}
+                height={40}
+                className="rounded-[9px]"
+              />
             ) : (
               <Image src="/avatars/user-avatar-empty-square.svg" alt="Avatar" width={40} height={40} />
             )}
