@@ -151,6 +151,44 @@ export const METAMULTISIG_ABI = [
     stateMutability: "view",
     type: "function",
   },
+  { // TODO: update ABI after deploy contract
+    inputs: [
+      {
+        internalType: "address",
+        name: "token",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "spender",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "approveAmount",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "callTarget",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "callValue",
+        type: "uint256",
+      },
+      {
+        internalType: "bytes",
+        name: "callData",
+        type: "bytes",
+      },
+    ],
+    name: "approveAndCall",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
   {
     inputs: [
       {

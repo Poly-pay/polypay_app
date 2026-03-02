@@ -56,6 +56,7 @@ export interface TransactionRowData {
   oldThreshold?: number;
   newThreshold?: number;
   batchData?: BatchTransfer[];
+  destChainId?: number;
   contact?: {
     id: string;
     name: string;

@@ -22,6 +22,8 @@ export interface Transaction {
   signerData?: SignerData[] | null;
   newThreshold?: number;
   batchData?: string;
+  destChainId?: number;
+  bridgeFee?: string;
   createdBy: string;
   threshold: number;
   txHash?: string;
