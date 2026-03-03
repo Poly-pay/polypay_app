@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import NetworkBadge from "../Common/NetworkBadge";
 import { MultisigConnectButton } from "../scaffold-eth/RainbowKitCustomConnectButton/MultisigConnectButton";
 import { WrongNetwork } from "../scaffold-eth/RainbowKitCustomConnectButton/WrongNetwork";
 import { useQueryClient } from "@tanstack/react-query";
@@ -10,10 +11,11 @@ import { useAccount, useDisconnect, useWalletClient } from "wagmi";
 import ShinyText from "~~/components/effects/ShinyText";
 import { useMyAccounts, userKeys } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
+import { useNetworkGuard } from "~~/hooks/app/useNetworkGuard";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
-import { getAvatarByCommitment } from "~~/utils/avatar";
+import { getAccountAvatar, getAvatarByCommitment } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
 
@@ -26,7 +28,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
   const { data: walletClient } = useWalletClient();
   const { targetNetwork } = useTargetNetwork();
   const { disconnect } = useDisconnect();
-  const { connector, chain } = useAccount();
+  const { connector } = useAccount();
   const queryClient = useQueryClient();
 
   const { openModal } = useModalApp();
@@ -34,6 +36,8 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
   const { clearCurrentAccount, currentAccount } = useAccountStore();
   const { data: accounts } = useMyAccounts();
   const mySigner = currentAccount?.signers.find(s => s.commitment === commitment);
+
+  const { isWrongNetwork, targetChainId } = useNetworkGuard();
 
   const hasAccounts = accounts && accounts.length > 0;
 
@@ -60,8 +64,8 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
     );
   }
 
-  // Wrong network state
-  if (chain?.id !== targetNetwork.id) {
+  // Wrong network state (per-account guard)
+  if (isWrongNetwork && targetChainId) {
     return (
       <div className="flex justify-center p-3 bg-main-white border border-grey-200 rounded-xl">
         <WrongNetwork />
@@ -78,17 +82,30 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
       {/* Account Info Row */}
       <div
         className={`
-          flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl cursor-pointer
+          flex items-center gap-3 pl-1 pr-3 py-1 rounded-xl cursor-pointer
           ${hasAccounts ? "bg-pink-25 hover:bg-pink-75" : "bg-violet-25 hover:bg-violet-100"}
         `}
         onClick={onOpenManageAccounts}
       >
         {/* Avatar */}
-        <div className={`rounded-[9px] flex items-center justify-center`}>
-          {hasAccounts ? (
-            <Image src="/sidebar/account-icon.svg" alt="Account" width={40} height={40} />
-          ) : (
-            <Image src="/avatars/user-avatar-empty-square.svg" alt="Avatar" width={40} height={40} />
+        <div className="relative">
+          <div className="rounded-[9px] flex items-center justify-center">
+            {hasAccounts && currentAccount ? (
+              <Image
+                src={getAccountAvatar(currentAccount, accounts ?? [])}
+                alt="Account"
+                width={40}
+                height={40}
+                className="rounded-[9px]"
+              />
+            ) : (
+              <Image src="/avatars/user-avatar-empty-square.svg" alt="Avatar" width={40} height={40} />
+            )}
+          </div>
+          {hasAccounts && currentAccount?.chainId && (
+            <div className="absolute -bottom-1 -right-1">
+              <NetworkBadge chainId={currentAccount.chainId} size={16} />
+            </div>
           )}
         </div>
 

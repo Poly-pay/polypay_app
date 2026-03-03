@@ -7,12 +7,15 @@ import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui
 import { ResolvedToken } from "@polypay/shared";
 import { Eye, EyeOff, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
+import NetworkBadge from "~~/components/Common/NetworkBadge";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
+import { useAccountStore } from "~~/services/store";
+import { getDefaultChainId } from "~~/utils/network";
 
 interface PortfolioModalProps {
   children: React.ReactNode;
@@ -23,17 +26,17 @@ interface TokenBalanceRowProps {
   balance: string;
   usdValue: number;
   isLoading: boolean;
+  chainId?: number;
 }
 
-function TokenBalanceRow({ token, balance, usdValue, isLoading }: TokenBalanceRowProps) {
+function TokenBalanceRow({ token, balance, usdValue, isLoading, chainId }: TokenBalanceRowProps) {
   return (
     <div className="flex items-center gap-3 px-5 py-4">
       {/* Token Icon with Chain Badge */}
       <div className="relative">
         <Image src={token.icon} alt={token.symbol} width={40} height={40} className="rounded-full" />
-        {/* Chain Badge */}
-        <div className="absolute bottom-0 right-0 w-5 h-5 bg-black rounded overflow-hidden border border-white">
-          <Image src="/token/horizen-badge.svg" alt="Horizen" width={20} height={20} />
+        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full overflow-hidden border border-white bg-black">
+          <NetworkBadge chainId={chainId} size={20} />
         </div>
       </div>
 
@@ -64,8 +67,12 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
   const { openModal } = useModalApp();
   const [showBalance, setShowBalance] = React.useState(true);
   const { tokens } = useNetworkTokens();
+  const { currentAccount } = useAccountStore();
 
-  const { balances, isLoading: isLoadingBalances } = useTokenBalances(metaMultiSigWallet?.address);
+  const { balances, isLoading: isLoadingBalances } = useTokenBalances(
+    metaMultiSigWallet?.address,
+    currentAccount?.chainId,
+  );
   const { getPriceBySymbol, isLoading: isLoadingPrices } = useTokenPrices();
 
   const isLoading = isLoadingBalances || isLoadingPrices;
@@ -100,6 +107,8 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+  const chainId = currentAccount?.chainId ?? getDefaultChainId();
 
   return (
     <Sheet>
@@ -185,6 +194,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
                   balance={getTokenBalance(token)}
                   usdValue={getTokenUsdValue(token)}
                   isLoading={isLoading}
+                  chainId={chainId}
                 />
               ))}
             </div>

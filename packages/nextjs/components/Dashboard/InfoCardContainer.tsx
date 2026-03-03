@@ -2,9 +2,12 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import { useMetaMultiSigWallet, useModalApp, useWalletCommitments } from "~~/hooks";
+import NetworkBadge from "~~/components/Common/NetworkBadge";
+import { useMetaMultiSigWallet, useModalApp, useMyAccounts, useWalletCommitments } from "~~/hooks";
 import { usePendingTransactions } from "~~/hooks/api/useTransaction";
 import { useAccountStore } from "~~/services/store";
+import { getAccountAvatar } from "~~/utils/avatar";
+import { getDefaultChainId } from "~~/utils/network";
 
 type InfoCardContainerProps = unknown;
 
@@ -19,6 +22,9 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
   const { data: walletCommitments } = useWalletCommitments();
 
   const { currentAccount } = useAccountStore();
+  const { data: accounts = [] } = useMyAccounts();
+  const chainId = (currentAccount as any)?.chainId ?? getDefaultChainId();
+  const avatarSrc = currentAccount ? getAccountAvatar(currentAccount, accounts) : "/sidebar/account-icon.svg";
 
   // Memoize flattened transactions to avoid re-computing on every render
   const transactions = useMemo(() => data?.pages.flatMap(page => page.data) ?? [], [data?.pages]);
@@ -44,9 +50,12 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
             </span>
           </div>
           <div className="flex flex-row gap-2 items-center">
-            <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center shrink-0">
-              <Image src="/dashboard/circle-polypay-icon.svg" alt="Polypay Icon" width={24} height={24} />
-            </span>
+            <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+              <Image src={avatarSrc} alt="Account" width={40} height={40} className="rounded-[9px]" />
+              <div className="absolute -bottom-1 -right-1">
+                <NetworkBadge chainId={chainId} size={16} />
+              </div>
+            </div>
             <span className="font-family-repetition text-[32px] text-white leading-none tracking-[-0.01em] max-w-[122px] truncate">
               {currentAccount?.name ?? "Default account"}
             </span>

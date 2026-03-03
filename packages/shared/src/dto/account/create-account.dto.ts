@@ -23,6 +23,33 @@ export class CreateAccountDto {
   @ArrayMinSize(1)
   signers: SignerData[];
 
+  @IsNotEmpty()
+  @IsNumber()
+  chainId: number;
+
+  @IsOptional()
+  @IsString()
+  userAddress?: string;
+}
+
+export class CreateAccountBatchDto {
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(1)
+  threshold: number;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  signers: SignerData[];
+
+  @IsArray()
+  @ArrayMinSize(1)
+  chainIds: number[];
+
   @IsOptional()
   @IsString()
   userAddress?: string;

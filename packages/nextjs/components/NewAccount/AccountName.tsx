@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Repeat } from "lucide-react";
+import { ArrowLeft, Repeat } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { IAccountFormData } from "~~/types/form/account";
 
@@ -10,10 +10,11 @@ interface AccountNameProps {
   className?: string;
   form: UseFormReturn<IAccountFormData>;
   onNextStep: () => void;
+  onGoBack: () => void;
   isValid: boolean;
 }
 
-export default function AccountName({ className, form, onNextStep, isValid }: AccountNameProps) {
+export default function AccountName({ className, form, onNextStep, onGoBack, isValid }: AccountNameProps) {
   const { register, setValue, watch } = form;
   const name = watch("name");
 
@@ -40,7 +41,7 @@ export default function AccountName({ className, form, onNextStep, isValid }: Ac
 
         {/* Step description */}
         <div className="flex items-center justify-center w-full max-w-2xl flex-col text-center">
-          <span className="text-text-primary uppercase text-[26px] font-semibold mb-4">1. Basic setup</span>
+          <span className="text-text-primary uppercase text-[24px] font-semibold mb-4">2. Basic setup</span>
           <span className="text-text-secondary text-[16px] text-gray-500">
             This is the basic setup of the account, please enter the account name in the box below.
           </span>
@@ -69,8 +70,15 @@ export default function AccountName({ className, form, onNextStep, isValid }: Ac
           <Repeat onClick={handleGenerateName} size={16} className="cursor-pointer ml-2 shrink-0" />
         </div>
 
-        {/* Next button */}
-        <div className="flex gap-2 items-center justify-center w-full max-w-xs mt-4">
+        {/* Navigation buttons */}
+        <div className="flex gap-4 items-center justify-center w-full max-w-xs mt-4">
+          <button
+            type="button"
+            onClick={onGoBack}
+            className="flex items-center justify-center w-16 h-16 rounded-full shadow-lg transition-all bg-gray-100"
+          >
+            <ArrowLeft width={24} height={24} className="text-gray-400" />
+          </button>
           <button
             onClick={onNextStep}
             disabled={!isValid}

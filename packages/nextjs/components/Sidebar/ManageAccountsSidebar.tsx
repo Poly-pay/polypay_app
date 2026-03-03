@@ -16,6 +16,7 @@ interface ManageAccountsSidebarProps {
   onSelectAccount: (accountId: string) => void;
   onCreateAccount: () => void;
   isLoading?: boolean;
+  hasNetworkChooser?: boolean;
 }
 
 export default function ManageAccountsSidebar({
@@ -26,8 +27,12 @@ export default function ManageAccountsSidebar({
   onSelectAccount,
   onCreateAccount,
   isLoading = false,
+  hasNetworkChooser = false,
 }: ManageAccountsSidebarProps) {
-  const { expandAccountId, setExpandAccountId } = useSidebarStore();
+  const { expandAccountId, setExpandAccountId, selectedNetworkChainId } = useSidebarStore();
+
+  const filteredAccounts =
+    selectedNetworkChainId != null ? accounts.filter(a => a.chainId === selectedNetworkChainId) : accounts;
 
   const handleToggleExpand = (accountId: string) => {
     setExpandAccountId(expandAccountId === accountId ? null : accountId);
@@ -36,12 +41,13 @@ export default function ManageAccountsSidebar({
   return (
     <div
       className={`
-  absolute left-full top-0 z-50 ml-3
-  w-[330px] h-full bg-main-white rounded-lg p-3 flex flex-col gap-[15px]
-  shadow-[4px_0px_24px_rgba(0,0,0,0.1)]
-  transform transition-all duration-300 ease-in-out
-  ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"}
-`}
+      absolute left-full top-0 z-[100]
+      w-[330px] h-full bg-main-white rounded-lg p-3 flex flex-col gap-[15px]
+      shadow-[4px_0px_24px_rgba(0,0,0,0.1)]
+      transform transition-all duration-300 ease-in-out
+      ${hasNetworkChooser ? "ml-[342px]" : "ml-3"}
+      ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"}
+    `}
     >
       {/* Header */}
       <div className="flex flex-col gap-4">
@@ -75,7 +81,7 @@ export default function ManageAccountsSidebar({
       {/* Accounts List Header */}
       <div className="flex items-center justify-between">
         <span className="text-base font-medium text-main-black tracking-[-0.02em]">Multisig Accounts</span>
-        <span className="text-sm font-medium text-main-navy-blue tracking-[-0.04em]">{accounts.length}</span>
+        <span className="text-sm font-medium text-main-navy-blue tracking-[-0.04em]">{filteredAccounts.length}</span>
       </div>
 
       {/* Accounts List */}
@@ -87,7 +93,7 @@ export default function ManageAccountsSidebar({
             <Skeleton className="h-16 w-full rounded-lg" />
             <Skeleton className="h-16 w-full rounded-lg" />
           </>
-        ) : accounts.length === 0 ? (
+        ) : filteredAccounts.length === 0 ? (
           // Empty state
           <div className="flex-1 flex flex-col justify-center items-center gap-3 py-8">
             <div className="w-[120px] h-[120px] relative">
@@ -108,10 +114,11 @@ export default function ManageAccountsSidebar({
         ) : (
           // Has data
           <TooltipProvider delayDuration={200}>
-            {accounts.map(account => (
+            {filteredAccounts.map(account => (
               <AccountItem
                 key={account.id}
                 account={account}
+                allAccounts={accounts}
                 isSelected={selectedAccountId === account.id}
                 isExpanded={expandAccountId === account.id}
                 onSelect={onSelectAccount}

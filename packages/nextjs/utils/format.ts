@@ -1,14 +1,15 @@
-import { NetworkType, formatTokenAmount, getTokenByAddress } from "@polypay/shared";
+import { formatTokenAmount, getTokenByAddress } from "@polypay/shared";
 
 /**
  * Format amount with token symbol
  * @param amount - Amount in smallest unit (wei, etc.)
+ * @param chainId - EVM chain ID for token resolution
  * @param tokenAddress - Token contract address (null/undefined = native ETH)
  * @returns Formatted string like "1.5 ETH" or "100 USDC"
  */
-export function formatAmount(amount: string, network: NetworkType, tokenAddress?: string | null): string {
+export function formatAmount(amount: string, chainId: number, tokenAddress?: string | null): string {
   try {
-    const token = getTokenByAddress(tokenAddress, network);
+    const token = getTokenByAddress(tokenAddress, chainId);
     const formatted = formatTokenAmount(amount, token.decimals);
     return `${formatted} ${token.symbol}`;
   } catch {

@@ -67,7 +67,10 @@ const scaffoldConfig = {
   // The networks on which your DApp is live
   // targetNetworks: [chains.sepolia],
   // targetNetworks: [chains.hardhat],
-  targetNetworks: [process.env.NEXT_PUBLIC_NETWORK === NetworkValue.mainnet ? horizenMainnet : horizenTestnet],
+  targetNetworks:
+    process.env.NEXT_PUBLIC_NETWORK === NetworkValue.mainnet
+      ? [horizenMainnet, chains.base]
+      : [horizenTestnet, chains.baseSepolia],
   // The interval at which your front-end polls the RPC servers for new data (it has no effect if you only target the local network (default is 4000))
   pollingInterval: 30000,
   // This is ours Alchemy's default API key.

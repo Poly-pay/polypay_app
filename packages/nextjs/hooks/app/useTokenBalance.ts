@@ -12,14 +12,15 @@ const ERC20_ABI = [
   },
 ] as const;
 
-export function useTokenBalances(accountAddress: string | undefined) {
-  const { tokens, nativeEth } = useNetworkTokens();
+export function useTokenBalances(accountAddress: string | undefined, chainId?: number) {
+  const { tokens, nativeEth, chainId: currentChainId } = useNetworkTokens(chainId);
 
   // Filter out native ETH for ERC20 calls
   const erc20Tokens = tokens.filter(token => token.address !== nativeEth.address);
 
   const { data: nativeBalance, isLoading: isLoadingNative } = useBalance({
     address: accountAddress as `0x${string}`,
+    chainId: currentChainId,
     query: {
       enabled: !!accountAddress,
       staleTime: 0,
@@ -31,6 +32,7 @@ export function useTokenBalances(accountAddress: string | undefined) {
   // Fetch ERC20 balances
   const contracts = erc20Tokens.map(token => ({
     address: token.address as `0x${string}`,
+    chainId: currentChainId,
     abi: ERC20_ABI,
     functionName: "balanceOf" as const,
     args: accountAddress ? [accountAddress as `0x${string}`] : undefined,

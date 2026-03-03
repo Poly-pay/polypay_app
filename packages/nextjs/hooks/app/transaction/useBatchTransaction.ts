@@ -76,7 +76,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       ])) as `0x${string}`;
 
       // 6. Generate ZK proof
-      const { proof, publicInputs, nullifier } = await generateProof(txHash);
+      const { proof, publicInputs, nullifier, vk } = await generateProof(txHash);
 
       // 7. Submit to backend
       setLoadingState("Submitting to backend...");
@@ -92,6 +92,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
         nullifier: nullifier.toString(),
         batchItemIds: selectedIds,
         userAddress: walletClient.account.address,
+        vk: vk ? Buffer.from(vk).toString("base64") : undefined,
       });
 
       if (result) {

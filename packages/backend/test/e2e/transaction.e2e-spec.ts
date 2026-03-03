@@ -101,6 +101,7 @@ describe('Transaction E2E', () => {
         name: 'Test Multi-Sig Account',
         signers: [signerDtoA, signerDtoB],
         threshold: 2,
+        chainId: 2651420,
       };
 
       const accountResponse = await request(server)

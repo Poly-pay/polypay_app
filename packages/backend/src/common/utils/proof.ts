@@ -1,10 +1,10 @@
-import { NetworkValue } from '@polypay/shared';
-import {
-  DOMAIN_ID_HORIZEN_MAINNET,
-  DOMAIN_ID_HORIZEN_TESTNET,
-} from '../constants';
+import { DOMAIN_ID_BY_CHAIN_ID } from '../constants';
 
-export const getDomainId = (): number => {
-  const isMainnet = process.env.NETWORK === NetworkValue.mainnet;
-  return isMainnet ? DOMAIN_ID_HORIZEN_MAINNET : DOMAIN_ID_HORIZEN_TESTNET;
+export const getDomainId = (chainId: number): number => {
+  const id =
+    DOMAIN_ID_BY_CHAIN_ID[chainId as keyof typeof DOMAIN_ID_BY_CHAIN_ID];
+  if (id === undefined) {
+    throw new Error(`Unsupported chainId for domainId: ${chainId}`);
+  }
+  return id;
 };
