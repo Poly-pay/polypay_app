@@ -7,7 +7,8 @@ import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMyAccounts } from "~~/hooks/api";
 import { useAccountStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
-import { getAvatarByAccountId } from "~~/utils/avatar";
+import { getAccountAvatar } from "~~/utils/avatar";
+import { formatAddress } from "~~/utils/format";
 import { getNetworkMeta } from "~~/utils/network";
 
 const VISIBLE_COUNT = 4;
@@ -84,6 +85,11 @@ const SwitchAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handleSelectNetwork = (chainId: number) => {
+    const networkAccounts = accounts.filter(acc => acc.chainId === chainId);
+    if (networkAccounts.length === 1) {
+      handleSelectAccount(networkAccounts[0]);
+      return;
+    }
     setSelectedChainId(chainId);
     setStep(2);
     setStartIndex(0);
@@ -171,16 +177,20 @@ const SwitchAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               {step === 2 && (
                 <>
                   {/* Account Cards Container */}
-                  <div className="relative w-full h-[248px] overflow-hidden mt-5 flex items-center">
+                  <div
+                    className={`relative w-full h-[248px] overflow-hidden mt-5 flex items-center ${filteredAccounts.length <= VISIBLE_COUNT ? "justify-center" : ""}`}
+                  >
                     <div
-                      className="flex gap-4 absolute transition-transform duration-300 ease-in-out pl-4"
-                      style={{
-                        transform: `translateX(-${startIndex * (160 + 16)}px)`,
-                      }}
+                      className={`flex gap-4 transition-transform duration-300 ease-in-out ${filteredAccounts.length > VISIBLE_COUNT ? "absolute pl-4" : ""}`}
+                      style={
+                        filteredAccounts.length > VISIBLE_COUNT
+                          ? { transform: `translateX(-${startIndex * (160 + 16)}px)` }
+                          : undefined
+                      }
                     >
                       {filteredAccounts.map(account => {
                         const isSelected = currentAccount?.id === account.id;
-                        const avatarSrc = getAvatarByAccountId(account.id);
+                        const avatarSrc = getAccountAvatar(account, accounts);
 
                         return (
                           <div
@@ -217,10 +227,15 @@ const SwitchAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
                                 />
                               </div>
 
-                              {/* Account name */}
-                              <span className="text-xl font-semibold text-grey-1000 tracking-tight text-center truncate max-w-[160px]">
-                                {account.name || "Unnamed"}
-                              </span>
+                              {/* Account name + address */}
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="text-xl font-semibold text-grey-1000 tracking-tight text-center truncate max-w-[160px]">
+                                  {account.name || "Unnamed"}
+                                </span>
+                                <span className="text-xs text-grey-500 tracking-tight">
+                                  {formatAddress(account.address, { start: 4, end: 3 })}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         );
