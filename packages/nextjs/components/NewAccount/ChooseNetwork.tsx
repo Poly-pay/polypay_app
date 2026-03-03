@@ -2,27 +2,19 @@
 
 import React from "react";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
 import { getDefaultChainId, getNetworkMeta } from "~~/utils/network";
 
 interface ChooseNetworkProps {
   className?: string;
   selectedChainIds: number[];
   onToggleChain: (chainId: number) => void;
-  onGoBack: () => void;
   onNextStep: () => void;
 }
 
 const HORIZEN_MAINNET = 26514;
 const BASE_MAINNET = 8453;
 
-const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
-  className,
-  selectedChainIds,
-  onToggleChain,
-  onGoBack,
-  onNextStep,
-}) => {
+const ChooseNetwork: React.FC<ChooseNetworkProps> = ({ className, selectedChainIds, onToggleChain, onNextStep }) => {
   const defaultChainId = getDefaultChainId();
 
   const networks = [
@@ -41,7 +33,7 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
   };
 
   return (
-    <div className={`flex flex-col h-full px-8 py-10 z-[100] ${className ?? ""}`}>
+    <div className={`flex flex-col min-h-full px-8 py-10 z-[100] ${className ?? ""}`}>
       {/* Title - same style as other steps */}
       <div className="flex flex-col items-center justify-center">
         <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">create new</div>
@@ -53,7 +45,7 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
 
         {/* Step description */}
         <div className="mt-6 flex flex-col items-center gap-2 text-center">
-          <span className="text-text-primary uppercase text-[24px] font-semibold">2. Choose network</span>
+          <span className="text-text-primary uppercase text-[24px] font-semibold">1. Choose network</span>
           <span className="text-text-secondary text-[14px] text-gray-500 max-w-[420px]">
             Choose which networks you want your account to be active on. You can add more networks later.
           </span>
@@ -103,17 +95,8 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
       </div>
 
       {/* Navigation buttons */}
-      <div className="mt-10 flex items-center justify-between w-full">
-        {/* Back button - same as SignersConfirmations */}
-        <button
-          type="button"
-          onClick={onGoBack}
-          className="flex items-center justify-center w-16 h-16 rounded-full shadow-lg transition-all bg-gray-100"
-        >
-          <ArrowLeft width={24} height={24} className="text-gray-400" />
-        </button>
-
-        {/* Next button - same as AccountName */}
+      <div className="mt-6 flex items-center justify-end w-full pb-2">
+        {/* Next button */}
         <button
           type="button"
           onClick={onNextStep}
