@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ResolvedToken, parseTokenAmount } from "@polypay/shared";
+import { ResolvedToken, getAvailableDestChains, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
@@ -13,21 +13,87 @@ import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useZodForm } from "~~/hooks/form";
 import { TransferFormData, transferSchema } from "~~/lib/form";
 import { formatErrorMessage } from "~~/lib/form/utils";
+import scaffoldConfig from "~~/scaffold.config";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
+function ChainSelector({
+  sourceChainId,
+  selectedChainId,
+  onChange,
+  tokenSymbol,
+  disabled,
+}: {
+  sourceChainId: number;
+  selectedChainId: number;
+  onChange: (chainId: number) => void;
+  tokenSymbol: string;
+  disabled?: boolean;
+}) {
+  const availableChains = useMemo(
+    () => getAvailableDestChains(sourceChainId, tokenSymbol),
+    [sourceChainId, tokenSymbol],
+  );
+
+  const chainNames: Record<number, string> = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const chain of scaffoldConfig.targetNetworks) {
+      map[chain.id] = chain.name;
+    }
+    return map;
+  }, []);
+
+  if (availableChains.length <= 1) return null;
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-grey-500">Network:</span>
+      <div className="flex gap-1">
+        {availableChains.map(chainId => (
+          <button
+            key={chainId}
+            type="button"
+            onClick={() => onChange(chainId)}
+            disabled={disabled}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+              selectedChainId === chainId ? "bg-violet-300 text-white" : "bg-grey-100 text-grey-600 hover:bg-grey-200"
+            } disabled:opacity-50`}
+          >
+            {chainNames[chainId] || `Chain ${chainId}`}
+            {chainId === sourceChainId && " (current)"}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function TransferContainer() {
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
-  const { tokens, nativeEth } = useNetworkTokens();
+  const { tokens, nativeEth, chainId: sourceChainId } = useNetworkTokens();
   const [selectedToken, setSelectedToken] = useState<ResolvedToken>(nativeEth);
+  const [destChainId, setDestChainId] = useState<number>(sourceChainId);
 
   const { currentAccount: selectedAccount } = useAccountStore();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
 
+  const isCrossChain = destChainId !== sourceChainId;
+
   useEffect(() => {
     setSelectedToken(nativeEth);
   }, [nativeEth]);
+
+  useEffect(() => {
+    setDestChainId(sourceChainId);
+  }, [sourceChainId]);
+
+  useEffect(() => {
+    const available = getAvailableDestChains(sourceChainId, selectedToken.symbol);
+    if (!available.includes(destChainId)) {
+      setDestChainId(sourceChainId);
+    }
+  }, [selectedToken.symbol, sourceChainId, destChainId]);
 
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { balances, isLoading: isLoadingBalances } = useTokenBalances(
@@ -49,7 +115,6 @@ export default function TransferContainer() {
   };
 
   useEffect(() => {
-    // Check for recipient data from sessionStorage
     const recipientData = sessionStorage.getItem("transferRecipient");
     if (recipientData) {
       try {
@@ -61,7 +126,6 @@ export default function TransferContainer() {
         if (name) {
           notification.info(`Pre-filled address for: ${name}`);
         }
-        // Clear the data after using it
         sessionStorage.removeItem("transferRecipient");
       } catch (error) {
         console.error("Failed to parse recipient data:", error);
@@ -84,11 +148,11 @@ export default function TransferContainer() {
       amount: data.amount,
       token: selectedToken,
       contactId: selectedContactId,
+      destChainId: isCrossChain ? destChainId : undefined,
     });
   };
 
   const handleAddToBatch = async () => {
-    // Validate form first
     const isValid = await form.trigger();
     if (!isValid) {
       return;
@@ -96,7 +160,6 @@ export default function TransferContainer() {
 
     const data = form.getValues();
 
-    // Validate commitment
     if (!commitment) {
       notification.error("No commitment found. Please create identity first.");
       return;
@@ -123,7 +186,6 @@ export default function TransferContainer() {
         </div>,
       );
 
-      // Reset form
       form.reset();
       setSelectedContactId(null);
     } catch (error: any) {
@@ -228,6 +290,23 @@ export default function TransferContainer() {
             </div>
           </div>
         </div>
+
+        {/* Destination chain selector */}
+        <ChainSelector
+          sourceChainId={sourceChainId}
+          selectedChainId={destChainId}
+          onChange={setDestChainId}
+          tokenSymbol={selectedToken.symbol}
+          disabled={isLoading}
+        />
+
+        {/* Cross-chain indicator */}
+        {isCrossChain && (
+          <div className="flex items-center gap-2 bg-violet-50 text-violet-700 px-4 py-2 rounded-lg text-sm">
+            <span>Cross-chain transfer via {selectedToken.symbol === "ETH" ? "OP Stack bridge" : "LayerZero"}</span>
+          </div>
+        )}
+
         {/* Address input */}
         <div className="flex flex-col gap-[5px] items-center justify-start w-full max-w-xl">
           <div className="flex gap-2.5 items-center justify-center w-full">
@@ -253,22 +332,24 @@ export default function TransferContainer() {
 
         {/* Action buttons */}
         <div className="flex gap-2 items-center justify-center w-full max-w-xs">
-          <button
-            onClick={handleAddToBatch}
-            disabled={isLoading || !isAmountValid || !watchedRecipient}
-            className="bg-main-black flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
-          >
-            <span className="font-medium xl:text-base text-xs text-center text-white tracking-[-0.16px]">
-              {isLoading ? "Processing..." : "Add to batch"}
-            </span>
-          </button>
+          {!isCrossChain && (
+            <button
+              onClick={handleAddToBatch}
+              disabled={isLoading || !isAmountValid || !watchedRecipient}
+              className="bg-main-black flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
+            >
+              <span className="font-medium xl:text-base text-xs text-center text-white tracking-[-0.16px]">
+                {isLoading ? "Processing..." : "Add to batch"}
+              </span>
+            </button>
+          )}
           <button
             onClick={form.handleSubmit(handleTransfer)}
             disabled={isLoading || !isAmountValid || !watchedRecipient}
             className="bg-pink-350 flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
             <span className="font-medium xl:text-base text-xs text-center tracking-[-0.16px]">
-              {isLoading ? "Processing..." : "Transfer now"}
+              {isLoading ? "Processing..." : isCrossChain ? "Bridge now" : "Transfer now"}
             </span>
           </button>
         </div>

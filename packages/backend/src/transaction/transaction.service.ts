@@ -15,6 +15,9 @@ import {
   encodeBatchTransferMulti,
   encodeERC20Transfer,
   encodeBatchTransfer,
+  encodeBridgeETHTo,
+  encodeLzSend,
+  encodeApproveAndCall,
   TxStatus,
   TX_CREATED_EVENT,
   TX_VOTED_EVENT,
@@ -30,6 +33,11 @@ import {
   encodeRemoveSigners,
   SignerData,
   ZERO_ADDRESS,
+  getTokenByAddress,
+  getBridgeMechanism,
+  getBridgeContract,
+  OP_BRIDGE_ADDRESSES,
+  LZ_ENDPOINT_IDS,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -164,6 +172,8 @@ export class TransactionService {
           contactId: dto.contactId,
           signerData: dto.signers ? JSON.stringify(dto.signers) : null,
           newThreshold: dto.newThreshold,
+          destChainId: dto.destChainId,
+          bridgeFee: dto.bridgeFee,
           createdBy: userCommitment,
           status: 'PENDING',
           batchData,
@@ -654,7 +664,7 @@ export class TransactionService {
     }
 
     // Build execute params based on tx type
-    const { to, value, data } = this.buildExecuteParams(transaction);
+    const { to, value, data } = await this.buildExecuteParams(transaction);
 
     // Format proofs for smart contract
     const zkProofs = approveVotes.map((vote) => ({
@@ -1106,17 +1116,27 @@ export class TransactionService {
     );
   }
 
-  private buildExecuteParams(transaction: Transaction): {
+  private async buildExecuteParams(transaction: Transaction): Promise<{
     to: string;
     value: string;
     data: string;
-  } {
+  }> {
     switch (transaction.type) {
-      case TxType.TRANSFER:
+      case TxType.TRANSFER: {
+        // Check for cross-chain bridge
+        if (transaction.destChainId) {
+          const account = await this.prisma.account.findUnique({
+            where: { address: transaction.accountAddress },
+          });
+          if (account && transaction.destChainId !== account.chainId) {
+            return this.buildBridgeExecuteParams(transaction, account.chainId);
+          }
+        }
+
         // ERC20 transfer
         if (transaction?.tokenAddress) {
           return {
-            to: transaction.tokenAddress, // Token contract address
+            to: transaction.tokenAddress,
             value: '0',
             data: encodeERC20Transfer(
               transaction.to,
@@ -1130,6 +1150,7 @@ export class TransactionService {
           value: transaction.value,
           data: '0x',
         };
+      }
 
       case TxType.ADD_SIGNER: {
         const signers: SignerData[] = transaction.signerData
@@ -1198,6 +1219,110 @@ export class TransactionService {
       default:
         throw new BadRequestException(`Unknown transaction type`);
     }
+  }
+
+  private buildBridgeExecuteParams(
+    transaction: Transaction,
+    srcChainId: number,
+  ): { to: string; value: string; data: string } {
+    const destChainId = transaction.destChainId;
+    const tokenSymbol = transaction.tokenAddress
+      ? transaction.tokenAddress === ZERO_ADDRESS
+        ? 'ETH'
+        : null
+      : 'ETH';
+
+    let resolvedSymbol = tokenSymbol;
+    if (!resolvedSymbol && transaction.tokenAddress) {
+      resolvedSymbol = this.resolveTokenSymbol(
+        transaction.tokenAddress,
+        srcChainId,
+      );
+    }
+
+    const mechanism = getBridgeMechanism(
+      srcChainId,
+      destChainId,
+      resolvedSymbol,
+    );
+
+    if (!mechanism) {
+      throw new BadRequestException(
+        `No bridge route for ${resolvedSymbol} from chain ${srcChainId} to ${destChainId}`,
+      );
+    }
+
+    const recipient = transaction.to;
+    const amount = BigInt(transaction.value);
+    const bridgeFee = transaction.bridgeFee
+      ? BigInt(transaction.bridgeFee)
+      : 0n;
+
+    if (mechanism === 'OP_STACK') {
+      const bridgeAddress = OP_BRIDGE_ADDRESSES[srcChainId];
+      if (!bridgeAddress) {
+        throw new BadRequestException(`No OP bridge on chain ${srcChainId}`);
+      }
+      return {
+        to: bridgeAddress,
+        value: amount.toString(),
+        data: encodeBridgeETHTo(recipient),
+      };
+    }
+
+    // LAYERZERO
+    const dstEid = LZ_ENDPOINT_IDS[destChainId];
+    if (!dstEid) {
+      throw new BadRequestException(`No LZ endpoint for chain ${destChainId}`);
+    }
+
+    const oftEntry = getBridgeContract(resolvedSymbol, srcChainId);
+    if (!oftEntry) {
+      throw new BadRequestException(
+        `No OFT contract for ${resolvedSymbol} on chain ${srcChainId}`,
+      );
+    }
+
+    const lzSendData = encodeLzSend(
+      dstEid,
+      recipient,
+      amount,
+      bridgeFee,
+      transaction.accountAddress,
+    );
+
+    if (oftEntry.type === 'adapter') {
+      // Base side: approve token + call adapter. Self-call with value=0.
+      return {
+        to: transaction.accountAddress,
+        value: '0',
+        data: encodeApproveAndCall(
+          transaction.tokenAddress,
+          oftEntry.address,
+          amount,
+          oftEntry.address,
+          bridgeFee,
+          lzSendData,
+        ),
+      };
+    }
+
+    // Horizen side: direct OFT send with bridgeFee as value
+    return {
+      to: oftEntry.address,
+      value: bridgeFee.toString(),
+      data: lzSendData,
+    };
+  }
+
+  private resolveTokenSymbol(tokenAddress: string, chainId: number): string {
+    const token = getTokenByAddress(tokenAddress, chainId);
+    if (token.address === ZERO_ADDRESS) {
+      throw new BadRequestException(
+        `Cannot resolve token symbol for address ${tokenAddress} on chain ${chainId}`,
+      );
+    }
+    return token.symbol;
   }
 
   /**

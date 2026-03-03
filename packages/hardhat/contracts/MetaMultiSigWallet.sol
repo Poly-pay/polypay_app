@@ -214,6 +214,33 @@ contract MetaMultiSigWallet {
         }
     }
 
+    /**
+     * @notice Approve an ERC20 token and call a target contract in one atomic operation.
+     *         Used for cross-chain bridge flows (e.g. OFT Adapter: approve + send).
+     * @param token ERC20 token to approve
+     * @param spender Address to approve spending
+     * @param approveAmount Amount to approve
+     * @param callTarget Contract to call after approval
+     * @param callValue Native ETH to send with the call (e.g. LayerZero fee)
+     * @param callData Encoded function call for the target
+     */
+    function approveAndCall(
+        address token,
+        address spender,
+        uint256 approveAmount,
+        address callTarget,
+        uint256 callValue,
+        bytes calldata callData
+    ) public onlySelf {
+        (bool approveSuccess, bytes memory approveResult) = token.call(
+            abi.encodeWithSignature("approve(address,uint256)", spender, approveAmount)
+        );
+        require(approveSuccess && (approveResult.length == 0 || abi.decode(approveResult, (bool))), "Approve failed");
+
+        (bool callSuccess,) = callTarget.call{value: callValue}(callData);
+        require(callSuccess, "Call failed");
+    }
+
     // ============ View Functions ============
     function getTransactionHash(
         uint256 _nonce,

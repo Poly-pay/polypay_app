@@ -143,11 +143,7 @@ export function encodeBridgeETHTo(recipient: string): Hex {
   return encodeFunctionData({
     abi: L1_STANDARD_BRIDGE_ABI,
     functionName: "bridgeETHTo",
-    args: [
-      recipient as `0x${string}`,
-      OP_BRIDGE_MIN_GAS_LIMIT,
-      "0x" as Hex,
-    ],
+    args: [recipient as `0x${string}`, OP_BRIDGE_MIN_GAS_LIMIT, "0x" as Hex],
   });
 }
 

@@ -16,7 +16,7 @@ export const LZ_ENDPOINT_IDS: Record<number, number> = {
   [BASE_MAINNET]: 30184,
   [BASE_SEPOLIA]: 40245,
   [HORIZEN_MAINNET]: 30399,
-  [HORIZEN_TESTNET]: 40329, // TODO: update to correct endpoint id
+  [HORIZEN_TESTNET]: 40435,
 };
 
 // ─── OP Stack Bridge (Base only, bridging TO Horizen) ───
