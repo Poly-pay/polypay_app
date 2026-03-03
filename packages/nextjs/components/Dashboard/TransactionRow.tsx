@@ -63,6 +63,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     newThreshold: tx.newThreshold || undefined,
     batchData,
     destChainId: tx.destChainId,
+    bridgeFee: tx.bridgeFee,
     members,
     votedCount: tx.votes.length,
     threshold: tx.threshold,
