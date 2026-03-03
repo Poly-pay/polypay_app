@@ -166,6 +166,44 @@ export function formatTokenAmount(amount: string, decimals: number): string {
   return `${intPart}.${decStr}`;
 }
 
+const STABLECOINS = ["USDC", "USDT"];
+
+function getDisplayPrecision(value: number, tokenSymbol?: string): number {
+  if (tokenSymbol && STABLECOINS.includes(tokenSymbol.toUpperCase())) return 2;
+  if (value >= 1000) return 2;
+  if (value >= 100) return 4;
+  if (value >= 10) return 5;
+  if (value >= 1) return 6;
+  return 8;
+}
+
+export function formatDisplayValue(
+  value: string,
+  tokenSymbol?: string,
+): string {
+  const num = parseFloat(value);
+  if (isNaN(num) || num === 0) return "0";
+
+  const isStable =
+    tokenSymbol && STABLECOINS.includes(tokenSymbol.toUpperCase());
+  const precision = getDisplayPrecision(num, tokenSymbol);
+
+  if (num > 0 && isStable && num < 0.01) return "< 0.01";
+  if (num > 0 && num < 1e-8) return "< 0.00000001";
+
+  const formatted = num.toFixed(precision);
+  return formatted.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+}
+
+export function formatDisplayAmount(
+  amount: string,
+  decimals: number,
+  tokenSymbol?: string,
+): string {
+  const full = formatTokenAmount(amount, decimals);
+  return formatDisplayValue(full, tokenSymbol);
+}
+
 export function parseTokenAmount(amount: string, decimals: number): string {
   const [intPart, decPart = ""] = amount.split(".");
   const paddedDec = decPart.padEnd(decimals, "0").slice(0, decimals);

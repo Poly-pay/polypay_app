@@ -2,7 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ResolvedToken, getAvailableDestChains, isCrossChainEnabled, parseTokenAmount } from "@polypay/shared";
+import {
+  ResolvedToken,
+  formatDisplayValue,
+  getAvailableDestChains,
+  isCrossChainEnabled,
+  parseTokenAmount,
+} from "@polypay/shared";
 import { parseEther } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
@@ -266,7 +272,8 @@ export default function TransferContainer() {
           <div className="flex items-center gap-3 text-grey-500 text-base">
             <span>Polypay account balance:</span>
             <span className="font-semibold text-grey-700">
-              {isLoadingBalances ? "..." : currentBalance} {selectedToken.symbol}
+              {isLoadingBalances ? "..." : formatDisplayValue(currentBalance, selectedToken.symbol)}{" "}
+              {selectedToken.symbol}
             </span>
             <button
               type="button"

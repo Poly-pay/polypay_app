@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import Image from "next/image";
-import { ResolvedToken } from "@polypay/shared";
+import { ResolvedToken, formatDisplayValue } from "@polypay/shared";
 import NetworkBadge from "~~/components/Common/NetworkBadge";
 import { useMetaMultiSigWallet, useTokenPrices } from "~~/hooks";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
@@ -112,7 +112,7 @@ export function TokenPillPopover({
                     <span className="text-grey-300">$</span> {isLoadingPrices ? "..." : getTokenUsdValue(token)}
                   </p>
                   <p className="text-grey-800 text-xs">
-                    {balances[token.address] || "0"} {token.symbol}
+                    {formatDisplayValue(balances[token.address] || "0", token.symbol)} {token.symbol}
                   </p>
                 </div>
               </div>
