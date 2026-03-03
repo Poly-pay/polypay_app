@@ -24,17 +24,18 @@ model User {
 }
 
 model Account {
-  id            String          @id @default(cuid())
-  address       String          @unique
-  name          String
-  threshold     Int
-  chainId       Int             @default(26514) @map("chain_id")
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
-  signers       AccountSigner[]
-  contactGroups ContactGroup[]
-  contacts      Contact[]
-  transactions  Transaction[]
+  id              String          @id @default(cuid())
+  address         String          @unique
+  name            String
+  threshold       Int
+  chainId         Int             @default(26514) @map("chain_id")
+  contractVersion Int             @default(1) @map("contract_version")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  signers         AccountSigner[]
+  contactGroups   ContactGroup[]
+  contacts        Contact[]
+  transactions    Transaction[]
 
   @@map("accounts")
 }
