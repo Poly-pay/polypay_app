@@ -10,6 +10,7 @@ export interface Account {
   name: string;
   threshold: number;
   chainId: number;
+  contractVersion: number;
   createdAt: string;
   updatedAt: string;
   signers: AccountSigner[];

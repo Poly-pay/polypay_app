@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ResolvedToken, getAvailableDestChains, parseTokenAmount } from "@polypay/shared";
+import { ResolvedToken, getAvailableDestChains, isCrossChainEnabled, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
@@ -77,6 +77,10 @@ export default function TransferContainer() {
   const { currentAccount: selectedAccount } = useAccountStore();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
+
+  const crossChainEnabled = selectedAccount?.contractVersion
+    ? isCrossChainEnabled(selectedAccount.contractVersion)
+    : false;
 
   const isCrossChain = destChainId !== sourceChainId;
 
@@ -292,13 +296,15 @@ export default function TransferContainer() {
         </div>
 
         {/* Destination chain selector */}
-        <ChainSelector
-          sourceChainId={sourceChainId}
-          selectedChainId={destChainId}
-          onChange={setDestChainId}
-          tokenSymbol={selectedToken.symbol}
-          disabled={isLoading}
-        />
+        {crossChainEnabled && (
+          <ChainSelector
+            sourceChainId={sourceChainId}
+            selectedChainId={destChainId}
+            onChange={setDestChainId}
+            tokenSymbol={selectedToken.symbol}
+            disabled={isLoading}
+          />
+        )}
 
         {/* Cross-chain indicator */}
         {isCrossChain && (

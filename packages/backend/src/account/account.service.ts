@@ -9,6 +9,7 @@ import {
   CreateAccountDto,
   CreateAccountBatchDto,
   UpdateAccountDto,
+  CROSS_CHAIN_MIN_CONTRACT_VERSION,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { EventsService } from '@/events/events.service';
@@ -86,6 +87,7 @@ export class AccountService {
           name: dto.name,
           threshold: dto.threshold,
           chainId: dto.chainId,
+          contractVersion: CROSS_CHAIN_MIN_CONTRACT_VERSION,
         },
       });
 
@@ -235,6 +237,7 @@ export class AccountService {
             name: dto.name,
             threshold: dto.threshold,
             chainId: deployment.chainId,
+            contractVersion: CROSS_CHAIN_MIN_CONTRACT_VERSION,
           },
         });
 
@@ -339,6 +342,7 @@ export class AccountService {
       name: account.name,
       threshold: account.threshold,
       chainId: account.chainId,
+      contractVersion: account.contractVersion,
       createdAt: account.createdAt,
       signers: account.signers.map((as) => ({
         commitment: as.user.commitment,
@@ -369,6 +373,7 @@ export class AccountService {
       name: account.name,
       threshold: account.threshold,
       chainId: account.chainId,
+      contractVersion: account.contractVersion,
       createdAt: account.createdAt,
       signers: account.signers.map((as) => ({
         commitment: as.user.commitment,

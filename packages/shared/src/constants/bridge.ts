@@ -1,3 +1,11 @@
+// ─── Cross-chain version gate ───
+
+export const CROSS_CHAIN_MIN_CONTRACT_VERSION = 2;
+
+export function isCrossChainEnabled(contractVersion: number): boolean {
+  return contractVersion >= CROSS_CHAIN_MIN_CONTRACT_VERSION;
+}
+
 // Chain IDs (mirrored from token.ts for bridge-local use)
 const HORIZEN_MAINNET = 26514;
 const HORIZEN_TESTNET = 2651420;

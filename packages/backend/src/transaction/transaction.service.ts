@@ -38,6 +38,7 @@ import {
   getBridgeContract,
   OP_BRIDGE_ADDRESSES,
   LZ_ENDPOINT_IDS,
+  isCrossChainEnabled,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -106,6 +107,14 @@ export class TransactionService {
       throw new NotFoundException(
         `Account ${dto.accountAddress} not found. Please create account first.`,
       );
+    }
+
+    if (dto.destChainId && dto.destChainId !== account.chainId) {
+      if (!isCrossChainEnabled(account.contractVersion)) {
+        throw new BadRequestException(
+          'Cross-chain transfers require contract version >= 2. Please upgrade your account.',
+        );
+      }
     }
 
     // Create batch data
