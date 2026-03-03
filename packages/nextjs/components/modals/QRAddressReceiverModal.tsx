@@ -1,6 +1,8 @@
 import ModalContainer from "./ModalContainer";
 import { QRCodeSVG } from "qrcode.react";
+import { useAccountStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
+import { getNetworkMeta } from "~~/utils/network";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface QRAddressReceiverModalProps extends ModalProps {
@@ -8,6 +10,8 @@ interface QRAddressReceiverModalProps extends ModalProps {
 }
 
 const QRAddressReceiverModal: React.FC<QRAddressReceiverModalProps> = ({ isOpen, onClose, address }) => {
+  const { currentAccount } = useAccountStore();
+  const networkIcon = currentAccount?.chainId ? getNetworkMeta(currentAccount.chainId).icon : "/logo/polypay-icon.svg";
   const handleCopy = () => {
     navigator.clipboard.writeText(address ?? "");
     notification.success("Address copied to clipboard");
@@ -37,7 +41,7 @@ const QRAddressReceiverModal: React.FC<QRAddressReceiverModalProps> = ({ isOpen,
             fgColor="#000000"
             level="H"
             imageSettings={{
-              src: `/logo/polypay-icon.svg`,
+              src: networkIcon,
               width: 64,
               height: 64,
               excavate: true,
