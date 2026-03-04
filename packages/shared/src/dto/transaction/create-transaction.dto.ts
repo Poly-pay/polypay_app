@@ -58,6 +58,10 @@ export class CreateTransactionDto {
   @IsString()
   bridgeFee?: string;
 
+  @IsOptional()
+  @IsString()
+  bridgeMinAmount?: string;
+
   // ADD_SIGNER / REMOVE_SIGNER
   @IsOptional()
   @IsArray()

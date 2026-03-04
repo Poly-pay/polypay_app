@@ -12,7 +12,9 @@ import {
   encodeLzSend,
   getBridgeContract,
   getBridgeMechanism,
+  getOftCmd,
   parseTokenAmount,
+  removeDust,
 } from "@polypay/shared";
 import { type Hex, createPublicClient, http, parseEther } from "viem";
 import { useWalletClient } from "wagmi";
@@ -74,6 +76,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       // 4. Calculate txHash (different for ETH vs ERC20)
       let txHash: `0x${string}`;
       let bridgeFee: string | undefined;
+      let bridgeMinAmount: string | undefined;
 
       if (isCrossChain) {
         const bridgeResult = await buildBridgeParams({
@@ -88,6 +91,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
         });
 
         bridgeFee = bridgeResult.bridgeFee;
+        bridgeMinAmount = bridgeResult.bridgeMinAmount;
 
         txHash = (await metaMultiSigWallet.read.getTransactionHash([
           BigInt(nonce),
@@ -129,6 +133,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
         contactId: contactId || undefined,
         destChainId: isCrossChain ? destChainId : undefined,
         bridgeFee,
+        bridgeMinAmount,
         proof: Array.from(proof),
         publicInputs,
         nullifier: nullifier.toString(),
@@ -180,7 +185,7 @@ async function buildBridgeParams({
   destChainId: number;
   walletAddress: string;
   setLoadingState: (s: string) => void;
-}): Promise<{ to: string; value: string; data: Hex; bridgeFee?: string }> {
+}): Promise<{ to: string; value: string; data: Hex; bridgeFee?: string; bridgeMinAmount?: string }> {
   const tokenSymbol = isNativeETH ? "ETH" : token.symbol;
   const mechanism = getBridgeMechanism(sourceChainId, destChainId, tokenSymbol);
 
@@ -202,8 +207,6 @@ async function buildBridgeParams({
   }
 
   // LAYERZERO
-  setLoadingState("Quoting LayerZero fee...");
-
   const dstEid = LZ_ENDPOINT_IDS[destChainId];
   if (!dstEid) throw new Error(`No LZ endpoint for chain ${destChainId}`);
 
@@ -215,16 +218,50 @@ async function buildBridgeParams({
 
   const publicClient = createPublicClient({ chain, transport: http() });
 
+  const oftCmd = getOftCmd(oftEntry);
+  const toBytes32 = `0x${recipient.slice(2).padStart(64, "0")}` as `0x${string}`;
+
+  // For Stargate OFTs, call quoteOFT to get amountReceivedLD (accounts for protocol fee).
+  // For standard OFTs, removeDust is sufficient.
+  let minAmount: bigint;
+  if (oftEntry.stargate) {
+    setLoadingState("Quoting Stargate fee...");
+    const quoteResult = (await publicClient.readContract({
+      address: oftEntry.address as `0x${string}`,
+      abi: OFT_ABI,
+      functionName: "quoteOFT",
+      args: [
+        {
+          dstEid,
+          to: toBytes32,
+          amountLD: amount,
+          minAmountLD: 0n,
+          extraOptions: "0x" as Hex,
+          composeMsg: "0x" as Hex,
+          oftCmd: oftCmd as Hex,
+        },
+      ],
+    })) as [
+      { minAmountLD: bigint; maxAmountLD: bigint },
+      { feeAmountLD: bigint; description: string }[],
+      { amountSentLD: bigint; amountReceivedLD: bigint },
+    ];
+    minAmount = quoteResult[2].amountReceivedLD;
+  } else {
+    minAmount = removeDust(amount, token.decimals);
+  }
+
   const sendParam = {
     dstEid,
-    to: `0x${recipient.slice(2).padStart(64, "0")}` as `0x${string}`,
+    to: toBytes32,
     amountLD: amount,
-    minAmountLD: amount,
+    minAmountLD: minAmount,
     extraOptions: "0x" as Hex,
     composeMsg: "0x" as Hex,
-    oftCmd: "0x" as Hex,
+    oftCmd: oftCmd as Hex,
   };
 
+  setLoadingState("Quoting LayerZero fee...");
   const quotedFee = (await publicClient.readContract({
     address: oftEntry.address as `0x${string}`,
     abi: OFT_ABI,
@@ -234,7 +271,7 @@ async function buildBridgeParams({
 
   const nativeFee = quotedFee.nativeFee;
 
-  const lzSendData = encodeLzSend(dstEid, recipient, amount, nativeFee, walletAddress);
+  const lzSendData = encodeLzSend(dstEid, recipient, amount, minAmount, nativeFee, walletAddress, oftCmd as Hex);
 
   if (oftEntry.type === "adapter") {
     return {
@@ -242,6 +279,7 @@ async function buildBridgeParams({
       value: "0",
       data: encodeApproveAndCall(token.address, oftEntry.address, amount, oftEntry.address, nativeFee, lzSendData),
       bridgeFee: nativeFee.toString(),
+      bridgeMinAmount: minAmount.toString(),
     };
   }
 
@@ -250,5 +288,6 @@ async function buildBridgeParams({
     value: nativeFee.toString(),
     data: lzSendData,
     bridgeFee: nativeFee.toString(),
+    bridgeMinAmount: minAmount.toString(),
   };
 }

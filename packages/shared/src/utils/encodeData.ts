@@ -155,15 +155,31 @@ export function addressToBytes32(addr: string): Hex {
 }
 
 /**
+ * Strip dust bits that would be lost during LayerZero shared-decimals conversion.
+ * OFT standard uses 6 shared decimals; tokens with more local decimals lose
+ * the lowest (localDecimals - sharedDecimals) digits during transfer.
+ */
+export function removeDust(
+  amountLD: bigint,
+  localDecimals: number,
+  sharedDecimals = 6,
+): bigint {
+  if (localDecimals <= sharedDecimals) return amountLD;
+  const rate = BigInt(10 ** (localDecimals - sharedDecimals));
+  return (amountLD / rate) * rate;
+}
+
+/**
  * Encode LayerZero OFT send() call.
- * minAmountLD = amountLD (no slippage, OFT is 1:1).
  */
 export function encodeLzSend(
   dstEid: number,
   recipient: string,
   amountLD: bigint,
+  minAmountLD: bigint,
   nativeFee: bigint,
   refundAddress: string,
+  oftCmd: Hex = "0x",
 ): Hex {
   return encodeFunctionData({
     abi: OFT_ABI,
@@ -173,10 +189,10 @@ export function encodeLzSend(
         dstEid,
         to: addressToBytes32(recipient),
         amountLD,
-        minAmountLD: amountLD,
+        minAmountLD,
         extraOptions: "0x" as Hex,
         composeMsg: "0x" as Hex,
-        oftCmd: "0x" as Hex,
+        oftCmd,
       },
       {
         nativeFee,

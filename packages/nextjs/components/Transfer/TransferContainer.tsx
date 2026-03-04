@@ -359,7 +359,7 @@ export default function TransferContainer() {
           <button
             onClick={form.handleSubmit(handleTransfer)}
             disabled={isLoading || !isAmountValid || !watchedRecipient}
-            className="bg-pink-350 flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
+            className="bg-pink-350 flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors z-[100]"
           >
             <span className="font-medium xl:text-base text-xs text-center tracking-[-0.16px]">
               {isLoading ? "Processing..." : isCrossChain ? "Bridge now" : "Transfer now"}

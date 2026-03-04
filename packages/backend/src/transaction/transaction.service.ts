@@ -36,9 +36,11 @@ import {
   getTokenByAddress,
   getBridgeMechanism,
   getBridgeContract,
+  getOftCmd,
   OP_BRIDGE_ADDRESSES,
   LZ_ENDPOINT_IDS,
   isCrossChainEnabled,
+  removeDust,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
@@ -183,6 +185,7 @@ export class TransactionService {
           newThreshold: dto.newThreshold,
           destChainId: dto.destChainId,
           bridgeFee: dto.bridgeFee,
+          bridgeMinAmount: dto.bridgeMinAmount,
           createdBy: userCommitment,
           status: 'PENDING',
           batchData,
@@ -1292,12 +1295,20 @@ export class TransactionService {
       );
     }
 
+    const token = getTokenByAddress(transaction.tokenAddress, srcChainId);
+    const minAmount = transaction.bridgeMinAmount
+      ? BigInt(transaction.bridgeMinAmount)
+      : removeDust(amount, token.decimals);
+    const oftCmd = getOftCmd(oftEntry);
+
     const lzSendData = encodeLzSend(
       dstEid,
       recipient,
       amount,
+      minAmount,
       bridgeFee,
       transaction.accountAddress,
+      oftCmd as `0x${string}`,
     );
 
     if (oftEntry.type === 'adapter') {

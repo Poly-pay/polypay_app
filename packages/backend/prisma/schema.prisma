@@ -70,6 +70,7 @@ model Transaction {
   batchData      String?   @map("batch_data")
   destChainId    Int?      @map("dest_chain_id")
   bridgeFee      String?   @map("bridge_fee")
+  bridgeMinAmount String?  @map("bridge_min_amount")
   createdBy      String    @map("created_by")
   threshold      Int
   txHash         String?   @map("tx_hash")

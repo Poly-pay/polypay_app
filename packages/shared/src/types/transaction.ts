@@ -24,6 +24,7 @@ export interface Transaction {
   batchData?: string;
   destChainId?: number;
   bridgeFee?: string;
+  bridgeMinAmount?: string;
   createdBy: string;
   threshold: number;
   txHash?: string;

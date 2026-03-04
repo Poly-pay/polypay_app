@@ -17,7 +17,9 @@ import {
   encodeUpdateThreshold,
   getBridgeContract,
   getBridgeMechanism,
+  getOftCmd,
   getTokenByAddress,
+  removeDust,
 } from "@polypay/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWalletClient } from "wagmi";
@@ -66,6 +68,7 @@ export interface TransactionRowData {
   batchData?: BatchTransfer[];
   destChainId?: number;
   bridgeFee?: string;
+  bridgeMinAmount?: string;
   contact?: {
     id: string;
     name: string;
@@ -168,7 +171,11 @@ function buildBridgeTransactionParams(
     throw new Error(`No bridge route for ${tokenSymbol} from ${sourceChainId} to ${destChainId}`);
   }
 
-  const lzSendData = encodeLzSend(dstEid, recipient, amount, fee, tx.accountAddress);
+  const token = getTokenByAddress(tx.tokenAddress, sourceChainId);
+  const minAmount = tx.bridgeMinAmount ? BigInt(tx.bridgeMinAmount) : removeDust(amount, token.decimals);
+  const oftCmd = getOftCmd(oftEntry);
+
+  const lzSendData = encodeLzSend(dstEid, recipient, amount, minAmount, fee, tx.accountAddress, oftCmd);
 
   if (oftEntry.type === "adapter") {
     return {

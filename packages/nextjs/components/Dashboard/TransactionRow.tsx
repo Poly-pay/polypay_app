@@ -64,6 +64,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     batchData,
     destChainId: tx.destChainId,
     bridgeFee: tx.bridgeFee,
+    bridgeMinAmount: tx.bridgeMinAmount,
     members,
     votedCount: tx.votes.length,
     threshold: tx.threshold,

@@ -38,9 +38,18 @@ export const OP_BRIDGE_MIN_GAS_LIMIT = 200_000;
 
 // ─── OFT / Adapter addresses per chain per token ───
 
-interface OftContractEntry {
+export interface OftContractEntry {
   type: "oft" | "adapter";
   address: string;
+  stargate?: boolean;
+}
+
+// Stargate V2 uses taxi mode (non-empty oftCmd) for immediate delivery.
+// Bus mode (empty oftCmd) requires an active bus driver and may fail.
+export const STARGATE_TAXI_OFT_CMD = "0x01" as const;
+
+export function getOftCmd(entry: OftContractEntry | null): `0x${string}` {
+  return entry?.stargate ? STARGATE_TAXI_OFT_CMD : "0x";
 }
 
 export const BRIDGE_CONTRACTS: Record<
@@ -69,10 +78,12 @@ export const BRIDGE_CONTRACTS: Record<
     [BASE_MAINNET]: {
       type: "adapter",
       address: "0x27a16dc786820b16e5c9028b75b99f6f604b5d26",
+      stargate: true,
     },
     [HORIZEN_MAINNET]: {
-      type: "oft",
+      type: "adapter",
       address: "0x3a1293Bdb83bBbDd5Ebf4fAc96605aD2021BbC0f",
+      stargate: true,
     },
     // No testnet OFT contracts for USDC
   },
