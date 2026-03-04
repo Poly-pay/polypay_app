@@ -15,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { PriceModule } from './price/price.module';
 import { FeatureRequestModule } from './feature-request/feature-request.module';
 import { AdminModule } from './admin/admin.module';
+import { PartnerModule } from './partner/partner.module';
 import { QuestModule } from './quest/quest.module';
 import { RewardModule } from './reward/reward.module';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -36,6 +37,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PriceModule,
     FeatureRequestModule,
     AdminModule,
+    PartnerModule,
     QuestModule,
     RewardModule,
     ScheduleModule.forRoot(),
