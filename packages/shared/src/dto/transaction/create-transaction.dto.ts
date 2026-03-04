@@ -49,6 +49,19 @@ export class CreateTransactionDto {
   @IsString()
   contactId?: string;
 
+  // Cross-chain bridge
+  @IsOptional()
+  @IsNumber()
+  destChainId?: number;
+
+  @IsOptional()
+  @IsString()
+  bridgeFee?: string;
+
+  @IsOptional()
+  @IsString()
+  bridgeMinAmount?: string;
+
   // ADD_SIGNER / REMOVE_SIGNER
   @IsOptional()
   @IsArray()

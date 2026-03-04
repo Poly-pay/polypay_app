@@ -263,6 +263,43 @@ export class RelayerService {
       } catch (e) {
         // Not a batchTransferMulti call, continue
       }
+
+      // Try decode approveAndCall (cross-chain bridge via OFT Adapter)
+      try {
+        const decoded = decodeFunctionData({
+          abi: [
+            {
+              name: 'approveAndCall',
+              type: 'function',
+              inputs: [
+                { name: 'token', type: 'address' },
+                { name: 'spender', type: 'address' },
+                { name: 'approveAmount', type: 'uint256' },
+                { name: 'callTarget', type: 'address' },
+                { name: 'callValue', type: 'uint256' },
+                { name: 'callData', type: 'bytes' },
+              ],
+            },
+          ],
+          data: data as `0x${string}`,
+        });
+
+        if (decoded.functionName === 'approveAndCall') {
+          const tokenAddress = (decoded.args[0] as string).toLowerCase();
+          const approveAmount = decoded.args[2] as bigint;
+          const callValue = decoded.args[4] as bigint;
+
+          erc20Requirements[tokenAddress] =
+            (erc20Requirements[tokenAddress] || 0n) + approveAmount;
+          requiredBalance = requiredBalance + callValue;
+
+          this.logger.log(
+            `ApproveAndCall detected. Token: ${tokenAddress}, Amount: ${approveAmount}, LZ fee: ${callValue}`,
+          );
+        }
+      } catch (e) {
+        // Not an approveAndCall, continue
+      }
     }
 
     // Check ETH balance

@@ -1,19 +1,29 @@
 import { useState } from "react";
 import {
+  LZ_ENDPOINT_IDS,
+  OP_BRIDGE_ADDRESSES,
   SignerData,
   TxStatus,
   TxType,
   ZERO_ADDRESS,
   encodeAddSigners,
+  encodeApproveAndCall,
   encodeBatchTransfer,
   encodeBatchTransferMulti,
+  encodeBridgeETHTo,
   encodeERC20Transfer,
+  encodeLzSend,
   encodeRemoveSigners,
   encodeUpdateThreshold,
+  getBridgeContract,
+  getBridgeMechanism,
+  getOftCmd,
+  getTokenByAddress,
+  removeDust,
 } from "@polypay/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWalletClient } from "wagmi";
-import { accountKeys, useMetaMultiSigWallet, userKeys } from "~~/hooks";
+import { accountKeys, useMetaMultiSigWallet, useNetworkTokens, userKeys } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { formatErrorMessage } from "~~/lib/form/utils";
@@ -56,6 +66,9 @@ export interface TransactionRowData {
   oldThreshold?: number;
   newThreshold?: number;
   batchData?: BatchTransfer[];
+  destChainId?: number;
+  bridgeFee?: string;
+  bridgeMinAmount?: string;
   contact?: {
     id: string;
     name: string;
@@ -70,9 +83,15 @@ export interface TransactionRowData {
 }
 
 /**
- * Build callData, to, and value based on transaction type
+ * Build callData, to, and value based on transaction type.
+ * For cross-chain TRANSFER, must reconstruct bridge execution params
+ * to produce the same txHash as the creator and backend.
  */
-function buildTransactionParams(tx: TransactionRowData): {
+function buildTransactionParams(
+  tx: TransactionRowData,
+  sourceChainId: number,
+  bridgeFee?: string,
+): {
   to: `0x${string}`;
   value: bigint;
   callData: `0x${string}`;
@@ -82,7 +101,12 @@ function buildTransactionParams(tx: TransactionRowData): {
   let value = BigInt(tx.amount || "0");
 
   if (tx.type === TxType.TRANSFER) {
-    // Check if ERC20 transfer
+    const isCrossChain = tx.destChainId && tx.destChainId !== sourceChainId;
+
+    if (isCrossChain) {
+      return buildBridgeTransactionParams(tx, sourceChainId, bridgeFee);
+    }
+
     if (tx.tokenAddress && tx.tokenAddress !== ZERO_ADDRESS) {
       to = tx.tokenAddress as `0x${string}`;
       value = 0n;
@@ -117,6 +141,69 @@ function buildTransactionParams(tx: TransactionRowData): {
   return { to, value, callData };
 }
 
+function buildBridgeTransactionParams(
+  tx: TransactionRowData,
+  sourceChainId: number,
+  bridgeFee?: string,
+): { to: `0x${string}`; value: bigint; callData: `0x${string}` } {
+  const destChainId = tx.destChainId!;
+  const isNativeETH = !tx.tokenAddress || tx.tokenAddress === ZERO_ADDRESS;
+  const tokenSymbol = isNativeETH ? "ETH" : getTokenSymbolFromAddress(tx.tokenAddress!, sourceChainId);
+  const mechanism = getBridgeMechanism(sourceChainId, destChainId, tokenSymbol);
+  const amount = BigInt(tx.amount || "0");
+  const fee = bridgeFee ? BigInt(bridgeFee) : 0n;
+  const recipient = tx.recipientAddress!;
+
+  if (mechanism === "OP_STACK") {
+    const bridgeAddress = OP_BRIDGE_ADDRESSES[sourceChainId];
+    return {
+      to: bridgeAddress as `0x${string}`,
+      value: amount,
+      callData: encodeBridgeETHTo(recipient) as `0x${string}`,
+    };
+  }
+
+  // LAYERZERO
+  const dstEid = LZ_ENDPOINT_IDS[destChainId];
+  const oftEntry = getBridgeContract(tokenSymbol, sourceChainId);
+
+  if (!dstEid || !oftEntry) {
+    throw new Error(`No bridge route for ${tokenSymbol} from ${sourceChainId} to ${destChainId}`);
+  }
+
+  const token = getTokenByAddress(tx.tokenAddress, sourceChainId);
+  const minAmount = tx.bridgeMinAmount ? BigInt(tx.bridgeMinAmount) : removeDust(amount, token.decimals);
+  const oftCmd = getOftCmd(oftEntry);
+
+  const lzSendData = encodeLzSend(dstEid, recipient, amount, minAmount, fee, tx.accountAddress, oftCmd);
+
+  if (oftEntry.type === "adapter") {
+    return {
+      to: tx.accountAddress as `0x${string}`,
+      value: 0n,
+      callData: encodeApproveAndCall(
+        tx.tokenAddress!,
+        oftEntry.address,
+        amount,
+        oftEntry.address,
+        fee,
+        lzSendData,
+      ) as `0x${string}`,
+    };
+  }
+
+  return {
+    to: oftEntry.address as `0x${string}`,
+    value: fee,
+    callData: lzSendData as `0x${string}`,
+  };
+}
+
+function getTokenSymbolFromAddress(tokenAddress: string, chainId: number): string {
+  const token = getTokenByAddress(tokenAddress, chainId);
+  return token.symbol;
+}
+
 export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingState, setLoadingState] = useState("");
@@ -124,6 +211,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
   const { commitment } = useIdentityStore();
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
+  const { chainId: sourceChainId } = useNetworkTokens();
 
   const { mutateAsync: approveApi } = useApproveTransaction();
   const { mutateAsync: denyApi } = useDenyTransaction();
@@ -146,8 +234,8 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
 
     setIsLoading(true);
     try {
-      // 1. Build callData based on tx type
-      const { to, value, callData } = buildTransactionParams(tx);
+      // 1. Build callData based on tx type (pass sourceChainId for cross-chain bridge reconstruction)
+      const { to, value, callData } = buildTransactionParams(tx, sourceChainId, tx.bridgeFee);
 
       // 2. Get txHash from contract
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([

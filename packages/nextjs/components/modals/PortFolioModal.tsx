@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
-import { ResolvedToken } from "@polypay/shared";
+import { ResolvedToken, formatDisplayValue } from "@polypay/shared";
 import { Eye, EyeOff, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
 import NetworkBadge from "~~/components/Common/NetworkBadge";
@@ -49,7 +49,7 @@ function TokenBalanceRow({ token, balance, usdValue, isLoading, chainId }: Token
       {/* Balance & USD Value */}
       <div className="flex-1 flex flex-col items-end gap-1">
         <span className="text-[#1B1B1B] text-base font-medium leading-6">
-          {isLoading ? "..." : `${balance} ${token.symbol}`}
+          {isLoading ? "..." : `${formatDisplayValue(balance, token.symbol)} ${token.symbol}`}
         </span>
         <span className="text-[#848484] text-sm font-medium leading-5">
           {isLoading

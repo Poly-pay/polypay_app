@@ -62,6 +62,9 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
     batchData,
+    destChainId: tx.destChainId,
+    bridgeFee: tx.bridgeFee,
+    bridgeMinAmount: tx.bridgeMinAmount,
     members,
     votedCount: tx.votes.length,
     threshold: tx.threshold,
@@ -308,6 +311,7 @@ function TxHeader({
           <span>{formatAmount(tx.amount ?? "0", chainId, tx.tokenAddress)}</span>
           <Image src="/icons/arrows/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} className="bg-white" />
+          <ChainBadge chainId={tx.destChainId} sourceChainId={chainId} />
         </div>
       </div>
     );
@@ -552,6 +556,18 @@ function getExpandedHeaderText(type: TxType): string {
   }
 }
 
+// TODO: test this component
+function ChainBadge({ chainId, sourceChainId }: { chainId?: number; sourceChainId: number }) {
+  if (!chainId || chainId === sourceChainId) return null;
+  const chain = scaffoldConfig.targetNetworks.find(n => n.id === chainId);
+  const name = chain?.name ?? `Chain ${chainId}`;
+  return (
+    <span className="text-[11px] font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+      {name}
+    </span>
+  );
+}
+
 function TxDetails({ tx }: { tx: TransactionRowData }) {
   const { chainId } = useNetworkTokens();
   switch (tx.type) {
@@ -569,6 +585,7 @@ function TxDetails({ tx }: { tx: TransactionRowData }) {
           </div>
           <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={100} height={100} />
           <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} />
+          <ChainBadge chainId={tx.destChainId} sourceChainId={chainId} />
         </div>
       );
 

@@ -1,4 +1,4 @@
-import { formatTokenAmount, getTokenByAddress } from "@polypay/shared";
+import { formatDisplayAmount, getTokenByAddress } from "@polypay/shared";
 
 /**
  * Format amount with token symbol
@@ -10,7 +10,7 @@ import { formatTokenAmount, getTokenByAddress } from "@polypay/shared";
 export function formatAmount(amount: string, chainId: number, tokenAddress?: string | null): string {
   try {
     const token = getTokenByAddress(tokenAddress, chainId);
-    const formatted = formatTokenAmount(amount, token.decimals);
+    const formatted = formatDisplayAmount(amount, token.decimals, token.symbol);
     return `${formatted} ${token.symbol}`;
   } catch {
     return amount;

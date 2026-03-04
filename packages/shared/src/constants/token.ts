@@ -39,7 +39,7 @@ export const NATIVE_ETH: Token = {
 
 export const ZEN_TOKEN: Token = {
   addresses: {
-    [HORIZEN_TESTNET]: "0x4b36cb6E7c257E9aA246122a997be0F7Dc1eFCd1",
+    [HORIZEN_TESTNET]: "0xb06EC4ce262D8dbDc24Fac87479A49A7DC4cFb87",
     [HORIZEN_MAINNET]: "0x57da2D504bf8b83Ef304759d9f2648522D7a9280",
     [BASE_MAINNET]: "0xf43eB8De897Fbc7F2502483B2Bef7Bb9EA179229",
     [BASE_SEPOLIA]: "0x107fdE93838e3404934877935993782F977324BB",
@@ -164,6 +164,44 @@ export function formatTokenAmount(amount: string, decimals: number): string {
 
   const decStr = decPart.toString().padStart(decimals, "0").replace(/0+$/, "");
   return `${intPart}.${decStr}`;
+}
+
+const STABLECOINS = ["USDC", "USDT"];
+
+function getDisplayPrecision(value: number, tokenSymbol?: string): number {
+  if (tokenSymbol && STABLECOINS.includes(tokenSymbol.toUpperCase())) return 2;
+  if (value >= 1000) return 2;
+  if (value >= 100) return 4;
+  if (value >= 10) return 5;
+  if (value >= 1) return 6;
+  return 8;
+}
+
+export function formatDisplayValue(
+  value: string,
+  tokenSymbol?: string,
+): string {
+  const num = parseFloat(value);
+  if (isNaN(num) || num === 0) return "0";
+
+  const isStable =
+    tokenSymbol && STABLECOINS.includes(tokenSymbol.toUpperCase());
+  const precision = getDisplayPrecision(num, tokenSymbol);
+
+  if (num > 0 && isStable && num < 0.01) return "< 0.01";
+  if (num > 0 && num < 1e-8) return "< 0.00000001";
+
+  const formatted = num.toFixed(precision);
+  return formatted.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+}
+
+export function formatDisplayAmount(
+  amount: string,
+  decimals: number,
+  tokenSymbol?: string,
+): string {
+  const full = formatTokenAmount(amount, decimals);
+  return formatDisplayValue(full, tokenSymbol);
 }
 
 export function parseTokenAmount(amount: string, decimals: number): string {
