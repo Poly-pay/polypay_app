@@ -21,7 +21,17 @@ This section covers:
 | Proof Verification | [zkVerify](https://docs.zkverify.io) |
 | Database | [PostgreSQL](https://www.postgresql.org) |
 
+## Supported Networks
+
+| Network | Type | Chain ID | Explorer |
+|---------|------|----------|----------|
+| Horizen | Mainnet | 26514 | [horizen.calderaexplorer.xyz](https://horizen.calderaexplorer.xyz/) |
+| Horizen | Testnet | 2651420 | [horizen-testnet.explorer.caldera.xyz](https://horizen-testnet.explorer.caldera.xyz/) |
+| Base | Mainnet | 8453 | [basescan.org](https://basescan.org/) |
+| Base | Sepolia | 84532 | [sepolia.basescan.org](https://sepolia.basescan.org/) |
+
 ## Quick Links
 
 - [GitHub Repository](https://github.com/Poly-pay/polypay_app)
 - [Smart Contract on Horizen testnet](https://horizen-testnet.explorer.caldera.xyz/)
+- [Smart Contract on Base Sepolia](https://sepolia.basescan.org/)
