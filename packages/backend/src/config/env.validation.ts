@@ -23,6 +23,10 @@ export const validationSchema = Joi.object({
     .valid('error', 'warn', 'info', 'debug', 'verbose')
     .default('info'),
 
+  // API keys - optional
+  ADMIN_API_KEY: Joi.string().optional(),
+  PARTNER_API_KEY: Joi.string().optional(),
+
   // Relayer - REQUIRED, no default
   RELAYER_ZKVERIFY_API_KEY: Joi.string().required().messages({
     'string.empty': 'RELAYER_ZKVERIFY_API_KEY is required',
