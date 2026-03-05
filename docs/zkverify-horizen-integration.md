@@ -1,22 +1,25 @@
-# zkVerify & Horizen Integration
+# zkVerify, Horizen & Base Integration
 
 ## Overview
 
-PolyPay uses two blockchain layers for privacy-preserving multisig operations:
+PolyPay uses multiple blockchain layers for privacy-preserving multisig operations:
 
 - **[zkVerify](https://docs.zkverify.io/)**: Verifies zero-knowledge proofs (ultraplonk) off-chain, providing proof verification and aggregation as a service
 - **[Horizen](https://www.horizen.io/)**: EVM-compatible L3 blockchain where multisig accounts (`MetaMultiSigWallet` contracts) are deployed and transactions are executed
+- **[Base](https://base.org/)**: EVM-compatible L2 blockchain, also supported as a destination chain for account deployment and transaction execution
+
+> **"Destination Chain"** refers to the EVM chain where the multisig account is deployed — either **Horizen** (L3, chain ID 26514) or **Base** (L2, chain ID 8453). The user selects the destination chain when creating an account, and all subsequent operations for that account happen on the same chain.
 
 ## Blockchain Classification
 
 | Action | Blockchain | Description |
 |--------|-----------|-------------|
 | LOGIN | zkVerify | ZK auth proof verified on zkVerify |
-| CREATE_ACCOUNT | Horizen | `MetaMultiSigWallet` contract deployed on Horizen |
+| CREATE_ACCOUNT | Horizen or Base | `MetaMultiSigWallet` contract deployed on the chosen destination chain |
 | PROPOSE | zkVerify | Creates a new transaction (TRANSFER, BATCH_TRANSFER, ADD_SIGNER, REMOVE_SIGNER, or UPDATE_THRESHOLD) and submits the creator's ZK approval proof to zkVerify |
 | APPROVE | zkVerify | Signer's approval proof submitted to zkVerify |
 | DENY | None | Off-chain vote, no proof or on-chain interaction |
-| EXECUTE | zkVerify + Horizen | Proofs aggregated on zkVerify, then executed on Horizen |
+| EXECUTE | zkVerify + Horizen/Base | Proofs aggregated on zkVerify, then executed on the destination chain |
 
 ## Architecture
 
@@ -31,16 +34,16 @@ User proves ownership of their commitment without revealing the secret.
 ![Authentication Flow](.gitbook/assets/zkverify-horizen/authentication-flow.png)
 
 - **zkVerify**: Verify ultraplonk proof, return `jobId` and `zkVerifyTxHash`
-- **Horizen**: No interaction
+- **Destination chain**: No interaction
 
 ### 2. Account Creation (CREATE_ACCOUNT)
 
-Deploy a new multisig account on Horizen.
+Deploy a new multisig account on the chosen destination chain (Horizen or Base).
 
 ![Account Creation Flow](.gitbook/assets/zkverify-horizen/account-creation-flow.png)
 
 - **zkVerify**: No interaction
-- **Horizen**: Deploy `MetaMultiSigWallet` contract
+- **Destination chain (Horizen or Base)**: Deploy `MetaMultiSigWallet` contract
 
 ### 3. Transaction Lifecycle
 
@@ -51,7 +54,7 @@ When a user proposes a transaction, they automatically approve it. Other signers
 ![Approve Flow](.gitbook/assets/zkverify-horizen/approve-flow.png)
 
 - **zkVerify**: Verify proof, return `jobId`
-- **Horizen**: No interaction
+- **Destination chain**: No interaction
 
 #### Deny
 
@@ -60,16 +63,16 @@ Deny is simply a "disagree" vote — no proof required, no on-chain interaction.
 ![Deny Flow](.gitbook/assets/zkverify-horizen/deny-flow.png)
 
 - **zkVerify**: No interaction (no proof needed)
-- **Horizen**: No interaction (no gas cost)
+- **Destination chain**: No interaction (no gas cost)
 
 #### Execute
 
-When threshold is met, execute the transaction on Horizen using aggregated proofs.
+When threshold is met, execute the transaction on the destination chain (Horizen or Base) using aggregated proofs.
 
 ![Execute Flow](.gitbook/assets/zkverify-horizen/execute-flow.png)
 
 - **zkVerify**: Provide aggregation data (merkle proofs) from job-ids
-- **Horizen**: Verify aggregated proofs + execute transaction
+- **Destination chain (Horizen or Base)**: Verify aggregated proofs + execute transaction
 
 ### 4. Transaction Types
 
@@ -137,3 +140,8 @@ PENDING → IncludedInBlock → AggregationPending → Aggregated
 
 - **Mainnet**: [horizen.calderaexplorer.xyz](https://horizen.calderaexplorer.xyz/)
 - **Testnet**: [horizen-testnet.explorer.caldera.xyz](https://horizen-testnet.explorer.caldera.xyz/)
+
+### Base
+
+- **Mainnet**: [basescan.org](https://basescan.org/)
+- **Testnet (Sepolia)**: [sepolia.basescan.org](https://sepolia.basescan.org/)
