@@ -49,15 +49,15 @@ export class PartnerService {
     const totalLine = [`Total Accounts,${accounts.length}`, ''];
 
     const header = includeChainId
-      ? 'address,created_at,chain_id,chain_name'
-      : 'address,created_at';
+      ? 'Address,Explorer Address,Created At,Chain ID,Chain Name'
+      : 'Address,Explorer Address,Created At';
 
     const rows = accounts.map((account) => {
       const addressLink = this.getExplorerAddressUrl(
         account.chainId,
         account.address,
       );
-      const base = `${addressLink},${account.createdAt.toISOString()}`;
+      const base = `${account.address},${addressLink},${account.createdAt.toISOString()}`;
       if (includeChainId) {
         let chainName: string;
         try {
