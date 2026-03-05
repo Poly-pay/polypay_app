@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   devIndicators: false,
+  transpilePackages: ["@polypay/shared"],
   typescript: {
     ignoreBuildErrors: false,
   },
