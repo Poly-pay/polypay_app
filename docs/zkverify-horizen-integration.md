@@ -8,6 +8,8 @@ PolyPay uses multiple blockchain layers for privacy-preserving multisig operatio
 - **[Horizen](https://www.horizen.io/)**: EVM-compatible L3 blockchain where multisig accounts (`MetaMultiSigWallet` contracts) are deployed and transactions are executed
 - **[Base](https://base.org/)**: EVM-compatible L2 blockchain, also supported as a destination chain for account deployment and transaction execution
 
+> **"Destination Chain"** refers to the EVM chain where the multisig account is deployed — either **Horizen** (L3, chain ID 26514) or **Base** (L2, chain ID 8453). The user selects the destination chain when creating an account, and all subsequent operations for that account happen on the same chain.
+
 ## Blockchain Classification
 
 | Action | Blockchain | Description |
