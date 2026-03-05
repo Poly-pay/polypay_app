@@ -41,7 +41,7 @@ export default function ManageAccountsSidebar({
   return (
     <div
       className={`
-      absolute left-full top-0 z-[100]
+      absolute left-full top-0 z-[1000]
       w-[330px] h-full bg-main-white rounded-lg p-3 flex flex-col gap-[15px]
       shadow-[4px_0px_24px_rgba(0,0,0,0.1)]
       transform transition-all duration-300 ease-in-out

@@ -75,7 +75,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="fixed w-80 bg-white rounded-2xl shadow-lg border border-grey-100 z-50"
+          className="fixed w-80 bg-white rounded-2xl shadow-lg border border-grey-100 z-[101]"
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,
