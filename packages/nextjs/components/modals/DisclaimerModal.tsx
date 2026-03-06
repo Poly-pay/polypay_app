@@ -29,7 +29,7 @@ const DisclaimerModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex items-center w-full px-3 py-4 gap-4">
           <DecoreCircleIcon width={36} height={36} color="#FF2323" />
-          <span className="font-semibold text-[16px] text-grey-950 uppercase tracking-[-0.03em]">Notice</span>
+          <span className="font-semibold text-base text-grey-950 uppercase tracking-[-0.03em]">Notice</span>
         </div>
 
         {/* Illustration */}
@@ -54,12 +54,12 @@ const DisclaimerModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           <h3 className="text-[20px] font-medium text-grey-950 tracking-[-0.03em] text-center leading-[110%]">
             BETA Disclaimer
           </h3>
-          <p className="text-[14px] font-normal text-grey-700 tracking-[-0.03em] text-center leading-[110%]">
+          <p className="text-sm font-normal text-grey-700 tracking-[-0.03em] text-center leading-[110%]">
             Please note that PolyPay is currently in beta and is used entirely at your own risk. We will not be liable
             to you for any damages or losses (including but not limited to loss of funds) arising out of or relating to
             your use of the application.
           </p>
-          <p className="text-[14px] font-normal text-grey-700 tracking-[-0.03em] text-center leading-[110%]">
+          <p className="text-sm font-normal text-grey-700 tracking-[-0.03em] text-center leading-[110%]">
             <span className="text-grey-950 font-medium">By clicking Agree</span>, you confirm that you have read and
             understood this notice.
           </p>
@@ -75,13 +75,13 @@ const DisclaimerModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               onChange={e => setDontShowFor30Days(e.target.checked)}
               className="w-[14px] h-[14px] rounded-[5px] border border-grey-400 bg-grey-200 cursor-pointer accent-main-pink"
             />
-            <span className="text-[14px] font-medium text-grey-800 tracking-[-0.03em]">Don&apos;t show it again</span>
+            <span className="text-sm font-medium text-grey-800 tracking-[-0.03em]">Don&apos;t show it again</span>
           </label>
 
           {/* Button */}
           <Button
             onClick={handleAgree}
-            className="w-full h-9 bg-main-pink hover:bg-main-pink/90 text-grey-1000 text-[14px] font-medium tracking-[-0.04em] rounded-lg cursor-pointer transition-all duration-200"
+            className="w-full h-9 bg-main-pink hover:bg-main-pink/90 text-grey-1000 text-sm font-medium tracking-[-0.04em] rounded-lg cursor-pointer transition-all duration-200"
           >
             I Understand & Agree
           </Button>

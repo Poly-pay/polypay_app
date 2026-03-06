@@ -146,13 +146,8 @@ export default function AddressBookPage() {
           </div>
 
           {/* Row 2: Search bar */}
-          <div className="flex items-center border border-[#E0E0E0] rounded-xl gap-3 p-2 mb-4 w-fit">
-            <div
-              className="p-2 rounded-lg bg-[#FCFCFC] flex items-center justify-center w-fit"
-              style={{
-                boxShadow: "0 0 4px 0 rgba(18, 18, 18, 0.10)",
-              }}
-            >
+          <div className="flex items-center border border-grey-200 rounded-xl gap-3 p-2 mb-4 w-fit">
+            <div className="p-2 rounded-lg bg-grey-25 flex items-center justify-center w-fit shadow-input">
               <Search size={14} />
             </div>
             <input
@@ -236,7 +231,7 @@ export default function AddressBookPage() {
                 style={{
                   height: "40%",
                   background: selectedContact
-                    ? "linear-gradient(180deg, #FF7CEB 0%, #FFF 100%)"
+                    ? "linear-gradient(180deg, var(--color-pink-350) 0%, #FFF 100%)"
                     : "linear-gradient(180deg, #BDBDBD 0%, #FFF 100%)",
                 }}
               ></div>

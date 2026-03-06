@@ -1,6 +1,7 @@
 import { NetworkValue } from "@polypay/shared";
 import { defineChain } from "viem";
 import * as chains from "viem/chains";
+import { RPC_POLLING_INTERVAL } from "~~/constants/timing";
 
 // We duplicate the horizenTestnet chain definition here to avoid error because mismatch versions of viem between packages/shared and packages/nextjs
 // It use the same version of viem but the hash return is different so TS thinks they are different versions
@@ -72,7 +73,7 @@ const scaffoldConfig = {
       ? [horizenMainnet, chains.base]
       : [horizenTestnet, chains.baseSepolia],
   // The interval at which your front-end polls the RPC servers for new data (it has no effect if you only target the local network (default is 4000))
-  pollingInterval: 30000,
+  pollingInterval: RPC_POLLING_INTERVAL,
   // This is ours Alchemy's default API key.
   // You can get your own at https://dashboard.alchemyapi.io
   // It's recommended to store it in an env variable:

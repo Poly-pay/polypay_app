@@ -110,12 +110,12 @@ const SwitchAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           {step === 2 && networks.length > 1 ? (
             <button
               onClick={handleBackToNetworks}
-              className="w-[38px] h-[38px] flex items-center justify-center rounded-lg border border-grey-200 hover:bg-grey-100 transition-colors"
+              className="w-[38px] h-icon-btn flex items-center justify-center rounded-lg border border-grey-200 hover:bg-grey-100 transition-colors"
             >
               <ChevronLeft size={18} className="text-grey-1000" />
             </button>
           ) : (
-            <div className="w-[38px] h-[38px]" />
+            <div className="w-[38px] h-icon-btn" />
           )}
 
           {/* Title */}
@@ -126,7 +126,7 @@ const SwitchAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           {/* Close button */}
           <button
             onClick={onClose}
-            className="w-[38px] h-[38px] flex items-center justify-center rounded-lg border border-grey-200 hover:bg-grey-100 transition-colors"
+            className="w-[38px] h-icon-btn flex items-center justify-center rounded-lg border border-grey-200 hover:bg-grey-100 transition-colors"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path

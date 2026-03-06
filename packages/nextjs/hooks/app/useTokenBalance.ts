@@ -1,6 +1,7 @@
 import { useNetworkTokens } from "./useNetworkTokens";
 import { formatTokenAmount } from "@polypay/shared";
 import { useBalance, useReadContracts } from "wagmi";
+import { BALANCE_REFETCH_INTERVAL } from "~~/constants/timing";
 
 const ERC20_ABI = [
   {
@@ -25,7 +26,7 @@ export function useTokenBalances(accountAddress: string | undefined, chainId?: n
       enabled: !!accountAddress,
       staleTime: 0,
       refetchOnMount: "always",
-      refetchInterval: 30 * 1000,
+      refetchInterval: BALANCE_REFETCH_INTERVAL,
     },
   });
 
@@ -48,7 +49,7 @@ export function useTokenBalances(accountAddress: string | undefined, chainId?: n
       enabled: !!accountAddress,
       staleTime: 0,
       refetchOnMount: "always",
-      refetchInterval: 30 * 1000,
+      refetchInterval: BALANCE_REFETCH_INTERVAL,
     },
   });
 

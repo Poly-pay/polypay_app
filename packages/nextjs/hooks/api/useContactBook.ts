@@ -1,6 +1,7 @@
 import { useAuthenticatedQuery } from "./useAuthenticatedQuery";
 import { UpdateContactDto, UpdateContactGroupDto } from "@polypay/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { QUERY_GC_TIME, QUERY_STALE_TIME } from "~~/constants/timing";
 import { contactBookApi } from "~~/services/api";
 
 export const addressBookKeys = {
@@ -74,8 +75,8 @@ export const useContacts = (accountId: string | null, groupId?: string) => {
     queryKey: addressBookKeys.contacts(accountId || "", groupId),
     queryFn: () => contactBookApi.contacts.getAll(accountId!, groupId),
     enabled: !!accountId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: QUERY_STALE_TIME,
+    gcTime: QUERY_GC_TIME,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });

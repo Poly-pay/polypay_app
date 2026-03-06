@@ -159,7 +159,7 @@ function BatchTransactions({
 
               {/* Amount with Token */}
               <div
-                className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isHighlighted ? "text-white" : "text-grey-950 group-hover:text-white"}`}
+                className={`flex items-center gap-1 text-base tracking-[-0.32px] ${isHighlighted ? "text-white" : "text-grey-950 group-hover:text-white"}`}
               >
                 <Image src={token.icon} alt={token.symbol} width={20} height={20} />
                 {formatAmount(item.amount, chainId, item.tokenAddress)}
@@ -221,7 +221,7 @@ function BatchTransactions({
                     }`}
                   >
                     <Image src="/icons/misc/edit-icon.svg" alt="Edit" width={16} height={16} />
-                    <span className="font-medium text-[14px] text-center text-black">Edit</span>
+                    <span className="font-medium text-sm text-center text-black">Edit</span>
                   </button>
                 </div>
 
@@ -239,7 +239,7 @@ function BatchTransactions({
                     className="w-[95px] bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center gap-2 py-1.5 rounded-lg shadow-[0px_2px_4px_-1px_rgba(255,0,4,0.5),0px_0px_0px_1px_#ff6668] disabled:opacity-50"
                   >
                     <Image src="/icons/misc/trash-icon.svg" alt="Remove" width={16} height={16} />
-                    <span className="font-medium text-[14px] text-center text-white">Remove</span>
+                    <span className="font-medium text-sm text-center text-white">Remove</span>
                   </button>
                 </div>
               </div>

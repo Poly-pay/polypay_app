@@ -14,6 +14,13 @@ import {
   NetworkValue,
 } from '@polypay/shared';
 import { CONFIG_KEYS } from '@/config/config.keys';
+import {
+  HTTP_TIMEOUT_DEFAULT,
+  RETRY_DELAY_BASE,
+  ZK_API_MAX_RETRIES,
+  ZK_FINALIZE_MAX_ATTEMPTS,
+  ZK_POLLING_DELAY,
+} from '@/common/constants/timing';
 
 export type CircuitType = 'transaction' | 'auth';
 
@@ -51,7 +58,7 @@ export class ZkVerifyService {
 
   private async retryRequest<T>(
     fn: () => Promise<T>,
-    maxRetries: number = 3,
+    maxRetries: number = ZK_API_MAX_RETRIES,
     operationName: string = 'request',
   ): Promise<T> {
     let lastError: Error | undefined;
@@ -77,7 +84,7 @@ export class ZkVerifyService {
           throw error;
         }
 
-        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        const delay = Math.pow(2, attempt - 1) * RETRY_DELAY_BASE;
         this.logger.warn(
           `${operationName} attempt ${attempt} failed, retrying in ${delay}ms: ${error.code || error.message}`,
         );
@@ -132,9 +139,9 @@ export class ZkVerifyService {
         axios.post<ZkVerifySubmitResponse>(
           `${this.apiUrl}/submit-proof/${this.apiKey}`,
           params,
-          { timeout: 30000 },
+          { timeout: HTTP_TIMEOUT_DEFAULT },
         ),
-      3,
+      ZK_API_MAX_RETRIES,
       'submitProof',
     );
 
@@ -167,7 +174,7 @@ export class ZkVerifyService {
 
   private async waitForFinalized(
     jobId: string,
-    maxAttempts = 30,
+    maxAttempts = ZK_FINALIZE_MAX_ATTEMPTS,
   ): Promise<ZkVerifyJobStatusResponse> {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
@@ -183,12 +190,12 @@ export class ZkVerifyService {
         }
 
         this.logger.log(`Job status: ${response.data.status}, waiting...`);
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, ZK_POLLING_DELAY));
       } catch (error) {
         this.logger.error(`Error checking job status: ${error.message}`);
       }
     }
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, ZK_POLLING_DELAY));
     throw new BadRequestException('Timeout waiting for aggregation');
   }
 
@@ -257,7 +264,7 @@ export class ZkVerifyService {
         );
       }
       await this.registerVk(circuitType, vk, numberOfPublicInputs);
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, ZK_POLLING_DELAY));
     }
 
     const vkData = JSON.parse(fs.readFileSync(vkeyPath, 'utf-8'));

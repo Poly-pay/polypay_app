@@ -47,7 +47,7 @@ export default function AddressNamedTooltip({
       {isVisible && (
         <div
           ref={tooltipRef}
-          className={`fixed z-50 text-xs font-medium px-3 py-2 rounded-lg shadow-lg pointer-events-none whitespace-nowrap ${
+          className={`fixed z-40 text-xs font-medium px-3 py-2 rounded-lg shadow-lg pointer-events-none whitespace-nowrap ${
             isHighlighted ? "bg-white text-black" : "bg-grey-950 text-white"
           }`}
           style={{

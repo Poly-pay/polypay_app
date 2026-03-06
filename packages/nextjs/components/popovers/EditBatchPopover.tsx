@@ -131,7 +131,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
   return (
     <div
       ref={popoverRef}
-      className="fixed z-50 bg-white rounded-2xl shadow-lg border border-grey-100 p-4"
+      className="fixed z-20 bg-white rounded-2xl shadow-lg border border-grey-100 p-4"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
@@ -187,14 +187,14 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
               <div className="absolute left-0 top-1/2 w-full h-0.5 border-t border-dashed border-gray-300 transform -translate-y-1/2" />
             </div>
             <div className="absolute bg-white rounded-[32.842px] w-8 h-8 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-[1px] border-dashed border-pink-350 shadow-[0_0_20px_rgba(255,124,235,0.5)]">
-              <div className="text-text-secondary text-[14px] text-center text-grey-800">To</div>
+              <div className="text-text-secondary text-sm text-center text-grey-800">To</div>
             </div>
           </div>
         </div>
 
         <div>
           <div className="flex items-center gap-2">
-            <div className="bg-white w-full flex-1 rounded-2xl border border-grey-100 p-2 flex gap-2 items-center focus-within:border-[#FF7CEB] transition-colors">
+            <div className="bg-white w-full flex-1 rounded-2xl border border-grey-100 p-2 flex gap-2 items-center focus-within:border-pink-350 transition-colors">
               <input
                 {...form.register("recipient")}
                 type="text"

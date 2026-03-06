@@ -5,6 +5,11 @@ import { Cache } from 'cache-manager';
 import { firstValueFrom } from 'rxjs';
 import { getCoingeckoIds } from '@polypay/shared';
 import { ZEN_COINGECKO_ID } from '@/common/constants';
+import {
+  PRICE_CACHE_TTL,
+  PRICE_CAPTURE_MAX_RETRIES,
+  PRICE_CAPTURE_RETRY_DELAY,
+} from '@/common/constants/timing';
 import { PrismaService } from '@/database/prisma.service';
 
 export interface TokenPrices {
@@ -15,7 +20,7 @@ export interface TokenPrices {
 export class PriceService {
   private readonly logger = new Logger(PriceService.name);
   private readonly CACHE_KEY = 'token-prices';
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly CACHE_TTL = PRICE_CACHE_TTL;
   private readonly COINGECKO_API =
     'https://api.coingecko.com/api/v3/simple/price';
 
@@ -113,8 +118,8 @@ export class PriceService {
    * Retries up to 10 times with 5s delay on failure
    */
   async captureWeeklyZenPrice(week: number): Promise<boolean> {
-    const MAX_RETRIES = 10;
-    const RETRY_DELAY = 5000; // 5 seconds
+    const MAX_RETRIES = PRICE_CAPTURE_MAX_RETRIES;
+    const RETRY_DELAY = PRICE_CAPTURE_RETRY_DELAY;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
