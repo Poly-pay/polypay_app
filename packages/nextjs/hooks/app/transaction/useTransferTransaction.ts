@@ -5,7 +5,7 @@ import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
-import { formatErrorMessage } from "~~/lib/form/utils";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface TransferParams {

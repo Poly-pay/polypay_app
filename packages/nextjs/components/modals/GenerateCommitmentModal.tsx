@@ -10,6 +10,7 @@ import { useAuth } from "~~/hooks";
 import { DecoreCircleIcon } from "~~/icons/DecoreCircleIcon";
 import { ModalProps } from "~~/types/modal";
 import { copyToClipboard } from "~~/utils/copy";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
@@ -23,7 +24,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const handleGenerateAndLogin = async () => {
     const success = await login();
     if (!success) {
-      notification.error(error || "Login failed. Please try again.");
+      notification.error(formatErrorMessage(error, "Login failed. Please try again."));
     }
   };
 

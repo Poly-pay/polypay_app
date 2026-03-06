@@ -7,6 +7,8 @@ import { X } from "lucide-react";
 import { useDeleteContact } from "~~/hooks";
 import { DecoreCircleIcon } from "~~/icons/DecoreCircleIcon";
 import { formatAddress } from "~~/utils/format";
+import { formatErrorMessage } from "~~/utils/formatError";
+import { notification } from "~~/utils/scaffold-eth";
 
 interface DeleteContactModalProps {
   isOpen: boolean;
@@ -36,7 +38,7 @@ const DeleteContactModal = ({
       onSuccess?.();
       onClose();
     } catch (err) {
-      console.error("Delete contact failed:", err);
+      notification.error(formatErrorMessage(err, "Failed to delete contact"));
     }
   };
 
