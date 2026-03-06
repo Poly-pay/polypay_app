@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useWalletClient } from "wagmi";
-import { formatErrorMessage } from "~~/lib/form/utils";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { createCommitment, createSecret } from "~~/utils/multisig";
 
 interface AuthProofResult {

@@ -16,8 +16,8 @@ import { useWalletClient } from "wagmi";
 import { accountKeys, useMetaMultiSigWallet, userKeys } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
-import { formatErrorMessage } from "~~/lib/form/utils";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface UseTransactionVoteOptions {
@@ -242,7 +242,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Execute error:", error);
-      notification.error(formatErrorMessage("Failed to execute"));
+      notification.error(formatErrorMessage(error, "Failed to execute"));
     } finally {
       setIsLoading(false);
       setLoadingState("");

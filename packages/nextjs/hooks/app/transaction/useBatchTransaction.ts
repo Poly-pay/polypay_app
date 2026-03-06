@@ -4,8 +4,8 @@ import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
-import { formatErrorMessage } from "~~/lib/form/utils";
 import { useIdentityStore } from "~~/services/store";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface UseBatchTransactionOptions {

@@ -3,7 +3,7 @@ import { SignerData, TxType, encodeAddSigners, encodeRemoveSigners, encodeUpdate
 import { useWalletClient } from "wagmi";
 import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
-import { formatErrorMessage } from "~~/lib/form/utils";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface UseSignerTransactionOptions {

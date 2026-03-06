@@ -14,6 +14,7 @@ import { useZodForm } from "~~/hooks/form";
 import { CreateAccountFormData, createAccountSchema } from "~~/lib/form";
 import { useAccountStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { getDefaultChainId } from "~~/utils/network";
 import { notification } from "~~/utils/scaffold-eth";
 import { getValidSigners } from "~~/utils/signer";
@@ -104,8 +105,7 @@ export default function NewAccountContainer() {
 
       setCurrentStep(4);
     } catch (err: any) {
-      notification.error("Failed to create account: " + (err?.message || err.toString()));
-      console.error("Failed to create account:", err);
+      notification.error(formatErrorMessage(err, "Failed to create account"));
     }
   };
 

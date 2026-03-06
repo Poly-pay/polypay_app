@@ -14,6 +14,7 @@ import { useDeleteBatchItem, useMyBatchItems, useUpdateBatchItem } from "~~/hook
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useAccountStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 // ==================== Custom Checkbox ====================
@@ -341,7 +342,7 @@ export default function BatchContainer() {
 
         notification.success("Batch item removed successfully");
       } catch (error) {
-        console.error("Failed to remove batch item:", error);
+        notification.error(formatErrorMessage(error, "Failed to remove batch item"));
       }
     },
     [deleteBatchItem, activeItem],
@@ -365,8 +366,7 @@ export default function BatchContainer() {
         notification.success("Batch item updated successfully");
         await refetchBatchItems();
       } catch (error) {
-        console.error("Failed to update batch item:", error);
-        notification.error("Failed to update batch item");
+        notification.error(formatErrorMessage(error, "Failed to update batch item"));
       }
     },
     [updateBatchItem, refetchBatchItems],
