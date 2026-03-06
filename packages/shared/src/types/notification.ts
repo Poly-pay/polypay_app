@@ -1,4 +1,4 @@
-import { NotificationType } from "../enums";
+import { NotificationType } from "../enums/index";
 import { User } from "./user";
 
 export interface Notification {

@@ -1,4 +1,4 @@
-import { TxType, TxStatus, VoteType } from "../enums";
+import { TxType, TxStatus, VoteType } from "../enums/index";
 import { Vote } from "./vote";
 
 export interface TxCreatedEventData {

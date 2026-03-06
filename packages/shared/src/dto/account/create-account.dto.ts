@@ -7,7 +7,7 @@ import {
   IsString,
   Min,
 } from "class-validator";
-import { SignerData } from "../../types";
+import { SignerData } from "../../types/index";
 
 export class CreateAccountDto {
   @IsNotEmpty()

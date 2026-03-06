@@ -9,8 +9,8 @@ import {
   IsString,
   Min,
 } from "class-validator";
-import { TxType } from "../../enums";
-import { SignerData } from "../../types";
+import { TxType } from "../../enums/index";
+import { SignerData } from "../../types/index";
 
 export class CreateTransactionDto {
   @IsNotEmpty()
