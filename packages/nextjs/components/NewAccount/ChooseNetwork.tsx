@@ -33,7 +33,7 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({ className, selectedChainI
   };
 
   return (
-    <div className={`flex flex-col min-h-full px-8 py-10 z-[100] ${className ?? ""}`}>
+    <div className={`flex flex-col min-h-full px-8 py-10 z-10 ${className ?? ""}`}>
       {/* Title - same style as other steps */}
       <div className="flex flex-col items-center justify-center">
         <div className="text-grey-1000 text-6xl text-center font-semibold uppercase w-full">create new</div>

@@ -155,7 +155,7 @@ export default function TransferContainer() {
       {/* Main content */}
       <div className="flex flex-col gap-6 items-center justify-center flex-1 px-4">
         {/* Title section */}
-        <div className="flex flex-col items-center justify-center pt-8 relative z-50">
+        <div className="flex flex-col items-center justify-center pt-8 relative z-10">
           <div className="text-6xl text-center font-bold uppercase w-full">transfering</div>
           <div className="flex gap-[5px] items-center justify-center w-full">
             <div className="text-6xl text-center font-bold uppercase">t</div>
