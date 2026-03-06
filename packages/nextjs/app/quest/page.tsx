@@ -63,7 +63,7 @@ export default function QuestPage() {
   }
 
   return (
-    <div className="w-[1144px] mx-auto p-[30px_100px] bg-white/70 border-2 border-white rounded-2xl flex flex-col gap-10">
+    <div className="w-full max-w-[1144px] mx-auto px-6 py-8 md:px-[100px] md:py-[30px] bg-white/70 border-2 border-white rounded-2xl flex flex-col gap-10">
       {/* Page title */}
       <h1 className="font-barlow font-normal text-4xl leading-[100%] tracking-[-0.03em] capitalize text-grey-1000">
         All Quests
@@ -71,7 +71,7 @@ export default function QuestPage() {
 
       {/* Featured Quests */}
       <QuestSection title="Featured Quests">
-        <div className="flex flex-row gap-4">
+        <div className="flex flex-wrap gap-4">
           {featuredQuests.length > 0 ? (
             featuredQuests.map(quest => (
               <QuestCard
@@ -91,7 +91,7 @@ export default function QuestPage() {
       {/* Daily Quests */}
       <QuestSection title="Daily Quests">
         {dailyQuests.length > 0 ? (
-          <div className="flex flex-row gap-4">
+          <div className="flex flex-wrap gap-4">
             {dailyQuests.map(quest => (
               <QuestCard
                 key={quest.id}
