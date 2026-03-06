@@ -58,7 +58,7 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
       {isOpen && (
         <div
           ref={popoverRef}
-          className="fixed w-40 bg-white rounded-2xl shadow-lg border border-grey-100 z-50 py-2"
+          className="fixed w-40 bg-white rounded-2xl shadow-lg border border-grey-100 z-20 py-2"
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,

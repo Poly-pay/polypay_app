@@ -131,7 +131,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
   return (
     <div
       ref={popoverRef}
-      className="fixed z-50 bg-white rounded-2xl shadow-lg border border-grey-100 p-4"
+      className="fixed z-20 bg-white rounded-2xl shadow-lg border border-grey-100 p-4"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,

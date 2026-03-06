@@ -51,13 +51,13 @@ export const TransactionSummaryDrawer = memo(function TransactionSummaryDrawer({
         onClick={onClose}
       ></div>
       <div
-        className={`lg:hidden fixed right-0 top-0 h-full rounded-2xl w-[400px] max-w-[90vw] bg-white z-50 shadow-2xl transform transition-all duration-300 ease-in-out ${
+        className={`lg:hidden fixed right-0 top-0 h-full rounded-2xl w-[400px] max-w-[90vw] bg-white z-40 shadow-2xl transform transition-all duration-300 ease-in-out ${
           isAnimating ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="h-full flex flex-col relative">
           <button
-            className="absolute top-4 right-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-100"
+            className="absolute top-4 right-4 z-40 w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-100"
             onClick={onClose}
           >
             <X width={16} height={16} />
