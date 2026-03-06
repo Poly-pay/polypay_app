@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { CAMPAIGN_START } from "@polypay/shared";
+import { TIMER_TICK } from "~~/constants/timing";
 import { chain } from "~~/utils/network-config";
 
 interface ClaimSectionProps {
@@ -67,7 +68,7 @@ export const ClaimSection = ({ week, claimData, onClaim }: ClaimSectionProps) =>
     };
 
     updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    const interval = setInterval(updateTimer, TIMER_TICK);
 
     return () => clearInterval(interval);
   }, [weekStart, weekEnd]);

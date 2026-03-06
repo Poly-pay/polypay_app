@@ -42,16 +42,16 @@ function TokenBalanceRow({ token, balance, usdValue, isLoading, chainId }: Token
 
       {/* Token Info */}
       <div className="flex-1 flex flex-col">
-        <span className="text-[#1B1B1B] text-base font-semibold leading-6">{token.symbol}</span>
-        <span className="text-[#848484] text-sm font-medium leading-5">{token.name}</span>
+        <span className="text-grey-850 text-base font-semibold leading-6">{token.symbol}</span>
+        <span className="text-grey-600 text-sm font-medium leading-5">{token.name}</span>
       </div>
 
       {/* Balance & USD Value */}
       <div className="flex-1 flex flex-col items-end gap-1">
-        <span className="text-[#1B1B1B] text-base font-medium leading-6">
+        <span className="text-grey-850 text-base font-medium leading-6">
           {isLoading ? "..." : `${balance} ${token.symbol}`}
         </span>
-        <span className="text-[#848484] text-sm font-medium leading-5">
+        <span className="text-grey-600 text-sm font-medium leading-5">
           {isLoading
             ? "..."
             : `$${usdValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -116,7 +116,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
       <SheetTitle></SheetTitle>
       <SheetContent
         side="right"
-        className="w-[332px] h-[98%] p-1 border-l-0 top-[8px] right-[5px] rounded-[19px] bg-[#F7F7F7] shadow-[7px_4px_108px_rgba(0,0,0,0.25)]"
+        className="w-[332px] h-[98%] p-1 border-l-0 top-[8px] right-[5px] rounded-[19px] bg-grey-50 shadow-[7px_4px_108px_rgba(0,0,0,0.25)]"
       >
         <div className="flex flex-col h-full gap-1">
           {/* Header Card */}
@@ -126,20 +126,20 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
               <SheetClose asChild>
                 <Button
                   size="sm"
-                  className="absolute top-2 right-2 h-[38px] w-[38px] p-2 bg-white hover:bg-white/70 rounded-[10px] cursor-pointer"
+                  className="absolute top-2 right-2 h-icon-btn w-[38px] p-2 bg-white hover:bg-white/70 rounded-[10px] cursor-pointer"
                 >
-                  <X className="h-[18px] w-[18px] text-[#363636]" />
+                  <X className="h-[18px] w-[18px] text-grey-950" />
                 </Button>
               </SheetClose>
 
               {/* Balance Label */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[#1E1E1E] text-sm font-medium leading-[22px]">Account balance</span>
+                <span className="text-grey-1000 text-sm font-medium leading-[22px]">Account balance</span>
                 <button onClick={toggleShowBalance} className="cursor-pointer">
                   {showBalance ? (
-                    <Eye className="w-[14px] h-[14px] text-[#6D2EFF]" />
+                    <Eye className="w-[14px] h-[14px] text-main-violet" />
                   ) : (
-                    <EyeOff className="w-[14px] h-[14px] text-[#6D2EFF]" />
+                    <EyeOff className="w-[14px] h-[14px] text-main-violet" />
                   )}
                 </button>
               </div>
@@ -148,13 +148,13 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
               <div className="flex items-center gap-2 pt-4 mb-6">
                 {showBalance ? (
                   <>
-                    <span className="text-[#1E1E1E] text-4xl font-normal uppercase leading-9">$</span>
-                    <span className="text-[#1E1E1E] text-4xl font-medium uppercase leading-9">
+                    <span className="text-grey-1000 text-4xl font-normal uppercase leading-9">$</span>
+                    <span className="text-grey-1000 text-4xl font-medium uppercase leading-9">
                       {isLoading ? "..." : formattedTotalUsd}
                     </span>
                   </>
                 ) : (
-                  <span className="text-[#1E1E1E] text-4xl font-medium leading-9">*****</span>
+                  <span className="text-grey-1000 text-4xl font-medium leading-9">*****</span>
                 )}
               </div>
 
@@ -162,28 +162,28 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
               <div className="flex gap-1 p-1 bg-[rgba(0,0,0,0.47)] backdrop-blur-[15px] rounded-[15px]">
                 <SheetClose asChild>
                   <Button
-                    className="flex-1 h-[38px] px-6 py-2 bg-[rgba(248,248,248,0.13)] hover:bg-[rgba(248,248,248,0.25)] rounded-xl border border-[rgba(255,255,255,0.25)] cursor-pointer"
+                    className="flex-1 h-icon-btn px-6 py-2 bg-[rgba(248,248,248,0.13)] hover:bg-[rgba(248,248,248,0.25)] rounded-xl border border-[rgba(255,255,255,0.25)] cursor-pointer"
                     onClick={() => router.goToTransfer()}
                   >
-                    <MoveUp className="h-5 w-5 text-[#F7F7F7]" />
-                    <span className="text-[#F7F7F7] text-base font-normal leading-[19px]">Transfer</span>
+                    <MoveUp className="h-5 w-5 text-grey-50" />
+                    <span className="text-grey-50 text-base font-normal leading-[19px]">Transfer</span>
                   </Button>
                 </SheetClose>
                 <Button
-                  className="flex-1 h-[38px] px-6 py-2 bg-[rgba(248,248,248,0.13)] hover:bg-[rgba(248,248,248,0.25)] rounded-xl border border-[rgba(255,255,255,0.25)] cursor-pointer"
+                  className="flex-1 h-icon-btn px-6 py-2 bg-[rgba(248,248,248,0.13)] hover:bg-[rgba(248,248,248,0.25)] rounded-xl border border-[rgba(255,255,255,0.25)] cursor-pointer"
                   onClick={() => openModal("qrAddressReceiver", { address: metaMultiSigWallet?.address as Address })}
                 >
-                  <MoveDown className="h-5 w-5 text-[#F7F7F7]" />
-                  <span className="text-[#F7F7F7] text-base font-normal leading-[19px]">Receive</span>
+                  <MoveDown className="h-5 w-5 text-grey-50" />
+                  <span className="text-grey-50 text-base font-normal leading-[19px]">Receive</span>
                 </Button>
               </div>
             </div>
           </div>
 
           {/* My Assets Section */}
-          <div className="flex-1 bg-white rounded-2xl border border-[#E0E0E0] overflow-hidden">
+          <div className="flex-1 bg-white rounded-2xl border border-grey-200 overflow-hidden">
             <div className="px-5 pt-4 pb-4">
-              <span className="text-[#1B1B1B] text-2xl font-medium">My Assets</span>
+              <span className="text-grey-850 text-2xl font-medium">My Assets</span>
             </div>
 
             <div className="flex flex-col">

@@ -58,7 +58,7 @@ export default function DashboardContainer() {
   );
 
   return (
-    <div className="flex flex-col gap-5 px-[100px] py-[30px] h-full bg-[#FAFAFA] border-2 border-white">
+    <div className="flex flex-col gap-5 px-[100px] py-[30px] h-full bg-grey-25 border-2 border-white">
       <Header />
 
       {/* Loading State */}

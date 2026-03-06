@@ -34,7 +34,7 @@ export const TransactionSummaryDrawer = memo(function TransactionSummaryDrawer({
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => setIsAnimating(true), 10);
+      requestAnimationFrame(() => setIsAnimating(true));
     } else {
       setIsAnimating(false);
     }
@@ -45,7 +45,7 @@ export const TransactionSummaryDrawer = memo(function TransactionSummaryDrawer({
   return (
     <>
       <div
-        className={`lg:hidden fixed inset-0 bg-[#2b2929ad] bg-opacity-50 z-40 transition-opacity duration-300 ${
+        className={`lg:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
           isAnimating ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}

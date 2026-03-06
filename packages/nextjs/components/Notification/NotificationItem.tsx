@@ -3,6 +3,7 @@
 import React from "react";
 import { Notification } from "@polypay/shared";
 import { Check, Copy } from "lucide-react";
+import { COPY_FEEDBACK_DURATION } from "~~/constants/timing";
 import { useMarkNotificationAsRead } from "~~/hooks";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification as toast } from "~~/utils/scaffold-eth";
@@ -26,7 +27,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
       setCopied(true);
       toast.success("Commitment copied!");
 
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
     } catch (error) {
       toast.error(formatErrorMessage(error, "Failed to copy"));
     }

@@ -13,6 +13,10 @@ import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { waitForReceiptWithRetry, sleep } from '@/common/utils/retry';
 import { ZEN_TOKEN_ADDRESS, ZEN_DECIMALS } from '@/common/constants';
+import {
+  ZEN_TRANSFER_MAX_RETRIES,
+  ZEN_TRANSFER_RETRY_DELAY,
+} from '@/common/constants/timing';
 
 const ERC20_ABI = [
   {
@@ -33,8 +37,8 @@ const ERC20_ABI = [
   },
 ] as const;
 
-const MAX_SEND_RETRIES = 3;
-const RETRY_DELAY_MS = 2000;
+const MAX_SEND_RETRIES = ZEN_TRANSFER_MAX_RETRIES;
+const RETRY_DELAY_MS = ZEN_TRANSFER_RETRY_DELAY;
 
 @Injectable()
 export class ZenTransferService {

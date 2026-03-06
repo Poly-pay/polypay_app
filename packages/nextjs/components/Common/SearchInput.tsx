@@ -16,10 +16,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   if (variant === "compact") {
     return (
       <div className="relative mb-3">
-        <div
-          className="absolute left-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer bg-[#FCFCFC]"
-          style={{ boxShadow: "0 0 4px 0 rgba(18, 18, 18, 0.10)" }}
-        >
+        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer bg-grey-25 shadow-input">
           <Search size={12} />
         </div>
         <input

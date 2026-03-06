@@ -224,7 +224,7 @@ export default function TransferContainer() {
               <div className="absolute left-0 top-1/2 w-full h-0.5 border-t border-dashed border-gray-300 transform -translate-y-1/2" />
             </div>
             <div className="absolute bg-white rounded-[32.842px] w-8 h-8 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-1 border-dashed shadow-[0 4px 33.5px 0 rgba(26, 32, 111, 0.29)]">
-              <div className="text-text-secondary text-[14px] text-center text-grey-800">To</div>
+              <div className="text-text-secondary text-sm text-center text-grey-800">To</div>
             </div>
           </div>
         </div>

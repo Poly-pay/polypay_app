@@ -44,10 +44,9 @@ export function TokenSelector({ selectedToken, onSelect, disabled = false }: Tok
       <div
         ref={buttonRef}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-1 rounded-full transition-colors ${
+        className={`bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-1 rounded-full transition-colors shadow-popover ${
           disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
         }`}
-        style={{ boxShadow: "0 4px 24.5px 0 rgba(46, 119, 255, 0.25)" }}
       >
         <Image src={selectedToken.icon} alt={selectedToken.symbol} width={24} height={24} />
         <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
