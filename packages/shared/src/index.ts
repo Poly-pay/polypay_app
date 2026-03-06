@@ -1,26 +1,9 @@
-// Enums
-export * from "./enums";
-
-// Types
-export * from "./types";
-
-// DTOs
-export * from "./dto";
-
-// Utils
-export * from "./utils";
-
-// Chains
-export * from "./chains";
-
-// Contracts
-export * from "./contracts";
-
-// Constants
-export * from "./constants";
-
-// Crypto
-export * from "./crypto";
-
-// API
-export * from "./api";
+export * from "./enums/index";
+export * from "./types/index";
+export * from "./dto/index";
+export * from "./utils/index";
+export * from "./chains/index";
+export * from "./contracts/index";
+export * from "./constants/index";
+export * from "./crypto/index";
+export * from "./api/index";

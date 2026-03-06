@@ -24,10 +24,7 @@ export class PartnerController {
   })
   @ApiResponse({ status: 200, description: 'CSV file' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid API key' })
-  async getAccountReport(
-    @Query() dto: AccountReportDto,
-    @Res() res: Response,
-  ) {
+  async getAccountReport(@Query() dto: AccountReportDto, @Res() res: Response) {
     const csv = await this.partnerService.generateAccountReport(dto);
 
     res.setHeader('Content-Type', 'text/csv');
