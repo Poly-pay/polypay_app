@@ -1,4 +1,4 @@
-import { TxType, TxStatus } from "../enums";
+import { TxType, TxStatus } from "../enums/index";
 import { Contact } from "./contact-book";
 import { Vote } from "./vote";
 
