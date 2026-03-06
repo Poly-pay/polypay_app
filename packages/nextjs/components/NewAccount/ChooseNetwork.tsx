@@ -46,7 +46,7 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({ className, selectedChainI
         {/* Step description */}
         <div className="mt-6 flex flex-col items-center gap-2 text-center">
           <span className="text-text-primary uppercase text-[24px] font-semibold">1. Choose network</span>
-          <span className="text-text-secondary text-[14px] text-gray-500 max-w-[420px]">
+          <span className="text-text-secondary text-sm text-gray-500 max-w-[420px]">
             Choose which networks you want your account to be active on. You can add more networks later.
           </span>
         </div>

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { PRICE_REFETCH_INTERVAL, QUERY_STALE_TIME } from "~~/constants/timing";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { priceApi } from "~~/services/api/priceApi";
 
@@ -10,8 +11,8 @@ export const usePrices = () => {
   return useQuery({
     queryKey: priceKeys.all,
     queryFn: () => priceApi.getPrices(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    staleTime: QUERY_STALE_TIME,
+    refetchInterval: PRICE_REFETCH_INTERVAL,
   });
 };
 

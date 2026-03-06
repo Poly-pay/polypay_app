@@ -5,14 +5,15 @@ import axiosRetry from 'axios-retry';
 import { PriceController } from './price.controller';
 import { PriceService } from './price.service';
 import { PriceScheduler } from './price.scheduler';
+import { HTTP_TIMEOUT_PRICE, PRICE_CACHE_TTL } from '@/common/constants/timing';
 
 @Module({
   imports: [
     HttpModule.register({
-      timeout: 10000,
+      timeout: HTTP_TIMEOUT_PRICE,
     }),
     CacheModule.register({
-      ttl: 5 * 60 * 1000, // 5 minutes
+      ttl: PRICE_CACHE_TTL,
     }),
   ],
   controllers: [PriceController],

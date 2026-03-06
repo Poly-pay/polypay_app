@@ -34,7 +34,7 @@ export function ContactDetailDrawer({
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => setIsAnimating(true), 10);
+      requestAnimationFrame(() => setIsAnimating(true));
     } else {
       setIsAnimating(false);
     }
@@ -45,7 +45,7 @@ export function ContactDetailDrawer({
   return (
     <>
       <div
-        className={`lg:hidden fixed inset-0 bg-[#2b2929ad] bg-opacity-50 z-40 transition-opacity duration-300 ${
+        className={`lg:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
           isAnimating ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
@@ -68,7 +68,7 @@ export function ContactDetailDrawer({
                 className="w-full h-[40%] flex-shrink-0 rounded-t-2xl"
                 style={{
                   background: contact
-                    ? "linear-gradient(180deg, #FF7CEB 0%, #FFF 100%)"
+                    ? "linear-gradient(180deg, var(--color-pink-350) 0%, #FFF 100%)"
                     : "linear-gradient(180deg, #BDBDBD 0%, #FFF 100%)",
                 }}
               ></div>

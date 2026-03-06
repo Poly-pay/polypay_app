@@ -67,8 +67,8 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
 
         {/* Signers list */}
         <div className="w-full flex flex-col gap-2">
-          <div className="text-text-secondary text-[16px] font-medium">Account signers</div>
-          <span className="w-[420px] text-[14px] text-gray-700 mb-1">
+          <div className="text-text-secondary text-base font-medium">Account signers</div>
+          <span className="w-[420px] text-sm text-gray-700 mb-1">
             Those commitments added to the signers list below will play an important role in approving future
             transactions as team members.
           </span>
@@ -86,7 +86,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                   type="text"
                   {...register(`signers.${index}.name`)}
                   placeholder="Signer Name"
-                  className="w-[150px] h-[48px] px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
+                  className="w-[150px] h-input px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-base focus:outline-none focus:border-primary"
                 />
 
                 {/* Commitment input  */}
@@ -98,7 +98,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                         {...register(`signers.${index}.commitment`)}
                         disabled
                         placeholder="Signer commitment"
-                        className={`h-[48px] flex-1 px-4 py-3 rounded-[16px] border bg-gray-50 text-[16px] focus:outline-none opacity-60 cursor-not-allowed`}
+                        className={`h-input flex-1 px-4 py-3 rounded-[16px] border bg-gray-50 text-base focus:outline-none opacity-60 cursor-not-allowed`}
                       />
                     </TooltipTrigger>
                     <TooltipContent
@@ -118,7 +118,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                     type="text"
                     {...register(`signers.${index}.commitment`)}
                     placeholder="Signer commitment"
-                    className={`h-[48px] flex-1 px-4 py-3 rounded-[16px] border bg-gray-50 text-[16px] focus:outline-none ${hasDuplicate || hasInvalidFormat ? "border-red-500 focus:border-red-500 bg-red-50" : "border-gray-200 focus:border-primary"}`}
+                    className={`h-input flex-1 px-4 py-3 rounded-[16px] border bg-gray-50 text-base focus:outline-none ${hasDuplicate || hasInvalidFormat ? "border-red-500 focus:border-red-500 bg-red-50" : "border-gray-200 focus:border-primary"}`}
                   />
                 )}
 
@@ -135,20 +135,20 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
             className="flex items-center gap-2 text-white bg-violet-300 hover:bg-violet-300/80 px-3 py-1 rounded-[8px] transition-colors w-fit self-end"
           >
             <span className="text-xl">+</span>
-            <span className="text-[14px] font-medium">New Signer</span>
+            <span className="text-sm font-medium">New Signer</span>
           </button>
         </div>
 
         {/* Threshold */}
         <div className="w-full flex flex-col gap-2">
-          <div className="text-text-secondary text-[16px] font-medium">Threshold</div>
-          <div className="text-text-secondary text-[14px] text-gray-400">
+          <div className="text-text-secondary text-base font-medium">Threshold</div>
+          <div className="text-text-secondary text-sm text-gray-400">
             This is the minimum number of confirmations required for a transaction to go through. Anyone on the list can
             approve the transaction as long as the minimum number of approvals is met.
           </div>
           <span className="mt-3">
             <input
-              className="w-[220px] h-[48px] flex-1 px-4 py-3 mr-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
+              className="w-[220px] h-input flex-1 px-4 py-3 mr-3 rounded-[16px] border border-gray-200 bg-gray-50 text-base focus:outline-none focus:border-primary"
               placeholder="Enter threshold number"
               {...register("threshold", {
                 valueAsNumber: true,
@@ -166,7 +166,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
               type="number"
               max={signers.length}
             />
-            <span className="text-gray-600 text-[16px]">/ out of {signers.length} signers</span>
+            <span className="text-gray-600 text-base">/ out of {signers.length} signers</span>
           </span>
         </div>
 

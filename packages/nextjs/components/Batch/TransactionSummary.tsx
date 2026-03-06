@@ -59,7 +59,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
                 className="bg-grey-50 flex gap-3 items-center justify-between p-3 w-full rounded-lg"
               >
                 {/* Amount with Token Icon */}
-                <div className="flex items-center gap-1 text-grey-950 text-[16px]">
+                <div className="flex items-center gap-1 text-grey-950 text-base">
                   {transaction.tokenIcon && (
                     <Image
                       src={transaction.tokenIcon}
