@@ -8,3 +8,4 @@ export * from "./auth/index";
 export * from "./feature-request/index";
 export * from "./pagination.dto";
 export * from "./reward/index";
+export * from "./mixer/index";
