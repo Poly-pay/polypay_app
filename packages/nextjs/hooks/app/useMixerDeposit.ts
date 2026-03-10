@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { getContractConfigByChainId, MIXER_ABI } from "@polypay/shared";
+import { useMixerKeys } from "./useMixerKeys";
+import { MIXER_ABI, getContractConfigByChainId } from "@polypay/shared";
 import { useWriteContract } from "wagmi";
 import { mixerApi } from "~~/services/api/mixerApi";
-import { useMixerKeys } from "./useMixerKeys";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -32,12 +32,7 @@ export function useMixerDeposit() {
   const [error, setError] = useState<string | null>(null);
 
   const deposit = useCallback(
-    async (params: {
-      chainId: number;
-      token: string;
-      denomination: string;
-      value?: bigint;
-    }) => {
+    async (params: { chainId: number; token: string; denomination: string; value?: bigint }) => {
       setError(null);
       const { chainId, token, denomination, value } = params;
       const config = getContractConfigByChainId(chainId);

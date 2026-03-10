@@ -1,7 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { createPublicClient, http, parseAbiItem, keccak256, encodePacked } from 'viem';
-import { getChainById, getContractConfigByChainId, MIXER_DEPLOYMENT_BLOCK } from '@polypay/shared';
+import {
+  createPublicClient,
+  http,
+  parseAbiItem,
+  keccak256,
+  encodePacked,
+} from 'viem';
+import {
+  getChainById,
+  getContractConfigByChainId,
+  MIXER_DEPLOYMENT_BLOCK,
+} from '@polypay/shared';
 import { PrismaService } from '@/database/prisma.service';
 
 const MIXER_CHAIN_IDS = [2651420, 84532];
@@ -31,7 +41,10 @@ export class MixerIndexerService {
   private async indexChain(chainId: number) {
     const config = getContractConfigByChainId(chainId);
     const mixerAddress = config.mixerAddress;
-    if (!mixerAddress || mixerAddress === '0x0000000000000000000000000000000000000000') {
+    if (
+      !mixerAddress ||
+      mixerAddress === '0x0000000000000000000000000000000000000000'
+    ) {
       return;
     }
 
@@ -42,13 +55,20 @@ export class MixerIndexerService {
     });
 
     const poolIdFor = (token: string, denomination: string) =>
-      keccak256(encodePacked(['address', 'uint256'], [token as `0x${string}`, BigInt(denomination)]));
+      keccak256(
+        encodePacked(
+          ['address', 'uint256'],
+          [token as `0x${string}`, BigInt(denomination)],
+        ),
+      );
 
     let state = await this.prisma.mixerIndexerState.findUnique({
       where: { chainId },
     });
 
-    const deploymentNumber = MIXER_DEPLOYMENT_BLOCK[chainId as keyof typeof MIXER_DEPLOYMENT_BLOCK] ?? 0;
+    const deploymentNumber =
+      MIXER_DEPLOYMENT_BLOCK[chainId as keyof typeof MIXER_DEPLOYMENT_BLOCK] ??
+      0;
     const deploymentBlock = BigInt(deploymentNumber);
     if (deploymentBlock === 0n) {
       this.logger.warn(
@@ -77,7 +97,9 @@ export class MixerIndexerService {
     });
 
     for (const log of logs) {
-      const commitment = (log.args.commitment ?? log.topics?.[1] ?? '0x0') as string;
+      const commitment = (log.args.commitment ??
+        log.topics?.[1] ??
+        '0x0') as string;
       const leafIndex = Number(log.args.leafIndex ?? 0n);
       const token = (log.args.token ?? '') as string;
       const denomination = String(log.args.denomination ?? 0n);
@@ -116,7 +138,9 @@ export class MixerIndexerService {
     }
 
     if (logs.length > 0) {
-      this.logger.log(`Mixer indexer chainId=${chainId}: indexed ${logs.length} deposits up to block ${batchTo}`);
+      this.logger.log(
+        `Mixer indexer chainId=${chainId}: indexed ${logs.length} deposits up to block ${batchTo}`,
+      );
     }
   }
 }

@@ -11,7 +11,11 @@ import {
   getChainById,
   getContractConfigByChainId,
 } from '@polypay/shared';
-import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE, MIXER_ABI } from '@polypay/shared';
+import {
+  METAMULTISIG_ABI,
+  METAMULTISIG_BYTECODE,
+  MIXER_ABI,
+} from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
@@ -386,7 +390,10 @@ export class RelayerService {
       this.getChainClient(chainId);
 
     const mixerAddress = contractConfig.mixerAddress;
-    if (!mixerAddress || mixerAddress === '0x0000000000000000000000000000000000000000') {
+    if (
+      !mixerAddress ||
+      mixerAddress === '0x0000000000000000000000000000000000000000'
+    ) {
       throw new Error(`Mixer not deployed on chainId ${chainId}`);
     }
 

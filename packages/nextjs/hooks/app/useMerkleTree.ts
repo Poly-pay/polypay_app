@@ -9,7 +9,7 @@ import { IncrementalMerkleTree } from "@polypay/shared";
 export function useMerkleTree() {
   const buildTree = useCallback(async (commitmentsHex: string[]) => {
     const tree = new IncrementalMerkleTree();
-    const leaves = commitmentsHex.map((c) => (c.startsWith("0x") ? BigInt(c) : BigInt("0x" + c)));
+    const leaves = commitmentsHex.map(c => (c.startsWith("0x") ? BigInt(c) : BigInt("0x" + c)));
     await tree.insertMany(leaves);
     return tree;
   }, []);

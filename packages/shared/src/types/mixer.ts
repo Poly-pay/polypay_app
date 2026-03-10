@@ -22,4 +22,3 @@ export interface MixerWithdrawParams {
   publicInputs: string[];
   vk?: string;
 }
-

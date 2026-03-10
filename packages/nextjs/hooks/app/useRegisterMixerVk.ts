@@ -42,8 +42,8 @@ export function useRegisterMixerVk() {
     const circuitInput = {
       secret: secret.toString(),
       nullifier: nullifier.toString(),
-      merkle_path: siblings.map((s) => s.toString()),
-      path_indices: pathIndices.map((i) => i.toString()),
+      merkle_path: siblings.map(s => s.toString()),
+      path_indices: pathIndices.map(i => i.toString()),
       merkle_root: root.toString(),
       nullifier_hash: nullifierHash.toString(),
       recipient: recipientField.toString(),
@@ -52,10 +52,7 @@ export function useRegisterMixerVk() {
     };
 
     setLoadingState("Loading ZK libraries...");
-    const [{ Noir }, { UltraPlonkBackend }] = await Promise.all([
-      import("@noir-lang/noir_js"),
-      import("@aztec/bb.js"),
-    ]);
+    const [{ Noir }, { UltraPlonkBackend }] = await Promise.all([import("@noir-lang/noir_js"), import("@aztec/bb.js")]);
 
     setLoadingState("Executing circuit...");
     const noir = new Noir({ bytecode, abi } as any);

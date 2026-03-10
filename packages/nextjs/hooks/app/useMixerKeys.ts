@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { BN254_MODULUS, poseidonHash2 } from "@polypay/shared";
 import { keccak256 } from "viem";
 import { useWalletClient } from "wagmi";
-import { BN254_MODULUS, poseidonHash2 } from "@polypay/shared";
 
 const MIXER_SECRET_MESSAGE = "polypay-mixer-secret";
 
@@ -64,7 +64,9 @@ export function useMixerKeys() {
   const getNextDepositIndex = useCallback(
     async (commitmentsHex: string[]): Promise<{ n: number; commitment: bigint; nullifier: bigint }> => {
       const secret = await ensureBaseSecret();
-      const set = new Set(commitmentsHex.map((c) => (c.startsWith("0x") ? BigInt(c).toString() : BigInt("0x" + c).toString())));
+      const set = new Set(
+        commitmentsHex.map(c => (c.startsWith("0x") ? BigInt(c).toString() : BigInt("0x" + c).toString())),
+      );
       for (let n = 0; ; n++) {
         const { commitment, nullifier } = await computeCommitmentAndNullifier(secret, n);
         const key = commitment.toString();
@@ -78,10 +80,7 @@ export function useMixerKeys() {
    * Find all n such that commitment_n is in the pool; returns slots with leafIndex from the index list.
    */
   const findMyDeposits = useCallback(
-    async (
-      commitmentsHex: string[],
-      leafIndices: number[],
-    ): Promise<MixerDepositSlot[]> => {
+    async (commitmentsHex: string[], leafIndices: number[]): Promise<MixerDepositSlot[]> => {
       if (commitmentsHex.length !== leafIndices.length) return [];
       const secret = await ensureBaseSecret();
       const commitmentToLeafIndex = new Map<string, number>();

@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { getContractConfigByChainId, MIXER_ABI, poseidonHash2 } from "@polypay/shared";
-import { usePublicClient } from "wagmi";
-import { useMixerKeys, type MixerDepositSlot } from "./useMixerKeys";
 import { useMerkleTree } from "./useMerkleTree";
+import { type MixerDepositSlot, useMixerKeys } from "./useMixerKeys";
+import { MIXER_ABI, getContractConfigByChainId, poseidonHash2 } from "@polypay/shared";
+import { encodePacked, keccak256 } from "viem";
+import { usePublicClient } from "wagmi";
 import { mixerApi } from "~~/services/api/mixerApi";
-import { keccak256, encodePacked } from "viem";
 
 function bigintToHex(v: bigint): string {
   const hex = v.toString(16).padStart(64, "0");
@@ -39,11 +39,7 @@ export function useMixerWithdraw() {
   const [error, setError] = useState<string | null>(null);
 
   const getWithdrawableSlots = useCallback(
-    async (
-      chainId: number,
-      token: string,
-      denomination: string,
-    ): Promise<MixerDepositSlot[]> => {
+    async (chainId: number, token: string, denomination: string): Promise<MixerDepositSlot[]> => {
       const config = getContractConfigByChainId(chainId);
       if (!config.mixerAddress || config.mixerAddress === "0x0000000000000000000000000000000000000000") {
         return [];
@@ -98,8 +94,8 @@ export function useMixerWithdraw() {
       const circuitInput = {
         secret: secret.toString(),
         nullifier: slot.nullifier.toString(),
-        merkle_path: siblings.map((s) => s.toString()),
-        path_indices: pathIndices.map((i) => i.toString()),
+        merkle_path: siblings.map(s => s.toString()),
+        path_indices: pathIndices.map(i => i.toString()),
         merkle_root: root.toString(),
         nullifier_hash: nullifierHash.toString(),
         recipient: recipientField.toString(),

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { keccak256, encodePacked } from 'viem';
 import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
@@ -29,20 +25,36 @@ export class MixerService {
     return { vkHash };
   }
 
-  async withdraw(dto: MixerWithdrawDto): Promise<{ txHash: string; status: string }> {
-    const { chainId, token, denomination, recipient, nullifierHash, root, proof, publicInputs } = dto;
+  async withdraw(
+    dto: MixerWithdrawDto,
+  ): Promise<{ txHash: string; status: string }> {
+    const {
+      chainId,
+      token,
+      denomination,
+      recipient,
+      nullifierHash,
+      root,
+      proof,
+      publicInputs,
+    } = dto;
 
     if (!publicInputs || publicInputs.length !== 5) {
-      throw new BadRequestException('Mixer circuit expects exactly 5 public inputs');
+      throw new BadRequestException(
+        'Mixer circuit expects exactly 5 public inputs',
+      );
     }
 
-    this.logger.log(`Submitting mixer proof for chainId=${chainId}, recipient=${recipient}`);
-
-    const { jobId, status: submitStatus } = await this.zkVerifyService.submitProofAndWaitFinalized(
-      { proof, publicInputs, vk: dto.vk },
-      'mixer',
-      chainId,
+    this.logger.log(
+      `Submitting mixer proof for chainId=${chainId}, recipient=${recipient}`,
     );
+
+    const { jobId, status: submitStatus } =
+      await this.zkVerifyService.submitProofAndWaitFinalized(
+        { proof, publicInputs, vk: dto.vk },
+        'mixer',
+        chainId,
+      );
 
     if (submitStatus === 'Failed' || !jobId) {
       throw new BadRequestException('Proof submission failed');
@@ -93,7 +105,9 @@ export class MixerService {
         if (jobStatus.status === 'Failed') {
           throw new BadRequestException('Proof aggregation failed');
         }
-        this.logger.log(`Mixer job ${jobId} status: ${jobStatus.status}, waiting...`);
+        this.logger.log(
+          `Mixer job ${jobId} status: ${jobStatus.status}, waiting...`,
+        );
       } catch (err: any) {
         this.logger.warn(`Error polling job ${jobId}: ${err?.message}`);
       }
@@ -106,8 +120,17 @@ export class MixerService {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async getDeposits(query: MixerDepositsQueryDto): Promise<{ commitments: string[]; leafIndices: number[] }> {
-    const { chainId, token, denomination, fromLeaf = 0, toLeaf } = query;
+  async getDeposits(
+    query: MixerDepositsQueryDto,
+  ): Promise<{ commitments: string[]; leafIndices: number[] }> {
+    const {
+      chainId: chainIdStr,
+      token,
+      denomination,
+      fromLeaf = 0,
+      toLeaf,
+    } = query;
+    const chainId = Number(chainIdStr);
     const poolId = this.getPoolId(token, denomination);
 
     const where: any = { chainId, poolId };
@@ -128,12 +151,21 @@ export class MixerService {
     };
   }
 
-  async getDepositCount(chainId: number, token: string, denomination: string): Promise<number> {
+  async getDepositCount(
+    chainId: number,
+    token: string,
+    denomination: string,
+  ): Promise<number> {
     const poolId = this.getPoolId(token, denomination);
     return this.prisma.mixerDeposit.count({ where: { chainId, poolId } });
   }
 
   private getPoolId(token: string, denomination: string): string {
-    return keccak256(encodePacked(['address', 'uint256'], [token as `0x${string}`, BigInt(denomination)]));
+    return keccak256(
+      encodePacked(
+        ['address', 'uint256'],
+        [token as `0x${string}`, BigInt(denomination)],
+      ),
+    );
   }
 }

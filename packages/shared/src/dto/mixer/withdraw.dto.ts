@@ -1,5 +1,11 @@
-import { IsArray, IsNumber, IsOptional, IsString, Min } from "class-validator";
-import { Type } from "class-transformer";
+import {
+  IsArray,
+  IsNumber,
+  IsNumberString,
+  IsOptional,
+  IsString,
+  Min,
+} from "class-validator";
 
 export class MixerWithdrawDto {
   @IsNumber()
@@ -40,7 +46,7 @@ export class RegisterVkDto {
 }
 
 export class MixerDepositsQueryDto {
-  @IsNumber()
+  @IsNumberString()
   chainId: number;
 
   @IsString()
@@ -50,15 +56,12 @@ export class MixerDepositsQueryDto {
   denomination: string;
 
   @IsOptional()
-  @Type(() => Number)
   @IsNumber()
   @Min(0)
   fromLeaf?: number;
 
   @IsOptional()
-  @Type(() => Number)
   @IsNumber()
   @Min(0)
   toLeaf?: number;
 }
-

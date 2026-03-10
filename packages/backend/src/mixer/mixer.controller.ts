@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { MixerService } from './mixer.service';
-import { MixerDepositsQueryDto, MixerWithdrawDto, RegisterVkDto } from '@polypay/shared';
+import {
+  MixerDepositsQueryDto,
+  MixerWithdrawDto,
+  RegisterVkDto,
+} from '@polypay/shared';
 
 @Controller('mixer')
 export class MixerController {
@@ -28,6 +32,10 @@ export class MixerController {
     @Query('token') token: string,
     @Query('denomination') denomination: string,
   ) {
-    return this.mixerService.getDepositCount(Number(chainId), token, denomination);
+    return this.mixerService.getDepositCount(
+      Number(chainId),
+      token,
+      denomination,
+    );
   }
 }
