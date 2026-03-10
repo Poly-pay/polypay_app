@@ -22,7 +22,7 @@ import {
   ZK_POLLING_DELAY,
 } from '@/common/constants/timing';
 
-export type CircuitType = 'transaction' | 'auth';
+export type CircuitType = 'transaction' | 'auth' | 'mixer';
 
 @Injectable()
 export class ZkVerifyService {
@@ -245,6 +245,21 @@ export class ZkVerifyService {
 
       fs.writeFileSync(vkeyPath, JSON.stringify(error.response?.data || {}));
     }
+  }
+
+  // TODO: remove this method
+  /**
+   * Register mixer VK on Kurier and return vkHash. Used for pre-deploy setup.
+   */
+  async registerMixerVk(vk: string): Promise<string> {
+    await this.registerVk('mixer', vk, 5);
+    const vkeyPath = this.getVkeyPath('mixer');
+    const vkData = JSON.parse(fs.readFileSync(vkeyPath, 'utf-8'));
+    const vkHash = vkData.vkHash || vkData.meta?.vkHash;
+    if (!vkHash) {
+      throw new BadRequestException('VK registration returned no vkHash');
+    }
+    return vkHash;
   }
 
   /**

@@ -19,6 +19,7 @@ import { PartnerModule } from './partner/partner.module';
 import { QuestModule } from './quest/quest.module';
 import { RewardModule } from './reward/reward.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MixerModule } from './mixer/mixer.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PartnerModule,
     QuestModule,
     RewardModule,
+    MixerModule,
     ScheduleModule.forRoot(),
   ],
 })

@@ -43,6 +43,12 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
   },
 } as const;
 
+// Starting blocks for Mixer deployments; used by backend indexer to avoid scanning from block 0.
+export const MIXER_DEPLOYMENT_BLOCK = {
+  2651420: 11529753, // Horizen testnet Mixer deploy block
+  84532: 38675302, // Base Sepolia Mixer deploy block
+} as const;
+
 export const getContractConfigByChainId = (chainId: number) => {
   const config =
     CONTRACT_CONFIG_BY_CHAIN_ID[
