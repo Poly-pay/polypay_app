@@ -30,6 +30,7 @@ const sectionItems = [
     menuItems: [
       { icon: Routes.TRANSFER.icon, label: Routes.TRANSFER.title, link: Routes.TRANSFER.path },
       { icon: Routes.BATCH.icon, label: Routes.BATCH.title, link: Routes.BATCH.path },
+      { icon: Routes.MIXER.icon, label: Routes.MIXER.title, link: Routes.MIXER.path },
     ],
   },
   {
