@@ -314,3 +314,30 @@ enum QuestCategory {
   RECURRING
   DAILY
 }
+
+model MixerDeposit {
+  id           String   @id @default(cuid())
+  chainId      Int      @map("chain_id")
+  poolId       String   @map("pool_id")
+  leafIndex    Int      @map("leaf_index")
+  commitment   String
+  token        String
+  denomination String
+  blockNumber  Int      @map("block_number")
+  txHash       String   @map("tx_hash")
+  timestamp    DateTime @default(now())
+
+  @@unique([chainId, poolId, leafIndex])
+  @@index([chainId, poolId])
+  @@index([chainId, poolId, leafIndex])
+  @@map("mixer_deposits")
+}
+
+model MixerIndexerState {
+  id                String   @id @default(cuid())
+  chainId           Int      @unique @map("chain_id")
+  lastIndexedBlock  Int      @map("last_indexed_block")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("mixer_indexer_state")
+}
