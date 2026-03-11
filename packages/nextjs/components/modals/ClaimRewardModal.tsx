@@ -6,8 +6,8 @@ import ModalContainer from "./ModalContainer";
 import { useWalletClient } from "wagmi";
 import { Button } from "~~/components/ui/button";
 import { useClaimRewards, useClaimSummary } from "~~/hooks/api/useClaim";
-import { formatErrorMessage } from "~~/lib/form/utils";
 import { ModalProps } from "~~/types/modal";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { chain } from "~~/utils/network-config";
 
 type ModalState = "default" | "loading" | "success" | "error";

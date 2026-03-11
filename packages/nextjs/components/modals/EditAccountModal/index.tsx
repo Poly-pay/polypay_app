@@ -7,9 +7,9 @@ import SubmittingStep from "./SubmittingStep";
 import { ActionMode, ExistingSigner, ModalStep, PendingSigner } from "./types";
 import ModalContainer from "~~/components/modals/ModalContainer";
 import { useAccount, useMetaMultiSigWallet, useSignerTransaction } from "~~/hooks";
-import { formatErrorMessage } from "~~/lib/form/utils";
 import { useIdentityStore, useSidebarStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
