@@ -2,8 +2,8 @@ import { useIdentityStore } from "../store";
 import { authApi } from "./authApi";
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "~~/constants";
-import { formatErrorMessage } from "~~/utils/formatError";
 import { API_TIMEOUT_DEFAULT, API_TIMEOUT_ZK } from "~~/constants/timing";
+import { formatErrorMessage } from "~~/utils/formatError";
 
 const AUTHORIZATION_HEADER = (accessToken: string) => `Bearer ${accessToken}`;
 
