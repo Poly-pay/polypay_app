@@ -37,7 +37,7 @@ export default function AddressNamedTooltip({
     <>
       <div
         ref={triggerRef}
-        className="w-fit"
+        className="max-w-full"
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
       >
