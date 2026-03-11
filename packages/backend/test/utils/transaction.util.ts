@@ -5,11 +5,14 @@ import {
   CreateAccountDto,
   TxType,
 } from '@polypay/shared';
+import { parseTokenAmount } from '@polypay/shared';
 import { getHttpServer } from '../setup';
 import { getAuthHeader } from './auth.util';
-import { getTransactionHash } from './contract.util';
+import { createTestPublicClient, getTransactionHash } from './contract.util';
 import { generateTestProof } from './proof.util';
 import { type TestIdentity } from './identity.util';
+import { type TestSigner } from './signer.util';
+import { waitForReceiptWithRetry } from '@/common/utils/retry';
 
 export interface CreateTransactionPayload {
   nonce: number;
@@ -29,6 +32,11 @@ export interface ApproveTransactionPayload {
   proof: number[];
   publicInputs: string[];
   nullifier: string;
+}
+
+export interface ParsedTokenAmount {
+  amountString: string;
+  amountBigInt: bigint;
 }
 
 export async function apiCreateAccount(
@@ -140,4 +148,82 @@ export async function generateVotePayload(
     nullifier: proof.nullifier,
   };
 }
+
+/**
+ * Convert human-readable token amount to smallest unit (string + bigint)
+ * using shared parseTokenAmount helper.
+ */
+export function toTokenAmount(
+  humanAmount: string,
+  decimals: number,
+): ParsedTokenAmount {
+  const amountString = parseTokenAmount(humanAmount, decimals);
+  return {
+    amountString,
+    amountBigInt: BigInt(amountString),
+  };
+}
+
+/**
+ * Transfer ERC20 tokens from a test signer to a recipient address.
+ * Uses standard ERC20 transfer(address,uint256) and waits for confirmation.
+ */
+export async function transferErc20FromSigner(
+  signer: TestSigner,
+  tokenAddress: `0x${string}`,
+  to: `0x${string}`,
+  amount: bigint,
+): Promise<Hex> {
+  const hash = await signer.walletClient.writeContract({
+    account: signer.account,
+    address: tokenAddress,
+    abi: [
+      {
+        name: 'transfer',
+        type: 'function',
+        stateMutability: 'nonpayable',
+        inputs: [
+          { name: 'to', type: 'address' },
+          { name: 'amount', type: 'uint256' },
+        ],
+        outputs: [{ name: '', type: 'success', internalType: 'bool' as const }],
+      },
+    ],
+    functionName: 'transfer',
+    args: [to, amount],
+  } as any);
+
+  const publicClient = createTestPublicClient();
+  await waitForReceiptWithRetry(publicClient as any, hash);
+
+  return hash as Hex;
+}
+
+/**
+ * Read ERC20 token balance for an address.
+ */
+export async function getErc20Balance(
+  accountAddress: `0x${string}`,
+  tokenAddress: `0x${string}`,
+): Promise<bigint> {
+  const publicClient = createTestPublicClient();
+
+  const balance = await publicClient.readContract({
+    address: tokenAddress,
+    abi: [
+      {
+        name: 'balanceOf',
+        type: 'function',
+        stateMutability: 'view',
+        inputs: [{ name: 'account', type: 'address' }],
+        outputs: [{ name: 'balance', type: 'uint256' }],
+      },
+    ],
+    functionName: 'balanceOf',
+    args: [accountAddress],
+  });
+
+  return balance as bigint;
+}
+
 
