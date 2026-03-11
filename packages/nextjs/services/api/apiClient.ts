@@ -4,7 +4,6 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestCo
 import { API_BASE_URL } from "~~/constants";
 import { API_TIMEOUT_DEFAULT, API_TIMEOUT_ZK } from "~~/constants/timing";
 import { formatErrorMessage } from "~~/utils/formatError";
-import { API_TIMEOUT_DEFAULT, API_TIMEOUT_ZK } from "~~/constants/timing";
 
 const AUTHORIZATION_HEADER = (accessToken: string) => `Bearer ${accessToken}`;
 
