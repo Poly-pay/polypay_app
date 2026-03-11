@@ -34,7 +34,7 @@ export function ContactDetailDrawer({
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => setIsAnimating(true), 10);
+      requestAnimationFrame(() => setIsAnimating(true));
     } else {
       setIsAnimating(false);
     }
@@ -45,19 +45,19 @@ export function ContactDetailDrawer({
   return (
     <>
       <div
-        className={`lg:hidden fixed inset-0 bg-[#2b2929ad] bg-opacity-50 z-40 transition-opacity duration-300 ${
+        className={`lg:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 ${
           isAnimating ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
       ></div>
       <div
-        className={`lg:hidden fixed right-0 top-0 h-full rounded-2xl w-[400px] max-w-[90vw] bg-white z-50 shadow-2xl transform transition-all duration-300 ease-in-out ${
+        className={`lg:hidden fixed right-0 top-0 h-full rounded-2xl w-[400px] max-w-[90vw] bg-white z-40 shadow-2xl transform transition-all duration-300 ease-in-out ${
           isAnimating ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="h-full flex flex-col relative">
           <button
-            className="absolute top-4 left-4 z-50 w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-100"
+            className="absolute top-4 left-4 z-40 w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-md hover:bg-gray-100"
             onClick={onClose}
           >
             <X width={16} height={16} />
@@ -68,7 +68,7 @@ export function ContactDetailDrawer({
                 className="w-full h-[40%] flex-shrink-0 rounded-t-2xl"
                 style={{
                   background: contact
-                    ? "linear-gradient(180deg, #FF7CEB 0%, #FFF 100%)"
+                    ? "linear-gradient(180deg, var(--color-pink-350) 0%, #FFF 100%)"
                     : "linear-gradient(180deg, #BDBDBD 0%, #FFF 100%)",
                 }}
               ></div>

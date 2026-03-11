@@ -42,10 +42,10 @@ export default function AccountName({ className, form, onNextStep, onGoBack, isV
         {/* Step description */}
         <div className="flex items-center justify-center w-full max-w-2xl flex-col text-center">
           <span className="text-text-primary uppercase text-[24px] font-semibold mb-4">2. Basic setup</span>
-          <span className="text-text-secondary text-[16px] text-gray-500">
+          <span className="text-text-secondary text-base text-gray-500">
             This is the basic setup of the account, please enter the account name in the box below.
           </span>
-          <span className="text-text-secondary text-[16px] text-gray-500">
+          <span className="text-text-secondary text-base text-gray-500">
             Or click the generate button next to it to automatically generate the account name.
           </span>
         </div>
@@ -60,11 +60,9 @@ export default function AccountName({ className, form, onNextStep, onGoBack, isV
               })}
               maxLength={30}
               placeholder="Your account name"
-              className="w-[350px] lg:w-[421px] h-[48px] flex-1 px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-[16px] focus:outline-none focus:border-primary"
+              className="w-[350px] lg:w-[421px] h-input flex-1 px-4 py-3 rounded-[16px] border border-gray-200 bg-gray-50 text-base focus:outline-none focus:border-primary"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[16px] text-gray-400">
-              {name.length}/30
-            </span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-base text-gray-400">{name.length}/30</span>
           </div>
 
           <Repeat onClick={handleGenerateName} size={16} className="cursor-pointer ml-2 shrink-0" />

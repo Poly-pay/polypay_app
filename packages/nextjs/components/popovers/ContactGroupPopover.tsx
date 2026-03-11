@@ -50,10 +50,7 @@ export function ContactGroupPopover({
     <div ref={rootRef} className="relative">
       <div
         onClick={() => setOpen(v => !v)}
-        className="px-5 py-1.5 rounded-full absolute top-8 left-28 bg-white border border-main-pink cursor-pointer max-w-40"
-        style={{
-          boxShadow: "0 4px 24.5px 0 rgba(46, 119, 255, 0.25)",
-        }}
+        className="px-5 py-1.5 rounded-full absolute top-8 left-28 bg-white border border-main-pink cursor-pointer max-w-40 shadow-popover"
       >
         {pillContent || (
           <>
@@ -97,7 +94,7 @@ export function ContactGroupPopover({
                     onClick={() => {
                       onSelect(group.id);
                     }}
-                    className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-[#FF7CEB1A] cursor-pointer rounded-lg"
+                    className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-pink-350/10 cursor-pointer rounded-lg"
                   >
                     <div className="flex-1">
                       <p className="text-sm font-medium">{group.name}</p>

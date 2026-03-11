@@ -91,7 +91,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, createdAccount
 
                       {/* Address (click to copy) */}
                       <div
-                        className="flex-1 min-w-0 text-[14px] text-violet-300 truncate cursor-pointer hover:bg-gray-100 rounded px-1 py-0.5 transition-colors font-family-repetition"
+                        className="flex-1 min-w-0 text-sm text-violet-300 truncate cursor-pointer hover:bg-gray-100 rounded px-1 py-0.5 transition-colors font-family-repetition"
                         onClick={() => copyToClipboard(acc.address, `Address (${meta.name}) copied!`)}
                         title="Click to copy"
                       >
@@ -139,13 +139,13 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, createdAccount
                   }
                   className="flex-1 bg-grey-1000 flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
                 >
-                  <span className="font-semibold text-[16px] text-center text-white">See your account</span>
+                  <span className="font-semibold text-base text-center text-white">See your account</span>
                 </button>
                 <button
                   onClick={() => handleFund(currentAccount?.address || "")}
                   className="flex-1 bg-primary flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
                 >
-                  <span className="font-semibold text-[16px] text-center text-black">Fund your account</span>
+                  <span className="font-semibold text-base text-center text-black">Fund your account</span>
                 </button>
               </div>
             )}

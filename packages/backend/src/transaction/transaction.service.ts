@@ -34,6 +34,12 @@ import {
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
 import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
+import {
+  CROSS_CHAIN_FINALIZATION_WAIT,
+  NONCE_RESERVATION_TTL,
+  PROOF_AGGREGATION_INTERVAL,
+  PROOF_AGGREGATION_MAX_ATTEMPTS,
+} from '@/common/constants/timing';
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
@@ -1021,7 +1027,7 @@ export class TransactionService {
       );
 
       // 3. Reserve (expires 2 min)
-      const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + NONCE_RESERVATION_TTL);
 
       await tx.reservedNonce.create({
         data: { accountAddress, nonce: nextNonce, expiresAt },
@@ -1253,8 +1259,8 @@ export class TransactionService {
 
   private async aggregateProofs(
     txId: number,
-    maxAttempts = 30,
-    intervalMs = 10000,
+    maxAttempts = PROOF_AGGREGATION_MAX_ATTEMPTS,
+    intervalMs = PROOF_AGGREGATION_INTERVAL,
   ) {
     let hasRecentAggregation = false;
     const TWO_MINUTES_MS = 2 * 60 * 1000;
@@ -1344,7 +1350,7 @@ export class TransactionService {
       this.logger.log(
         'Recent aggregation detected, waiting 40s for cross-chain finalization...',
       );
-      await this.sleep(40000);
+      await this.sleep(CROSS_CHAIN_FINALIZATION_WAIT);
     } else {
       this.logger.log('All aggregations are old (> 2 minutes), skipping wait');
     }

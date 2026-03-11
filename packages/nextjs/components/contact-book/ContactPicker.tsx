@@ -75,7 +75,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="fixed w-80 bg-white rounded-2xl shadow-lg border border-grey-100 z-[101]"
+          className="fixed w-80 bg-white rounded-2xl shadow-lg border border-grey-100 z-20"
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,
@@ -96,12 +96,7 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
           {/* Header */}
           <div className="p-3">
             <div className="flex items-center gap-2 border border-[#E2E2E2] bg-[#F8F7F7] rounded-xl pr-3 pl-1 py-1">
-              <div
-                className="flex items-center justify-center p-2 rounded-lg bg-white"
-                style={{
-                  boxShadow: "0 0 4px 0 rgba(18, 18, 18, 0.10)",
-                }}
-              >
+              <div className="flex items-center justify-center p-2 rounded-lg bg-white shadow-input">
                 <Search size={16} className="text-gray-400" />
               </div>
               <input

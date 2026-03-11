@@ -8,6 +8,10 @@
 
 @theme {
   --shadow-center: 0 0 12px -2px rgb(0 0 0 / 0.05);
+  --shadow-popover: 0 4px 24.5px 0 rgba(46, 119, 255, 0.25);
+  --shadow-input: 0 0 4px 0 rgba(18, 18, 18, 0.1);
+  --shadow-modal: 0px 0px 46.8px 0px rgba(46, 46, 46, 0.13);
+  --shadow-sidebar: 4px 0px 24px rgba(0, 0, 0, 0.1);
   --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --font-family-repetition: var(--font-repetition), sans-serif;
   --font-family-barlow: var(--font-barlow), sans-serif;

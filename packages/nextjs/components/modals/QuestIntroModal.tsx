@@ -121,7 +121,7 @@ const QuestIntroModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="w-[38px] h-[38px] flex items-center justify-center bg-white border border-grey-200 rounded-lg hover:bg-grey-50 transition-colors"
+            className="w-[38px] h-icon-btn flex items-center justify-center bg-white border border-grey-200 rounded-lg hover:bg-grey-50 transition-colors"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
