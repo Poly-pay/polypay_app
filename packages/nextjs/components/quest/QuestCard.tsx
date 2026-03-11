@@ -11,7 +11,7 @@ interface QuestCardProps {
 export function QuestCard({ name, description, points, onClick }: QuestCardProps) {
   return (
     <div
-      className="w-[464px] h-[165px] p-[24px_16px] bg-white border border-grey-100 rounded-2xl flex flex-col justify-center gap-6 cursor-pointer hover:bg-grey-50 transition-colors"
+      className="flex-1 min-w-[280px] h-[165px] p-[24px_16px] bg-white border border-grey-100 rounded-2xl flex flex-col justify-center gap-6 cursor-pointer hover:bg-grey-50 transition-colors"
       onClick={onClick}
     >
       {/* Top row: Icon + Points */}
