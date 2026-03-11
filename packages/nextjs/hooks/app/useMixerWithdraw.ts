@@ -126,14 +126,6 @@ export function useMixerWithdraw() {
       const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
       const vk = await plonk.getVerificationKey();
 
-      const publicInputsHex = [
-        bigintToHex(root),
-        bigintToHex(nullifierHash),
-        bigintToHex(recipientField),
-        bigintToHex(tokenField),
-        bigintToHex(denomField),
-      ];
-
       setLoadingState("Submitting withdraw...");
       const result = await mixerApi.withdraw({
         chainId,
@@ -143,7 +135,7 @@ export function useMixerWithdraw() {
         nullifierHash: bigintToHex(nullifierHash),
         root: bigintToHex(root),
         proof: Array.from(proof),
-        publicInputs: publicInputsHex,
+        publicInputs,
         vk: Buffer.from(vk).toString("base64"),
       });
 

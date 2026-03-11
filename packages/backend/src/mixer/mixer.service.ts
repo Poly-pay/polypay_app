@@ -1,5 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { keccak256, encodePacked } from 'viem';
+import { keccak256, encodePacked, sha256, toHex } from 'viem';
+import { getContractConfigByChainId } from '@polypay/shared';
 import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
@@ -65,23 +66,30 @@ export class MixerService {
       throw new BadRequestException('MIXER_AGGREGATION_TIMEOUT');
     }
 
+    // TODO: remove later
     const { aggregationId, aggregationDetails } = aggregationResult;
     const domainId = getDomainId(chainId);
 
-    const txHash = await this.relayerService.executeMixerWithdraw(
+    const proofArgs = {
+      aggregationId: String(aggregationId),
+      domainId,
+      zkMerklePath: aggregationDetails.merkleProof || [],
+      leafCount: aggregationDetails.numberOfLeaves ?? 0,
+      index: aggregationDetails.leafIndex ?? 0,
+    };
+
+    this.logger.log(
+      `Mixer aggregation ready. aggregationId=${aggregationId}, domainId=${domainId}. Waiting for on-chain availability...`,
+    );
+
+    const txHash = await this.executeWithRetry(
       chainId,
       token,
       denomination,
       recipient,
       nullifierHash,
       root,
-      {
-        aggregationId: String(aggregationId),
-        domainId,
-        zkMerklePath: aggregationDetails.merkleProof || [],
-        leafCount: aggregationDetails.numberOfLeaves ?? 0,
-        index: aggregationDetails.leafIndex ?? 0,
-      },
+      proofArgs,
     );
 
     this.logger.log(`Mixer withdraw executed: txHash=${txHash}`);
@@ -92,7 +100,9 @@ export class MixerService {
     jobId: string,
     maxAttempts = MIXER_AGGREGATION_MAX_ATTEMPTS,
     intervalMs = MIXER_AGGREGATION_INTERVAL_MS,
-  ): Promise<{ aggregationId?: number; aggregationDetails?: any } | null> {
+  ): Promise<
+    { aggregationId?: number; aggregationDetails?: any; updatedAt?: string } | null
+  > {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const jobStatus = await this.zkVerifyService.getJobStatus(jobId);
@@ -100,6 +110,7 @@ export class MixerService {
           return {
             aggregationId: jobStatus.aggregationId,
             aggregationDetails: jobStatus.aggregationDetails,
+            updatedAt: jobStatus.updatedAt as string | undefined,
           };
         }
         if (jobStatus.status === 'Failed') {
@@ -114,6 +125,105 @@ export class MixerService {
       await this.sleep(intervalMs);
     }
     return null;
+  }
+
+  // TODO: remove this method
+  private async executeWithRetry(
+    chainId: number,
+    token: string,
+    denomination: string,
+    recipient: string,
+    nullifierHash: string,
+    root: string,
+    proofArgs: {
+      aggregationId: string;
+      domainId: number;
+      zkMerklePath: string[];
+      leafCount: number;
+      index: number;
+    },
+    maxRetries = 20,
+    retryIntervalMs = 30_000,
+  ): Promise<string> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.logger.log(
+          `executeMixerWithdraw attempt ${attempt}/${maxRetries}...`,
+        );
+        return await this.relayerService.executeMixerWithdraw(
+          chainId,
+          token,
+          denomination,
+          recipient,
+          nullifierHash,
+          root,
+          proofArgs,
+        );
+      } catch (err: any) {
+        const isInvalidProof =
+          err?.message?.includes('Invalid proof') ||
+          err?.message?.includes('reverted');
+
+        if (isInvalidProof && attempt < maxRetries) {
+          this.logger.log(
+            `Attempt ${attempt} failed (on-chain batch not ready yet). Retrying in ${retryIntervalMs / 1000}s...`,
+          );
+          await this.sleep(retryIntervalMs);
+        } else {
+          throw err;
+        }
+      }
+    }
+    throw new BadRequestException('MIXER_EXECUTE_TIMEOUT');
+  }
+
+  private debugLeafComparison(
+    chainId: number,
+    root: string,
+    nullifierHash: string,
+    recipient: string,
+    token: string,
+    denomination: string,
+    aggregationDetails: any,
+  ): void {
+    try {
+      const config = getContractConfigByChainId(chainId);
+      const vkHash = config.mixerVkHash as `0x${string}`;
+
+      const PROVING_SYSTEM_ID = keccak256(toHex('ultraplonk'));
+      const VERSION_HASH = sha256(toHex(''));
+
+      const encodedInputs = encodePacked(
+        ['bytes32', 'bytes32', 'uint256', 'uint256', 'uint256'],
+        [
+          root as `0x${string}`,
+          nullifierHash as `0x${string}`,
+          BigInt(recipient),
+          BigInt(token),
+          BigInt(denomination),
+        ],
+      );
+      const inputsHash = keccak256(encodedInputs);
+      const computedLeaf = keccak256(
+        encodePacked(
+          ['bytes32', 'bytes32', 'bytes32', 'bytes32'],
+          [PROVING_SYSTEM_ID, vkHash, VERSION_HASH, inputsHash],
+        ),
+      );
+
+      this.logger.log(`=== LEAF DEBUG ===`);
+      this.logger.log(`vkHash used: ${vkHash}`);
+      this.logger.log(`PROVING_SYSTEM_ID: ${PROVING_SYSTEM_ID}`);
+      this.logger.log(`VERSION_HASH: ${VERSION_HASH}`);
+      this.logger.log(`encodedInputs hash: ${inputsHash}`);
+      this.logger.log(`Kurier leaf: ${aggregationDetails?.leaf ?? 'N/A'}`);
+      this.logger.log(`Contract leaf: ${computedLeaf}`);
+      this.logger.log(
+        `Leaf match: ${aggregationDetails?.leaf === computedLeaf}`,
+      );
+    } catch (e: any) {
+      this.logger.warn(`debugLeafComparison error: ${e?.message}`);
+    }
   }
 
   private sleep(ms: number): Promise<void> {
