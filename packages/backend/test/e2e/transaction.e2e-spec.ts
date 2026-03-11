@@ -1,45 +1,39 @@
-import * as request from 'supertest';
 import { type Hex, formatEther } from 'viem';
 import {
   setupTestApp,
   teardownTestApp,
   resetDatabase,
-  getHttpServer,
   getTestApp,
 } from '../setup';
 import { getSignerA, getSignerB } from '../fixtures/test-users';
-import { createTestSigner, TestSigner } from '../utils/signer.util';
-import {
-  generateSecret,
-  generateCommitment,
-  generateTestProof,
-} from '../utils/proof.util';
 import {
   depositToAccount,
-  getTransactionHash,
   getAccountBalance,
 } from '../utils/contract.util';
 import { getPrismaService } from '../utils/cleanup.util';
-import { loginUser, getAuthHeader, AuthTokens } from '../utils/auth.util';
+import { loginUser, AuthTokens } from '../utils/auth.util';
+import { TestIdentity, createTestIdentity } from '../utils/identity.util';
 import {
-  API_ENDPOINTS,
+  apiCreateAccount,
+  apiReserveNonce,
+  apiCreateTransaction,
+  apiApproveTransaction,
+  apiExecuteTransaction,
+  apiGetTransaction,
+  generateVotePayload,
+} from '../utils/transaction.util';
+import {
   CreateAccountDto,
   TxStatus,
   TxType,
 } from '@polypay/shared';
 
-// Timeout 5 minutes for blockchain calls
-jest.setTimeout(600000); 
+// Timeout 10 minutes for blockchain calls
+jest.setTimeout(1200000); 
 
 describe('Transaction E2E', () => {
-  let signerA: TestSigner;
-  let signerB: TestSigner;
-  let secretA: bigint;
-  let secretB: bigint;
-  let commitmentA: string;
-  let commitmentB: string;
-  let signerDtoA: any;
-  let signerDtoB: any;
+  let identityA: TestIdentity;
+  let identityB: TestIdentity;
   let tokensA: AuthTokens;
   let tokensB: AuthTokens;
 
@@ -47,43 +41,15 @@ describe('Transaction E2E', () => {
     // Setup NestJS app
     await setupTestApp();
 
-    // Setup test signers
-    signerA = createTestSigner(getSignerA());
-    signerB = createTestSigner(getSignerB());
-
-    // Generate secrets and commitments
-    secretA = await generateSecret(signerA);
-    secretB = await generateSecret(signerB);
-
-    const commitmentABigInt = await generateCommitment(secretA);
-    const commitmentBBigInt = await generateCommitment(secretB);
-
-    commitmentA = commitmentABigInt.toString();
-    commitmentB = commitmentBBigInt.toString();
-    signerDtoA = {
-      commitment: commitmentA,
-      name: 'Signer A',
-    };
-    signerDtoB = {
-      commitment: commitmentB,
-      name: 'Signer B',
-    };
-
-    console.log('Test setup complete:');
-    console.log('  Signer A address:', signerA.address);
-    console.log('  Signer B address:', signerB.address);
-    console.log('  Commitment A:', commitmentA);
-    console.log('  Commitment B:', commitmentB);
+    identityA = await createTestIdentity(getSignerA, 'Signer A');
+    identityB = await createTestIdentity(getSignerB, 'Signer B');
   });
 
   beforeEach(async () => {
     await resetDatabase();
     // Login both users
-    console.log('\n--- Login Users ---');
-    tokensA = await loginUser(secretA, commitmentA);
-    tokensB = await loginUser(secretB, commitmentB);
-    console.log('  User A logged in');
-    console.log('  User B logged in');
+    tokensA = await loginUser(identityA.secret, identityA.commitment);
+    tokensB = await loginUser(identityB.secret, identityB.commitment);
   });
 
   afterAll(async () => {
@@ -92,170 +58,143 @@ describe('Transaction E2E', () => {
 
   describe('Full transaction flow', () => {
     it('should complete full flow: create account → create tx → approve → execute', async () => {
-      const server = getHttpServer();
+      console.log('\n=== Transaction E2E: Start ===');
 
       // ============ STEP 1: Create Account ============
-      console.log('\n--- Step 1: Create Account ---');
-
+      console.log('Step 1: Create Account - start');
       const dataCreateAccount: CreateAccountDto = {
         name: 'Test Multi-Sig Account',
-        signers: [signerDtoA, signerDtoB],
+        signers: [identityA.signerDto, identityB.signerDto],
         threshold: 2,
         chainId: 2651420,
       };
 
-      const accountResponse = await request(server)
-        .post(API_ENDPOINTS.accounts.base)
-        .set(getAuthHeader(tokensA.accessToken))
-        .send(dataCreateAccount)
-        .expect(201);
-
-      expect(accountResponse.body).toHaveProperty('address');
-
-      const accountAddress = accountResponse.body.address as `0x${string}`;
-      console.log('Account created:');
-      console.log('  Address:', accountAddress);
+      const { address: accountAddress } = await apiCreateAccount(
+        tokensA.accessToken,
+        dataCreateAccount,
+      );
+      console.log('Step 1: Create Account - done', {
+        accountAddress,
+      });
 
       // ============ STEP 2: Deposit ETH to Account ============
-      console.log('\n--- Step 2: Deposit ETH to Account ---');
-
+      console.log('Step 2: Deposit - start');
       const balanceBefore = await getAccountBalance(accountAddress);
-      console.log('  Balance before:', formatEther(balanceBefore), 'ETH');
-
-      await depositToAccount(signerA, accountAddress, '0.001');
+      await depositToAccount(identityA.signer, accountAddress, '0.0001');
 
       const balanceAfter = await getAccountBalance(accountAddress);
-      console.log('  Balance after:', formatEther(balanceAfter), 'ETH');
 
       expect(balanceAfter).toBeGreaterThan(balanceBefore);
+      console.log('Step 2: Deposit - done', {
+        balanceBefore: formatEther(balanceBefore),
+        balanceAfter: formatEther(balanceAfter),
+      });
 
       // ============ STEP 3: Create Transaction ============
-      console.log('\n--- Step 3: Create Transaction ---');
-
       // 3.1 Reserve nonce
-      const reserveNonceResponse = await request(server)
-        .post(API_ENDPOINTS.transactions.reserveNonce)
-        .set(getAuthHeader(tokensA.accessToken))
-        .send({ accountAddress })
-        .expect(201);
-
-      const nonce = reserveNonceResponse.body.nonce;
-      console.log('  Reserved nonce:', nonce);
+      console.log('Step 3.1: Reserve nonce - start');
+      const { nonce } = await apiReserveNonce(
+        tokensA.accessToken,
+        accountAddress,
+      );
+      console.log('Step 3.1: Reserve nonce - done', { nonce });
 
       // 3.2 Prepare transfer params
       const recipient =
         '0x87142a49c749dD05069836F9B81E5579E95BE0A6' as `0x${string}`;
-      const value = BigInt('1000000000000000'); // 0.001 ETH
+      const value = BigInt('100000000000000'); // 0.0001 ETH
       const callData = '0x' as Hex;
 
-      // 3.3 Get txHash from contract
-      const txHash = await getTransactionHash(
+      // 3.3 Generate proof for signer A and create transaction
+      console.log('Step 3.2: Generate proof A - start');
+      const votePayloadA = await generateVotePayload(
+        identityA,
         accountAddress,
         BigInt(nonce),
         recipient,
         value,
         callData,
       );
-      console.log('  TxHash from contract:', txHash);
+      console.log('Step 3.2: Generate proof A - done');
 
-      // 3.4 Generate proof for signer A
-      console.log('  Generating proof for Signer A...');
-      const proofA = await generateTestProof(signerA, secretA, txHash);
-      console.log('  Proof A generated');
-
-      // 3.5 Create transaction
-      const createTxResponse = await request(server)
-        .post(API_ENDPOINTS.transactions.base)
-        .set(getAuthHeader(tokensA.accessToken))
-        .send({
-          nonce: nonce,
-          type: TxType.TRANSFER,
-          accountAddress: accountAddress,
-          to: recipient,
-          value: value.toString(),
-          threshold: 2,
-          creatorCommitment: commitmentA,
-          proof: proofA.proof,
-          publicInputs: proofA.publicInputs,
-          nullifier: proofA.nullifier,
-        })
-        .expect(201);
-
-      const txId = createTxResponse.body.txId;
-      console.log('  Transaction created, txId:', txId);
+      console.log('Step 3.3: Create transaction - start');
+      const { txId } = await apiCreateTransaction(tokensA.accessToken, {
+        nonce,
+        type: TxType.TRANSFER,
+        accountAddress,
+        to: recipient,
+        value: value.toString(),
+        threshold: 2,
+        creatorCommitment: identityA.commitment,
+        proof: votePayloadA.proof,
+        publicInputs: votePayloadA.publicInputs,
+        nullifier: votePayloadA.nullifier,
+      });
+      console.log('Step 3.3: Create transaction - done', { txId });
 
       // ============ STEP 4: Approve Transaction (Signer B) ============
-      console.log('\n--- Step 4: Approve Transaction (Signer B) ---');
-
       // 4.1 Get transaction details
-      const getTxResponse = await request(server)
-        .get(API_ENDPOINTS.transactions.byTxId(txId))
-        .set(getAuthHeader(tokensA.accessToken))
-        .expect(200);
+      console.log('Step 4.1: Get transaction details - start');
+      const txDetails = (await apiGetTransaction(
+        tokensA.accessToken,
+        txId,
+      )) as {
+        nonce: number;
+        to: string;
+        value: string;
+      };
+      console.log('Step 4.1: Get transaction details - done', {
+        nonce: txDetails.nonce,
+        to: txDetails.to,
+        value: txDetails.value,
+      });
 
-      console.log('  Transaction status:', getTxResponse.body.status);
-
-      // 4.2 Get txHash for approve
-      const txHashForApprove = await getTransactionHash(
+      // 4.2 Generate proof for signer B and approve
+      console.log('Step 4.2: Generate proof B - start');
+      const votePayloadB = await generateVotePayload(
+        identityB,
         accountAddress,
-        BigInt(getTxResponse.body.nonce),
-        getTxResponse.body.to as `0x${string}`,
-        BigInt(getTxResponse.body.value),
+        BigInt(txDetails.nonce),
+        txDetails.to as `0x${string}`,
+        BigInt(txDetails.value),
         callData,
       );
+      console.log('Step 4.2: Generate proof B - done');
 
-      // 4.3 Generate proof for signer B
-      console.log('  Generating proof for Signer B...');
-      const proofB = await generateTestProof(
-        signerB,
-        secretB,
-        txHashForApprove,
-      );
-      console.log('  Proof B generated');
-
-      // 4.4 Approve transaction
-      await request(server)
-        .post(API_ENDPOINTS.transactions.approve(txId))
-        .set(getAuthHeader(tokensB.accessToken))
-        .send({
-          voterCommitment: commitmentB,
-          proof: proofB.proof,
-          publicInputs: proofB.publicInputs,
-          nullifier: proofB.nullifier,
-        })
-        .expect(201);
-
-      console.log('  Transaction approved by Signer B');
+      console.log('Step 4.3: Approve transaction - start');
+      await apiApproveTransaction(tokensB.accessToken, txId, votePayloadB);
+      console.log('Step 4.3: Approve transaction - done');
 
       // ============ STEP 5: Execute Transaction ============
-      console.log('\n--- Step 5: Execute Transaction ---');
-
-      const executeResponse = await request(server)
-        .post(API_ENDPOINTS.transactions.execute(txId))
-        .set(getAuthHeader(tokensA.accessToken))
-        .expect(201);
-
-      expect(executeResponse.body).toHaveProperty('txHash');
-      console.log('  Execute TxHash:', executeResponse.body.txHash);
+      console.log('Step 5: Execute transaction - start');
+      const { txHash } = await apiExecuteTransaction(
+        tokensA.accessToken,
+        txId,
+      );
+      expect(txHash).toBeDefined();
+      console.log('Step 5: Execute transaction - done', { txHash });
 
       // ============ STEP 6: Verify Final State ============
-      console.log('\n--- Step 6: Verify Final State ---');
-
+      console.log('Step 6: Verify final state - start');
       const prisma = getPrismaService(getTestApp());
 
-      const finalTx = await prisma.transaction.findUnique({
-        where: { txId: txId },
+      const finalTx = (await prisma.transaction.findUnique({
+        where: { txId: Number(txId) },
         include: { votes: true },
-      });
+      })) as {
+        status: TxStatus;
+        votes: unknown[];
+      } | null;
 
       expect(finalTx).not.toBeNull();
       expect(finalTx!.status).toBe(TxStatus.EXECUTED);
       expect(finalTx!.votes.length).toBe(2);
+      console.log('Step 6: Verify final state - done', {
+        status: finalTx?.status,
+        votes: finalTx?.votes.length,
+      });
 
-      console.log('Final verification:');
-      console.log('  Status:', finalTx!.status);
-      console.log('  Vote count:', finalTx!.votes.length);
-      console.log('\n✅ Full transaction flow completed successfully!');
+      console.log('=== Transaction E2E: Done ===\n');
     });
   });
 });
