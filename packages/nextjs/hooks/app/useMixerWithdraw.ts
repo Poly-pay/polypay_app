@@ -19,6 +19,8 @@ export interface MixerWithdrawParams {
   denomination: string;
   recipient: string;
   slot: MixerDepositSlot;
+  /** Pass commitments from a previous getWithdrawableSlots call to avoid double fetch */
+  commitments?: string[];
 }
 
 function getPoolId(token: string, denomination: string): `0x${string}` {
@@ -39,12 +41,16 @@ export function useMixerWithdraw() {
   const [error, setError] = useState<string | null>(null);
 
   const getWithdrawableSlots = useCallback(
-    async (chainId: number, token: string, denomination: string): Promise<MixerDepositSlot[]> => {
+    async (
+      chainId: number,
+      token: string,
+      denomination: string,
+    ): Promise<{ slots: MixerDepositSlot[]; commitments: string[] }> => {
       const config = getContractConfigByChainId(chainId);
       if (!config.mixerAddress || config.mixerAddress === "0x0000000000000000000000000000000000000000") {
-        return [];
+        return { slots: [], commitments: [] };
       }
-      if (!publicClient) return [];
+      if (!publicClient) return { slots: [], commitments: [] };
       const { commitments, leafIndices } = await mixerApi.getDeposits({
         chainId,
         token,
@@ -63,7 +69,7 @@ export function useMixerWithdraw() {
         });
         if (!used) withdrawable.push(slot);
       }
-      return withdrawable;
+      return { slots: withdrawable, commitments };
     },
     [publicClient, findMyDeposits],
   );
@@ -77,14 +83,12 @@ export function useMixerWithdraw() {
       const secret = await ensureBaseSecret();
 
       setLoadingState("Fetching deposits...");
-      const { commitments, leafIndices } = await mixerApi.getDeposits({
-        chainId,
-        token,
-        denomination,
-      });
+      const resolvedCommitments =
+        params.commitments ??
+        (await mixerApi.getDeposits({ chainId, token, denomination })).commitments;
 
       setLoadingState("Building Merkle path...");
-      const { root, siblings, pathIndices } = await getRootAndPath(commitments, slot.leafIndex);
+      const { root, siblings, pathIndices } = await getRootAndPath(resolvedCommitments, slot.leafIndex);
       const nullifierHash = await poseidonHash2(slot.nullifier, slot.nullifier);
 
       const recipientField = BigInt(recipient);

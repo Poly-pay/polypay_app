@@ -40,7 +40,6 @@ export function useMixerDeposit() {
       if (!mixerAddress || mixerAddress === "0x0000000000000000000000000000000000000000") {
         throw new Error("Mixer is not deployed on this network");
       }
-      await ensureBaseSecret();
       const { commitments } = await mixerApi.getDeposits({ chainId, token, denomination });
       const { commitment } = await getNextDepositIndex(commitments);
       const commitmentHex = bigintToBytes32Hex(commitment);

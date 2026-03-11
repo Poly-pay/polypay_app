@@ -18,6 +18,7 @@ export function WithdrawTab() {
   const [tokenKey, setTokenKey] = useState<"ETH" | "ZEN" | "USDC">("ETH");
   const [denomination, setDenomination] = useState<string>(MIXER_DENOMINATIONS.ETH[0]);
   const [slots, setSlots] = useState<MixerDepositSlot[]>([]);
+  const [cachedCommitments, setCachedCommitments] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<MixerDepositSlot | null>(null);
   const [recipient, setRecipient] = useState("");
@@ -40,10 +41,12 @@ export function WithdrawTab() {
     setError(null);
     setLoadingSlots(true);
     setSlots([]);
+    setCachedCommitments([]);
     setSelectedSlot(null);
     try {
-      const list = await getWithdrawableSlots(chainId, tokenAddress, denomination);
+      const { slots: list, commitments } = await getWithdrawableSlots(chainId, tokenAddress, denomination);
       setSlots(list);
+      setCachedCommitments(commitments);
       if (list.length > 0 && !recipient && accounts.length > 0) {
         setRecipient(accounts[0].address ?? "");
       }
@@ -67,6 +70,7 @@ export function WithdrawTab() {
         denomination,
         recipient,
         slot: selectedSlot,
+        commitments: cachedCommitments.length > 0 ? cachedCommitments : undefined,
       });
       notification.success(`Withdraw successful. Tx: ${result.txHash}`);
       setSelectedSlot(null);
@@ -106,6 +110,7 @@ export function WithdrawTab() {
                   : MIXER_DENOMINATIONS.USDC;
             setDenomination(denoms[0]);
             setSlots([]);
+            setCachedCommitments([]);
             setSelectedSlot(null);
           }}
         >
@@ -132,6 +137,7 @@ export function WithdrawTab() {
               onClick={() => {
                 setDenomination(d);
                 setSlots([]);
+                setCachedCommitments([]);
                 setSelectedSlot(null);
               }}
             >

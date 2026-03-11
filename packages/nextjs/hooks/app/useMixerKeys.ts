@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { BN254_MODULUS, poseidonHash2 } from "@polypay/shared";
 import { keccak256 } from "viem";
 import { useWalletClient } from "wagmi";
@@ -16,7 +16,10 @@ export interface MixerDepositSlot {
 
 export function useMixerKeys() {
   const { data: walletClient } = useWalletClient();
-  const [baseSecret, setBaseSecret] = useState<bigint | null>(null);
+  // Use ref instead of state to avoid stale closure issues when called multiple times
+  // within the same async execution (e.g., deposit flow).
+  const baseSecretRef = useRef<bigint | null>(null);
+  const pendingSecretRef = useRef<Promise<bigint> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,21 +36,27 @@ export function useMixerKeys() {
   }, [walletClient]);
 
   const ensureBaseSecret = useCallback(async (): Promise<bigint> => {
-    if (baseSecret !== null) return baseSecret;
+    if (baseSecretRef.current !== null) return baseSecretRef.current;
+    // Deduplicate concurrent calls — only one sign request in flight at a time.
+    if (pendingSecretRef.current !== null) return pendingSecretRef.current;
     setIsLoading(true);
     setError(null);
-    try {
-      const secret = await deriveBaseSecret();
-      setBaseSecret(secret);
-      return secret;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed to derive mixer secret";
-      setError(msg);
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [baseSecret, deriveBaseSecret]);
+    const promise = deriveBaseSecret()
+      .then(secret => {
+        baseSecretRef.current = secret;
+        pendingSecretRef.current = null;
+        return secret;
+      })
+      .catch(e => {
+        pendingSecretRef.current = null;
+        const msg = e instanceof Error ? e.message : "Failed to derive mixer secret";
+        setError(msg);
+        throw e;
+      })
+      .finally(() => setIsLoading(false));
+    pendingSecretRef.current = promise;
+    return promise;
+  }, [deriveBaseSecret]);
 
   const computeCommitmentAndNullifier = useCallback(
     async (secret: bigint, n: number): Promise<{ commitment: bigint; nullifier: bigint }> => {
@@ -104,7 +113,8 @@ export function useMixerKeys() {
   );
 
   const reset = useCallback(() => {
-    setBaseSecret(null);
+    baseSecretRef.current = null;
+    pendingSecretRef.current = null;
     setError(null);
   }, []);
 
@@ -113,7 +123,6 @@ export function useMixerKeys() {
     getNextDepositIndex,
     findMyDeposits,
     deriveBaseSecret,
-    baseSecret,
     isLoading,
     error,
     reset,
