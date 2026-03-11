@@ -179,7 +179,11 @@ function BatchTransactions({
               {/* Recipient */}
               <div className="min-w-0 shrink">
                 {matchedContact ? (
-                  <AddressNamedTooltip address={item.recipient} name={matchedContact.name} isHighlighted={isHighlighted}>
+                  <AddressNamedTooltip
+                    address={item.recipient}
+                    name={matchedContact.name}
+                    isHighlighted={isHighlighted}
+                  >
                     <div
                       className={`flex items-center gap-1 text-xs font-medium rounded-full pl-1 pr-4 py-1 ${
                         isHighlighted ? "bg-white text-black" : "bg-grey-100 text-black group-hover:bg-white"
