@@ -50,7 +50,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
               currentStep === 1 ? "bg-violet-300 w-24 " : "bg-green-500 w-8"
             }`}
           >
-            <span className="text-white font-bold text-[16px]">{currentStep > 1 ? "✓" : "1"}</span>
+            <span className="text-white font-bold text-base">{currentStep > 1 ? "✓" : "1"}</span>
           </div>
 
           {/* Step 2 */}
@@ -59,7 +59,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
               currentStep === 2 ? "bg-violet-300 w-24" : currentStep > 2 ? "bg-green-500 w-8" : "bg-gray-200 w-8"
             }`}
           >
-            <span className={`text-[16px] ${currentStep >= 2 ? "text-white" : "text-gray-400"}`}>
+            <span className={`text-base ${currentStep >= 2 ? "text-white" : "text-gray-400"}`}>
               {currentStep > 2 ? "✓" : "2"}
             </span>
           </div>
@@ -70,7 +70,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
               currentStep === 3 ? "bg-violet-300 w-24" : "bg-gray-200 w-8"
             }`}
           >
-            <span className={`text-[16px] ${currentStep === 3 ? "text-white" : "text-gray-400"}`}>3</span>
+            <span className={`text-base ${currentStep === 3 ? "text-white" : "text-gray-400"}`}>3</span>
           </div>
         </div>
 
@@ -110,7 +110,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
         {/* Single info section - content changes based on step */}
         <div className="bg-gray-50 rounded-xl w-full border border-gray-200 flex flex-col flex-1 overflow-hidden">
           <div className="p-4 border-b border-gray-200">
-            <span className="text-grey-1000 text-[16px] font-semibold">{getSectionTitle()}</span>
+            <span className="text-grey-1000 text-base font-semibold">{getSectionTitle()}</span>
           </div>
 
           <div className="flex-1 overflow-auto p-4">
@@ -132,7 +132,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
                   })
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full">
-                    <span className="text-gray-400 text-[14px]">Select at least one network</span>
+                    <span className="text-gray-400 text-sm">Select at least one network</span>
                   </div>
                 )}
               </div>
@@ -140,7 +140,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
               /* Step 2 - Placeholder for signers */
               <div className="flex flex-col gap-3 items-center justify-center h-full">
                 <Image src="/new-account/frame.svg" alt="Setup" className="w-25 h-25" width={100} height={100} />
-                <span className="text-grey-1000 text-[14px]">Setup on next step</span>
+                <span className="text-grey-1000 text-sm">Setup on next step</span>
               </div>
             ) : (
               /* Step 3 - Signers list */
@@ -175,7 +175,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full">
-                    <span className="text-gray-400 text-[14px]">Add signers</span>
+                    <span className="text-gray-400 text-sm">Add signers</span>
                   </div>
                 )}
               </div>
@@ -196,7 +196,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
           }`}
         >
           <span
-            className={`flex items-center gap-3 font-semibold xl:text-[16px] text-sm ${currentStep === 3 && isFormValid && !loading ? "text-black" : "text-white"}`}
+            className={`flex items-center gap-3 font-semibold xl:text-base text-sm ${currentStep === 3 && isFormValid && !loading ? "text-black" : "text-white"}`}
           >
             {loading ? "Creating your account..." : "Create your account"}
             {loading && (

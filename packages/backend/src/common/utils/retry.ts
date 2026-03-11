@@ -1,4 +1,8 @@
 import { type Hex, type PublicClient } from 'viem';
+import {
+  RECEIPT_WAIT_MAX_RETRIES,
+  RETRY_DELAY_BASE,
+} from '@/common/constants/timing';
 
 /**
  * Sleep for a specified duration
@@ -18,7 +22,7 @@ export function sleep(ms: number): Promise<void> {
 export async function waitForReceiptWithRetry(
   publicClient: PublicClient,
   txHash: Hex,
-  maxRetries: number = 5,
+  maxRetries: number = RECEIPT_WAIT_MAX_RETRIES,
 ): Promise<any> {
   let lastError: Error | undefined;
 
@@ -46,7 +50,7 @@ export async function waitForReceiptWithRetry(
         throw error;
       }
 
-      const delay = Math.pow(2, attempt) * 1000;
+      const delay = Math.pow(2, attempt) * RETRY_DELAY_BASE;
       console.warn(
         `waitForReceipt attempt ${attempt} failed, retrying in ${delay}ms: ${error.code || error.message}`,
       );

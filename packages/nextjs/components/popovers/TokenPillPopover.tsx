@@ -57,11 +57,10 @@ export function TokenPillPopover({
     <div ref={rootRef} className="relative">
       <div
         onClick={() => setOpen(v => !v)}
-        className={
+        className={`${
           pillClassName ??
           "bg-white flex gap-1 items-center justify-start pl-1.5 pr-2 py-1 rounded-full cursor-pointer transition-colors"
-        }
-        style={{ boxShadow: "0 4px 24.5px 0 rgba(46, 119, 255, 0.25)" }}
+        } shadow-popover`}
       >
         <Image src={"/icons/arrows/dropdown.svg"} alt="icon" width={14} height={14} />
         <div className="relative">
@@ -95,7 +94,7 @@ export function TokenPillPopover({
                   onSelect(token.address);
                   setOpen(false);
                 }}
-                className="flex items-center gap-2 px-3 py-2 hover:bg-[#FF7CEB1A] cursor-pointer first:rounded-t-lg last:rounded-b-lg"
+                className="flex items-center gap-2 px-3 py-2 hover:bg-pink-350/10 cursor-pointer first:rounded-t-lg last:rounded-b-lg"
               >
                 <div className="relative">
                   <Image src={token.icon} alt={token.symbol} width={32} height={32} />

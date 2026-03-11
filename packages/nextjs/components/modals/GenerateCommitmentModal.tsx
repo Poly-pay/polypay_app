@@ -33,7 +33,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       <div className="flex flex-col bg-white rounded-lg overflow-hidden -mx-1.5 -my-4">
         <div className="flex items-center justify-between p-4 pb-2 border-b bg-gray-100">
           <div className="flex items-center gap-2">
-            <DecoreCircleIcon width={36} height={36} color="#6D2EFF" />
+            <DecoreCircleIcon width={36} height={36} color="var(--color-main-violet)" />
             <span className="flex flex-col">
               <span className="font-semibold text-gray-900 uppercase">Generate commitment</span>
             </span>
@@ -80,7 +80,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           )}
           {commitment && (
             <div
-              className="w-[296px] h-[31px] flex items-center px-2.5 py-[7px] gap-2 bg-[#FF7CEB1A] border border-main-pink rounded-full cursor-pointer hover:bg-[#FF7CEB33] transition-colors"
+              className="w-[296px] h-[31px] flex items-center px-2.5 py-[7px] gap-2 bg-pink-350/10 border border-main-pink rounded-full cursor-pointer hover:bg-pink-350/20 transition-colors"
               onClick={() => {
                 copyToClipboard(commitment || "", "Commitment copied to clipboard");
               }}

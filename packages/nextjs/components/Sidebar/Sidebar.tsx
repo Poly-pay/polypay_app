@@ -284,7 +284,7 @@ export default function Sidebar() {
 
       {/* Invisible backdrop for click outside to close */}
       {(isManageAccountsOpen || isNetworkChooserOpen) && (
-        <div className="fixed inset-0 z-40" onClick={handleCloseAllSidebars} />
+        <div className="fixed inset-0 z-20" onClick={handleCloseAllSidebars} />
       )}
 
       {/* Network chooser sidebar */}

@@ -152,7 +152,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                   return (
                     <div
                       key={contact.id}
-                      className="flex items-center gap-2 py-1 px-2.5 rounded-xl cursor-pointer hover:bg-[#FF7CEB1A] transition-colors"
+                      className="flex items-center gap-2 py-1 px-2.5 rounded-xl cursor-pointer hover:bg-pink-350/10 transition-colors"
                       onClick={() => toggleContact(contact.id)}
                     >
                       <Checkbox checked={isSelected} />
