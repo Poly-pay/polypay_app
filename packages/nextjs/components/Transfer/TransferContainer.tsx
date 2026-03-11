@@ -12,8 +12,8 @@ import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useZodForm } from "~~/hooks/form";
 import { TransferFormData, transferSchema } from "~~/lib/form";
-import { formatErrorMessage } from "~~/lib/form/utils";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function TransferContainer() {

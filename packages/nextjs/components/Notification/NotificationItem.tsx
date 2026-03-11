@@ -4,6 +4,7 @@ import React from "react";
 import { Notification } from "@polypay/shared";
 import { Check, Copy } from "lucide-react";
 import { useMarkNotificationAsRead } from "~~/hooks";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification as toast } from "~~/utils/scaffold-eth";
 
 interface NotificationItemProps {
@@ -27,7 +28,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
 
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      toast.error("Failed to copy" + error);
+      toast.error(formatErrorMessage(error, "Failed to copy"));
     }
   };
 
