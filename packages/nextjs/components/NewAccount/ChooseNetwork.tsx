@@ -3,18 +3,28 @@
 import React from "react";
 import Image from "next/image";
 import { getDefaultChainId, getNetworkMeta } from "~~/utils/network";
+import { notification } from "~~/utils/scaffold-eth";
 
 interface ChooseNetworkProps {
   className?: string;
   selectedChainIds: number[];
   onToggleChain: (chainId: number) => void;
   onNextStep: () => void;
+  hasCommitment: boolean;
+  isWalletConnected: boolean;
 }
 
 const HORIZEN_MAINNET = 26514;
 const BASE_MAINNET = 8453;
 
-const ChooseNetwork: React.FC<ChooseNetworkProps> = ({ className, selectedChainIds, onToggleChain, onNextStep }) => {
+const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
+  className,
+  selectedChainIds,
+  onToggleChain,
+  onNextStep,
+  hasCommitment,
+  isWalletConnected,
+}) => {
   const defaultChainId = getDefaultChainId();
 
   const networks = [
@@ -28,8 +38,20 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({ className, selectedChainI
 
   const isSelected = (chainId: number) => selectedChainIds.includes(chainId);
 
+  const guardAction = (action: () => void) => {
+    if (!isWalletConnected) {
+      notification.info("Please connect wallet to continue");
+      return;
+    }
+    if (!hasCommitment) {
+      notification.info("Please sign in to continue");
+      return;
+    }
+    action();
+  };
+
   const handleCardClick = (chainId: number) => {
-    onToggleChain(chainId);
+    guardAction(() => onToggleChain(chainId));
   };
 
   return (
@@ -64,9 +86,11 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({ className, selectedChainI
                 onClick={() => handleCardClick(chainId)}
                 className={`relative flex flex-col items-center gap-4 px-10 py-12 rounded-[24px] border-[1.5px] w-[220px] md:w-[240px] transition-all
               ${
-                selected
-                  ? "border-violet-300 shadow-[0_0_20px_rgba(109,46,255,0.25)] bg-white"
-                  : "border-grey-200 bg-white hover:border-violet-200"
+                !hasCommitment || !isWalletConnected
+                  ? "border-grey-200 bg-white opacity-60 cursor-not-allowed"
+                  : selected
+                    ? "border-violet-300 shadow-[0_0_20px_rgba(109,46,255,0.25)] bg-white"
+                    : "border-grey-200 bg-white hover:border-violet-200"
               }`}
               >
                 <div className="relative w-[120px] h-[120px] rounded-full overflow-hidden">
@@ -99,10 +123,10 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({ className, selectedChainI
         {/* Next button */}
         <button
           type="button"
-          onClick={onNextStep}
-          disabled={selectedChainIds.length === 0}
+          onClick={() => guardAction(onNextStep)}
+          disabled={!hasCommitment || !isWalletConnected || selectedChainIds.length === 0}
           className={`flex items-center justify-center w-16 h-16 rounded-full shadow-lg transition-all bg-gray-100 ${
-            selectedChainIds.length === 0
+            !hasCommitment || !isWalletConnected || selectedChainIds.length === 0
               ? "cursor-not-allowed disabled:cursor-not-allowed"
               : "cursor-pointer hover:scale-105 bg-main-black"
           }`}
@@ -112,7 +136,9 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({ className, selectedChainI
             alt="Next"
             width={24}
             height={24}
-            className={selectedChainIds.length === 0 ? "" : "brightness-0 invert"}
+            className={
+              !hasCommitment || !isWalletConnected || selectedChainIds.length === 0 ? "" : "brightness-0 invert"
+            }
           />
         </button>
       </div>

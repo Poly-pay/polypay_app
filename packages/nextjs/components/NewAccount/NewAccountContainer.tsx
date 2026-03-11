@@ -28,7 +28,7 @@ export default function NewAccountContainer() {
   const { mutateAsync: createAccountBatch, isPending: isCreatingBatch } = useCreateAccountBatch();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedChainIds, setSelectedChainIds] = useState<number[]>([getDefaultChainId()]);
+  const [selectedChainIds, setSelectedChainIds] = useState<number[]>([]);
   const [createdAccounts, setCreatedAccounts] = useState<Account[] | null>(null);
 
   const form = useZodForm({
@@ -172,6 +172,8 @@ export default function NewAccountContainer() {
             <ChooseNetwork
               className="flex-1"
               selectedChainIds={selectedChainIds}
+              hasCommitment={!!commitment}
+              isWalletConnected={!!walletClient?.account}
               onToggleChain={chainId =>
                 setSelectedChainIds(prev =>
                   prev.includes(chainId) ? prev.filter(id => id !== chainId) : [...prev, chainId],
