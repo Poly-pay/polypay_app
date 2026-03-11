@@ -39,7 +39,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
       <div className="p-5">
         {/* Header Section */}
         <div className="flex flex-col gap-3 items-start justify-start  w-full">
-          <Image src="/batch/tx-summary.svg" alt="Batch transactions" width={74} height={57} className="shrink-0" />
+                <Image src="/batch/tx-summary.svg" alt="Batch transactions" width={74} height={57} className="shrink-0" />
           <div className="flex flex-col items-start justify-start w-full mt-3 gap-1">
             <div className="font-semibold text-grey-950 text-2xl tracking-[-0.72px] uppercase w-full">
               Transactions summary
@@ -58,7 +58,10 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
             );
 
             return (
-              <div key={transaction.id} className="bg-grey-50 flex gap-3 items-center p-3 w-full rounded-lg">
+              <div
+                key={transaction.id}
+                className="bg-grey-50 flex gap-3 items-center p-3 w-full rounded-lg"
+              >
                 {/* Amount with Token Icon */}
                 <div className="flex items-center gap-1 text-grey-950 text-base whitespace-nowrap shrink-0">
                   {transaction.tokenIcon && (
@@ -74,26 +77,14 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
 
                 {/* Arrow */}
                 <div className="shrink min-w-0">
-                  <Image
-                    src="/icons/arrows/arrow-right-long-purple.svg"
-                    alt="Arrow Right"
-                    width={60}
-                    height={20}
-                    className="max-w-full h-auto"
-                  />
+                  <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={60} height={20} className="max-w-full h-auto" />
                 </div>
 
                 {/* Recipient */}
                 <div className="min-w-0 shrink">
                   {matchedContact ? (
                     <div className="flex items-center gap-1 text-black text-xs font-medium bg-white rounded-full pl-1 pr-4 py-1">
-                      <Image
-                        src={"/avatars/default-avt.svg"}
-                        alt="avatar"
-                        width={16}
-                        height={16}
-                        className="shrink-0"
-                      />
+                      <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} className="shrink-0" />
                       <span className="truncate">
                         <span className="font-medium">{matchedContact.name}</span>
                         <span>{"(" + `${formatAddress(transaction.recipient, { start: 3, end: 3 }) + ")"}`}</span>
@@ -101,13 +92,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
                     </div>
                   ) : (
                     <span className="px-2 py-1 rounded-full flex items-center gap-1 text-xs font-medium text-black bg-white">
-                      <Image
-                        src={"/avatars/default-avt.svg"}
-                        alt="avatar"
-                        width={16}
-                        height={16}
-                        className="shrink-0"
-                      />
+                      <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} className="shrink-0" />
                       <span className="truncate">{formatAddress(transaction.recipient, { start: 3, end: 3 })}</span>
                     </span>
                   )}
