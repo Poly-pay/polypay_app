@@ -30,6 +30,7 @@ import {
   CreateAccountDto,
   encodeERC20Transfer,
   encodeBatchTransferMulti,
+  formatTokenAmount,
   TxStatus,
   TxType,
   ZEN_TOKEN,
@@ -225,8 +226,14 @@ async function fundAccountForScenario(
 
   console.log(`[${scenario.name}] Fund ERC20 (2x) - done`, {
     tokenAddress: scenario.tokenAddress,
-    balanceBefore: balanceBefore.toString(),
-    balanceAfter: balanceAfter.toString(),
+    balanceBefore: formatTokenAmount(
+      balanceBefore.toString(),
+      scenario.decimals,
+    ),
+    balanceAfter: formatTokenAmount(
+      balanceAfter.toString(),
+      scenario.decimals,
+    ),
   });
 
   return {
@@ -298,7 +305,7 @@ describe('Transaction E2E', () => {
         );
         scenarioAmounts.push(funded);
         console.log(`[${scenario.name}] Funding recorded`, {
-          amount: funded.amountString,
+          amount: TEST_TRANSFER_AMOUNT,
         });
       }
       console.log('Phase 2: Fund account for all scenarios - done');
