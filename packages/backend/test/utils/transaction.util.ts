@@ -21,7 +21,7 @@ export interface CreateTransactionPayload {
   to: `0x${string}`;
   value: string;
   threshold: number;
-  creatorCommitment: string;
+  tokenAddress?: string | null;
   proof: number[];
   publicInputs: string[];
   nullifier: string;
@@ -30,7 +30,6 @@ export interface CreateTransactionPayload {
 }
 
 export interface ApproveTransactionPayload {
-  voterCommitment: string;
   proof: number[];
   publicInputs: string[];
   nullifier: string;
@@ -165,7 +164,6 @@ export async function generateVotePayload(
   const proof = await generateTestProof(identity.signer, identity.secret, txHash);
 
   return {
-    voterCommitment: identity.commitment,
     proof: proof.proof,
     publicInputs: proof.publicInputs,
     nullifier: proof.nullifier,

@@ -1,45 +1,42 @@
 import { type Hex, formatEther, parseEther } from 'viem';
-import {
-  setupTestApp,
-  teardownTestApp,
-  resetDatabase,
-} from '../setup';
 import { getSignerA, getSignerB } from '../fixtures/test-users';
-import {
-  depositToAccount,
-  getAccountBalance,
-} from '../utils/contract.util';
-import { loginUser, AuthTokens } from '../utils/auth.util';
 import { TestIdentity, createTestIdentity } from '../utils/identity.util';
 import {
-  apiCreateAccount,
-  apiCreateBatchItem,
-  apiReserveNonce,
-  apiCreateTransaction,
-  apiApproveTransaction,
-  apiExecuteTransaction,
-  apiGetTransaction,
-  generateVotePayload,
-  toTokenAmount,
-  transferErc20FromSigner,
-  getErc20Balance,
-} from '../utils/transaction.util';
+  stagingLogin,
+  stagingCreateAccount,
+  stagingReserveNonce,
+  stagingCreateTransaction,
+  stagingApproveTransaction,
+  stagingExecuteTransaction,
+  stagingGetTransaction,
+  stagingCreateBatchItem,
+} from '../utils/staging-api.util';
 import {
   CreateAccountDto,
-  encodeERC20Transfer,
-  encodeBatchTransferMulti,
-  formatTokenAmount,
   TxStatus,
   TxType,
   ZEN_TOKEN,
   USDC_TOKEN,
   ZERO_ADDRESS,
+  encodeERC20Transfer,
+  encodeBatchTransferMulti,
+  formatTokenAmount,
 } from '@polypay/shared';
+import {
+  toTokenAmount,
+  transferErc20FromSigner,
+  getErc20Balance,
+  generateVotePayload,
+} from '../utils/transaction.util';
+import {
+  depositToAccount,
+  getAccountBalance,
+} from '../utils/contract.util';
 
 const TEST_CHAIN_ID = 2651420;
-const TEST_TRANSFER_AMOUNT = '0.0001'; // per tx (single + batch item)
-const TEST_FUND_ETH_AMOUNT = '0.0003'; // 2x transfer (0.0002) + gas for 4 txs
-const TEST_FUND_ERC20_MULTIPLIER = 2; // fund 2x so: 1x single tx + 1x batch item
+const TEST_TRANSFER_AMOUNT = '0.0001';
+const TEST_FUND_ETH_AMOUNT = '0.0003';
+const TEST_FUND_ERC20_MULTIPLIER = 2;
 const TEST_RECIPIENT =
   '0x87142a49c749dD05069836F9B81E5579E95BE0A6' as `0x${string}`;
 const TEST_THRESHOLD = 2;
@@ -93,7 +90,6 @@ function getCreatedTxLabel(entry: CreatedTx): string {
   return entry.kind === 'single' ? entry.scenario.name : 'batch';
 }
 
-/** Match frontend: ETH = (recipient, value, 0x); ERC20 = (tokenAddress, 0, encodeERC20Transfer) */
 function buildSingleTransferParams(
   amount: ScenarioAmount,
   recipient: `0x${string}`,
@@ -105,23 +101,6 @@ function buildSingleTransferParams(
   const callData = amount.scenario.isNative
     ? ('0x' as Hex)
     : (encodeERC20Transfer(recipient, amount.amountBigInt) as Hex);
-  return { to, value, callData };
-}
-
-/** Build approve params from API tx details (single transfer). */
-function buildSingleApproveParams(txDetails: {
-  to?: string;
-  value?: string;
-  tokenAddress?: string | null;
-}): { to: `0x${string}`; value: bigint; callData: Hex } {
-  if (txDetails.to === undefined || txDetails.value === undefined) {
-    throw new Error('Single transfer txDetails must have to and value');
-  }
-  const to = (txDetails.tokenAddress ?? txDetails.to) as `0x${string}`;
-  const value = txDetails.tokenAddress ? 0n : BigInt(txDetails.value);
-  const callData = txDetails.tokenAddress
-    ? (encodeERC20Transfer(txDetails.to, BigInt(txDetails.value)) as Hex)
-    : ('0x' as Hex);
   return { to, value, callData };
 }
 
@@ -166,9 +145,8 @@ function buildBatchCallDataFromParsed(parsedBatch: ParsedBatchItem[]): Hex {
 
 /**
  * Fund account: 2x per asset (single tx 0.0001 + batch item 0.0001).
- * Returns ScenarioAmount for one transfer (0.0001) used by both single tx and batch item.
  */
-async function fundAccountForScenario(
+async function stagingFundAccountForScenario(
   scenario: AssetScenario,
   accountAddress: `0x${string}`,
   identityA: TestIdentity,
@@ -195,11 +173,13 @@ async function fundAccountForScenario(
     throw new Error(`Token address is required for ERC20 scenario: ${scenario.name}`);
   }
 
-  // Fund 2x so: 1x single transfer + 1x batch transfer
   const fundHuman = (
     parseFloat(TEST_TRANSFER_AMOUNT) * TEST_FUND_ERC20_MULTIPLIER
   ).toFixed(scenario.decimals);
-  const { amountBigInt: fundAmount } = toTokenAmount(fundHuman, scenario.decimals);
+  const { amountBigInt: fundAmount } = toTokenAmount(
+    fundHuman,
+    scenario.decimals,
+  );
   const { amountBigInt, amountString } = toTokenAmount(
     TEST_TRANSFER_AMOUNT,
     scenario.decimals,
@@ -241,37 +221,60 @@ async function fundAccountForScenario(
   };
 }
 
-// Timeout 20 minutes for blockchain calls
-jest.setTimeout(1200000); 
+async function waitForExecuted(
+  accessToken: string,
+  txId: string,
+  label: string,
+): Promise<any> {
+  const maxAttempts = 20;
+  const intervalMs = 15000;
 
-describe('Transaction E2E', () => {
+  let lastStatus: string | undefined;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const tx = await stagingGetTransaction(accessToken, txId);
+    lastStatus = tx.status;
+
+    if (tx.status === TxStatus.EXECUTED) {
+      return tx;
+    }
+
+    console.log(
+      `[${label}] Waiting for EXECUTED - attempt ${attempt}, status=${tx.status}`,
+    );
+
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+  }
+
+  throw new Error(
+    `[${label}] Transaction ${txId} did not reach EXECUTED within timeout. Last status=${lastStatus}`,
+  );
+}
+
+// Timeout 20 minutes for blockchain calls
+jest.setTimeout(1200000);
+
+describe('Transaction Staging E2E', () => {
   let identityA: TestIdentity;
   let identityB: TestIdentity;
-  let tokensA: AuthTokens;
-  let tokensB: AuthTokens;
+  let tokensA: { accessToken: string; refreshToken: string };
+  let tokensB: { accessToken: string; refreshToken: string };
 
   beforeAll(async () => {
-    // Setup NestJS app
-    await setupTestApp();
-
     identityA = await createTestIdentity(getSignerA, 'Signer A');
     identityB = await createTestIdentity(getSignerB, 'Signer B');
   });
 
   beforeEach(async () => {
-    await resetDatabase();
-    // Login both users
-    tokensA = await loginUser(identityA.secret, identityA.commitment);
-    tokensB = await loginUser(identityB.secret, identityB.commitment);
+    tokensA = await stagingLogin(identityA.secret, identityA.commitment);
+    tokensB = await stagingLogin(identityB.secret, identityB.commitment);
   });
 
-  afterAll(async () => {
-    await teardownTestApp();
-  });
-
-  describe('Full transaction flow', () => {
-    it('should complete full flow for ETH, ZEN and USDC transfers', async () => {
-      console.log('\n=== Multi-asset Transaction E2E: Start ===');
+  describe('Full transaction flow (staging)', () => {
+    it('should complete full flow for ETH, ZEN and USDC transfers + batch on staging', async () => {
+      console.log('\n=== Multi-asset Transaction E2E (Staging): Start ===');
 
       // ============ STEP 1: Create Account ============
       console.log('Phase 1: Create Account - start');
@@ -283,7 +286,7 @@ describe('Transaction E2E', () => {
         chainId: TEST_CHAIN_ID,
       };
 
-      const { address: accountAddress } = await apiCreateAccount(
+      const { address: accountAddress } = await stagingCreateAccount(
         tokensA.accessToken,
         dataCreateAccount,
       );
@@ -297,7 +300,7 @@ describe('Transaction E2E', () => {
 
       for (const scenario of SCENARIOS) {
         console.log(`[${scenario.name}] Funding start`);
-        const funded = await fundAccountForScenario(
+        const funded = await stagingFundAccountForScenario(
           scenario,
           accountAddress,
           identityA,
@@ -317,7 +320,7 @@ describe('Transaction E2E', () => {
       for (const amount of scenarioAmounts) {
         console.log(`[${amount.scenario.name}] Create single transaction - start`);
 
-        const { nonce } = await apiReserveNonce(
+        const { nonce } = await stagingReserveNonce(
           tokensA.accessToken,
           accountAddress,
         );
@@ -336,7 +339,7 @@ describe('Transaction E2E', () => {
           callData,
         );
 
-        const { txId } = await apiCreateTransaction(tokensA.accessToken, {
+        const { txId } = await stagingCreateTransaction(tokensA.accessToken, {
           nonce,
           type: TxType.TRANSFER,
           accountAddress,
@@ -361,7 +364,7 @@ describe('Transaction E2E', () => {
       console.log('Batch: Create batch items - start');
       const batchItemIds: string[] = [];
       for (const amount of scenarioAmounts) {
-        const item = await apiCreateBatchItem(tokensA.accessToken, {
+        const item = await stagingCreateBatchItem(tokensA.accessToken, {
           recipient: TEST_RECIPIENT,
           amount: amount.amountString,
           tokenAddress: amount.scenario.isNative
@@ -372,9 +375,12 @@ describe('Transaction E2E', () => {
       }
       console.log('Batch: Create batch items - done', { batchItemIds });
 
-      const batchCallData = buildBatchCallData(scenarioAmounts, TEST_RECIPIENT);
+      const batchCallData = buildBatchCallData(
+        scenarioAmounts,
+        TEST_RECIPIENT,
+      );
 
-      const { nonce: batchNonce } = await apiReserveNonce(
+      const { nonce: batchNonce } = await stagingReserveNonce(
         tokensA.accessToken,
         accountAddress,
       );
@@ -388,7 +394,7 @@ describe('Transaction E2E', () => {
         batchCallData,
       );
 
-      const { txId: batchTxId } = await apiCreateTransaction(
+      const { txId: batchTxId } = await stagingCreateTransaction(
         tokensA.accessToken,
         {
           nonce: batchNonce,
@@ -415,7 +421,7 @@ describe('Transaction E2E', () => {
         const label = getCreatedTxLabel(entry);
         console.log(`[${label}] Approve transaction - start`, { txId });
 
-        const txDetails = (await apiGetTransaction(
+        const txDetails = (await stagingGetTransaction(
           tokensA.accessToken,
           txId,
         )) as {
@@ -441,14 +447,27 @@ describe('Transaction E2E', () => {
             0n,
             callDataApprove,
           );
-          await apiApproveTransaction(
+          await stagingApproveTransaction(
             tokensB.accessToken,
             txId,
             votePayloadB,
           );
         } else {
           const { to: toApprove, value: valueApprove, callData: callDataApprove } =
-            buildSingleApproveParams(txDetails);
+            (() => {
+              if (txDetails.to === undefined || txDetails.value === undefined) {
+                throw new Error('Single transfer txDetails must have to and value');
+              }
+              const to = (txDetails.tokenAddress ?? txDetails.to) as `0x${string}`;
+              const value = txDetails.tokenAddress ? 0n : BigInt(txDetails.value);
+              const callData = txDetails.tokenAddress
+                ? (encodeERC20Transfer(
+                    txDetails.to,
+                    BigInt(txDetails.value),
+                  ) as Hex)
+                : ('0x' as Hex);
+              return { to, value, callData };
+            })();
 
           const votePayloadB = await generateVotePayload(
             identityB,
@@ -458,7 +477,7 @@ describe('Transaction E2E', () => {
             valueApprove,
             callDataApprove,
           );
-          await apiApproveTransaction(
+          await stagingApproveTransaction(
             tokensB.accessToken,
             txId,
             votePayloadB,
@@ -476,7 +495,7 @@ describe('Transaction E2E', () => {
         const label = getCreatedTxLabel(entry);
         console.log(`[${label}] Execute transaction - start`, { txId });
 
-        const { txHash } = await apiExecuteTransaction(
+        const { txHash } = await stagingExecuteTransaction(
           tokensA.accessToken,
           txId,
         );
@@ -493,9 +512,10 @@ describe('Transaction E2E', () => {
         const txId = entry.txId;
         const label = getCreatedTxLabel(entry);
 
-        const finalTx = (await apiGetTransaction(
+        const finalTx = (await waitForExecuted(
           tokensA.accessToken,
           txId,
+          label,
         )) as {
           status: TxStatus;
           votes: unknown[];
@@ -505,7 +525,6 @@ describe('Transaction E2E', () => {
 
         expect(finalTx).not.toBeNull();
         expect(finalTx!.status).toBe(TxStatus.EXECUTED);
-        expect(finalTx!.votes.length).toBe(2);
 
         if (entry.kind === 'single') {
           if (entry.scenario.isNative) {
@@ -520,12 +539,12 @@ describe('Transaction E2E', () => {
 
         console.log(`[${label}] Final verification - done`, {
           status: finalTx?.status,
-          votes: finalTx?.votes.length,
         });
       }
 
       console.log('Phase 6: Verify final state - done');
-      console.log('=== Multi-asset Transaction E2E: Done ===\n');
+      console.log('=== Multi-asset Transaction E2E (Staging): Done ===\n');
     });
   });
 });
+

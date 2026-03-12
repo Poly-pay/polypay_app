@@ -2,7 +2,7 @@
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
   "testEnvironment": "node",
-  "testRegex": "transaction.e2e-spec.ts$",
+  "testRegex": "transaction.staging.e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
@@ -11,9 +11,9 @@
     "^@polypay/shared/(.*)$": "<rootDir>/../../shared/src/$1",
     "^@/(.*)$": "<rootDir>/../src/$1"
   },
-  "setupFilesAfterEnv": ["<rootDir>/jest.setup.ts"],
-  "testTimeout": 300000,
+  "testTimeout": 1200000,
   "verbose": true,
   "forceExit": true,
   "detectOpenHandles": true
 }
+
