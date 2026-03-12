@@ -39,10 +39,11 @@ import {
 
 const TEST_CHAIN_ID = 2651420;
 const TEST_TRANSFER_AMOUNT = '0.0001'; // per tx (single + batch item)
-const TEST_FUND_ETH_AMOUNT = '0.0004'; // 2x transfer (0.0002) + gas for 4 txs
+const TEST_FUND_ETH_AMOUNT = '0.0003'; // 2x transfer (0.0002) + gas for 4 txs
 const TEST_FUND_ERC20_MULTIPLIER = 2; // fund 2x so: 1x single tx + 1x batch item
 const TEST_RECIPIENT =
   '0x87142a49c749dD05069836F9B81E5579E95BE0A6' as `0x${string}`;
+const TEST_THRESHOLD = 2;
 
 type AssetName = 'ETH' | 'ZEN' | 'USDC';
 
@@ -78,6 +79,90 @@ interface ScenarioAmount {
   scenario: AssetScenario;
   amountBigInt: bigint;
   amountString: string;
+}
+
+type CreatedTx =
+  | {
+      kind: 'single';
+      scenario: AssetScenario;
+      amount: ScenarioAmount;
+      txId: string;
+    }
+  | { kind: 'batch'; txId: string };
+
+function getCreatedTxLabel(entry: CreatedTx): string {
+  return entry.kind === 'single' ? entry.scenario.name : 'batch';
+}
+
+/** Match frontend: ETH = (recipient, value, 0x); ERC20 = (tokenAddress, 0, encodeERC20Transfer) */
+function buildSingleTransferParams(
+  amount: ScenarioAmount,
+  recipient: `0x${string}`,
+): { to: `0x${string}`; value: bigint; callData: Hex } {
+  const to = amount.scenario.isNative
+    ? recipient
+    : (amount.scenario.tokenAddress as `0x${string}`);
+  const value = amount.scenario.isNative ? amount.amountBigInt : 0n;
+  const callData = amount.scenario.isNative
+    ? ('0x' as Hex)
+    : (encodeERC20Transfer(recipient, amount.amountBigInt) as Hex);
+  return { to, value, callData };
+}
+
+/** Build approve params from API tx details (single transfer). */
+function buildSingleApproveParams(txDetails: {
+  to?: string;
+  value?: string;
+  tokenAddress?: string | null;
+}): { to: `0x${string}`; value: bigint; callData: Hex } {
+  if (txDetails.to === undefined || txDetails.value === undefined) {
+    throw new Error('Single transfer txDetails must have to and value');
+  }
+  const to = (txDetails.tokenAddress ?? txDetails.to) as `0x${string}`;
+  const value = txDetails.tokenAddress ? 0n : BigInt(txDetails.value);
+  const callData = txDetails.tokenAddress
+    ? (encodeERC20Transfer(txDetails.to, BigInt(txDetails.value)) as Hex)
+    : ('0x' as Hex);
+  return { to, value, callData };
+}
+
+function buildBatchCallData(
+  scenarioAmounts: ScenarioAmount[],
+  recipient: `0x${string}`,
+): Hex {
+  const recipients = [
+    recipient,
+    recipient,
+    recipient,
+  ] as `0x${string}`[];
+  const amounts = scenarioAmounts.map((a) => a.amountBigInt);
+  const tokenAddresses = scenarioAmounts.map((a) =>
+    a.scenario.tokenAddress ?? (ZERO_ADDRESS as `0x${string}`),
+  );
+  return encodeBatchTransferMulti(
+    recipients,
+    amounts,
+    tokenAddresses as string[],
+  ) as Hex;
+}
+
+interface ParsedBatchItem {
+  recipient: string;
+  amount: string;
+  tokenAddress?: string | null;
+}
+
+function buildBatchCallDataFromParsed(parsedBatch: ParsedBatchItem[]): Hex {
+  const recipients = parsedBatch.map((p) => p.recipient as `0x${string}`);
+  const amounts = parsedBatch.map((p) => BigInt(p.amount));
+  const tokenAddresses = parsedBatch.map(
+    (p) => p.tokenAddress || ZERO_ADDRESS,
+  );
+  return encodeBatchTransferMulti(
+    recipients,
+    amounts,
+    tokenAddresses,
+  ) as Hex;
 }
 
 /**
@@ -151,7 +236,7 @@ async function fundAccountForScenario(
   };
 }
 
-// Timeout 10 minutes for blockchain calls
+// Timeout 20 minutes for blockchain calls
 jest.setTimeout(1200000); 
 
 describe('Transaction E2E', () => {
@@ -188,7 +273,7 @@ describe('Transaction E2E', () => {
       const dataCreateAccount: CreateAccountDto = {
         name: 'Test Multi-Sig Account (Multi-asset)',
         signers: [identityA.signerDto, identityB.signerDto],
-        threshold: 2,
+        threshold: TEST_THRESHOLD,
         chainId: TEST_CHAIN_ID,
       };
 
@@ -220,17 +305,7 @@ describe('Transaction E2E', () => {
 
       // ============ STEP 3: Create Transactions (3 single + 1 batch) ============
       console.log('Phase 3: Create transactions - start');
-      type CreatedTx =
-        | {
-            kind: 'single';
-            scenario: AssetScenario;
-            amount: ScenarioAmount;
-            txId: string;
-          }
-        | { kind: 'batch'; txId: string };
       const createdTxs: CreatedTx[] = [];
-
-      const recipient = TEST_RECIPIENT;
 
       // 3 single transfers (ETH, ZEN, USDC)
       for (const amount of scenarioAmounts) {
@@ -241,13 +316,10 @@ describe('Transaction E2E', () => {
           accountAddress,
         );
 
-        const to = amount.scenario.isNative
-          ? (recipient as `0x${string}`)
-          : (amount.scenario.tokenAddress as `0x${string}`);
-        const value = amount.scenario.isNative ? amount.amountBigInt : 0n;
-        const callData = amount.scenario.isNative
-          ? ('0x' as Hex)
-          : (encodeERC20Transfer(recipient, amount.amountBigInt) as Hex);
+        const { to, value, callData } = buildSingleTransferParams(
+          amount,
+          TEST_RECIPIENT,
+        );
 
         const votePayloadA = await generateVotePayload(
           identityA,
@@ -262,9 +334,9 @@ describe('Transaction E2E', () => {
           nonce,
           type: TxType.TRANSFER,
           accountAddress,
-          to: recipient,
+          to: TEST_RECIPIENT,
           value: amount.amountString,
-          threshold: 2,
+          threshold: TEST_THRESHOLD,
           creatorCommitment: identityA.commitment,
           proof: votePayloadA.proof,
           publicInputs: votePayloadA.publicInputs,
@@ -295,21 +367,7 @@ describe('Transaction E2E', () => {
       }
       console.log('Batch: Create batch items - done', { batchItemIds });
 
-      const batchRecipient = TEST_RECIPIENT;
-      const batchRecipients = [
-        batchRecipient as `0x${string}`,
-        batchRecipient as `0x${string}`,
-        batchRecipient as `0x${string}`,
-      ];
-      const batchAmounts = scenarioAmounts.map((a) => a.amountBigInt);
-      const batchTokenAddresses = scenarioAmounts.map((a) =>
-        a.scenario.tokenAddress ?? (ZERO_ADDRESS as `0x${string}`),
-      );
-      const batchCallData = encodeBatchTransferMulti(
-        batchRecipients,
-        batchAmounts,
-        batchTokenAddresses as string[],
-      ) as Hex;
+      const batchCallData = buildBatchCallData(scenarioAmounts, TEST_RECIPIENT);
 
       const { nonce: batchNonce } = await apiReserveNonce(
         tokensA.accessToken,
@@ -333,7 +391,7 @@ describe('Transaction E2E', () => {
           accountAddress,
           to: accountAddress,
           value: '0',
-          threshold: 2,
+          threshold: TEST_THRESHOLD,
           creatorCommitment: identityA.commitment,
           proof: batchVotePayloadA.proof,
           publicInputs: batchVotePayloadA.publicInputs,
@@ -350,7 +408,7 @@ describe('Transaction E2E', () => {
       console.log('Phase 4: Approve transactions - start');
       for (const entry of createdTxs) {
         const txId = entry.txId;
-        const label = entry.kind === 'single' ? entry.scenario.name : 'batch';
+        const label = getCreatedTxLabel(entry);
         console.log(`[${label}] Approve transaction - start`, { txId });
 
         const txDetails = (await apiGetTransaction(
@@ -365,23 +423,11 @@ describe('Transaction E2E', () => {
         };
 
         if (entry.kind === 'batch') {
-          const parsedBatch = JSON.parse(txDetails.batchData!) as Array<{
-            recipient: string;
-            amount: string;
-            tokenAddress?: string | null;
-          }>;
-          const approveRecipients = parsedBatch.map(
-            (p) => p.recipient as `0x${string}`,
-          );
-          const approveAmounts = parsedBatch.map((p) => BigInt(p.amount));
-          const approveTokenAddresses = parsedBatch.map(
-            (p) => p.tokenAddress || ZERO_ADDRESS,
-          );
-          const callDataApprove = encodeBatchTransferMulti(
-            approveRecipients,
-            approveAmounts,
-            approveTokenAddresses,
-          ) as Hex;
+          if (txDetails.batchData == null) {
+            throw new Error(`Batch tx ${txId} missing batchData`);
+          }
+          const parsedBatch = JSON.parse(txDetails.batchData) as ParsedBatchItem[];
+          const callDataApprove = buildBatchCallDataFromParsed(parsedBatch);
 
           const votePayloadB = await generateVotePayload(
             identityB,
@@ -397,18 +443,8 @@ describe('Transaction E2E', () => {
             votePayloadB,
           );
         } else {
-          const toApprove = txDetails.tokenAddress
-            ? (txDetails.tokenAddress as `0x${string}`)
-            : (txDetails.to as `0x${string}`);
-          const valueApprove = txDetails.tokenAddress
-            ? 0n
-            : BigInt(txDetails.value!);
-          const callDataApprove = txDetails.tokenAddress
-            ? (encodeERC20Transfer(
-                txDetails.to!,
-                BigInt(txDetails.value!),
-              ) as Hex)
-            : ('0x' as Hex);
+          const { to: toApprove, value: valueApprove, callData: callDataApprove } =
+            buildSingleApproveParams(txDetails);
 
           const votePayloadB = await generateVotePayload(
             identityB,
@@ -433,7 +469,7 @@ describe('Transaction E2E', () => {
       console.log('Phase 5: Execute transactions - start');
       for (const entry of createdTxs) {
         const txId = entry.txId;
-        const label = entry.kind === 'single' ? entry.scenario.name : 'batch';
+        const label = getCreatedTxLabel(entry);
         console.log(`[${label}] Execute transaction - start`, { txId });
 
         const { txHash } = await apiExecuteTransaction(
@@ -452,7 +488,7 @@ describe('Transaction E2E', () => {
 
       for (const entry of createdTxs) {
         const txId = entry.txId;
-        const label = entry.kind === 'single' ? entry.scenario.name : 'batch';
+        const label = getCreatedTxLabel(entry);
 
         const finalTx = (await prisma.transaction.findUnique({
           where: { txId: Number(txId) },
