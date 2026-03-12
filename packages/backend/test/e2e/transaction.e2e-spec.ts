@@ -1,14 +1,9 @@
-import { type Hex, formatEther, parseEther } from 'viem';
 import {
+  resetDatabase,
   setupTestApp,
   teardownTestApp,
-  resetDatabase,
 } from '../setup';
 import { getSignerA, getSignerB } from '../fixtures/test-users';
-import {
-  depositToAccount,
-  getAccountBalance,
-} from '../utils/contract.util';
 import { loginUser, AuthTokens } from '../utils/auth.util';
 import { TestIdentity, createTestIdentity } from '../utils/identity.util';
 import {
@@ -20,226 +15,24 @@ import {
   apiExecuteTransaction,
   apiGetTransaction,
   generateVotePayload,
-  toTokenAmount,
-  transferErc20FromSigner,
-  getErc20Balance,
 } from '../utils/transaction.util';
+import { CreateAccountDto, TxStatus, TxType } from '@polypay/shared';
 import {
-  CreateAccountDto,
-  encodeERC20Transfer,
-  encodeBatchTransferMulti,
-  formatTokenAmount,
-  TxStatus,
-  TxType,
-  ZEN_TOKEN,
-  USDC_TOKEN,
-  ZERO_ADDRESS,
-} from '@polypay/shared';
-
-const TEST_CHAIN_ID = 2651420;
-const TEST_TRANSFER_AMOUNT = '0.0001'; // per tx (single + batch item)
-const TEST_FUND_ETH_AMOUNT = '0.0003'; // 2x transfer (0.0002) + gas for 4 txs
-const TEST_FUND_ERC20_MULTIPLIER = 2; // fund 2x so: 1x single tx + 1x batch item
-const TEST_RECIPIENT =
-  '0x87142a49c749dD05069836F9B81E5579E95BE0A6' as `0x${string}`;
-const TEST_THRESHOLD = 2;
-
-type AssetName = 'ETH' | 'ZEN' | 'USDC';
-
-interface AssetScenario {
-  name: AssetName;
-  isNative: boolean;
-  tokenAddress: `0x${string}` | null;
-  decimals: number;
-}
-
-const SCENARIOS: AssetScenario[] = [
-  {
-    name: 'ETH',
-    isNative: true,
-    tokenAddress: null,
-    decimals: 18,
-  },
-  {
-    name: 'ZEN',
-    isNative: false,
-    tokenAddress: ZEN_TOKEN.addresses[TEST_CHAIN_ID] as `0x${string}`,
-    decimals: ZEN_TOKEN.decimals,
-  },
-  {
-    name: 'USDC',
-    isNative: false,
-    tokenAddress: USDC_TOKEN.addresses[TEST_CHAIN_ID] as `0x${string}`,
-    decimals: USDC_TOKEN.decimals,
-  },
-];
-
-interface ScenarioAmount {
-  scenario: AssetScenario;
-  amountBigInt: bigint;
-  amountString: string;
-}
-
-type CreatedTx =
-  | {
-      kind: 'single';
-      scenario: AssetScenario;
-      amount: ScenarioAmount;
-      txId: string;
-    }
-  | { kind: 'batch'; txId: string };
-
-function getCreatedTxLabel(entry: CreatedTx): string {
-  return entry.kind === 'single' ? entry.scenario.name : 'batch';
-}
-
-/** Match frontend: ETH = (recipient, value, 0x); ERC20 = (tokenAddress, 0, encodeERC20Transfer) */
-function buildSingleTransferParams(
-  amount: ScenarioAmount,
-  recipient: `0x${string}`,
-): { to: `0x${string}`; value: bigint; callData: Hex } {
-  const to = amount.scenario.isNative
-    ? recipient
-    : (amount.scenario.tokenAddress as `0x${string}`);
-  const value = amount.scenario.isNative ? amount.amountBigInt : 0n;
-  const callData = amount.scenario.isNative
-    ? ('0x' as Hex)
-    : (encodeERC20Transfer(recipient, amount.amountBigInt) as Hex);
-  return { to, value, callData };
-}
-
-/** Build approve params from API tx details (single transfer). */
-function buildSingleApproveParams(txDetails: {
-  to?: string;
-  value?: string;
-  tokenAddress?: string | null;
-}): { to: `0x${string}`; value: bigint; callData: Hex } {
-  if (txDetails.to === undefined || txDetails.value === undefined) {
-    throw new Error('Single transfer txDetails must have to and value');
-  }
-  const to = (txDetails.tokenAddress ?? txDetails.to) as `0x${string}`;
-  const value = txDetails.tokenAddress ? 0n : BigInt(txDetails.value);
-  const callData = txDetails.tokenAddress
-    ? (encodeERC20Transfer(txDetails.to, BigInt(txDetails.value)) as Hex)
-    : ('0x' as Hex);
-  return { to, value, callData };
-}
-
-function buildBatchCallData(
-  scenarioAmounts: ScenarioAmount[],
-  recipient: `0x${string}`,
-): Hex {
-  const recipients = [
-    recipient,
-    recipient,
-    recipient,
-  ] as `0x${string}`[];
-  const amounts = scenarioAmounts.map((a) => a.amountBigInt);
-  const tokenAddresses = scenarioAmounts.map((a) =>
-    a.scenario.tokenAddress ?? (ZERO_ADDRESS as `0x${string}`),
-  );
-  return encodeBatchTransferMulti(
-    recipients,
-    amounts,
-    tokenAddresses as string[],
-  ) as Hex;
-}
-
-interface ParsedBatchItem {
-  recipient: string;
-  amount: string;
-  tokenAddress?: string | null;
-}
-
-function buildBatchCallDataFromParsed(parsedBatch: ParsedBatchItem[]): Hex {
-  const recipients = parsedBatch.map((p) => p.recipient as `0x${string}`);
-  const amounts = parsedBatch.map((p) => BigInt(p.amount));
-  const tokenAddresses = parsedBatch.map(
-    (p) => p.tokenAddress || ZERO_ADDRESS,
-  );
-  return encodeBatchTransferMulti(
-    recipients,
-    amounts,
-    tokenAddresses,
-  ) as Hex;
-}
-
-/**
- * Fund account: 2x per asset (single tx 0.0001 + batch item 0.0001).
- * Returns ScenarioAmount for one transfer (0.0001) used by both single tx and batch item.
- */
-async function fundAccountForScenario(
-  scenario: AssetScenario,
-  accountAddress: `0x${string}`,
-  identityA: TestIdentity,
-): Promise<ScenarioAmount> {
-  if (scenario.isNative) {
-    const balanceBefore = await getAccountBalance(accountAddress);
-    await depositToAccount(identityA.signer, accountAddress, TEST_FUND_ETH_AMOUNT);
-    const balanceAfter = await getAccountBalance(accountAddress);
-
-    console.log(`[${scenario.name}] Fund native ETH - done`, {
-      balanceBefore: formatEther(balanceBefore),
-      balanceAfter: formatEther(balanceAfter),
-    });
-
-    const value = parseEther(TEST_TRANSFER_AMOUNT);
-    return {
-      scenario,
-      amountBigInt: value,
-      amountString: value.toString(),
-    };
-  }
-
-  if (!scenario.tokenAddress) {
-    throw new Error(`Token address is required for ERC20 scenario: ${scenario.name}`);
-  }
-
-  // Fund 2x so: 1x single transfer + 1x batch transfer
-  const fundHuman = (
-    parseFloat(TEST_TRANSFER_AMOUNT) * TEST_FUND_ERC20_MULTIPLIER
-  ).toFixed(scenario.decimals);
-  const { amountBigInt: fundAmount } = toTokenAmount(fundHuman, scenario.decimals);
-  const { amountBigInt, amountString } = toTokenAmount(
-    TEST_TRANSFER_AMOUNT,
-    scenario.decimals,
-  );
-
-  const balanceBefore = await getErc20Balance(
-    accountAddress,
-    scenario.tokenAddress,
-  );
-
-  await transferErc20FromSigner(
-    identityA.signer,
-    scenario.tokenAddress,
-    accountAddress,
-    fundAmount,
-  );
-
-  const balanceAfter = await getErc20Balance(
-    accountAddress,
-    scenario.tokenAddress,
-  );
-
-  console.log(`[${scenario.name}] Fund ERC20 (2x) - done`, {
-    tokenAddress: scenario.tokenAddress,
-    balanceBefore: formatTokenAmount(
-      balanceBefore.toString(),
-      scenario.decimals,
-    ),
-    balanceAfter: formatTokenAmount(
-      balanceAfter.toString(),
-      scenario.decimals,
-    ),
-  });
-
-  return {
-    scenario,
-    amountBigInt,
-    amountString,
-  };
-}
+  TEST_CHAIN_ID,
+  TEST_RECIPIENT,
+  TEST_THRESHOLD,
+  TEST_TRANSFER_AMOUNT,
+  SCENARIOS,
+  type CreatedTx,
+  type ScenarioAmount,
+  type ParsedBatchItem,
+  getCreatedTxLabel,
+  buildSingleTransferParams,
+  buildSingleApproveParams,
+  buildBatchCallData,
+  buildBatchCallDataFromParsed,
+  fundAccountForScenario,
+} from '../utils/multi-asset-flow.shared';
 
 // Timeout 20 minutes for blockchain calls
 jest.setTimeout(1200000); 
