@@ -2,9 +2,9 @@ import { useCallback, useState } from "react";
 import { userKeys } from "../api";
 import { useAuthProof } from "./useAuthProof";
 import { useQueryClient } from "@tanstack/react-query";
-import { formatErrorMessage } from "~~/lib/form/utils";
 import { authApi } from "~~/services/api";
 import { useIdentityStore } from "~~/services/store";
+import { formatErrorMessage } from "~~/utils/formatError";
 
 export const useAuth = () => {
   const { generateAuthProof, isGenerating } = useAuthProof();

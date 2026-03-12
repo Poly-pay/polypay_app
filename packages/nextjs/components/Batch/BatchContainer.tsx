@@ -14,6 +14,7 @@ import { useDeleteBatchItem, useMyBatchItems, useUpdateBatchItem } from "~~/hook
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useAccountStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 // ==================== Custom Checkbox ====================
@@ -124,7 +125,7 @@ function BatchTransactions({
       </div>
 
       {/* Batch Items List */}
-      <div className="grid grid-cols-1 gap-2 w-full mt-2">
+      <div className="flex flex-col gap-2 mt-2">
         {batchItems.map(item => {
           const isActive = activeItem === item.id;
           const isSelected = selectedItems.has(item.id);
@@ -138,7 +139,7 @@ function BatchTransactions({
           return (
             <div
               key={item.id}
-              className={`shadow-sm grid grid-cols-[auto_auto_1fr_auto_1fr_auto] gap-3 items-center px-6 py-4 w-full cursor-pointer rounded-xl transition-colors group ${
+              className={`shadow-sm flex items-center gap-3 px-6 py-4 w-full cursor-pointer rounded-xl transition-colors group ${
                 isHighlighted ? "bg-main-violet" : "bg-white hover:bg-main-violet"
               }`}
               onClick={() => {
@@ -146,102 +147,106 @@ function BatchTransactions({
               }}
             >
               {/* Checkbox */}
-              <div onClick={e => e.stopPropagation()}>
+              <div onClick={e => e.stopPropagation()} className="shrink-0">
                 <CustomCheckbox checked={isSelected} onChange={() => onSelectItem(item.id)} />
               </div>
 
               {/* Transaction Type */}
               <div
-                className={`text-sm font-medium w-[105px] ${isHighlighted ? "text-white" : "text-main-violet group-hover:text-white"}`}
+                className={`text-sm font-medium shrink-0 ${isHighlighted ? "text-white" : "text-main-violet group-hover:text-white"}`}
               >
                 Transfer
               </div>
 
               {/* Amount with Token */}
               <div
-                className={`flex items-center gap-1 text-[16px] tracking-[-0.32px] ${isHighlighted ? "text-white" : "text-grey-950 group-hover:text-white"}`}
+                className={`flex items-center gap-1 text-base tracking-[-0.32px] shrink-0 whitespace-nowrap ${isHighlighted ? "text-white" : "text-grey-950 group-hover:text-white"}`}
               >
-                <Image src={token.icon} alt={token.symbol} width={20} height={20} />
+                <Image src={token.icon} alt={token.symbol} width={20} height={20} className="shrink-0" />
                 {formatAmount(item.amount, chainId, item.tokenAddress)}
               </div>
 
               {/* Arrow */}
-              <Image
-                src="icons/arrows/arrow-right-long-purple.svg"
-                className={`mr-3 transition-all ${isHighlighted ? "brightness-0 invert" : "group-hover:brightness-0 group-hover:invert"}`}
-                alt="Arrow Right"
-                width={100}
-                height={100}
-              />
+              <div className="shrink min-w-0">
+                <Image
+                  src="icons/arrows/arrow-right-long-purple.svg"
+                  className={`max-w-full h-auto transition-all ${isHighlighted ? "brightness-0 invert" : "group-hover:brightness-0 group-hover:invert"}`}
+                  alt="Arrow Right"
+                  width={100}
+                  height={100}
+                />
+              </div>
               {/* Recipient */}
-              {matchedContact ? (
-                <AddressNamedTooltip address={item.recipient} name={matchedContact.name} isHighlighted={isHighlighted}>
-                  <div
-                    className={`flex items-center gap-1 text-xs font-medium rounded-full w-fit pl-1 pr-4 py-1 max-w-32 ${
-                      isHighlighted ? "bg-white text-black" : "bg-grey-100 text-black group-hover:bg-white"
+              <div className="min-w-0 shrink">
+                {matchedContact ? (
+                  <AddressNamedTooltip
+                    address={item.recipient}
+                    name={matchedContact.name}
+                    isHighlighted={isHighlighted}
+                  >
+                    <div
+                      className={`flex items-center gap-1 text-xs font-medium rounded-full pl-1 pr-4 py-1 ${
+                        isHighlighted ? "bg-white text-black" : "bg-grey-100 text-black group-hover:bg-white"
+                      }`}
+                    >
+                      <Image
+                        src={"/avatars/default-avt.svg"}
+                        alt="avatar"
+                        width={16}
+                        height={16}
+                        className="flex-shrink-0"
+                      />
+                      <span className="truncate">
+                        <Fragment>
+                          <span className="font-medium mr-0.5">{matchedContact.name}</span>
+                          <span>{"(" + `${formatAddress(item?.recipient, { start: 3, end: 3 })}` + ")"}</span>
+                        </Fragment>
+                      </span>
+                    </div>
+                  </AddressNamedTooltip>
+                ) : (
+                  <span
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                      isHighlighted
+                        ? "text-black bg-white"
+                        : "text-black bg-grey-100 group-hover:bg-white group-hover:text-black"
                     }`}
                   >
-                    <Image
-                      src={"/avatars/default-avt.svg"}
-                      alt="avatar"
-                      width={16}
-                      height={16}
-                      className="flex-shrink-0"
-                    />
-                    <span className="truncate overflow-hidden">
-                      <Fragment>
-                        <span className="font-medium mr-0.5">{matchedContact.name}</span>
-                        <span>{"(" + `${formatAddress(item?.recipient, { start: 3, end: 3 })}` + ")"}</span>
-                      </Fragment>
-                    </span>
-                  </div>
-                </AddressNamedTooltip>
-              ) : (
-                <span
-                  className={`flex item-center gap-1 px-2 py-1 rounded-full w-fit text-xs font-medium ${
-                    isHighlighted
-                      ? "text-black bg-white"
-                      : "text-black bg-grey-100 group-hover:bg-white group-hover:text-black"
+                    <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} className="shrink-0" />
+                    <span className="truncate">{formatAddress(item?.recipient, { start: 3, end: 3 })}</span>
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  ref={editButtonRefs[item.id]}
+                  onClick={e => {
+                    e.stopPropagation();
+                    setEditingItemId(item.id);
+                  }}
+                  className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg disabled:opacity-50 ${
+                    isHighlighted ? "bg-white" : "bg-grey-100 group-hover:bg-white"
                   }`}
                 >
-                  <Image src={"/avatars/default-avt.svg"} alt="avatar" width={16} height={16} />
-                  <span> {formatAddress(item?.recipient, { start: 3, end: 3 })}</span>
-                </span>
-              )}
-              <div className="flex items-center gap-2">
-                <div>
-                  <button
-                    ref={editButtonRefs[item.id]}
-                    onClick={e => {
-                      e.stopPropagation();
-                      setEditingItemId(item.id);
-                    }}
-                    className={`flex items-center justify-center gap-2 py-1.5 rounded-lg disabled:opacity-50 w-[95px] ${
-                      isHighlighted ? "bg-white" : "bg-grey-100 group-hover:bg-white"
-                    }`}
-                  >
-                    <Image src="/icons/misc/edit-icon.svg" alt="Edit" width={16} height={16} />
-                    <span className="font-medium text-[14px] text-center text-black">Edit</span>
-                  </button>
-                </div>
+                  <Image src="/icons/misc/edit-icon.svg" alt="Edit" width={16} height={16} />
+                  <span className="font-medium text-sm text-center text-black">Edit</span>
+                </button>
 
                 {/* Remove Button */}
-                <div>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      openModal("removeBatch", {
-                        item,
-                        onRemove: () => onRemove(item.id),
-                      });
-                    }}
-                    disabled={isRemoving}
-                    className="w-[95px] bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center gap-2 py-1.5 rounded-lg shadow-[0px_2px_4px_-1px_rgba(255,0,4,0.5),0px_0px_0px_1px_#ff6668] disabled:opacity-50"
-                  >
-                    <Image src="/icons/misc/trash-icon.svg" alt="Remove" width={16} height={16} />
-                    <span className="font-medium text-[14px] text-center text-white">Remove</span>
-                  </button>
-                </div>
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    openModal("removeBatch", {
+                      item,
+                      onRemove: () => onRemove(item.id),
+                    });
+                  }}
+                  disabled={isRemoving}
+                  className="bg-gradient-to-b from-red-500 to-red-600 flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg shadow-[0px_2px_4px_-1px_rgba(255,0,4,0.5),0px_0px_0px_1px_#ff6668] disabled:opacity-50"
+                >
+                  <Image src="/icons/misc/trash-icon.svg" alt="Remove" width={16} height={16} />
+                  <span className="font-medium text-sm text-center text-white">Remove</span>
+                </button>
               </div>
             </div>
           );
@@ -341,7 +346,7 @@ export default function BatchContainer() {
 
         notification.success("Batch item removed successfully");
       } catch (error) {
-        console.error("Failed to remove batch item:", error);
+        notification.error(formatErrorMessage(error, "Failed to remove batch item"));
       }
     },
     [deleteBatchItem, activeItem],
@@ -365,8 +370,7 @@ export default function BatchContainer() {
         notification.success("Batch item updated successfully");
         await refetchBatchItems();
       } catch (error) {
-        console.error("Failed to update batch item:", error);
-        notification.error("Failed to update batch item");
+        notification.error(formatErrorMessage(error, "Failed to update batch item"));
       }
     },
     [updateBatchItem, refetchBatchItems],
@@ -406,7 +410,7 @@ export default function BatchContainer() {
     <div className="flex flex-row gap-1 w-full h-full bg-[#ECEDEC]">
       {/* Main Content */}
       <div
-        className="py-5 px-8 bg-background rounded-lg flex flex-col flex-1 border-divider border-white border-2"
+        className="py-5 px-4 lg:px-8 bg-background rounded-lg flex flex-col flex-1 min-w-0 border-divider border-white border-2"
         style={{
           background: "rgba(255, 255, 255, 0.70)",
         }}
@@ -430,7 +434,7 @@ export default function BatchContainer() {
       {selectedItems.size > 0 && (
         <div className={`hidden lg:block overflow-hidden ${isExiting ? "animate-slide-out" : "animate-slide-in"}`}>
           <TransactionSummary
-            className="xl:w-[420px] w-[250px]"
+            className="xl:w-[420px] lg:w-[320px]"
             transactions={transactionsSummary}
             onConfirm={handleProposeBatch}
             isLoading={isProposing}

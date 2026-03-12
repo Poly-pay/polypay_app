@@ -49,7 +49,7 @@ const RemoveSignerModal: React.FC<RemoveSignerModalProps> = ({ isOpen, onClose, 
           {/* Close button */}
           <button
             onClick={onClose}
-            className="w-[38px] h-[38px] flex items-center justify-center rounded-lg bg-grey-0 transition-colors hover:bg-grey-50"
+            className="w-[38px] h-icon-btn flex items-center justify-center rounded-lg bg-grey-0 transition-colors hover:bg-grey-50"
           >
             <X className="w-[18px] h-[18px] text-grey-950" />
           </button>

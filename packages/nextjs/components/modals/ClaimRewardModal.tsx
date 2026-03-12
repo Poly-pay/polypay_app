@@ -6,8 +6,8 @@ import ModalContainer from "./ModalContainer";
 import { useWalletClient } from "wagmi";
 import { Button } from "~~/components/ui/button";
 import { useClaimRewards, useClaimSummary } from "~~/hooks/api/useClaim";
-import { formatErrorMessage } from "~~/lib/form/utils";
 import { ModalProps } from "~~/types/modal";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { chain } from "~~/utils/network-config";
 
 type ModalState = "default" | "loading" | "success" | "error";
@@ -97,7 +97,7 @@ const ClaimRewardModal: React.FC<ClaimRewardModalProps> = ({ isOpen, onClose, we
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 w-[38px] h-[38px] flex items-center justify-center bg-white border border-grey-200 rounded-lg hover:bg-grey-50 transition-colors z-10"
+          className="absolute right-4 top-4 w-[38px] h-icon-btn flex items-center justify-center bg-white border border-grey-200 rounded-lg hover:bg-grey-50 transition-colors z-10"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path

@@ -1,4 +1,4 @@
-export { apiClient, handleApiError } from "./apiClient";
+export { apiClient } from "./apiClient";
 export { accountApi } from "./accountApi";
 export { userApi } from "./userApi";
 export { contactBookApi } from "./contactBookApi";

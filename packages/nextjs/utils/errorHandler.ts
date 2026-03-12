@@ -1,3 +1,4 @@
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 export enum ErrorCode {
@@ -85,7 +86,7 @@ export function handleError(
   const appError = parseError(error);
 
   if (showNotification) {
-    notification.error(appError.message);
+    notification.error(formatErrorMessage(error, appError.message));
   }
 
   if (appError.shouldLogout && onLogout) {

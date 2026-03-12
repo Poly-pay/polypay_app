@@ -508,7 +508,7 @@ function SignerList({
               </span>
               {signer.isMe && <span className="text-sm font-medium text-pink-350 tracking-tight">[you]</span>}
               {signer.isInitiator && (
-                <span className="text-sm font-medium text-[#066EFF] tracking-tight">[Transaction Initiator]</span>
+                <span className="text-sm font-medium text-main-navy-blue tracking-tight">[Transaction Initiator]</span>
               )}
             </div>
             <VoteBadge status={signer.voteStatus} />

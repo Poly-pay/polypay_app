@@ -6,10 +6,11 @@ import EditStep from "./EditStep";
 import SubmittingStep from "./SubmittingStep";
 import { ActionMode, ExistingSigner, ModalStep, PendingSigner } from "./types";
 import ModalContainer from "~~/components/modals/ModalContainer";
+import { WARNING_AUTO_HIDE } from "~~/constants/timing";
 import { useAccount, useMetaMultiSigWallet, useSignerTransaction } from "~~/hooks";
-import { formatErrorMessage } from "~~/lib/form/utils";
 import { useIdentityStore, useSidebarStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
@@ -94,7 +95,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   // Auto-hide warning after 5 seconds
   useEffect(() => {
     if (showWarning) {
-      const timer = setTimeout(() => setShowWarning(false), 5000);
+      const timer = setTimeout(() => setShowWarning(false), WARNING_AUTO_HIDE);
       return () => clearTimeout(timer);
     }
   }, [showWarning]);

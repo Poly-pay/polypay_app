@@ -41,9 +41,9 @@ export default function ManageAccountsSidebar({
   return (
     <div
       className={`
-      absolute left-full top-0 z-[1000]
+      absolute left-full top-0 z-30
       w-[330px] h-full bg-main-white rounded-lg p-3 flex flex-col gap-[15px]
-      shadow-[4px_0px_24px_rgba(0,0,0,0.1)]
+      shadow-sidebar
       transform transition-all duration-300 ease-in-out
       ${hasNetworkChooser ? "ml-[342px]" : "ml-3"}
       ${isOpen ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 pointer-events-none"}
@@ -105,7 +105,7 @@ export default function ManageAccountsSidebar({
                 className="w-full h-full object-contain"
               />
             </div>
-            <p className="text-center text-[#7B7B7B] text-sm leading-5 tracking-[-0.02em] font-normal">
+            <p className="text-center text-grey-700 text-sm leading-5 tracking-[-0.02em] font-normal">
               You don&apos;t have a multisig account yet.
               <br />
               Create one now to get started.

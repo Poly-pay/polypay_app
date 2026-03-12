@@ -62,8 +62,7 @@ const ModalContainer = forwardRef<ModalRef, ModalProps>(
     return (
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent
-          className={cn("rounded-3xl w-[600px] px-1.5 py-4", className)}
-          style={{ boxShadow: "0px 0px 46.8px 0px rgba(46, 46, 46, 0.13)" }}
+          className={cn("rounded-3xl w-[600px] px-1.5 py-4 shadow-modal", className)}
           showCloseButton={isCloseButton}
           onEscapeKeyDown={e => loadingTransaction && e.preventDefault()}
           onPointerDownOutside={e => loadingTransaction && e.preventDefault()}

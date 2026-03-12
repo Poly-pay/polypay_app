@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import AccountSidebar from "./AccountSidebar";
 import ManageAccountsSidebar from "./ManageAccountsSidebar";
 import NetworkChooserSidebar from "./NetworkChooserSidebar";
-import { useSwitchChain } from "wagmi";
+import { useSwitchChain, useWalletClient } from "wagmi";
 import Routes from "~~/configs/routes.config";
 import { useMyAccounts } from "~~/hooks";
 import { useModalApp } from "~~/hooks/app/useModalApp";
@@ -50,6 +50,7 @@ const SectionItem = ({
   requireAccount = true,
   hasAccount = false,
   hasCommitment = false,
+  isWalletConnected = false,
 }: {
   label: string;
   menuItems: { icon: string; label: string; link: string }[];
@@ -58,6 +59,7 @@ const SectionItem = ({
   requireAccount?: boolean;
   hasAccount?: boolean;
   hasCommitment?: boolean;
+  isWalletConnected?: boolean;
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const router = useRouter();
@@ -73,7 +75,9 @@ const SectionItem = ({
 
     // Check if section is disabled and show appropriate notification
     if (isSectionDisabled) {
-      if (!hasCommitment) {
+      if (!isWalletConnected) {
+        notification.info("Please connect wallet to continue");
+      } else if (!hasCommitment) {
         notification.info("Please sign in to continue");
       } else if (requireAccount && !hasAccount) {
         notification.info("Please create an account to access this feature");
@@ -155,6 +159,7 @@ export default function Sidebar() {
   const router = useAppRouter();
   const { data: accounts = [], isLoading: isLoadingAccounts } = useMyAccounts();
   const { commitment } = useIdentityStore();
+  const { data: walletClient } = useWalletClient();
   const { currentAccount, setCurrentAccount } = useAccountStore();
   const { switchChainAsync } = useSwitchChain();
   const {
@@ -170,6 +175,10 @@ export default function Sidebar() {
   const selectedAccountId = currentAccount?.id || accounts[0]?.id || "";
 
   const handleLogoClick = () => {
+    if (!walletClient?.account) {
+      notification.info("Please connect wallet to continue");
+      return;
+    }
     if (!commitment) {
       notification.info("Please sign in to continue");
       return;
@@ -252,6 +261,7 @@ export default function Sidebar() {
                 requireAccount={item.requireAccount}
                 hasAccount={accounts.length > 0}
                 hasCommitment={!!commitment}
+                isWalletConnected={!!walletClient?.account}
               />
             ))}
           </div>
@@ -284,7 +294,7 @@ export default function Sidebar() {
 
       {/* Invisible backdrop for click outside to close */}
       {(isManageAccountsOpen || isNetworkChooserOpen) && (
-        <div className="fixed inset-0 z-40" onClick={handleCloseAllSidebars} />
+        <div className="fixed inset-0 z-20" onClick={handleCloseAllSidebars} />
       )}
 
       {/* Network chooser sidebar */}

@@ -28,6 +28,12 @@ const Title: React.FC = () => {
     case "/batch":
       title = "Your Batch";
       break;
+    case "/quest":
+      title = "Quests";
+      break;
+    case "/leaderboard":
+      title = "Leaderboard";
+      break;
   }
 
   return (

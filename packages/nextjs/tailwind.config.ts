@@ -109,6 +109,10 @@ const config: Config = {
       },
       boxShadow: {
         center: "var(--shadow-center)",
+        popover: "var(--shadow-popover)",
+        input: "var(--shadow-input)",
+        modal: "var(--shadow-modal)",
+        sidebar: "var(--shadow-sidebar)",
       },
       animation: {
         "pulse-fast": "var(--animate-pulse-fast)",
@@ -116,6 +120,10 @@ const config: Config = {
       borderRadius: {
         field: "var(--radius-field)",
         box: "var(--radius-box)",
+      },
+      height: {
+        input: "48px",
+        "icon-btn": "38px",
       },
       fontFamily: {
         barlow: "var(--font-barlow), sans-serif",

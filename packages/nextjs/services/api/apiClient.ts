@@ -2,24 +2,24 @@ import { useIdentityStore } from "../store";
 import { authApi } from "./authApi";
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "~~/constants";
-import { formatErrorMessage } from "~~/lib/form/utils";
+import { API_TIMEOUT_DEFAULT, API_TIMEOUT_ZK } from "~~/constants/timing";
+import { formatErrorMessage } from "~~/utils/formatError";
 
 const AUTHORIZATION_HEADER = (accessToken: string) => `Bearer ${accessToken}`;
-const ZK_TIMEOUT = 600000; // 10 minutes for ZK proof generation + verification
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000,
+  timeout: API_TIMEOUT_DEFAULT,
 });
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Increase timeout for auth endpoints (ZK proof takes time)
     if (config.url?.includes("/auth") || config.url?.includes("/transaction")) {
-      config.timeout = ZK_TIMEOUT;
+      config.timeout = API_TIMEOUT_ZK;
     }
 
     // Add auth header if token exists
@@ -108,12 +108,5 @@ apiClient.interceptors.response.use(
     }
   },
 );
-
-export const handleApiError = (error: unknown): string => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return "An unexpected error occurred";
-};
 
 export default apiClient;

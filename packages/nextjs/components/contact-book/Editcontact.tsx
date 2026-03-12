@@ -7,6 +7,7 @@ import { Contact, ContactGroup, UpdateContactDto } from "@polypay/shared";
 import { useModalApp, useUpdateContact } from "~~/hooks";
 import { useZodForm } from "~~/hooks/form";
 import { createContactSchema } from "~~/lib/form/schemas";
+import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface EditContactProps {
@@ -65,8 +66,7 @@ export const EditContact = ({ contact, accountId, onSuccess, onDelete, onClose }
         onSuccess?.();
         onClose?.();
       } catch (error) {
-        console.error("Failed to update contact:", error);
-        notification.error(error instanceof Error ? error.message : "Failed to update contact");
+        notification.error(formatErrorMessage(error, "Failed to update contact"));
       }
     } else {
       console.log("No changes detected");
