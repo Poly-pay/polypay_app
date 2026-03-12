@@ -25,6 +25,8 @@ export interface CreateTransactionPayload {
   proof: number[];
   publicInputs: string[];
   nullifier: string;
+  /** For TxType.BATCH: IDs from apiCreateBatchItem (order = execution order) */
+  batchItemIds?: string[];
 }
 
 export interface ApproveTransactionPayload {
@@ -121,6 +123,27 @@ export async function apiGetTransaction(accessToken: string, txId: string) {
     .expect(200);
 
   return response.body;
+}
+
+export interface CreateBatchItemPayload {
+  recipient: string;
+  amount: string;
+  tokenAddress?: string | null;
+}
+
+export async function apiCreateBatchItem(
+  accessToken: string,
+  payload: CreateBatchItemPayload,
+) {
+  const server = getHttpServer();
+
+  const response = await request(server)
+    .post(API_ENDPOINTS.batchItems.base)
+    .set(getAuthHeader(accessToken))
+    .send(payload)
+    .expect(201);
+
+  return response.body as { id: string };
 }
 
 export async function generateVotePayload(
