@@ -3,14 +3,12 @@ import {
   setupTestApp,
   teardownTestApp,
   resetDatabase,
-  getTestApp,
 } from '../setup';
 import { getSignerA, getSignerB } from '../fixtures/test-users';
 import {
   depositToAccount,
   getAccountBalance,
 } from '../utils/contract.util';
-import { getPrismaService } from '../utils/cleanup.util';
 import { loginUser, AuthTokens } from '../utils/auth.util';
 import { TestIdentity, createTestIdentity } from '../utils/identity.util';
 import {
@@ -491,16 +489,15 @@ describe('Transaction E2E', () => {
 
       // ============ STEP 6: Verify Final State for all 4 transactions ============
       console.log('Phase 6: Verify final state - start');
-      const prisma = getPrismaService(getTestApp());
 
       for (const entry of createdTxs) {
         const txId = entry.txId;
         const label = getCreatedTxLabel(entry);
 
-        const finalTx = (await prisma.transaction.findUnique({
-          where: { txId: Number(txId) },
-          include: { votes: true },
-        })) as {
+        const finalTx = (await apiGetTransaction(
+          tokensA.accessToken,
+          txId,
+        )) as {
           status: TxStatus;
           votes: unknown[];
           tokenAddress?: string | null;
