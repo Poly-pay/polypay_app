@@ -6,11 +6,17 @@
 // Increase timeout for blockchain calls
 jest.setTimeout(300000);
 
-// Load environment variables from .env.test if exists
+// Load environment variables from .env.test if exists, otherwise fallback to .env
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
-dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
+const envTestPath = path.resolve(__dirname, '../.env.test');
+const envPath = fs.existsSync(envTestPath)
+  ? envTestPath
+  : path.resolve(__dirname, '../.env');
+
+dotenv.config({ path: envPath });
 
 // Validate required environment variables
 const requiredEnvVars = [
