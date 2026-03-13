@@ -341,3 +341,35 @@ model MixerIndexerState {
 
   @@map("mixer_indexer_state")
 }
+
+model MixerWithdrawRequest {
+  id                    String   @id @default(cuid())
+  jobId                 String   @unique @map("job_id")
+  chainId               Int      @map("chain_id")
+  token                 String
+  denomination          String
+  recipient             String
+  nullifierHash         String   @map("nullifier_hash")
+  root                  String
+  status                MixerWithdrawStatus @default(PENDING)
+  zkVerifyTxHash        String?  @map("zkverify_tx_hash")
+  aggregationId         String?  @map("aggregation_id")
+  domainId              Int?     @map("domain_id")
+  merkleProof           String[] @map("merkle_proof")
+  leafIndex             Int?     @map("leaf_index")
+  leafCount             Int?     @map("leaf_count")
+  txHash                String?  @map("tx_hash")
+  errorMessage          String?  @map("error_message")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("mixer_withdraw_requests")
+}
+
+enum MixerWithdrawStatus {
+  PENDING
+  AGGREGATED
+  EXECUTED
+  FAILED
+}

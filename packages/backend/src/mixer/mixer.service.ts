@@ -1,14 +1,15 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { keccak256, encodePacked, sha256, toHex } from 'viem';
-import { getContractConfigByChainId } from '@polypay/shared';
+import { keccak256, encodePacked } from 'viem';
 import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { getDomainId } from '@/common/utils/proof';
 import { MixerDepositsQueryDto, MixerWithdrawDto } from '@polypay/shared';
+import { MixerWithdrawStatus } from '@/generated/prisma/client';
 
 const MIXER_AGGREGATION_MAX_ATTEMPTS = 30;
 const MIXER_AGGREGATION_INTERVAL_MS = 10000;
+const MIXER_FINALIZATION_WAIT_MS = 40000;
 
 @Injectable()
 export class MixerService {
@@ -50,7 +51,7 @@ export class MixerService {
       `Submitting mixer proof for chainId=${chainId}, recipient=${recipient}`,
     );
 
-    const { jobId, status: submitStatus } =
+    const { jobId, status: submitStatus, txHash: zkVerifyTxHash } =
       await this.zkVerifyService.submitProofAndWaitFinalized(
         { proof, publicInputs, vk: dto.vk },
         'mixer',
@@ -61,26 +62,56 @@ export class MixerService {
       throw new BadRequestException('Proof submission failed');
     }
 
+    const request = await this.prisma.mixerWithdrawRequest.create({
+      data: {
+        jobId,
+        chainId,
+        token,
+        denomination,
+        recipient,
+        nullifierHash,
+        root,
+        status: MixerWithdrawStatus.PENDING,
+        zkVerifyTxHash: zkVerifyTxHash ?? null,
+        merkleProof: [],
+      },
+    });
+
     const aggregationResult = await this.pollForAggregation(jobId);
     if (!aggregationResult) {
+      await this.prisma.mixerWithdrawRequest.update({
+        where: { id: request.id },
+        data: { status: MixerWithdrawStatus.FAILED, errorMessage: 'MIXER_AGGREGATION_TIMEOUT' },
+      });
       throw new BadRequestException('MIXER_AGGREGATION_TIMEOUT');
     }
 
-    // TODO: remove later
     const { aggregationId, aggregationDetails } = aggregationResult;
     const domainId = getDomainId(chainId);
 
+    await this.prisma.mixerWithdrawRequest.update({
+      where: { id: request.id },
+      data: {
+        status: MixerWithdrawStatus.AGGREGATED,
+        aggregationId: String(aggregationId),
+        domainId,
+        merkleProof: aggregationDetails?.merkleProof ?? [],
+        leafIndex: aggregationDetails?.leafIndex ?? null,
+        leafCount: aggregationDetails?.numberOfLeaves ?? null,
+      },
+    });
     const proofArgs = {
       aggregationId: String(aggregationId),
       domainId,
-      zkMerklePath: aggregationDetails.merkleProof || [],
-      leafCount: aggregationDetails.numberOfLeaves ?? 0,
-      index: aggregationDetails.leafIndex ?? 0,
+      zkMerklePath: aggregationDetails?.merkleProof ?? [],
+      leafCount: aggregationDetails?.numberOfLeaves ?? 0,
+      index: aggregationDetails?.leafIndex ?? 0,
     };
 
     this.logger.log(
-      `Mixer aggregation ready. aggregationId=${aggregationId}, domainId=${domainId}. Waiting for on-chain availability...`,
+      `Mixer aggregation ready. Waiting ${MIXER_FINALIZATION_WAIT_MS / 1000}s before execute...`,
     );
+    await this.sleep(MIXER_FINALIZATION_WAIT_MS);
 
     const txHash = await this.executeWithRetry(
       chainId,
@@ -91,6 +122,11 @@ export class MixerService {
       root,
       proofArgs,
     );
+
+    await this.prisma.mixerWithdrawRequest.update({
+      where: { id: request.id },
+      data: { status: MixerWithdrawStatus.EXECUTED, txHash },
+    });
 
     this.logger.log(`Mixer withdraw executed: txHash=${txHash}`);
     return { txHash, status: 'success' };
@@ -127,7 +163,6 @@ export class MixerService {
     return null;
   }
 
-  // TODO: remove this method
   private async executeWithRetry(
     chainId: number,
     token: string,
@@ -175,55 +210,6 @@ export class MixerService {
       }
     }
     throw new BadRequestException('MIXER_EXECUTE_TIMEOUT');
-  }
-
-  private debugLeafComparison(
-    chainId: number,
-    root: string,
-    nullifierHash: string,
-    recipient: string,
-    token: string,
-    denomination: string,
-    aggregationDetails: any,
-  ): void {
-    try {
-      const config = getContractConfigByChainId(chainId);
-      const vkHash = config.mixerVkHash as `0x${string}`;
-
-      const PROVING_SYSTEM_ID = keccak256(toHex('ultraplonk'));
-      const VERSION_HASH = sha256(toHex(''));
-
-      const encodedInputs = encodePacked(
-        ['bytes32', 'bytes32', 'uint256', 'uint256', 'uint256'],
-        [
-          root as `0x${string}`,
-          nullifierHash as `0x${string}`,
-          BigInt(recipient),
-          BigInt(token),
-          BigInt(denomination),
-        ],
-      );
-      const inputsHash = keccak256(encodedInputs);
-      const computedLeaf = keccak256(
-        encodePacked(
-          ['bytes32', 'bytes32', 'bytes32', 'bytes32'],
-          [PROVING_SYSTEM_ID, vkHash, VERSION_HASH, inputsHash],
-        ),
-      );
-
-      this.logger.log(`=== LEAF DEBUG ===`);
-      this.logger.log(`vkHash used: ${vkHash}`);
-      this.logger.log(`PROVING_SYSTEM_ID: ${PROVING_SYSTEM_ID}`);
-      this.logger.log(`VERSION_HASH: ${VERSION_HASH}`);
-      this.logger.log(`encodedInputs hash: ${inputsHash}`);
-      this.logger.log(`Kurier leaf: ${aggregationDetails?.leaf ?? 'N/A'}`);
-      this.logger.log(`Contract leaf: ${computedLeaf}`);
-      this.logger.log(
-        `Leaf match: ${aggregationDetails?.leaf === computedLeaf}`,
-      );
-    } catch (e: any) {
-      this.logger.warn(`debugLeafComparison error: ${e?.message}`);
-    }
   }
 
   private sleep(ms: number): Promise<void> {

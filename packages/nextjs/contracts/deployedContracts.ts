@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   84532: {
     Mixer: {
-      address: "0xd9E9103693014b00db0Bf262b65CB2226062e732",
+      address: "0xE146bA86fef4056566D7EE9dBB9fFaCf8A994AC2",
       abi: [
         {
           inputs: [
@@ -499,7 +499,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 38675302,
+      deployedOnBlock: 38809306,
     },
   },
   2651420: {
@@ -1025,7 +1025,7 @@ const deployedContracts = {
       deployedOnBlock: 6615581,
     },
     Mixer: {
-      address: "0x8F5f249210fFc91a2b1D86828764562f97C9eEdd",
+      address: "0xd9E9103693014b00db0Bf262b65CB2226062e732",
       abi: [
         {
           inputs: [
@@ -1517,7 +1517,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 11529753,
+      deployedOnBlock: 11797624,
     },
   },
   11155111: {

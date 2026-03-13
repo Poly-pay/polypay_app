@@ -5,7 +5,7 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
     vkHash:
       "0x80aca2e84f244400a76040aa5c77f9d83ff8409a2bf0d0cde96daffcf0a50e1b",
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
-    mixerAddress: "0x8F5f249210fFc91a2b1D86828764562f97C9eEdd" as `0x${string}`,
+    mixerAddress: "0xd9E9103693014b00db0Bf262b65CB2226062e732" as `0x${string}`,
     mixerVkHash:
       "0x29236cc027580a6be3e581d9625a48710d39eb92e2c68e7b5e42841d11affe00" as `0x${string}`,
   },
@@ -15,7 +15,7 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
     vkHash:
       "0x80aca2e84f244400a76040aa5c77f9d83ff8409a2bf0d0cde96daffcf0a50e1b",
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
-    mixerAddress: "0xd9E9103693014b00db0Bf262b65CB2226062e732" as `0x${string}`,
+    mixerAddress: "0xE146bA86fef4056566D7EE9dBB9fFaCf8A994AC2" as `0x${string}`,
     mixerVkHash:
       "0x29236cc027580a6be3e581d9625a48710d39eb92e2c68e7b5e42841d11affe00" as `0x${string}`,
   },
@@ -45,8 +45,8 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
 
 // Starting blocks for Mixer deployments; used by backend indexer to avoid scanning from block 0.
 export const MIXER_DEPLOYMENT_BLOCK = {
-  2651420: 11529753, // Horizen testnet Mixer deploy block
-  84532: 38675302, // Base Sepolia Mixer deploy block
+  2651420: 11797624, // Horizen testnet Mixer deploy block
+  84532: 38809306, // Base Sepolia Mixer deploy block
 } as const;
 
 export const getContractConfigByChainId = (chainId: number) => {
