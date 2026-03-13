@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { ResolvedToken, TxType, ZERO_ADDRESS, encodeERC20Transfer, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
+import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -19,16 +20,23 @@ interface UseTransferTransactionOptions {
   onSuccess?: () => void;
 }
 
+const TRANSFER_STEPS = [
+  { id: 1, label: "Preparing your transfer..." },
+  { id: 2, label: "Waiting for wallet approval..." },
+  { id: 3, label: "Securing your transaction..." },
+  { id: 4, label: "Almost done, submitting..." },
+];
+
 export const useTransferTransaction = (options?: UseTransferTransactionOptions) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState("");
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
+    useStepLoading(TRANSFER_STEPS);
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { mutateAsync: createTransaction } = useCreateTransaction();
   const { mutateAsync: reserveNonce } = useReserveNonce();
   const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
+    onLoadingStateChange: setStepByLabel,
   });
 
   const transfer = async ({ recipient, amount, token, contactId }: TransferParams) => {
@@ -38,14 +46,13 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
     }
 
     const isNativeETH = token.address === ZERO_ADDRESS;
-
-    setIsLoading(true);
     try {
       // 1. Reserve nonce from backend
+      startStep(1);
       const { nonce } = await reserveNonce(metaMultiSigWallet.address);
 
       // 2. Get current threshold and commitments
-      setLoadingState("Preparing transaction...");
+      startStep(1);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
       // 3. Parse amount based on token type
@@ -79,7 +86,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       const { proof, publicInputs, nullifier, vk } = await generateProof(txHash);
 
       // 6. Submit to backend
-      setLoadingState("Submitting to backend...");
+      startStep(4);
       const result = await createTransaction({
         nonce,
         type: TxType.TRANSFER,
@@ -105,8 +112,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       console.error("Transfer error:", error);
       notification.error(formatErrorMessage(error, "Failed to create transfer"));
     } finally {
-      setIsLoading(false);
-      setLoadingState("");
+      reset();
     }
   };
 
@@ -114,5 +120,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
     transfer,
     isLoading,
     loadingState,
+    loadingStep,
+    totalSteps,
   };
 };

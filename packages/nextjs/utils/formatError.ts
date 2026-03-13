@@ -7,7 +7,7 @@ type ErrorLike = {
 
 const ERROR_PATTERNS: [RegExp, string | null][] = [
   [/user rejected|user denied|user refused|ACTION_REJECTED/i, "Transaction was cancelled."],
-  [/insufficient funds/i, "Insufficient funds for this transaction."],
+  [/insufficient (funds|balance|account)/i, "Insufficient funds for this transaction."],
   [/nonce too (high|low)/i, "Transaction conflict. Please try again."],
   [/gas required exceeds|cannot estimate gas/i, "Transaction failed. Please try again."],
   [/rate.?limit|429/i, "Too many requests. Please wait a moment."],
