@@ -25,6 +25,8 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
     updateThreshold,
     isLoading: loading,
     loadingState,
+    loadingStep,
+    totalSteps,
     signers,
     threshold: originalThreshold,
     refetchCommitments,
@@ -190,7 +192,9 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
         />
       )}
 
-      {step === "submitting" && <SubmittingStep />}
+      {step === "submitting" && (
+        <SubmittingStep loadingState={loadingState} loadingStep={loadingStep} totalSteps={totalSteps} />
+      )}
     </ModalContainer>
   );
 };

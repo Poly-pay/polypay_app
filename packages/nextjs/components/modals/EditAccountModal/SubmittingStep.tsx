@@ -2,7 +2,17 @@
 
 import React from "react";
 
-const SubmittingStep = () => {
+interface SubmittingStepProps {
+  loadingState?: string;
+  loadingStep?: number;
+  totalSteps?: number;
+}
+
+const SubmittingStep: React.FC<SubmittingStepProps> = ({
+  loadingState = "",
+  loadingStep = 0,
+  totalSteps = 4,
+}) => {
   return (
     <div className="flex flex-col items-center bg-grey-0 rounded-2xl border border-grey-200 w-[420px] py-10">
       {/* Rocket animation video */}
@@ -30,6 +40,20 @@ const SubmittingStep = () => {
           This may take a few moments. Please don&apos;t close this window.
         </p>
       </div>
+
+      {loadingStep > 0 && totalSteps > 0 && (
+        <div className="flex flex-col items-center gap-2 w-full max-w-xs mt-4">
+          <div className="text-sm text-gray-500">
+            Step {loadingStep} of {totalSteps} — {loadingState}
+          </div>
+          <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${(loadingStep / totalSteps) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
