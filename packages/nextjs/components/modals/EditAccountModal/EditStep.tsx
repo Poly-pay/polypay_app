@@ -24,7 +24,6 @@ const EditStep: React.FC<EditStepProps> = ({
   existingSigners,
   originalThreshold,
   loading,
-  loadingState,
   onNext,
   onClose,
 }) => {
@@ -173,11 +172,6 @@ const EditStep: React.FC<EditStepProps> = ({
           <X className="w-[18px] h-[18px] text-grey-950" />
         </button>
       </div>
-
-      {/* Loading state */}
-      {loading && loadingState && (
-        <div className="px-4 py-2 bg-blue-50 text-blue-600 text-sm text-center">{loadingState}</div>
-      )}
 
       {/* Content */}
       <div className="flex flex-col gap-6 px-4 py-0">

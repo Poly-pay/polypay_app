@@ -4,6 +4,7 @@ import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
+import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useIdentityStore } from "~~/services/store";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
@@ -12,9 +13,16 @@ interface UseBatchTransactionOptions {
   onSuccess?: () => void;
 }
 
+const BATCH_STEPS = [
+  { id: 1, label: "Preparing your batch..." },
+  { id: 2, label: "Waiting for wallet approval..." },
+  { id: 3, label: "Securing your transaction..." },
+  { id: 4, label: "Almost done, submitting..." },
+];
+
 export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState("");
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
+    useStepLoading(BATCH_STEPS);
 
   const { data: walletClient } = useWalletClient();
   const { secret, commitment: myCommitment } = useIdentityStore();
@@ -22,7 +30,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
   const { mutateAsync: createTransaction } = useCreateTransaction();
   const { mutateAsync: reserveNonce } = useReserveNonce();
   const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
+    onLoadingStateChange: setStepByLabel,
   });
 
   const proposeBatch = async (selectedBatchItems: BatchItem[]) => {
@@ -42,16 +50,15 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       return;
     }
 
-    setIsLoading(true);
-
     try {
       const selectedIds = selectedBatchItems.map(item => item.id);
 
       // 1. Reserve nonce from backend
+      startStep(1);
       const { nonce } = await reserveNonce(metaMultiSigWallet.address);
 
       // 2. Get current threshold and commitments
-      setLoadingState("Preparing batch transaction...");
+      startStep(1);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
       // 3. Prepare batch data
@@ -79,7 +86,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       const { proof, publicInputs, nullifier, vk } = await generateProof(txHash);
 
       // 7. Submit to backend
-      setLoadingState("Submitting to backend...");
+      startStep(4);
       const result = await createTransaction({
         nonce,
         type: TxType.BATCH,
@@ -104,8 +111,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       console.error("Propose batch error:", error);
       notification.error(formatErrorMessage(error, "Failed to propose batch"));
     } finally {
-      setIsLoading(false);
-      setLoadingState("");
+      reset();
     }
   };
 
@@ -113,5 +119,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
     proposeBatch,
     isLoading,
     loadingState,
+    loadingStep,
+    totalSteps,
   };
 };

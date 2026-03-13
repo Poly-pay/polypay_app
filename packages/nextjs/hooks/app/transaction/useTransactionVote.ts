@@ -16,6 +16,7 @@ import { useWalletClient } from "wagmi";
 import { accountKeys, useMetaMultiSigWallet, userKeys } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
+import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
@@ -117,9 +118,16 @@ function buildTransactionParams(tx: TransactionRowData): {
   return { to, value, callData };
 }
 
+const APPROVE_STEPS = [
+  { id: 1, label: "Preparing approval..." },
+  { id: 2, label: "Waiting for wallet approval..." },
+  { id: 3, label: "Securing your transaction..." },
+  { id: 4, label: "Almost done, submitting..." },
+];
+
 export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState("");
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset, startLoading } =
+    useStepLoading(APPROVE_STEPS);
 
   const { commitment } = useIdentityStore();
   const { data: walletClient } = useWalletClient();
@@ -129,7 +137,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
   const { mutateAsync: denyApi } = useDenyTransaction();
   const { mutateAsync: executeApi } = useExecuteTransaction();
   const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
+    onLoadingStateChange: setStepByLabel,
   });
   const queryClient = useQueryClient();
 
@@ -144,7 +152,8 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       return;
     }
 
-    setIsLoading(true);
+    // Full 4-step flow
+    startStep(1);
     try {
       // 1. Build callData based on tx type
       const { to, value, callData } = buildTransactionParams(tx);
@@ -161,7 +170,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       const proofData = await generateProof(txHash);
 
       // 4. Submit to backend
-      setLoadingState("Submitting to backend...");
+      startStep(4);
       await approveApi({
         txId: tx.txId,
         dto: {
@@ -179,8 +188,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       console.error("Approve error:", error);
       notification.error(formatErrorMessage(error, "Failed to approve"));
     } finally {
-      setIsLoading(false);
-      setLoadingState("");
+      reset();
     }
   };
 
@@ -195,9 +203,10 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       return;
     }
 
-    setIsLoading(true);
+    // Single-step fast action
+    startLoading("Submitting deny vote...");
     try {
-      setLoadingState("Submitting deny vote...");
+      // Fast single-step action; keep step 1
       await denyApi({
         txId: tx.txId,
         dto: {
@@ -211,8 +220,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       console.error("Deny error:", error);
       notification.error(formatErrorMessage(error, "Failed to deny"));
     } finally {
-      setIsLoading(false);
-      setLoadingState("");
+      reset();
     }
   };
 
@@ -222,9 +230,9 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       return;
     }
 
-    setIsLoading(true);
+    // Single-step fast action
+    startLoading("Executing on-chain...");
     try {
-      setLoadingState("Executing on-chain...");
       const result = await executeApi({
         txId,
         dto: {
@@ -244,8 +252,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
       console.error("Execute error:", error);
       notification.error(formatErrorMessage(error, "Failed to execute"));
     } finally {
-      setIsLoading(false);
-      setLoadingState("");
+      reset();
     }
   };
 
@@ -255,5 +262,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
     execute,
     isLoading,
     loadingState,
+    loadingStep,
+    totalSteps,
   };
 };

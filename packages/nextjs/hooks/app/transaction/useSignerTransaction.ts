@@ -3,6 +3,7 @@ import { SignerData, TxType, encodeAddSigners, encodeRemoveSigners, encodeUpdate
 import { useWalletClient } from "wagmi";
 import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
+import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -10,14 +11,21 @@ interface UseSignerTransactionOptions {
   onSuccess?: () => void;
 }
 
+const SIGNER_STEPS = [
+  { id: 1, label: "Preparing your proposal..." },
+  { id: 2, label: "Waiting for wallet approval..." },
+  { id: 3, label: "Securing your transaction..." },
+  { id: 4, label: "Almost done, submitting..." },
+];
+
 export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingState, setLoadingState] = useState("");
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
+    useStepLoading(SIGNER_STEPS);
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { generateProof } = useGenerateProof({
-    onLoadingStateChange: setLoadingState,
+    onLoadingStateChange: setStepByLabel,
   });
   const { mutateAsync: createTransaction } = useCreateTransaction();
   const { mutateAsync: reserveNonce } = useReserveNonce();
@@ -44,6 +52,8 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       throw new Error("Wallet not connected");
     }
 
+    startStep(1);
+
     const { nonce } = await reserveNonce(metaMultiSigWallet.address);
     const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
@@ -56,7 +66,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
 
     const { proof, publicInputs, nullifier, vk } = await generateProof(txHash);
 
-    setLoadingState("Submitting to backend...");
+    startStep(4);
 
     await createTransaction({
       nonce,
@@ -91,7 +101,6 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       return;
     }
 
-    setIsLoading(true);
     try {
       const commitments = newSigners.map(s => s.commitment.trim());
       const callData = encodeAddSigners(commitments, newThreshold);
@@ -110,8 +119,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       console.error("Failed to add signer:", error);
       notification.error(formatErrorMessage(error, "Failed to add signer"));
     } finally {
-      setIsLoading(false);
-      setLoadingState("");
+      reset();
     }
   };
 
@@ -143,7 +151,6 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       return;
     }
 
-    setIsLoading(true);
     try {
       const commitments = signersToRemove.map(s => s.commitment.trim());
       const callData = encodeRemoveSigners(commitments, adjustedThreshold);
@@ -162,8 +169,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       console.error("Failed to remove signer:", error);
       notification.error(formatErrorMessage(error, "Failed to remove signer"));
     } finally {
-      setIsLoading(false);
-      setLoadingState("");
+      reset();
     }
   };
 
@@ -178,7 +184,6 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       return;
     }
 
-    setIsLoading(true);
     try {
       const callData = encodeUpdateThreshold(newThreshold);
       await executeSignerTransaction(TxType.SET_THRESHOLD, callData, {
@@ -191,8 +196,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       console.error("Failed to update threshold:", error);
       notification.error(formatErrorMessage(error, "Failed to update threshold"));
     } finally {
-      setIsLoading(false);
-      setLoadingState("");
+      reset();
     }
   };
 
@@ -202,6 +206,8 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
     updateThreshold,
     isLoading,
     loadingState,
+    loadingStep,
+    totalSteps,
     signers,
     threshold,
     refetchCommitments,

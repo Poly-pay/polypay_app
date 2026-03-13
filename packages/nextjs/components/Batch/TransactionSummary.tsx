@@ -19,6 +19,8 @@ interface TransactionSummaryProps {
   isLoading?: boolean;
   loadingState?: string;
   accountId: string | null;
+  loadingStep?: number;
+  totalSteps?: number;
 }
 
 const TransactionSummary: React.FC<TransactionSummaryProps> = ({
@@ -28,6 +30,8 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
   isLoading = false,
   loadingState = "",
   accountId,
+  loadingStep = 0,
+  totalSteps = 4,
 }) => {
   const { data: contacts = [] } = useContacts(accountId);
   return (
@@ -116,13 +120,26 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
 
       {/* Confirm Button Section */}
       <div className="bg-grey-50 absolute bottom-0 left-0 right-0 px-5 py-4 border-t border-grey-200">
+        {isLoading && loadingState && loadingStep > 0 && (
+          <div className="flex flex-col items-center gap-2 w-full mb-3">
+            <div className="text-sm text-gray-500">
+              Step {loadingStep} of {totalSteps} — {loadingState}
+            </div>
+            <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${(loadingStep / totalSteps) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
         <button
           onClick={onConfirm}
           disabled={isLoading || transactions.length === 0}
           className="flex items-center justify-center px-5 py-3 rounded-lg w-full disabled:opacity-50 bg-main-pink"
         >
           <span className="font-semibold text-sm text-center">
-            {isLoading ? loadingState || "Processing..." : `Execute`}
+            {isLoading ? loadingState || "Processing..." : `Submit batch`}
           </span>
         </button>
       </div>

@@ -75,7 +75,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       }
 
       // 2. Sign txHash
-      setLoadingState("Signing transaction...");
+      setLoadingState("Waiting for wallet approval...");
       const signature = await walletClient.signMessage({
         message: { raw: txHash },
       });
@@ -115,7 +115,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       const execResult = await noir.execute(input);
 
       // 7. Generate proof
-      setLoadingState("Generating ZK proof...");
+      setLoadingState("Securing your transaction...");
       const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
       const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
       // const vk = await plonk.getVerificationKey();
