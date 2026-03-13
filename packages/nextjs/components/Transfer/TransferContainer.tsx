@@ -279,7 +279,7 @@ export default function TransferContainer() {
           >
             {isLoading && <Spinner />}
             <span className="font-medium xl:text-base text-xs text-center tracking-[-0.16px]">
-              {isLoading ? "Processing..." : "Transfer now"}
+              {isLoading ? "Processing..." : "Submit Transfer"}
             </span>
           </button>
         </div>
