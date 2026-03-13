@@ -632,7 +632,17 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
   // Get totalSigners realtime from wallet commitments
   const totalSigners = commitmentsData?.length || 0;
 
-  const { approve, deny, execute, isLoading: loading, loadingState } = useTransactionVote({ onSuccess });
+  const {
+    approve,
+    deny,
+    execute,
+    isLoading: loading,
+    loadingState,
+    loadingStep,
+    totalSteps,
+  } = useTransactionVote({
+    onSuccess,
+  });
 
   const handleApprove = async () => {
     await approve(tx);
@@ -718,7 +728,16 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
     <div className="w-full mb-2">
       {/* Loading State */}
       {loading && loadingState && (
-        <div className="mb-1 px-4 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg">{loadingState}</div>
+        <div className="mb-1 flex">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 text-sm px-4 py-1 rounded-full">
+            {loadingStep > 0 && totalSteps > 1 && (
+              <span className="font-medium">
+                Step {loadingStep}/{totalSteps}
+              </span>
+            )}
+            <span>{loadingState}</span>
+          </div>
+        </div>
       )}
 
       {/* Main Container */}

@@ -37,6 +37,12 @@ export function useStepLoading(steps: StepDefinition[]) {
     setLoadingState("");
   };
 
+  const startLoading = (label: string) => {
+    setIsLoading(true);
+    setLoadingState(label);
+    setLoadingStep(0);
+  };
+
   // Prevent accidental refresh while loading
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -56,6 +62,6 @@ export function useStepLoading(steps: StepDefinition[]) {
     startStep,
     setStepByLabel,
     reset,
+    startLoading,
   };
 }
-

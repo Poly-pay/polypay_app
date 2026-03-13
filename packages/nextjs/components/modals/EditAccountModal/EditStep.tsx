@@ -24,7 +24,6 @@ const EditStep: React.FC<EditStepProps> = ({
   existingSigners,
   originalThreshold,
   loading,
-  loadingState,
   onNext,
   onClose,
 }) => {

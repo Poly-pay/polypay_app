@@ -8,11 +8,7 @@ interface SubmittingStepProps {
   totalSteps?: number;
 }
 
-const SubmittingStep: React.FC<SubmittingStepProps> = ({
-  loadingState = "",
-  loadingStep = 0,
-  totalSteps = 4,
-}) => {
+const SubmittingStep: React.FC<SubmittingStepProps> = ({ loadingState = "", loadingStep = 0, totalSteps = 4 }) => {
   return (
     <div className="flex flex-col items-center bg-grey-0 rounded-2xl border border-grey-200 w-[420px] py-10">
       {/* Rocket animation video */}
