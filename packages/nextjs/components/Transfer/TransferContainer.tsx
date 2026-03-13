@@ -6,6 +6,7 @@ import { ResolvedToken, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
+import { Spinner } from "~~/components/ui/Spinner";
 import { useMetaMultiSigWallet, useTransferTransaction } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
@@ -69,7 +70,7 @@ export default function TransferContainer() {
     }
   }, [form]);
 
-  const { transfer, isLoading, loadingState } = useTransferTransaction({
+  const { transfer, isLoading, loadingState, loadingStep, totalSteps } = useTransferTransaction({
     onSuccess: () => {
       form.reset();
       setSelectedContactId(null);
@@ -145,15 +146,15 @@ export default function TransferContainer() {
   return (
     <div className="overflow-hidden relative w-full h-full flex flex-col rounded-lg">
       {/* Background images */}
-      <div className="absolute -top-70 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
+      <div className="absolute -top-70 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none z-0">
         <Image src="/transfer/top-globe.svg" alt="Top globe" className="w-full h-full" width={780} height={736} />
       </div>
-      <div className="absolute -bottom-70 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none">
+      <div className="absolute -bottom-70 flex h-[736.674px] items-center justify-center left-1/2 translate-x-[-50%] w-[780px] pointer-events-none z-0">
         <Image src="/transfer/bottom-globe.svg" alt="Bottom globe" className="w-full h-full" width={780} height={736} />
       </div>
 
       {/* Main content */}
-      <div className="flex flex-col gap-6 items-center justify-center flex-1 px-4">
+      <div className="flex flex-col gap-6 items-center justify-center flex-1 px-4 relative z-10">
         {/* Title section */}
         <div className="flex flex-col items-center justify-center pt-8 relative z-10">
           <div className="text-6xl text-center font-bold uppercase w-full">transfering</div>
@@ -163,11 +164,6 @@ export default function TransferContainer() {
             <div className="text-6xl text-center font-bold uppercase">anyone</div>
           </div>
         </div>
-
-        {/* Loading state */}
-        {isLoading && loadingState && (
-          <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm">{loadingState}</div>
-        )}
 
         <div className="flex flex-col gap-2 mt-20">
           <div className="flex gap-2 items-center justify-center w-full">
@@ -252,12 +248,26 @@ export default function TransferContainer() {
         </div>
 
         {/* Action buttons */}
+        {isLoading && loadingState && (
+          <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+            <div className="text-sm text-gray-500">
+              Step {loadingStep} of {totalSteps} — {loadingState}
+            </div>
+            <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${(loadingStep / totalSteps) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
         <div className="flex gap-2 items-center justify-center w-full max-w-xs">
           <button
             onClick={handleAddToBatch}
             disabled={isLoading || !isAmountValid || !watchedRecipient}
-            className="bg-main-black flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
+            className="bg-main-black flex items-center justify-center gap-2 px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
           >
+            {isLoading && <Spinner />}
             <span className="font-medium xl:text-base text-xs text-center text-white tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Add to batch"}
             </span>
@@ -265,8 +275,9 @@ export default function TransferContainer() {
           <button
             onClick={form.handleSubmit(handleTransfer)}
             disabled={isLoading || !isAmountValid || !watchedRecipient}
-            className="bg-pink-350 flex items-center justify-center px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
+            className="bg-pink-350 flex items-center justify-center gap-2 px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
+            {isLoading && <Spinner />}
             <span className="font-medium xl:text-base text-xs text-center tracking-[-0.16px]">
               {isLoading ? "Processing..." : "Transfer now"}
             </span>

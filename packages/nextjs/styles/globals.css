@@ -188,6 +188,16 @@
     /* margin-bottom: 0.5rem; */
     line-height: 1;
   }
+
+  /* Override browser autofill styles */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px white inset !important;
+    -webkit-text-fill-color: var(--color-main-black) !important;
+    transition: 5000s ease-in-out 0s;
+  }
 }
 
 :root,
