@@ -139,7 +139,7 @@ const TransactionSummary: React.FC<TransactionSummaryProps> = ({
           className="flex items-center justify-center px-5 py-3 rounded-lg w-full disabled:opacity-50 bg-main-pink"
         >
           <span className="font-semibold text-sm text-center">
-            {isLoading ? loadingState || "Processing..." : `Submit batch`}
+            {isLoading ? loadingState || "Processing..." : `Propose batch`}
           </span>
         </button>
       </div>
