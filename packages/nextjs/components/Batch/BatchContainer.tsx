@@ -292,6 +292,8 @@ export default function BatchContainer() {
     proposeBatch,
     isLoading: isProposing,
     loadingState,
+    loadingStep,
+    totalSteps,
   } = useBatchTransaction({
     onSuccess: async () => {
       setSelectedItems(new Set());
@@ -439,6 +441,8 @@ export default function BatchContainer() {
             onConfirm={handleProposeBatch}
             isLoading={isProposing}
             loadingState={loadingState}
+            loadingStep={loadingStep}
+            totalSteps={totalSteps}
             accountId={accountId}
           />
         </div>
@@ -452,6 +456,8 @@ export default function BatchContainer() {
         onConfirm={handleProposeBatch}
         isLoading={isProposing}
         loadingState={loadingState}
+        loadingStep={loadingStep}
+        totalSteps={totalSteps}
         accountId={accountId}
       />
     </div>

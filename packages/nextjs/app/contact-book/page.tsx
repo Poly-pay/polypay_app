@@ -119,7 +119,7 @@ export default function AddressBookPage() {
 
             <div className="flex items-center gap-2">
               <button
-                className="bg-grey-100 rounded-lg font-medium text-sm text-gray-700 transition-colors cursor-pointer w-28 h-12"
+                className="bg-grey-100 rounded-lg font-medium text-sm text-gray-700 transition-colors cursor-pointer h-12 px-3 flex items-center gap-1"
                 onClick={() =>
                   modalManager.openModal?.("createGroup", {
                     accountId,
@@ -128,10 +128,22 @@ export default function AddressBookPage() {
                   })
                 }
               >
+                <Image src="/contact-book/new-group.svg" alt="New group" width={20} height={20} />
                 New group
               </button>
               <button
-                className="bg-main-violet text-white rounded-lg text-sm font-medium transition-colors cursor-pointer w-28 h-12"
+                className="bg-main-black text-white rounded-lg text-sm font-medium transition-colors cursor-pointer h-12 px-3 flex items-center gap-1"
+                onClick={() =>
+                  modalManager.openModal?.("createBatchFromContacts", {
+                    accountId,
+                  })
+                }
+              >
+                <Image src="/contact-book/create-batch.svg" alt="Create batch" width={20} height={20} />
+                Create batch
+              </button>
+              <button
+                className="bg-main-violet text-white rounded-lg text-sm font-medium transition-colors cursor-pointer h-12 px-3 flex items-center gap-1"
                 onClick={() =>
                   modalManager.openModal?.("createContact", {
                     accountId,
@@ -140,7 +152,7 @@ export default function AddressBookPage() {
                   })
                 }
               >
-                New contact
+                <Image src="/contact-book/new-contact.svg" alt="New contact" width={20} height={20} /> New contact
               </button>
             </div>
           </div>

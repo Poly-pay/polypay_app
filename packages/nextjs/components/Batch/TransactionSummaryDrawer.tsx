@@ -19,6 +19,8 @@ interface TransactionSummaryDrawerProps {
   onConfirm?: () => void;
   isLoading?: boolean;
   loadingState?: string;
+  loadingStep?: number;
+  totalSteps?: number;
 }
 
 export const TransactionSummaryDrawer = memo(function TransactionSummaryDrawer({
@@ -29,6 +31,8 @@ export const TransactionSummaryDrawer = memo(function TransactionSummaryDrawer({
   onConfirm,
   isLoading = false,
   loadingState = "",
+  loadingStep = 0,
+  totalSteps = 4,
 }: TransactionSummaryDrawerProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -68,6 +72,8 @@ export const TransactionSummaryDrawer = memo(function TransactionSummaryDrawer({
             accountId={accountId}
             isLoading={isLoading}
             loadingState={loadingState}
+            loadingStep={loadingStep}
+            totalSteps={totalSteps}
             className="h-full"
           />
         </div>

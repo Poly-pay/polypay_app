@@ -54,6 +54,7 @@ const modals: ModalRegistry = {
   disclaimer: dynamic(() => import("./DisclaimerModal"), { ssr: false }),
   claimReward: dynamic(() => import("./ClaimRewardModal"), { ssr: false }),
   questIntro: dynamic(() => import("./QuestIntroModal"), { ssr: false }),
+  createBatchFromContacts: dynamic(() => import("./CreateBatchFromContactsModal"), { ssr: false }),
 };
 
 type ModalInstance = {
