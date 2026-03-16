@@ -30,4 +30,5 @@ export type ModalName =
   | "switchAccount"
   | "disclaimer"
   | "claimReward"
-  | "questIntro";
+  | "questIntro"
+  | "createBatchFromContacts";
