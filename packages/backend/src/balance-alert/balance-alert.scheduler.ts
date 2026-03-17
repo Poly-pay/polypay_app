@@ -42,14 +42,12 @@ export class BalanceAlertScheduler {
       {
         name: isMainnet ? 'Horizen Mainnet' : 'Horizen Testnet',
         chain: getChain(network as 'mainnet' | 'testnet'),
-        // threshold: 100000000000000n, // 0.0001 ETH
-        threshold: 1000000000000000000n, // 0.0001 ETH
+        threshold: 100000000000000n, // 0.0001 ETH
       },
       {
         name: isMainnet ? 'Base Mainnet' : 'Base Sepolia',
         chain: isMainnet ? base : baseSepolia,
-        // threshold: 500000000000000n, // 0.0005 ETH
-        threshold: 5000000000000000000n, // 0.0005 ETH
+        threshold: 500000000000000n, // 0.0005 ETH
       },
     ];
 
@@ -58,9 +56,8 @@ export class BalanceAlertScheduler {
     );
   }
 
-  // Production: 6:00 AM Vietnam (23:00 UTC)
-  // @Cron('0 23 * * *', { timeZone: 'UTC' })
-  @Cron('*/10 * * * * *')
+  // 6:00 AM Vietnam (23:00 UTC)
+  @Cron('0 23 * * *', { timeZone: 'UTC' })
   async checkBalances() {
     this.logger.log('Running daily relayer balance check');
 
