@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { PoolStats } from "./PoolStats";
 import { getContractConfigByChainId, getTokenBySymbol } from "@polypay/shared";
 import { useAccount } from "wagmi";
 import { MIXER_DENOMINATIONS, MIXER_SUPPORTED_CHAIN_IDS } from "~~/configs/mixer.config";
-import { useMyAccounts } from "~~/hooks";
 import type { MixerDepositSlot } from "~~/hooks/app/useMixerKeys";
 import { useMixerWithdraw } from "~~/hooks/app/useMixerWithdraw";
+import { useAccountStore } from "~~/services/store";
 import { notification } from "~~/utils/scaffold-eth";
 
 const TOKEN_KEYS = ["ETH", "ZEN", "USDC"] as const;
@@ -34,8 +34,16 @@ export function WithdrawTab() {
         ? MIXER_DENOMINATIONS.ZEN
         : MIXER_DENOMINATIONS.USDC;
 
-  const { data: accounts = [] } = useMyAccounts();
+  const { currentAccount } = useAccountStore();
   const { withdraw, getWithdrawableSlots, loadingState, setError, isReady } = useMixerWithdraw();
+
+  useEffect(() => {
+    if (currentAccount?.chainId === chainId) {
+      setRecipient(currentAccount.address);
+    } else {
+      setRecipient("");
+    }
+  }, [chainId, currentAccount?.chainId, currentAccount?.address]);
 
   const loadSlots = async () => {
     setError(null);
@@ -47,9 +55,6 @@ export function WithdrawTab() {
       const { slots: list, commitments } = await getWithdrawableSlots(chainId, tokenAddress, denomination);
       setSlots(list);
       setCachedCommitments(commitments);
-      if (list.length > 0 && !recipient && accounts.length > 0) {
-        setRecipient(accounts[0].address ?? "");
-      }
     } catch (e: any) {
       notification.error(e?.message ?? "Failed to load deposits");
     } finally {
@@ -186,11 +191,11 @@ export function WithdrawTab() {
               onChange={e => setRecipient(e.target.value)}
             >
               <option value="">Select or type below</option>
-              {accounts.map(a => (
-                <option key={a.id} value={a.address}>
-                  {a.name ?? a.address?.slice(0, 10)}...
+              {currentAccount?.chainId === chainId && (
+                <option value={currentAccount.address}>
+                  {currentAccount.name ?? currentAccount.address?.slice(0, 10)}...
                 </option>
-              ))}
+              )}
             </select>
             <input
               type="text"

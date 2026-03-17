@@ -41,7 +41,7 @@ export function useMixerDeposit() {
         throw new Error("Mixer is not deployed on this network");
       }
       const { commitments } = await mixerApi.getDeposits({ chainId, token, denomination });
-      const { commitment } = await getNextDepositIndex(commitments);
+      const { commitment } = await getNextDepositIndex(commitments, token, denomination);
       const commitmentHex = bigintToBytes32Hex(commitment);
       const tokenAddress = token as `0x${string}`;
       const denomBigInt = BigInt(denomination);

@@ -56,7 +56,7 @@ export function useMixerWithdraw() {
         token,
         denomination,
       });
-      const allSlots = await findMyDeposits(commitments, leafIndices);
+      const allSlots = await findMyDeposits(commitments, leafIndices, token, denomination);
       const poolId = getPoolId(token, denomination);
       const withdrawable: MixerDepositSlot[] = [];
       for (const slot of allSlots) {

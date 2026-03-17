@@ -2,16 +2,40 @@
 
 import { useCallback, useRef, useState } from "react";
 import { BN254_MODULUS, poseidonHash2 } from "@polypay/shared";
-import { keccak256 } from "viem";
+import { encodePacked, keccak256 } from "viem";
 import { useWalletClient } from "wagmi";
 
 const MIXER_SECRET_MESSAGE = "polypay-mixer-secret";
+const FIND_DEPOSITS_BATCH_SIZE = 50;
+
+/**
+ * TODO: Mixer UX improvements (not yet implemented)
+ *
+ * 1. Progressive loading: Update UI after each batch instead of waiting for all.
+ *    - findMyDeposits: add onBatchComplete(slots) callback or return AsyncGenerator
+ *    - loadSlots: call setSlots incrementally as batches complete
+ *
+ * 2. localStorage cache (scope by wallet address):
+ *    - Key: mixer_deposit_n:{walletAddress}:{chainId}:{poolId} -> [n1, n2, ...]
+ *    - On deposit: save n used (from getNextDepositIndex)
+ *    - On load: try known n first; if all match, skip scan. Fallback to scan if no cache.
+ *    - Use address from useAccount/useWalletClient - when user switches wallet, different cache.
+ *    - Consider Zustand store + persist if fits app patterns.
+ */
 
 export interface MixerDepositSlot {
   n: number;
   commitment: bigint;
   nullifier: bigint;
   leafIndex: number;
+}
+
+/** poolId as Field (bigint mod BN254) for nullifier derivation */
+function poolIdToField(token: string, denomination: string): bigint {
+  const poolId = keccak256(
+    encodePacked(["address", "uint256"], [token as `0x${string}`, BigInt(denomination)]),
+  );
+  return BigInt(poolId) % BN254_MODULUS;
 }
 
 export function useMixerKeys() {
@@ -59,8 +83,15 @@ export function useMixerKeys() {
   }, [deriveBaseSecret]);
 
   const computeCommitmentAndNullifier = useCallback(
-    async (secret: bigint, n: number): Promise<{ commitment: bigint; nullifier: bigint }> => {
-      const nullifier = await poseidonHash2(secret, BigInt(n));
+    async (
+      secret: bigint,
+      n: number,
+      token: string,
+      denomination: string,
+    ): Promise<{ commitment: bigint; nullifier: bigint }> => {
+      const poolIdField = poolIdToField(token, denomination);
+      const inner = await poseidonHash2(secret, BigInt(n));
+      const nullifier = await poseidonHash2(inner, poolIdField);
       const commitment = await poseidonHash2(secret, nullifier);
       return { commitment, nullifier };
     },
@@ -71,13 +102,17 @@ export function useMixerKeys() {
    * Find smallest n such that commitment_n is not in the pool (for next deposit).
    */
   const getNextDepositIndex = useCallback(
-    async (commitmentsHex: string[]): Promise<{ n: number; commitment: bigint; nullifier: bigint }> => {
+    async (
+      commitmentsHex: string[],
+      token: string,
+      denomination: string,
+    ): Promise<{ n: number; commitment: bigint; nullifier: bigint }> => {
       const secret = await ensureBaseSecret();
       const set = new Set(
         commitmentsHex.map(c => (c.startsWith("0x") ? BigInt(c).toString() : BigInt("0x" + c).toString())),
       );
       for (let n = 0; ; n++) {
-        const { commitment, nullifier } = await computeCommitmentAndNullifier(secret, n);
+        const { commitment, nullifier } = await computeCommitmentAndNullifier(secret, n, token, denomination);
         const key = commitment.toString();
         if (!set.has(key)) return { n, commitment, nullifier };
       }
@@ -87,9 +122,15 @@ export function useMixerKeys() {
 
   /**
    * Find all n such that commitment_n is in the pool; returns slots with leafIndex from the index list.
+   * Uses parallel batches to speed up scanning.
    */
   const findMyDeposits = useCallback(
-    async (commitmentsHex: string[], leafIndices: number[]): Promise<MixerDepositSlot[]> => {
+    async (
+      commitmentsHex: string[],
+      leafIndices: number[],
+      token: string,
+      denomination: string,
+    ): Promise<MixerDepositSlot[]> => {
       if (commitmentsHex.length !== leafIndices.length) return [];
       const secret = await ensureBaseSecret();
       const commitmentToLeafIndex = new Map<string, number>();
@@ -99,12 +140,19 @@ export function useMixerKeys() {
       });
       const result: MixerDepositSlot[] = [];
       const maxN = Math.max(commitmentsHex.length * 2, 100);
-      for (let n = 0; n < maxN; n++) {
-        const { commitment, nullifier } = await computeCommitmentAndNullifier(secret, n);
-        const key = commitment.toString();
-        const leafIndex = commitmentToLeafIndex.get(key);
-        if (leafIndex !== undefined) {
-          result.push({ n, commitment, nullifier, leafIndex });
+      for (let start = 0; start < maxN; start += FIND_DEPOSITS_BATCH_SIZE) {
+        const batch = Array.from({ length: FIND_DEPOSITS_BATCH_SIZE }, (_, i) => start + i)
+          .filter(n => n < maxN)
+          .map(n =>
+            computeCommitmentAndNullifier(secret, n, token, denomination).then(r => ({ n, ...r })),
+          );
+        const batchResults = await Promise.all(batch);
+        for (const { n, commitment, nullifier } of batchResults) {
+          const key = commitment.toString();
+          const leafIndex = commitmentToLeafIndex.get(key);
+          if (leafIndex !== undefined) {
+            result.push({ n, commitment, nullifier, leafIndex });
+          }
         }
       }
       return result.sort((a, b) => a.leafIndex - b.leafIndex);
