@@ -77,6 +77,7 @@ export function WithdrawTab() {
         slot: selectedSlot,
         commitments: cachedCommitments.length > 0 ? cachedCommitments : undefined,
       });
+      // TODO: Link to full transaction details (e.g., explorer URL) when showing this tx hash.
       notification.success(`Withdraw successful. Tx: ${result.txHash}`);
       setSelectedSlot(null);
       setSlots(prev => prev.filter(s => s.leafIndex !== selectedSlot.leafIndex));

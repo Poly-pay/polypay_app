@@ -6,6 +6,7 @@
 - [Privacy Architecture](privacy-architecture.md)
 - [Zero-Knowledge Implementation](zero-knowledge-implementation.md)
 - [ZK Authentication](zk-authentication.md)
+- [Private Transfer](private-transfer.md)
 - [zkVerify, Horizen & Base Integration](zkverify-horizen-integration.md)
 - [Architecture](architecture.md)
 - [Developer Documentation](developer-documentation/README.md)
@@ -13,3 +14,4 @@
   - [API Documentation](developer-documentation/api-documentation.md)
   - [Database Connection Guide](developer-documentation/database-connection-guide.md)
   - [Circuit Code Walkthrough](developer-documentation/circuit-code-walkthrough.md)
+  - [Private Transfer Flow](developer-documentation/private-transfer-flow.md)

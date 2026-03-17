@@ -84,8 +84,7 @@ export function useMixerWithdraw() {
 
       setLoadingState("Fetching deposits...");
       const resolvedCommitments =
-        params.commitments ??
-        (await mixerApi.getDeposits({ chainId, token, denomination })).commitments;
+        params.commitments ?? (await mixerApi.getDeposits({ chainId, token, denomination })).commitments;
 
       setLoadingState("Building Merkle path...");
       const { root, siblings, pathIndices } = await getRootAndPath(resolvedCommitments, slot.leafIndex);

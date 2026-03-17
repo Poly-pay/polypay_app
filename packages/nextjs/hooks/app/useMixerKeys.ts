@@ -32,9 +32,7 @@ export interface MixerDepositSlot {
 
 /** poolId as Field (bigint mod BN254) for nullifier derivation */
 function poolIdToField(token: string, denomination: string): bigint {
-  const poolId = keccak256(
-    encodePacked(["address", "uint256"], [token as `0x${string}`, BigInt(denomination)]),
-  );
+  const poolId = keccak256(encodePacked(["address", "uint256"], [token as `0x${string}`, BigInt(denomination)]));
   return BigInt(poolId) % BN254_MODULUS;
 }
 
@@ -143,9 +141,7 @@ export function useMixerKeys() {
       for (let start = 0; start < maxN; start += FIND_DEPOSITS_BATCH_SIZE) {
         const batch = Array.from({ length: FIND_DEPOSITS_BATCH_SIZE }, (_, i) => start + i)
           .filter(n => n < maxN)
-          .map(n =>
-            computeCommitmentAndNullifier(secret, n, token, denomination).then(r => ({ n, ...r })),
-          );
+          .map(n => computeCommitmentAndNullifier(secret, n, token, denomination).then(r => ({ n, ...r })));
         const batchResults = await Promise.all(batch);
         for (const { n, commitment, nullifier } of batchResults) {
           const key = commitment.toString();

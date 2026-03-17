@@ -9,6 +9,7 @@ This section covers:
 - [Getting Started](getting-started.md) - Prerequisites, setup, and running the project locally
 - [Database Connection Guide](database-connection-guide.md) - How to connect and query the PostgreSQL database
 - [Circuit Code Walkthrough](circuit-code-walkthrough.md) - Detailed explanation of the Noir ZK circuit
+- [Private Transfer Flow](private-transfer-flow.md) - End-to-end technical flow of the mixer / private transfer feature
 
 ## Tech Stack
 

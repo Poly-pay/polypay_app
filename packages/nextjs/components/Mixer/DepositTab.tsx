@@ -44,6 +44,7 @@ export function DepositTab() {
         denomination,
         value,
       });
+      // TODO: Include deposit transaction hash in this notification once available from the hook.
       notification.success("Deposit submitted. Confirm in your wallet.");
     } catch (e: any) {
       notification.error(e?.message ?? "Deposit failed");

@@ -51,12 +51,15 @@ export class MixerService {
       `Submitting mixer proof for chainId=${chainId}, recipient=${recipient}`,
     );
 
-    const { jobId, status: submitStatus, txHash: zkVerifyTxHash } =
-      await this.zkVerifyService.submitProofAndWaitFinalized(
-        { proof, publicInputs, vk: dto.vk },
-        'mixer',
-        chainId,
-      );
+    const {
+      jobId,
+      status: submitStatus,
+      txHash: zkVerifyTxHash,
+    } = await this.zkVerifyService.submitProofAndWaitFinalized(
+      { proof, publicInputs, vk: dto.vk },
+      'mixer',
+      chainId,
+    );
 
     if (submitStatus === 'Failed' || !jobId) {
       throw new BadRequestException('Proof submission failed');
@@ -81,7 +84,10 @@ export class MixerService {
     if (!aggregationResult) {
       await this.prisma.mixerWithdrawRequest.update({
         where: { id: request.id },
-        data: { status: MixerWithdrawStatus.FAILED, errorMessage: 'MIXER_AGGREGATION_TIMEOUT' },
+        data: {
+          status: MixerWithdrawStatus.FAILED,
+          errorMessage: 'MIXER_AGGREGATION_TIMEOUT',
+        },
       });
       throw new BadRequestException('MIXER_AGGREGATION_TIMEOUT');
     }
@@ -136,9 +142,11 @@ export class MixerService {
     jobId: string,
     maxAttempts = MIXER_AGGREGATION_MAX_ATTEMPTS,
     intervalMs = MIXER_AGGREGATION_INTERVAL_MS,
-  ): Promise<
-    { aggregationId?: number; aggregationDetails?: any; updatedAt?: string } | null
-  > {
+  ): Promise<{
+    aggregationId?: number;
+    aggregationDetails?: any;
+    updatedAt?: string;
+  } | null> {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const jobStatus = await this.zkVerifyService.getJobStatus(jobId);
