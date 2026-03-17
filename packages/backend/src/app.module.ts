@@ -18,6 +18,7 @@ import { AdminModule } from './admin/admin.module';
 import { PartnerModule } from './partner/partner.module';
 import { QuestModule } from './quest/quest.module';
 import { RewardModule } from './reward/reward.module';
+import { BalanceAlertModule } from './balance-alert/balance-alert.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -40,6 +41,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PartnerModule,
     QuestModule,
     RewardModule,
+    BalanceAlertModule,
     ScheduleModule.forRoot(),
   ],
 })

@@ -4,13 +4,20 @@ import databaseConfig from './database.config';
 import appConfig from './app.config';
 import jwtConfig from './jwt.config';
 import relayerConfig from './relayer.config';
+import telegramConfig from './telegram.config';
 import { validationSchema } from './env.validation';
 
 @Module({
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, relayerConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        jwtConfig,
+        relayerConfig,
+        telegramConfig,
+      ],
       envFilePath: ['.env.local', '.env'],
       cache: true,
       expandVariables: true,
