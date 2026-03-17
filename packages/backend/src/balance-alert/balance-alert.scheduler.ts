@@ -56,8 +56,8 @@ export class BalanceAlertScheduler {
     );
   }
 
-  // 6:00 AM Vietnam (23:00 UTC)
-  @Cron('0 23 * * *', { timeZone: 'UTC' })
+  // 7:00 AM Vietnam (00:00 UTC)
+  @Cron('0 0 * * *', { timeZone: 'UTC' })
   async checkBalances() {
     this.logger.log('Running daily relayer balance check');
 
