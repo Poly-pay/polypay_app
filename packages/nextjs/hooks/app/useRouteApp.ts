@@ -110,6 +110,7 @@ export function useAppRouter() {
   const goToTransfer = useCallback(() => router.push(Routes.TRANSFER.path), [router]);
   const goToBatch = useCallback(() => router.push(Routes.BATCH.path), [router]);
   const goToMobile = useCallback(() => router.push(Routes.MOBILE.path), [router]);
+  const goToMixer = useCallback(() => router.push(Routes.MIXER.path), [router]);
 
   return {
     navigateTo,
@@ -123,6 +124,7 @@ export function useAppRouter() {
     goToTransfer,
     goToBatch,
     goToMobile,
+    goToMixer,
     isActiveRoute,
     currentRoute,
     pathname,

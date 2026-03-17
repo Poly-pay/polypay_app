@@ -47,6 +47,12 @@ const Routes = {
     name: "mobile",
     title: "Mobile",
   },
+  MIXER: {
+    path: "/mixer",
+    name: "mixer",
+    title: "Mixer",
+    icon: "/sidebar/transfer.svg", //TODO: change icon
+  },
 } as const;
 
 export default Routes;

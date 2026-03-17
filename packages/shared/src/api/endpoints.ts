@@ -86,4 +86,11 @@ export const API_ENDPOINTS = {
     base: "/api/claims",
     summary: "/api/claims/summary",
   },
+
+  mixer: {
+    withdraw: "/api/mixer/withdraw",
+    deposits: "/api/mixer/deposits",
+    depositCount: "/api/mixer/deposit-count",
+    registerVk: "/api/mixer/register-vk", // TODO: remove this endpoint
+  },
 } as const;

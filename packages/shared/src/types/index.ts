@@ -10,3 +10,4 @@ export * from "./auth";
 export * from "./feature-request";
 export * from "./quest";
 export * from "./reward";
+export * from "./mixer";

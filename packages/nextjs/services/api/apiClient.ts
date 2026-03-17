@@ -17,8 +17,12 @@ export const apiClient: AxiosInstance = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Increase timeout for auth endpoints (ZK proof takes time)
-    if (config.url?.includes("/auth") || config.url?.includes("/transaction")) {
+    // Increase timeout for auth and ZK-heavy endpoints (proof generation + verification)
+    if (
+      config.url?.includes("/auth") ||
+      config.url?.includes("/transaction") ||
+      config.url?.includes("/mixer/withdraw")
+    ) {
       config.timeout = API_TIMEOUT_ZK;
     }
 

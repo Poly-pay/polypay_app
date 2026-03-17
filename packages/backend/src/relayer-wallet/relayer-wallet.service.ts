@@ -11,7 +11,11 @@ import {
   getChainById,
   getContractConfigByChainId,
 } from '@polypay/shared';
-import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
+import {
+  METAMULTISIG_ABI,
+  METAMULTISIG_BYTECODE,
+  MIXER_ABI,
+} from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
@@ -24,6 +28,7 @@ type RelayerChainClient = {
     zkVerifyAddress: `0x${string}`;
     vkHash: string;
     poseidonT3Address: `0x${string}` | string;
+    mixerAddress: `0x${string}`;
   };
 };
 
@@ -361,5 +366,69 @@ export class RelayerService {
     );
 
     return { txHash };
+  }
+
+  /**
+   * Execute Mixer withdraw on-chain (relayer wallet pays gas)
+   */
+  async executeMixerWithdraw(
+    chainId: number,
+    token: string,
+    denomination: string,
+    recipient: string,
+    nullifierHash: string,
+    root: string,
+    proof: {
+      aggregationId: string;
+      domainId: number;
+      zkMerklePath: string[];
+      leafCount: number;
+      index: number;
+    },
+  ): Promise<string> {
+    const { walletClient, publicClient, chain, contractConfig } =
+      this.getChainClient(chainId);
+
+    const mixerAddress = contractConfig.mixerAddress;
+    if (
+      !mixerAddress ||
+      mixerAddress === '0x0000000000000000000000000000000000000000'
+    ) {
+      throw new Error(`Mixer not deployed on chainId ${chainId}`);
+    }
+
+    const args = [
+      token as `0x${string}`,
+      BigInt(denomination),
+      recipient as `0x${string}`,
+      nullifierHash as `0x${string}`,
+      root as `0x${string}`,
+      {
+        aggregationId: BigInt(proof.aggregationId),
+        domainId: BigInt(proof.domainId),
+        zkMerklePath: proof.zkMerklePath as `0x${string}`[],
+        leafCount: BigInt(proof.leafCount),
+        index: BigInt(proof.index),
+      },
+    ] as const;
+
+    const txHash = await walletClient.writeContract({
+      address: mixerAddress,
+      abi: MIXER_ABI,
+      functionName: 'withdraw',
+      args,
+      account: this.account,
+      chain,
+    });
+
+    this.logger.log(`Mixer withdraw tx sent: ${txHash}`);
+
+    const receipt = await waitForReceiptWithRetry(publicClient, txHash);
+
+    if (receipt.status === 'reverted') {
+      throw new Error(`Mixer withdraw reverted. TxHash: ${txHash}`);
+    }
+
+    return txHash;
   }
 }
