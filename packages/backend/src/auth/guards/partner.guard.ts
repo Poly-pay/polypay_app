@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { timingSafeEqual } from 'crypto';
 
 @Injectable()
 export class PartnerGuard implements CanActivate {
@@ -12,7 +13,7 @@ export class PartnerGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers['x-partner-key'];
+    const apiKey = request.headers['x-partner-key'] as string | undefined;
 
     const partnerApiKey = this.configService.get<string>('PARTNER_API_KEY');
 
@@ -20,7 +21,11 @@ export class PartnerGuard implements CanActivate {
       throw new UnauthorizedException('Partner API key not configured');
     }
 
-    if (!apiKey || apiKey !== partnerApiKey) {
+    if (
+      !apiKey ||
+      apiKey.length !== partnerApiKey.length ||
+      !timingSafeEqual(Buffer.from(apiKey), Buffer.from(partnerApiKey))
+    ) {
       throw new UnauthorizedException('Invalid partner API key');
     }
 

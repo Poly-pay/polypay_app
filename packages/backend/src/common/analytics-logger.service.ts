@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  ANALYTICS_LOG_WRITE_DELAY_MAX,
+  ADDRESS_LOG_PREVIEW_LENGTH,
+} from './constants/timing';
 
 @Injectable()
 export class AnalyticsLoggerService {
@@ -23,7 +27,7 @@ export class AnalyticsLoggerService {
    * Write log to local file (for local development)
    */
   private writeFileLog(logEntry: string, debugMsg: string) {
-    const delay = Math.floor(Math.random() * 500);
+    const delay = Math.floor(Math.random() * ANALYTICS_LOG_WRITE_DELAY_MAX);
 
     setTimeout(() => {
       try {
@@ -66,7 +70,7 @@ export class AnalyticsLoggerService {
 
     this.writeFileLog(
       logEntry,
-      `Logged LOGIN: ${walletAddress.substring(0, 10)}...`,
+      `Logged LOGIN: ${walletAddress.substring(0, ADDRESS_LOG_PREVIEW_LENGTH)}...`,
     );
 
     this.writeCloudLog({
@@ -84,7 +88,7 @@ export class AnalyticsLoggerService {
 
     this.writeFileLog(
       logEntry,
-      `Logged CREATE_ACCOUNT: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}...`,
+      `Logged CREATE_ACCOUNT: ${addr.substring(0, ADDRESS_LOG_PREVIEW_LENGTH)}... | ${accountAddress.substring(0, ADDRESS_LOG_PREVIEW_LENGTH)}...`,
     );
 
     this.writeCloudLog({
@@ -108,7 +112,7 @@ export class AnalyticsLoggerService {
 
     this.writeFileLog(
       logEntry,
-      `Logged ${action}: ${addr.substring(0, 10)}... | ${accountAddress.substring(0, 10)}...`,
+      `Logged ${action}: ${addr.substring(0, ADDRESS_LOG_PREVIEW_LENGTH)}... | ${accountAddress.substring(0, ADDRESS_LOG_PREVIEW_LENGTH)}...`,
     );
 
     this.writeCloudLog({

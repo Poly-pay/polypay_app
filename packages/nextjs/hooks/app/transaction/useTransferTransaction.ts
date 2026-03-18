@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createTransactionSteps } from "./transactionSteps";
 import { ResolvedToken, TxType, ZERO_ADDRESS, encodeERC20Transfer, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
@@ -20,16 +21,10 @@ interface UseTransferTransactionOptions {
   onSuccess?: () => void;
 }
 
-const TRANSFER_STEPS = [
-  { id: 1, label: "Preparing your transfer..." },
-  { id: 2, label: "Waiting for wallet approval..." },
-  { id: 3, label: "Securing your transaction..." },
-  { id: 4, label: "Almost done, submitting..." },
-];
-
 export const useTransferTransaction = (options?: UseTransferTransactionOptions) => {
-  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
-    useStepLoading(TRANSFER_STEPS);
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } = useStepLoading(
+    createTransactionSteps("transfer"),
+  );
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
@@ -52,7 +47,6 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       const { nonce } = await reserveNonce(metaMultiSigWallet.address);
 
       // 2. Get current threshold and commitments
-      startStep(1);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
       // 3. Parse amount based on token type

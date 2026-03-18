@@ -8,6 +8,7 @@ import { useCreateGroup } from "~~/hooks";
 import { useZodForm } from "~~/hooks/form";
 import { createGroupSchema } from "~~/lib/form/schemas";
 import { ModalProps } from "~~/types/modal";
+import { formatAddress } from "~~/utils/format";
 
 interface CreateGroupModalProps extends ModalProps {
   onSuccess?: () => void;
@@ -25,9 +26,9 @@ const avatarColors = [
 
 const getAvatarColor = (index: number): string => avatarColors[index % avatarColors.length];
 
-const formatAddress = (address: string): string => {
+const formatGroupAddress = (address: string): string => {
   if (!address) return "";
-  return `[${address.slice(0, 4)}...${address.slice(-4)}]`;
+  return `[${formatAddress(address, { start: 4, end: 4 })}]`;
 };
 
 const getContactGroups = (contact: Contact): string => {
@@ -169,7 +170,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
                       </div>
 
                       <span className="text-sm text-main-violet font-medium flex-shrink-0">
-                        {formatAddress(contact.address)}
+                        {formatGroupAddress(contact.address)}
                       </span>
                     </div>
                   );

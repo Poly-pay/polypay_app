@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TransactionController } from './transaction.controller';
 import { TransactionService } from './transaction.service';
+import { TransactionExecutorService } from './transaction-executor.service';
 import { ZkVerifyModule } from '@/zkverify/zkverify.module';
 import { DatabaseModule } from '@/database/database.module';
 import { RelayerModule } from '@/relayer-wallet/relayer-wallet.module';
@@ -19,7 +20,11 @@ import { QuestModule } from '@/quest/quest.module';
     QuestModule,
   ],
   controllers: [TransactionController],
-  providers: [TransactionService, AnalyticsLoggerService],
+  providers: [
+    TransactionService,
+    TransactionExecutorService,
+    AnalyticsLoggerService,
+  ],
   exports: [TransactionService],
 })
 export class TransactionModule {}

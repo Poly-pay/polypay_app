@@ -298,20 +298,9 @@ export class AccountService {
       }
     }
 
-    // Return normalized response objects (similar to findByAddress)
-    return createdAccounts.map((account) => ({
-      id: account.id,
-      address: account.address,
-      name: account.name,
-      threshold: account.threshold,
-      chainId: account.chainId,
-      createdAt: account.createdAt,
-      signers: account.signers.map((as) => ({
-        commitment: as.user.commitment,
-        name: as.displayName,
-        isCreator: as.isCreator,
-      })),
-    }));
+    return createdAccounts.map((account) =>
+      this.formatAccountResponse(account),
+    );
   }
 
   /**
@@ -333,19 +322,7 @@ export class AccountService {
       throw new NotFoundException('Account not found');
     }
 
-    return {
-      id: account.id,
-      address: account.address,
-      name: account.name,
-      threshold: account.threshold,
-      chainId: account.chainId,
-      createdAt: account.createdAt,
-      signers: account.signers.map((as) => ({
-        commitment: as.user.commitment,
-        name: as.displayName,
-        isCreator: as.isCreator,
-      })),
-    };
+    return this.formatAccountResponse(account);
   }
 
   /**
@@ -363,7 +340,23 @@ export class AccountService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return accounts.map((account) => ({
+    return accounts.map((account) => this.formatAccountResponse(account));
+  }
+
+  private formatAccountResponse(account: {
+    id: string;
+    address: string;
+    name: string | null;
+    threshold: number;
+    chainId: number;
+    createdAt: Date;
+    signers: Array<{
+      isCreator: boolean;
+      displayName: string | null;
+      user: { commitment: string };
+    }>;
+  }) {
+    return {
       id: account.id,
       address: account.address,
       name: account.name,
@@ -375,7 +368,7 @@ export class AccountService {
         name: as.displayName,
         isCreator: as.isCreator,
       })),
-    }));
+    };
   }
 
   /**

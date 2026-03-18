@@ -15,6 +15,8 @@ import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
+import { SUPPORTED_CHAIN_IDS } from '@/common/constants/campaign';
+import { GAS_BUFFER_EXECUTE } from '@/common/constants/timing';
 
 type RelayerChainClient = {
   chain: any;
@@ -45,7 +47,7 @@ export class RelayerService {
     this.account = privateKeyToAccount(privateKey);
 
     // Initialize clients for all supported chains
-    const supportedChainIds = [2651420, 84532, 26514, 8453];
+    const supportedChainIds = SUPPORTED_CHAIN_IDS;
 
     for (const chainId of supportedChainIds) {
       const chain = getChainById(chainId);
@@ -151,6 +153,7 @@ export class RelayerService {
       leafCount: number;
       index: number;
     }[],
+    onTxSubmitted?: (txHash: string) => Promise<void>,
   ): Promise<{ txHash: string }> {
     const { publicClient, walletClient, chain } = this.getChainClient(chainId);
 
@@ -336,7 +339,7 @@ export class RelayerService {
 
     this.logger.log(`Gas estimate for execute: ${gasEstimate}`);
 
-    // 4. Execute
+    // 4. Submit transaction to chain
     const txHash = await walletClient.writeContract({
       address: accountAddress as `0x${string}`,
       abi: METAMULTISIG_ABI,
@@ -344,12 +347,18 @@ export class RelayerService {
       args,
       account: this.account,
       chain,
-      gas: gasEstimate + 50000n,
+      gas: gasEstimate + GAS_BUFFER_EXECUTE,
     });
 
     this.logger.log(`Execute tx sent: ${txHash}`);
 
-    // 5. Wait for receipt and verify status
+    // 5. Notify caller of txHash before waiting for receipt
+    //    (caller should persist txHash to DB at this point)
+    if (onTxSubmitted) {
+      await onTxSubmitted(txHash);
+    }
+
+    // 6. Wait for receipt and verify status
     const receipt = await waitForReceiptWithRetry(publicClient, txHash);
 
     if (receipt.status === 'reverted') {

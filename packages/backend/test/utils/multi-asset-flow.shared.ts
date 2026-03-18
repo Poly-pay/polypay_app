@@ -85,7 +85,7 @@ export function buildSingleTransferParams(
 ): { to: `0x${string}`; value: bigint; callData: Hex } {
   const to = amount.scenario.isNative
     ? recipient
-    : (amount.scenario.tokenAddress as `0x${string}`);
+    : amount.scenario.tokenAddress;
   const value = amount.scenario.isNative ? amount.amountBigInt : 0n;
   const callData = amount.scenario.isNative
     ? ('0x' as Hex)
@@ -114,20 +114,16 @@ export function buildBatchCallData(
   scenarioAmounts: ScenarioAmount[],
   recipient: `0x${string}`,
 ): Hex {
-  const recipients = [
-    recipient,
-    recipient,
-    recipient,
-  ] as `0x${string}`[];
+  const recipients = [recipient, recipient, recipient] as `0x${string}`[];
   const amounts = scenarioAmounts.map((a) => a.amountBigInt);
-  const tokenAddresses = scenarioAmounts.map((a) =>
-    a.scenario.tokenAddress ?? (ZERO_ADDRESS as `0x${string}`),
+  const tokenAddresses = scenarioAmounts.map(
+    (a) => a.scenario.tokenAddress ?? (ZERO_ADDRESS as `0x${string}`),
   );
   return encodeBatchTransferMulti(
     recipients,
     amounts,
     tokenAddresses as string[],
-  ) as Hex;
+  );
 }
 
 export function buildBatchCallDataFromParsed(
@@ -135,14 +131,8 @@ export function buildBatchCallDataFromParsed(
 ): Hex {
   const recipients = parsedBatch.map((p) => p.recipient as `0x${string}`);
   const amounts = parsedBatch.map((p) => BigInt(p.amount));
-  const tokenAddresses = parsedBatch.map(
-    (p) => p.tokenAddress || ZERO_ADDRESS,
-  );
-  return encodeBatchTransferMulti(
-    recipients,
-    amounts,
-    tokenAddresses,
-  ) as Hex;
+  const tokenAddresses = parsedBatch.map((p) => p.tokenAddress || ZERO_ADDRESS);
+  return encodeBatchTransferMulti(recipients, amounts, tokenAddresses);
 }
 
 /**
@@ -217,10 +207,7 @@ export async function fundAccountForScenario(
       balanceBefore.toString(),
       scenario.decimals,
     ),
-    balanceAfter: formatTokenAmount(
-      balanceAfter.toString(),
-      scenario.decimals,
-    ),
+    balanceAfter: formatTokenAmount(balanceAfter.toString(), scenario.decimals),
   });
 
   return {

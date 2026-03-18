@@ -5,7 +5,12 @@ import axiosRetry from 'axios-retry';
 import { PriceController } from './price.controller';
 import { PriceService } from './price.service';
 import { PriceScheduler } from './price.scheduler';
-import { HTTP_TIMEOUT_PRICE, PRICE_CACHE_TTL } from '@/common/constants/timing';
+import {
+  HTTP_TIMEOUT_PRICE,
+  PRICE_CACHE_TTL,
+  PRICE_API_RETRY_ATTEMPTS,
+  HTTP_STATUS_RATE_LIMIT,
+} from '@/common/constants/timing';
 
 @Module({
   imports: [
@@ -24,12 +29,12 @@ export class PriceModule {
   constructor(private httpService: HttpService) {
     // Configure axios-retry
     axiosRetry(this.httpService.axiosRef, {
-      retries: 3,
+      retries: PRICE_API_RETRY_ATTEMPTS,
       retryDelay: axiosRetry.exponentialDelay,
       retryCondition: (error) => {
         return (
           axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-          error.response?.status === 429
+          error.response?.status === HTTP_STATUS_RATE_LIMIT
         );
       },
       onRetry: (retryCount, error) => {

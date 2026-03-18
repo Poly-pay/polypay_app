@@ -1,5 +1,10 @@
 import { createPublicClient, http, type Hex, parseEther } from 'viem';
-import { horizenMainnet, horizenTestnet, METAMULTISIG_ABI, NetworkValue } from '@polypay/shared';
+import {
+  horizenMainnet,
+  horizenTestnet,
+  METAMULTISIG_ABI,
+  NetworkValue,
+} from '@polypay/shared';
 import { TestSigner } from './signer.util';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
 
@@ -39,7 +44,7 @@ export async function getTransactionHash(
     args: [nonce, to, value, data],
   });
 
-  return txHash as Hex;
+  return txHash;
 }
 
 /**

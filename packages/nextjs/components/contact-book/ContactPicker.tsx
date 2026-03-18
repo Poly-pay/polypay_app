@@ -5,6 +5,7 @@ import { Contact } from "@polypay/shared";
 import { Search, X } from "lucide-react";
 import { useContacts, useGroups } from "~~/hooks";
 import { useClickOutside } from "~~/hooks/useClickOutside";
+import { formatAddress } from "~~/utils/format";
 
 interface ContactPickerProps {
   accountId: string | null;
@@ -49,10 +50,6 @@ export function ContactPicker({ accountId, onSelect, disabled }: ContactPickerPr
     onSelect(contact.address, contact.name, contact.id);
     setIsOpen(false);
     setSearchTerm("");
-  };
-
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   if (!accountId) return null;

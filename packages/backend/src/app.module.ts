@@ -1,4 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@/config/config.module';
 import { IpRestrictMiddleware } from '@/common/middleware/ip-restrict.middleware';
 import { DatabaseModule } from '@/database/database.module';
@@ -24,6 +25,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     ConfigModule,
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 60 }],
+    }),
     DatabaseModule,
     ZkVerifyModule,
     TransactionModule,

@@ -1,8 +1,4 @@
-import {
-  resetDatabase,
-  setupTestApp,
-  teardownTestApp,
-} from '../setup';
+import { resetDatabase, setupTestApp, teardownTestApp } from '../setup';
 import { getSignerA, getSignerB } from '../fixtures/test-users';
 import { loginUser, AuthTokens } from '../utils/auth.util';
 import { TestIdentity, createTestIdentity } from '../utils/identity.util';
@@ -35,7 +31,7 @@ import {
 } from '../utils/multi-asset-flow.shared';
 
 // Timeout 20 minutes for blockchain calls
-jest.setTimeout(1200000); 
+jest.setTimeout(1200000);
 
 describe('Transaction E2E', () => {
   let identityA: TestIdentity;
@@ -108,7 +104,9 @@ describe('Transaction E2E', () => {
 
       // 3 single transfers (ETH, ZEN, USDC)
       for (const amount of scenarioAmounts) {
-        console.log(`[${amount.scenario.name}] Create single transaction - start`);
+        console.log(
+          `[${amount.scenario.name}] Create single transaction - start`,
+        );
 
         const { nonce } = await apiReserveNonce(
           tokensA.accessToken,
@@ -141,13 +139,21 @@ describe('Transaction E2E', () => {
           nullifier: votePayloadA.nullifier,
           ...(amount.scenario.isNative
             ? {}
-            : { tokenAddress: amount.scenario.tokenAddress as `0x${string}` }),
+            : { tokenAddress: amount.scenario.tokenAddress }),
         });
 
-        createdTxs.push({ kind: 'single', scenario: amount.scenario, amount, txId });
-        console.log(`[${amount.scenario.name}] Create single transaction - done`, {
+        createdTxs.push({
+          kind: 'single',
+          scenario: amount.scenario,
+          amount,
           txId,
         });
+        console.log(
+          `[${amount.scenario.name}] Create single transaction - done`,
+          {
+            txId,
+          },
+        );
       }
 
       // 1 batch tx (ETH + ZEN + USDC, same amounts)
@@ -176,7 +182,7 @@ describe('Transaction E2E', () => {
         identityA,
         accountAddress,
         BigInt(batchNonce),
-        accountAddress as `0x${string}`,
+        accountAddress,
         0n,
         batchCallData,
       );
@@ -223,25 +229,26 @@ describe('Transaction E2E', () => {
           if (txDetails.batchData == null) {
             throw new Error(`Batch tx ${txId} missing batchData`);
           }
-          const parsedBatch = JSON.parse(txDetails.batchData) as ParsedBatchItem[];
+          const parsedBatch = JSON.parse(
+            txDetails.batchData,
+          ) as ParsedBatchItem[];
           const callDataApprove = buildBatchCallDataFromParsed(parsedBatch);
 
           const votePayloadB = await generateVotePayload(
             identityB,
             accountAddress,
             BigInt(txDetails.nonce),
-            accountAddress as `0x${string}`,
+            accountAddress,
             0n,
             callDataApprove,
           );
-          await apiApproveTransaction(
-            tokensB.accessToken,
-            txId,
-            votePayloadB,
-          );
+          await apiApproveTransaction(tokensB.accessToken, txId, votePayloadB);
         } else {
-          const { to: toApprove, value: valueApprove, callData: callDataApprove } =
-            buildSingleApproveParams(txDetails);
+          const {
+            to: toApprove,
+            value: valueApprove,
+            callData: callDataApprove,
+          } = buildSingleApproveParams(txDetails);
 
           const votePayloadB = await generateVotePayload(
             identityB,
@@ -251,11 +258,7 @@ describe('Transaction E2E', () => {
             valueApprove,
             callDataApprove,
           );
-          await apiApproveTransaction(
-            tokensB.accessToken,
-            txId,
-            votePayloadB,
-          );
+          await apiApproveTransaction(tokensB.accessToken, txId, votePayloadB);
         }
 
         console.log(`[${label}] Approve transaction - done`, { txId });
@@ -297,18 +300,18 @@ describe('Transaction E2E', () => {
         } | null;
 
         expect(finalTx).not.toBeNull();
-        expect(finalTx!.status).toBe(TxStatus.EXECUTED);
-        expect(finalTx!.votes.length).toBe(2);
+        expect(finalTx.status).toBe(TxStatus.EXECUTED);
+        expect(finalTx.votes.length).toBe(2);
 
         if (entry.kind === 'single') {
           if (entry.scenario.isNative) {
-            expect(finalTx!.tokenAddress).toBeNull();
+            expect(finalTx.tokenAddress).toBeNull();
           } else {
-            expect(finalTx!.tokenAddress?.toLowerCase()).toBe(
+            expect(finalTx.tokenAddress?.toLowerCase()).toBe(
               (entry.scenario.tokenAddress as string).toLowerCase(),
             );
           }
-          expect(finalTx!.value).toBe(entry.amount.amountString);
+          expect(finalTx.value).toBe(entry.amount.amountString);
         }
 
         console.log(`[${label}] Final verification - done`, {

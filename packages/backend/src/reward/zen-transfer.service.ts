@@ -16,6 +16,7 @@ import { ZEN_TOKEN_ADDRESS, ZEN_DECIMALS } from '@/common/constants';
 import {
   ZEN_TRANSFER_MAX_RETRIES,
   ZEN_TRANSFER_RETRY_DELAY,
+  GAS_BUFFER_ZEN_TRANSFER,
 } from '@/common/constants/timing';
 
 const ERC20_ABI = [
@@ -36,9 +37,6 @@ const ERC20_ABI = [
     stateMutability: 'view',
   },
 ] as const;
-
-const MAX_SEND_RETRIES = ZEN_TRANSFER_MAX_RETRIES;
-const RETRY_DELAY_MS = ZEN_TRANSFER_RETRY_DELAY;
 
 @Injectable()
 export class ZenTransferService {
@@ -148,7 +146,7 @@ export class ZenTransferService {
     // Retry loop for sending transaction
     let lastError: Error | undefined;
 
-    for (let attempt = 1; attempt <= MAX_SEND_RETRIES; attempt++) {
+    for (let attempt = 1; attempt <= ZEN_TRANSFER_MAX_RETRIES; attempt++) {
       try {
         // Estimate gas
         const gasEstimate = await this.publicClient.estimateContractGas({
@@ -169,7 +167,7 @@ export class ZenTransferService {
           args: [toAddress as `0x${string}`, amountWei],
           account: this.account,
           chain: this.chain,
-          gas: gasEstimate + 10000n, // Add buffer
+          gas: gasEstimate + GAS_BUFFER_ZEN_TRANSFER,
         });
 
         this.logger.log(`Transaction sent: ${txHash} (attempt ${attempt})`);
@@ -196,15 +194,15 @@ export class ZenTransferService {
           `sendZen attempt ${attempt} failed: ${error.message}`,
         );
 
-        if (attempt < MAX_SEND_RETRIES) {
-          this.logger.warn(`Retrying in ${RETRY_DELAY_MS}ms...`);
-          await sleep(RETRY_DELAY_MS);
+        if (attempt < ZEN_TRANSFER_MAX_RETRIES) {
+          this.logger.warn(`Retrying in ${ZEN_TRANSFER_RETRY_DELAY}ms...`);
+          await sleep(ZEN_TRANSFER_RETRY_DELAY);
         }
       }
     }
 
     throw new Error(
-      `Failed to send ZEN after ${MAX_SEND_RETRIES} attempts: ${lastError?.message}`,
+      `Failed to send ZEN after ${ZEN_TRANSFER_MAX_RETRIES} attempts: ${lastError?.message}`,
     );
   }
 }

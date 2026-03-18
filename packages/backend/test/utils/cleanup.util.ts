@@ -1,5 +1,5 @@
-import { PrismaService } from "@/database/prisma.service";
-import { INestApplication } from "@nestjs/common";
+import { PrismaService } from '@/database/prisma.service';
+import { INestApplication } from '@nestjs/common';
 
 /**
  * Truncate all tables in the test database
@@ -18,7 +18,7 @@ export async function truncateAllTables(app: INestApplication): Promise<void> {
   await prisma.claimHistory.deleteMany({});
   await prisma.user.deleteMany({});
 
-  console.log("All tables truncated");
+  console.log('All tables truncated');
 }
 
 /**

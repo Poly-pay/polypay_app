@@ -1,10 +1,12 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto, RefreshDto } from '@polypay/shared';
 
 @ApiTags('auth')
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -13,6 +15,7 @@ export class AuthController {
    * POST /api/auth/login
    */
   @Post('login')
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @ApiOperation({
     summary: 'Login with zero-knowledge proof',
     description:
@@ -65,6 +68,7 @@ export class AuthController {
    * POST /api/auth/refresh
    */
   @Post('refresh')
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
   @ApiOperation({
     summary: 'Refresh access token',
     description:

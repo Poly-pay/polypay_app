@@ -75,7 +75,6 @@ export class UserService {
       },
     });
 
-    // Map to response format
     return accounts.map((account) => ({
       id: account.id,
       address: account.address,
@@ -83,7 +82,6 @@ export class UserService {
       threshold: account.threshold,
       chainId: account.chainId,
       createdAt: account.createdAt,
-      updatedAt: account.updatedAt,
       signers: account.signers.map((signer) => ({
         commitment: signer.user.commitment,
         name: signer.displayName,
