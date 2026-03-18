@@ -15,6 +15,8 @@ import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
+import { SUPPORTED_CHAIN_IDS } from '@/common/constants/campaign';
+import { GAS_BUFFER_EXECUTE } from '@/common/constants/timing';
 
 type RelayerChainClient = {
   chain: any;
@@ -45,7 +47,7 @@ export class RelayerService {
     this.account = privateKeyToAccount(privateKey);
 
     // Initialize clients for all supported chains
-    const supportedChainIds = [2651420, 84532, 26514, 8453];
+    const supportedChainIds = SUPPORTED_CHAIN_IDS;
 
     for (const chainId of supportedChainIds) {
       const chain = getChainById(chainId);
@@ -344,7 +346,7 @@ export class RelayerService {
       args,
       account: this.account,
       chain,
-      gas: gasEstimate + 50000n,
+      gas: gasEstimate + GAS_BUFFER_EXECUTE,
     });
 
     this.logger.log(`Execute tx sent: ${txHash}`);

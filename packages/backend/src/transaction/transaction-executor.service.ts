@@ -27,6 +27,9 @@ import {
   CROSS_CHAIN_FINALIZATION_WAIT,
   PROOF_AGGREGATION_INTERVAL,
   PROOF_AGGREGATION_MAX_ATTEMPTS,
+  RECENT_AGGREGATION_THRESHOLD,
+  ETH_DISPLAY_DECIMALS,
+  WEI_PER_ETH,
 } from '@/common/constants/timing';
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
@@ -90,7 +93,7 @@ export class TransactionExecutorService {
         txHash,
       );
 
-      return { txId, txHash, status: 'EXECUTED', pointsAwarded };
+      return { txId, txHash, status: TxStatus.EXECUTED, pointsAwarded };
     } catch (error) {
       this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
 
@@ -109,10 +112,10 @@ export class TransactionExecutorService {
         if (match) {
           const required = BigInt(match[1]);
           const available = BigInt(match[2]);
-          const requiredEth = Number(required) / 1e18;
-          const availableEth = Number(available) / 1e18;
+          const requiredEth = Number(required) / WEI_PER_ETH;
+          const availableEth = Number(available) / WEI_PER_ETH;
           throw new BadRequestException(
-            `Insufficient account balance. Required: ${requiredEth.toFixed(6)} ETH, Available: ${availableEth.toFixed(6)} ETH`,
+            `Insufficient account balance. Required: ${requiredEth.toFixed(ETH_DISPLAY_DECIMALS)} ETH, Available: ${availableEth.toFixed(ETH_DISPLAY_DECIMALS)} ETH`,
           );
         }
       }
@@ -351,7 +354,7 @@ export class TransactionExecutorService {
           voterCommitment: signer.commitment,
           transaction: {
             accountAddress: transaction.accountAddress,
-            status: { in: ['PENDING'] },
+            status: { in: [TxStatus.PENDING] },
           },
         },
       });
@@ -492,14 +495,13 @@ export class TransactionExecutorService {
     intervalMs = PROOF_AGGREGATION_INTERVAL,
   ) {
     let hasRecentAggregation = false;
-    const TWO_MINUTES_MS = 2 * 60 * 1000;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const pendingVotes = await this.prisma.vote.findMany({
         where: {
           txId,
-          voteType: 'APPROVE',
-          proofStatus: 'PENDING',
+          voteType: VoteType.APPROVE,
+          proofStatus: ProofStatus.PENDING,
         },
       });
 
@@ -523,14 +525,14 @@ export class TransactionExecutorService {
 
             const updatedAt = new Date(jobStatus.updatedAt).getTime();
             const now = Date.now();
-            if (now - updatedAt < TWO_MINUTES_MS) {
+            if (now - updatedAt < RECENT_AGGREGATION_THRESHOLD) {
               hasRecentAggregation = true;
             }
 
             await this.prisma.vote.update({
               where: { id: vote.id },
               data: {
-                proofStatus: 'AGGREGATED',
+                proofStatus: ProofStatus.AGGREGATED,
                 aggregationId: jobStatus.aggregationId?.toString(),
                 merkleProof: jobStatus.aggregationDetails?.merkleProof || [],
                 leafCount: jobStatus.aggregationDetails?.numberOfLeaves,
@@ -542,7 +544,7 @@ export class TransactionExecutorService {
           } else if (jobStatus.status === 'Failed') {
             await this.prisma.vote.update({
               where: { id: vote.id },
-              data: { proofStatus: 'FAILED' },
+              data: { proofStatus: ProofStatus.FAILED },
             });
 
             this.logger.error(`Vote ${vote.id} proof failed`);
@@ -558,8 +560,8 @@ export class TransactionExecutorService {
     const stillPending = await this.prisma.vote.count({
       where: {
         txId,
-        voteType: 'APPROVE',
-        proofStatus: 'PENDING',
+        voteType: VoteType.APPROVE,
+        proofStatus: ProofStatus.PENDING,
       },
     });
 

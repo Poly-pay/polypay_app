@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/database/prisma.service';
 import { TxType } from '@/generated/prisma/client';
 import { AnalyticsReportDto } from './dto/analytics-report.dto';
+import { EXPLORER_URLS } from '@/common/constants/campaign';
 
 interface AnalyticsRecord {
   timestamp: Date;
@@ -25,22 +26,9 @@ export class AdminService {
     private readonly configService: ConfigService,
   ) {
     const network = this.configService.get<string>('NETWORK') || 'mainnet';
-
-    const configs = {
-      mainnet: {
-        ZKVERIFY_EXPLORER: 'https://zkverify.subscan.io/tx',
-        HORIZEN_EXPLORER_ADDRESS: 'https://horizen.calderaexplorer.xyz/address',
-        HORIZEN_EXPLORER_TX: 'https://horizen.calderaexplorer.xyz/tx',
-      },
-      testnet: {
-        ZKVERIFY_EXPLORER: 'https://zkverify-testnet.subscan.io/tx',
-        HORIZEN_EXPLORER_ADDRESS:
-          'https://horizen-testnet.explorer.caldera.xyz/address',
-        HORIZEN_EXPLORER_TX: 'https://horizen-testnet.explorer.caldera.xyz/tx',
-      },
-    };
-
-    this.explorerConfig = configs[network] || configs.mainnet;
+    this.explorerConfig =
+      EXPLORER_URLS[network as keyof typeof EXPLORER_URLS] ||
+      EXPLORER_URLS.mainnet;
   }
 
   /**

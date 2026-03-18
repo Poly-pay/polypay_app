@@ -23,7 +23,10 @@ import {
   DEFAULT_PAGE_SIZE,
 } from '@polypay/shared';
 import { BatchItemService } from '@/batch-item/batch-item.service';
-import { NONCE_RESERVATION_TTL } from '@/common/constants/timing';
+import {
+  MAX_SIGNERS_PER_TRANSACTION,
+  NONCE_RESERVATION_TTL,
+} from '@/common/constants/timing';
 import { checkAccountMembership } from '@/common/utils/membership';
 import { EventsService } from '@/events/events.service';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
@@ -144,7 +147,7 @@ export class TransactionService {
           signerData: dto.signers ? JSON.stringify(dto.signers) : null,
           newThreshold: dto.newThreshold,
           createdBy: userCommitment,
-          status: 'PENDING',
+          status: TxStatus.PENDING,
           batchData,
         },
       });
@@ -153,10 +156,10 @@ export class TransactionService {
         data: {
           txId: tx.txId,
           voterCommitment: userCommitment,
-          voteType: 'APPROVE',
+          voteType: VoteType.APPROVE,
           nullifier: dto.nullifier,
           jobId: proofResult.jobId,
-          proofStatus: 'PENDING',
+          proofStatus: ProofStatus.PENDING,
           domainId: getDomainId(account.chainId),
           zkVerifyTxHash: proofResult.txHash,
         },
@@ -222,11 +225,11 @@ export class TransactionService {
       throw new NotFoundException(`Transaction ${txId} not found`);
     }
 
-    if (transaction.status === 'EXECUTED') {
+    if (transaction.status === TxStatus.EXECUTED) {
       throw new BadRequestException('Transaction already executed');
     }
 
-    if (transaction.status === 'FAILED') {
+    if (transaction.status === TxStatus.FAILED) {
       throw new BadRequestException('Transaction has failed');
     }
 
@@ -342,11 +345,11 @@ export class TransactionService {
       throw new NotFoundException(`Transaction ${txId} not found`);
     }
 
-    if (transaction.status === 'EXECUTED') {
+    if (transaction.status === TxStatus.EXECUTED) {
       throw new BadRequestException('Transaction already executed');
     }
 
-    if (transaction.status === 'FAILED') {
+    if (transaction.status === TxStatus.FAILED) {
       throw new BadRequestException('Transaction already failed');
     }
 
@@ -607,8 +610,10 @@ export class TransactionService {
             'Add signer requires "signers" (array of {commitment, name?}) and "newThreshold"',
           );
         }
-        if (dto.signers.length > 10) {
-          throw new BadRequestException('Maximum 10 signers per transaction');
+        if (dto.signers.length > MAX_SIGNERS_PER_TRANSACTION) {
+          throw new BadRequestException(
+            `Maximum ${MAX_SIGNERS_PER_TRANSACTION} signers per transaction`,
+          );
         }
         break;
 
@@ -622,8 +627,10 @@ export class TransactionService {
             'Remove signer requires "signers" (array of {commitment, name?}) and "newThreshold"',
           );
         }
-        if (dto.signers.length > 10) {
-          throw new BadRequestException('Maximum 10 signers per transaction');
+        if (dto.signers.length > MAX_SIGNERS_PER_TRANSACTION) {
+          throw new BadRequestException(
+            `Maximum ${MAX_SIGNERS_PER_TRANSACTION} signers per transaction`,
+          );
         }
         break;
 
@@ -696,13 +703,13 @@ export class TransactionService {
 
   private async getApproveCount(txId: number): Promise<number> {
     return this.prisma.vote.count({
-      where: { txId, voteType: 'APPROVE' },
+      where: { txId, voteType: VoteType.APPROVE },
     });
   }
 
   private async getDenyCount(txId: number): Promise<number> {
     return this.prisma.vote.count({
-      where: { txId, voteType: 'DENY' },
+      where: { txId, voteType: VoteType.DENY },
     });
   }
 

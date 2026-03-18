@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
+import { ADDRESS_LOG_PREVIEW_LENGTH } from '@/common/constants/timing';
 import {
   SendCommitmentDto,
   NotificationType,
@@ -60,7 +61,7 @@ export class NotificationService {
     });
 
     this.logger.log(
-      `Commitment sent from ${senderCommitment.slice(0, 10)}... to ${recipientCommitment.slice(0, 10)}...`,
+      `Commitment sent from ${senderCommitment.slice(0, ADDRESS_LOG_PREVIEW_LENGTH)}... to ${recipientCommitment.slice(0, ADDRESS_LOG_PREVIEW_LENGTH)}...`,
     );
 
     // Emit realtime event to recipient

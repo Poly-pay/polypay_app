@@ -1,22 +1,24 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { QuestCategory, QuestCode } from '@polypay/shared';
+import {
+  QUEST_POINTS_ACCOUNT_FIRST_TX,
+  QUEST_POINTS_SUCCESSFUL_TX,
+} from '@/common/constants/campaign';
 
 const QUEST_SEED_DATA = [
   {
     code: QuestCode.ACCOUNT_FIRST_TX,
     name: 'Account creation',
-    description:
-      'Each account created and performed 1 successful transaction will receive 100 points link to the wallet addresses use for signin',
-    points: 100,
+    description: `Each account created and performed 1 successful transaction will receive ${QUEST_POINTS_ACCOUNT_FIRST_TX} points link to the wallet addresses use for signin`,
+    points: QUEST_POINTS_ACCOUNT_FIRST_TX,
     type: QuestCategory.RECURRING,
   },
   {
     code: QuestCode.SUCCESSFUL_TX,
     name: 'Transaction',
-    description:
-      'Each successful transaction by an account earns 50 points, credited to the address that initiates the transaction.',
-    points: 50,
+    description: `Each successful transaction by an account earns ${QUEST_POINTS_SUCCESSFUL_TX} points, credited to the address that initiates the transaction.`,
+    points: QUEST_POINTS_SUCCESSFUL_TX,
     type: QuestCategory.RECURRING,
   },
 ];
