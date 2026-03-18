@@ -11,10 +11,6 @@ import {
   CreateTransactionDto,
   ApproveTransactionDto,
   TxType,
-  encodeUpdateThreshold,
-  encodeBatchTransferMulti,
-  encodeERC20Transfer,
-  encodeBatchTransfer,
   TxStatus,
   TX_CREATED_EVENT,
   TX_VOTED_EVENT,
@@ -26,25 +22,14 @@ import {
   TxStatusEventData,
   PaginatedResponse,
   DEFAULT_PAGE_SIZE,
-  encodeAddSigners,
-  encodeRemoveSigners,
-  SignerData,
-  ZERO_ADDRESS,
 } from '@polypay/shared';
-import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { BatchItemService } from '@/batch-item/batch-item.service';
 import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
-import {
-  CROSS_CHAIN_FINALIZATION_WAIT,
-  NONCE_RESERVATION_TTL,
-  PROOF_AGGREGATION_INTERVAL,
-  PROOF_AGGREGATION_MAX_ATTEMPTS,
-} from '@/common/constants/timing';
+import { NONCE_RESERVATION_TTL } from '@/common/constants/timing';
 import { EventsService } from '@/events/events.service';
-import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 import { getDomainId } from '@/common/utils/proof';
-import { QuestService } from '@/quest/quest.service';
+import { TransactionExecutorService } from './transaction-executor.service';
 
 @Injectable()
 export class TransactionService {
@@ -53,11 +38,10 @@ export class TransactionService {
   constructor(
     private prisma: PrismaService,
     private zkVerifyService: ZkVerifyService,
-    private relayerService: RelayerService,
     private batchItemService: BatchItemService,
     private readonly eventsService: EventsService,
     private readonly analyticsLogger: AnalyticsLoggerService,
-    private readonly questService: QuestService,
+    private readonly transactionExecutor: TransactionExecutorService,
   ) {}
 
   /**
@@ -568,355 +552,10 @@ export class TransactionService {
   }
 
   /**
-   * Get execution data for smart contract
-   */
-  async getExecutionData(txId: number, transaction: Transaction) {
-    // Aggregate all pending proofs (poll until all aggregated)
-    await this.aggregateProofs(txId);
-
-    // Get aggregated approve votes
-    const approveVotes = await this.prisma.vote.findMany({
-      where: {
-        txId,
-        voteType: VoteType.APPROVE,
-        proofStatus: ProofStatus.AGGREGATED,
-      },
-    });
-
-    if (approveVotes.length < transaction.threshold) {
-      throw new BadRequestException(
-        `Not enough aggregated proofs. Required: ${transaction.threshold}, Got: ${approveVotes.length}`,
-      );
-    }
-
-    // Build execute params based on tx type
-    const { to, value, data } = this.buildExecuteParams(transaction);
-
-    // Format proofs for smart contract
-    const zkProofs = approveVotes.map((vote) => ({
-      commitment: vote.voterCommitment,
-      nullifier: vote.nullifier,
-      aggregationId: vote.aggregationId,
-      domainId: vote.domainId,
-      zkMerklePath: vote.merkleProof,
-      leafCount: vote.leafCount,
-      index: vote.leafIndex,
-    }));
-
-    return {
-      txId,
-      nonce: transaction.nonce,
-      accountAddress: transaction.accountAddress,
-      to,
-      value,
-      data,
-      zkProofs,
-      threshold: transaction.threshold,
-    };
-  }
-
-  /**
-   * Mark transaction as executed
-   */
-  async markExecuted(txId: number, txHash: string) {
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Find the transaction
-      const transaction = await tx.transaction.findUnique({
-        where: { txId },
-      });
-
-      if (!transaction) {
-        throw new NotFoundException(`Transaction ${txId} not found`);
-      }
-
-      // Handle ADD_SIGNER: create User + AccountSigner link
-      if (transaction.type === TxType.ADD_SIGNER && transaction.signerData) {
-        const signers: SignerData[] = JSON.parse(transaction.signerData);
-
-        const account = await tx.account.findUnique({
-          where: { address: transaction.accountAddress },
-        });
-
-        if (account) {
-          // Loop through all signers to add
-          for (const signer of signers) {
-            // Upsert user for new signer
-            const user = await tx.user.upsert({
-              where: { commitment: signer.commitment },
-              create: { commitment: signer.commitment },
-              update: {},
-            });
-
-            // Create AccountSigner link with displayName
-            await tx.accountSigner.upsert({
-              where: {
-                userId_accountId: {
-                  userId: user.id,
-                  accountId: account.id,
-                },
-              },
-              create: {
-                userId: user.id,
-                accountId: account.id,
-                isCreator: false,
-                displayName: signer.name || null,
-              },
-              update: {
-                displayName: signer.name || undefined,
-              },
-            });
-
-            this.logger.log(
-              `Added signer ${signer.commitment} (${signer.name || 'no name'}) to account ${account.address}`,
-            );
-          }
-
-          // Update threshold for pending transactions if newThreshold exists
-          if (transaction.newThreshold) {
-            const updatedTxs = await tx.transaction.updateMany({
-              where: {
-                accountAddress: transaction.accountAddress,
-                status: TxStatus.PENDING,
-                txId: { not: txId },
-              },
-              data: {
-                threshold: transaction.newThreshold,
-              },
-            });
-
-            if (updatedTxs.count > 0) {
-              this.logger.log(
-                `Updated threshold to ${transaction.newThreshold} for ${updatedTxs.count} pending transactions`,
-              );
-            }
-          }
-        }
-      }
-
-      // Handle REMOVE_SIGNER: delete AccountSigner link + delete pending votes
-      if (transaction.type === TxType.REMOVE_SIGNER && transaction.signerData) {
-        const signers: SignerData[] = JSON.parse(transaction.signerData);
-
-        const account = await tx.account.findUnique({
-          where: { address: transaction.accountAddress },
-        });
-
-        if (account) {
-          // Loop through all signers to remove
-          for (const signer of signers) {
-            const user = await tx.user.findUnique({
-              where: { commitment: signer.commitment },
-            });
-
-            if (user) {
-              await tx.accountSigner.deleteMany({
-                where: {
-                  userId: user.id,
-                  accountId: account.id,
-                },
-              });
-
-              this.logger.log(
-                `Removed signer ${signer.commitment} from account ${account.address}`,
-              );
-            }
-
-            // Delete all pending votes from removed signer (same account only)
-            const deletedVotes = await tx.vote.deleteMany({
-              where: {
-                voterCommitment: signer.commitment,
-                transaction: {
-                  accountAddress: transaction.accountAddress,
-                  status: { in: ['PENDING'] },
-                },
-              },
-            });
-
-            if (deletedVotes.count > 0) {
-              this.logger.log(
-                `Deleted ${deletedVotes.count} pending votes from removed signer ${signer.commitment}`,
-              );
-            }
-          }
-        }
-
-        // Update threshold for pending transactions if newThreshold exists
-        if (transaction.newThreshold) {
-          const updatedTxs = await tx.transaction.updateMany({
-            where: {
-              accountAddress: transaction.accountAddress,
-              status: TxStatus.PENDING,
-              txId: { not: txId },
-            },
-            data: {
-              threshold: transaction.newThreshold,
-            },
-          });
-
-          if (updatedTxs.count > 0) {
-            this.logger.log(
-              `Updated threshold to ${transaction.newThreshold} for ${updatedTxs.count} pending transactions`,
-            );
-          }
-        }
-      }
-
-      // Handle SET_THRESHOLD: update threshold for all pending transactions in the same account
-      if (
-        transaction.type === TxType.SET_THRESHOLD &&
-        transaction.newThreshold
-      ) {
-        const updatedTxs = await tx.transaction.updateMany({
-          where: {
-            accountAddress: transaction.accountAddress,
-            status: TxStatus.PENDING,
-            txId: { not: txId },
-          },
-          data: {
-            threshold: transaction.newThreshold,
-          },
-        });
-
-        if (updatedTxs.count > 0) {
-          this.logger.log(
-            `Updated threshold to ${transaction.newThreshold} for ${updatedTxs.count} pending transactions in account ${transaction.accountAddress}`,
-          );
-        }
-      }
-
-      // Mark this transaction as EXECUTED
-      const updatedTx = tx.transaction.update({
-        where: { txId },
-        data: {
-          status: TxStatus.EXECUTED,
-          txHash,
-          executedAt: new Date(),
-        },
-      });
-
-      // Award quest points (only for TRANSFER and BATCH transactions)
-      let pointsAwarded = 0;
-      if (
-        transaction.type === TxType.TRANSFER ||
-        transaction.type === TxType.BATCH
-      ) {
-        try {
-          const successfulTxPoints = await this.questService.awardSuccessfulTx(
-            txId,
-            transaction.createdBy,
-          );
-          const firstTxPoints = await this.questService.awardAccountFirstTx(
-            transaction.accountAddress,
-            txId,
-          );
-          pointsAwarded = successfulTxPoints + firstTxPoints;
-        } catch (error) {
-          this.logger.error(`Failed to award quest points: ${error.message}`);
-        }
-      }
-
-      // Emit event for status update
-      const eventData: TxStatusEventData = {
-        txId,
-        status: TxStatus.EXECUTED,
-        txHash,
-      };
-      this.eventsService.emitToAccount(
-        transaction.accountAddress,
-        TX_STATUS_EVENT,
-        eventData,
-      );
-
-      const result = await updatedTx;
-      return { ...result, pointsAwarded };
-    });
-  }
-
-  /**
    * Execute transaction on-chain via relayer
    */
   async executeOnChain(txId: number, userAddress?: string) {
-    // Check transaction exists
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { txId },
-      include: { account: true },
-    });
-
-    if (!transaction) {
-      throw new NotFoundException(`Transaction ${txId} not found`);
-    }
-
-    // Mark as EXECUTING
-    await this.updateStatusAndEmit(
-      txId,
-      transaction.accountAddress,
-      TxStatus.EXECUTING,
-    );
-
-    // 1. Get execution data
-    const executionData = await this.getExecutionData(txId, transaction);
-
-    try {
-      // 2. Execute via relayer (includes balance check + receipt verification)
-      const { txHash } = await this.relayerService.executeTransaction(
-        executionData.accountAddress,
-        executionData.nonce,
-        executionData.to,
-        executionData.value,
-        executionData.data,
-        transaction.account.chainId,
-        executionData.zkProofs,
-      );
-
-      // 3. Mark as executed only on success
-      const { pointsAwarded } = await this.markExecuted(txId, txHash);
-
-      this.analyticsLogger.logExecute(
-        userAddress,
-        transaction.accountAddress,
-        txHash,
-      );
-
-      return { txId, txHash, status: 'EXECUTED', pointsAwarded };
-    } catch (error) {
-      this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
-
-      // Revert to PENDING on failure
-      await this.updateStatusAndEmit(
-        txId,
-        executionData.accountAddress,
-        TxStatus.PENDING,
-      );
-
-      // Parse error message for user-friendly response
-      if (error.message?.includes('Insufficient wallet balance')) {
-        // Extract amounts from error message
-        const match = error.message.match(
-          /Required: (\d+) wei, Available: (\d+) wei/,
-        );
-        if (match) {
-          const required = BigInt(match[1]);
-          const available = BigInt(match[2]);
-          // Convert to ETH for readability
-          const requiredEth = Number(required) / 1e18;
-          const availableEth = Number(available) / 1e18;
-          throw new BadRequestException(
-            `Insufficient account balance. Required: ${requiredEth.toFixed(6)} ETH, Available: ${availableEth.toFixed(6)} ETH`,
-          );
-        }
-      }
-
-      if (error.message?.includes('Transaction reverted')) {
-        throw new BadRequestException(
-          'Transaction reverted on-chain. Please check contract conditions.',
-        );
-      }
-
-      // Generic error
-      throw new BadRequestException(
-        error.message || 'Failed to execute transaction',
-      );
-    }
+    return this.transactionExecutor.executeOnChain(txId, userAddress);
   }
 
   async reserveNonce(accountAddress: string, userCommitment: string) {
@@ -1023,119 +662,6 @@ export class TransactionService {
     }
   }
 
-  private async updateStatusAndEmit(
-    txId: number,
-    accountAddress: string,
-    status: TxStatus,
-    txHash?: string,
-  ) {
-    await this.prisma.transaction.update({
-      where: { txId },
-      data: { status },
-    });
-
-    const eventData: TxStatusEventData = { txId, status, txHash };
-    this.eventsService.emitToAccount(
-      accountAddress,
-      TX_STATUS_EVENT,
-      eventData,
-    );
-  }
-
-  private buildExecuteParams(transaction: Transaction): {
-    to: string;
-    value: string;
-    data: string;
-  } {
-    switch (transaction.type) {
-      case TxType.TRANSFER:
-        // ERC20 transfer
-        if (transaction?.tokenAddress) {
-          return {
-            to: transaction.tokenAddress, // Token contract address
-            value: '0',
-            data: encodeERC20Transfer(
-              transaction.to,
-              BigInt(transaction.value),
-            ),
-          };
-        }
-        // Native ETH transfer
-        return {
-          to: transaction.to,
-          value: transaction.value,
-          data: '0x',
-        };
-
-      case TxType.ADD_SIGNER: {
-        const signers: SignerData[] = transaction.signerData
-          ? JSON.parse(transaction.signerData)
-          : [];
-        return {
-          to: transaction.accountAddress,
-          value: '0',
-          data: encodeAddSigners(
-            signers.map((s) => s.commitment),
-            transaction.newThreshold,
-          ),
-        };
-      }
-
-      case TxType.REMOVE_SIGNER: {
-        const signers: SignerData[] = transaction.signerData
-          ? JSON.parse(transaction.signerData)
-          : [];
-        return {
-          to: transaction.accountAddress,
-          value: '0',
-          data: encodeRemoveSigners(
-            signers.map((s) => s.commitment),
-            transaction.newThreshold,
-          ),
-        };
-      }
-
-      case TxType.SET_THRESHOLD:
-        return {
-          to: transaction.accountAddress,
-          value: '0',
-          data: encodeUpdateThreshold(transaction.newThreshold),
-        };
-
-      case TxType.BATCH:
-        const batchData = JSON.parse(transaction.batchData || '[]');
-        const recipients = batchData.map((item: any) => item.recipient);
-        const amounts = batchData.map((item: any) => BigInt(item.amount));
-        const tokenAddresses = batchData.map(
-          (item: any) => item.tokenAddress || ZERO_ADDRESS,
-        );
-
-        // Check if any ERC20 token in batch
-        const hasERC20 = tokenAddresses.some(
-          (addr: string) => addr !== ZERO_ADDRESS,
-        );
-
-        if (hasERC20) {
-          // Use batchTransferMulti for mixed transfers
-          return {
-            to: transaction.accountAddress,
-            value: '0',
-            data: encodeBatchTransferMulti(recipients, amounts, tokenAddresses),
-          };
-        }
-
-        // Use original batchTransfer for ETH-only
-        return {
-          to: transaction.accountAddress,
-          value: '0',
-          data: encodeBatchTransfer(recipients, amounts),
-        };
-
-      default:
-        throw new BadRequestException(`Unknown transaction type`);
-    }
-  }
-
   /**
    * Check if transaction should be marked as FAILED
    * Query totalSigners realtime from account.signers
@@ -1187,105 +713,6 @@ export class TransactionService {
     }
   }
 
-  private async aggregateProofs(
-    txId: number,
-    maxAttempts = PROOF_AGGREGATION_MAX_ATTEMPTS,
-    intervalMs = PROOF_AGGREGATION_INTERVAL,
-  ) {
-    let hasRecentAggregation = false;
-    const TWO_MINUTES_MS = 2 * 60 * 1000;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const pendingVotes = await this.prisma.vote.findMany({
-        where: {
-          txId,
-          voteType: 'APPROVE',
-          proofStatus: 'PENDING',
-        },
-      });
-
-      if (pendingVotes.length === 0) {
-        this.logger.log(`All proofs aggregated for txId: ${txId}`);
-        break;
-      }
-
-      this.logger.log(
-        `Attempt ${attempt + 1}/${maxAttempts}: ${pendingVotes.length} pending proofs for txId: ${txId}`,
-      );
-
-      for (const vote of pendingVotes) {
-        if (!vote.jobId) continue;
-
-        try {
-          const jobStatus = await this.zkVerifyService.getJobStatus(vote.jobId);
-
-          if (jobStatus.status === 'Aggregated') {
-            this.logger.log(`job data: ${JSON.stringify(jobStatus)}`);
-
-            // Check if this aggregation is recent (< 2 minutes)
-            const updatedAt = new Date(jobStatus.updatedAt).getTime();
-            const now = Date.now();
-            if (now - updatedAt < TWO_MINUTES_MS) {
-              hasRecentAggregation = true;
-            }
-
-            await this.prisma.vote.update({
-              where: { id: vote.id },
-              data: {
-                proofStatus: 'AGGREGATED',
-                aggregationId: jobStatus.aggregationId?.toString(),
-                merkleProof: jobStatus.aggregationDetails?.merkleProof || [],
-                leafCount: jobStatus.aggregationDetails?.numberOfLeaves,
-                leafIndex: jobStatus.aggregationDetails?.leafIndex,
-              },
-            });
-
-            this.logger.log(`Vote ${vote.id} aggregated successfully`);
-          } else if (jobStatus.status === 'Failed') {
-            await this.prisma.vote.update({
-              where: { id: vote.id },
-              data: { proofStatus: 'FAILED' },
-            });
-
-            this.logger.error(`Vote ${vote.id} proof failed`);
-          }
-        } catch (error) {
-          this.logger.error(`Error checking vote ${vote.id}:`, error);
-        }
-      }
-
-      await this.sleep(intervalMs);
-    }
-
-    // Check if all proofs are aggregated
-    const stillPending = await this.prisma.vote.count({
-      where: {
-        txId,
-        voteType: 'APPROVE',
-        proofStatus: 'PENDING',
-      },
-    });
-
-    if (stillPending > 0) {
-      this.logger.warn(
-        `Timeout: ${stillPending} proofs still pending for txId: ${txId}`,
-      );
-      throw new BadRequestException(
-        `Timeout waiting for proof aggregation. ${stillPending} proofs still pending.`,
-      );
-    }
-
-    // Wait 40s only if there's recent aggregation (< 2 minutes)
-    if (hasRecentAggregation) {
-      this.logger.log(
-        'Recent aggregation detected, waiting 40s for cross-chain finalization...',
-      );
-      await this.sleep(CROSS_CHAIN_FINALIZATION_WAIT);
-    } else {
-      this.logger.log('All aggregations are old (> 2 minutes), skipping wait');
-    }
-  }
-
   private async getApproveCount(txId: number): Promise<number> {
     return this.prisma.vote.count({
       where: { txId, voteType: 'APPROVE' },
@@ -1296,10 +723,6 @@ export class TransactionService {
     return this.prisma.vote.count({
       where: { txId, voteType: 'DENY' },
     });
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private logTransactionAnalytics(
