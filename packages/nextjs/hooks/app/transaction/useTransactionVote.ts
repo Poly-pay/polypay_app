@@ -20,6 +20,7 @@ import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
+import { createTransactionSteps } from "./transactionSteps";
 
 interface UseTransactionVoteOptions {
   onSuccess?: () => void;
@@ -118,16 +119,9 @@ function buildTransactionParams(tx: TransactionRowData): {
   return { to, value, callData };
 }
 
-const APPROVE_STEPS = [
-  { id: 1, label: "Preparing approval..." },
-  { id: 2, label: "Waiting for wallet approval..." },
-  { id: 3, label: "Securing your transaction..." },
-  { id: 4, label: "Almost done, submitting..." },
-];
-
 export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
   const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset, startLoading } =
-    useStepLoading(APPROVE_STEPS);
+    useStepLoading(createTransactionSteps("approval"));
 
   const { commitment } = useIdentityStore();
   const { data: walletClient } = useWalletClient();

@@ -1,12 +1,11 @@
-import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 import { PrismaService } from '@/database/prisma.service';
+import { checkAccountMembership } from '@/common/utils/membership';
 import { Prisma } from '@/generated/prisma/client';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import {
@@ -45,17 +44,11 @@ export class ContactBookService {
   // ============ CONTACT GROUP ============
 
   async createGroup(dto: CreateContactGroupDto, userCommitment: string) {
-    // Check if user is a signer of the account
-    const membership = await this.prisma.accountSigner.findFirst({
-      where: {
-        account: { id: dto.accountId },
-        user: { commitment: userCommitment },
-      },
-    });
-
-    if (!membership) {
-      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
-    }
+    await checkAccountMembership(
+      this.prisma,
+      { accountId: dto.accountId },
+      userCommitment,
+    );
 
     if (dto.contactIds?.length) {
       const contacts = await this.prisma.contact.findMany({
@@ -88,17 +81,7 @@ export class ContactBookService {
   }
 
   async getGroups(accountId: string, userCommitment: string) {
-    // Check if user is a signer of the account
-    const membership = await this.prisma.accountSigner.findFirst({
-      where: {
-        account: { id: accountId },
-        user: { commitment: userCommitment },
-      },
-    });
-
-    if (!membership) {
-      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
-    }
+    await checkAccountMembership(this.prisma, { accountId }, userCommitment);
 
     return this.prisma.contactGroup.findMany({
       where: { accountId },
@@ -175,17 +158,11 @@ export class ContactBookService {
   // ============ CONTACT ============
 
   async createContact(dto: CreateContactDto, userCommitment: string) {
-    // Check if user is a signer of the account
-    const membership = await this.prisma.accountSigner.findFirst({
-      where: {
-        account: { id: dto.accountId },
-        user: { commitment: userCommitment },
-      },
-    });
-
-    if (!membership) {
-      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
-    }
+    await checkAccountMembership(
+      this.prisma,
+      { accountId: dto.accountId },
+      userCommitment,
+    );
 
     const groups = await this.prisma.contactGroup.findMany({
       where: { id: { in: dto.groupIds }, accountId: dto.accountId },
@@ -221,18 +198,8 @@ export class ContactBookService {
     userCommitment?: string,
     groupId?: string,
   ) {
-    // Check if user is a signer of the account
     if (userCommitment) {
-      const membership = await this.prisma.accountSigner.findFirst({
-        where: {
-          account: { id: accountId },
-          user: { commitment: userCommitment },
-        },
-      });
-
-      if (!membership) {
-        throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
-      }
+      await checkAccountMembership(this.prisma, { accountId }, userCommitment);
     }
 
     return this.prisma.contact.findMany({

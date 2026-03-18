@@ -6,21 +6,15 @@ import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransacti
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
+import { createTransactionSteps } from "./transactionSteps";
 
 interface UseSignerTransactionOptions {
   onSuccess?: () => void;
 }
 
-const SIGNER_STEPS = [
-  { id: 1, label: "Preparing your proposal..." },
-  { id: 2, label: "Waiting for wallet approval..." },
-  { id: 3, label: "Securing your transaction..." },
-  { id: 4, label: "Almost done, submitting..." },
-];
-
 export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
   const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
-    useStepLoading(SIGNER_STEPS);
+    useStepLoading(createTransactionSteps("proposal"));
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();

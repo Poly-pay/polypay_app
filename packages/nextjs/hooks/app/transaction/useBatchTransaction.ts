@@ -8,21 +8,15 @@ import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useIdentityStore } from "~~/services/store";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
+import { createTransactionSteps } from "./transactionSteps";
 
 interface UseBatchTransactionOptions {
   onSuccess?: () => void;
 }
 
-const BATCH_STEPS = [
-  { id: 1, label: "Preparing your batch..." },
-  { id: 2, label: "Waiting for wallet approval..." },
-  { id: 3, label: "Securing your transaction..." },
-  { id: 4, label: "Almost done, submitting..." },
-];
-
 export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
   const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
-    useStepLoading(BATCH_STEPS);
+    useStepLoading(createTransactionSteps("batch"));
 
   const { data: walletClient } = useWalletClient();
   const { secret, commitment: myCommitment } = useIdentityStore();

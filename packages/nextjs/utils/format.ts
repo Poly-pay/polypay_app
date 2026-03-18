@@ -33,3 +33,20 @@ export function formatAddress(address: string, options?: { start?: number; end?:
   if (address.length <= minLength) return address;
   return `${address.slice(0, start)}...${address.slice(-end)}`;
 }
+
+/**
+ * Format commitment to short form
+ * @param commitment - Full commitment string
+ * @param options - Slice options { start: number, end: number }
+ * @returns Shortened commitment like "1234...3512"
+ */
+export function formatCommitment(commitment: string, options?: { start?: number; end?: number }): string {
+  if (!commitment) return "";
+
+  const start = options?.start ?? 4;
+  const end = options?.end ?? 3;
+  const minLength = start + end;
+
+  if (commitment.length <= minLength) return commitment;
+  return `${commitment.slice(0, start)}...${commitment.slice(-end)}`;
+}

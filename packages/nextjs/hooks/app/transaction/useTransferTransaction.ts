@@ -8,6 +8,7 @@ import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
+import { createTransactionSteps } from "./transactionSteps";
 
 interface TransferParams {
   recipient: string;
@@ -20,16 +21,9 @@ interface UseTransferTransactionOptions {
   onSuccess?: () => void;
 }
 
-const TRANSFER_STEPS = [
-  { id: 1, label: "Preparing your transfer..." },
-  { id: 2, label: "Waiting for wallet approval..." },
-  { id: 3, label: "Securing your transaction..." },
-  { id: 4, label: "Almost done, submitting..." },
-];
-
 export const useTransferTransaction = (options?: UseTransferTransactionOptions) => {
   const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
-    useStepLoading(TRANSFER_STEPS);
+    useStepLoading(createTransactionSteps("transfer"));
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();

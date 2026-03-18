@@ -3,7 +3,6 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
@@ -24,8 +23,8 @@ import {
   DEFAULT_PAGE_SIZE,
 } from '@polypay/shared';
 import { BatchItemService } from '@/batch-item/batch-item.service';
-import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 import { NONCE_RESERVATION_TTL } from '@/common/constants/timing';
+import { checkAccountMembership } from '@/common/utils/membership';
 import { EventsService } from '@/events/events.service';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
 import { getDomainId } from '@/common/utils/proof';
@@ -48,17 +47,11 @@ export class TransactionService {
    * Create transaction with txId from smart contract nonce
    */
   async createTransaction(dto: CreateTransactionDto, userCommitment: string) {
-    // Check if user is a signer of the account
-    const membership = await this.prisma.accountSigner.findFirst({
-      where: {
-        account: { address: dto.accountAddress },
-        user: { commitment: userCommitment },
-      },
-    });
-
-    if (!membership) {
-      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
-    }
+    await checkAccountMembership(
+      this.prisma,
+      { accountAddress: dto.accountAddress },
+      userCommitment,
+    );
 
     // 1. Validate based on type
     this.validateTransactionDto(dto);
@@ -458,18 +451,12 @@ export class TransactionService {
     limit: number = DEFAULT_PAGE_SIZE,
     cursor?: string,
   ): Promise<PaginatedResponse<any>> {
-    // Check if user is a signer of the account
     if (userCommitment) {
-      const membership = await this.prisma.accountSigner.findFirst({
-        where: {
-          account: { address: accountAddress },
-          user: { commitment: userCommitment },
-        },
-      });
-
-      if (!membership) {
-        throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
-      }
+      await checkAccountMembership(
+        this.prisma,
+        { accountAddress },
+        userCommitment,
+      );
     }
 
     const where: any = { accountAddress };
@@ -559,17 +546,11 @@ export class TransactionService {
   }
 
   async reserveNonce(accountAddress: string, userCommitment: string) {
-    // Check if user is a signer of the account
-    const membership = await this.prisma.accountSigner.findFirst({
-      where: {
-        account: { address: accountAddress },
-        user: { commitment: userCommitment },
-      },
-    });
-
-    if (!membership) {
-      throw new ForbiddenException(NOT_MEMBER_OF_ACCOUNT);
-    }
+    await checkAccountMembership(
+      this.prisma,
+      { accountAddress },
+      userCommitment,
+    );
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Clean expired reservations
