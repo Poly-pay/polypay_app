@@ -72,8 +72,11 @@ export class TransactionExecutorService {
     // 1. Get execution data
     const executionData = await this.getExecutionData(txId, transaction);
 
+    // Track whether tx was submitted on-chain (txHash saved to DB)
+    let submittedTxHash: string | null = null;
+
     try {
-      // 2. Execute via relayer (includes balance check + receipt verification)
+      // 2. Execute via relayer
       const { txHash } = await this.relayerService.executeTransaction(
         executionData.accountAddress,
         executionData.nonce,
@@ -82,6 +85,19 @@ export class TransactionExecutorService {
         executionData.data,
         transaction.account.chainId,
         executionData.zkProofs,
+        // Save txHash to DB immediately after on-chain submission,
+        // before waiting for receipt. This prevents stuck EXECUTING state
+        // if receipt polling or markExecuted fails.
+        async (txHash: string) => {
+          submittedTxHash = txHash;
+          await this.prisma.transaction.update({
+            where: { txId },
+            data: { txHash },
+          });
+          this.logger.log(
+            `Persisted txHash ${txHash} for txId ${txId} before receipt confirmation`,
+          );
+        },
       );
 
       // 3. Mark as executed only on success
@@ -97,14 +113,43 @@ export class TransactionExecutorService {
     } catch (error) {
       this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
 
-      // Revert to PENDING on failure
+      if (submittedTxHash) {
+        // Tx was submitted on-chain — need to distinguish revert vs unknown failure
+        const isOnChainRevert =
+          error.message?.includes('reverted') || error.message?.includes('Transaction reverted');
+
+        if (isOnChainRevert) {
+          // Tx confirmed as REVERTED on-chain — safe to revert to PENDING
+          this.logger.warn(
+            `txId ${txId} reverted on-chain (txHash: ${submittedTxHash}). Reverting to PENDING.`,
+          );
+          await this.updateStatusAndEmit(
+            txId,
+            executionData.accountAddress,
+            TxStatus.PENDING,
+          );
+          throw new BadRequestException(
+            'Transaction reverted on-chain. Please check contract conditions.',
+          );
+        }
+
+        // Receipt timeout, network error, or markExecuted DB failure.
+        // Tx may have succeeded on-chain — keep EXECUTING + txHash for reconciliation.
+        this.logger.warn(
+          `txId ${txId} has on-chain txHash ${submittedTxHash} but post-submission failed: ${error.message}. Status kept as EXECUTING for reconciliation.`,
+        );
+        throw new BadRequestException(
+          'Transaction was submitted on-chain but confirmation failed. Please check transaction status.',
+        );
+      }
+
+      // Tx was NOT submitted on-chain — safe to revert to PENDING
       await this.updateStatusAndEmit(
         txId,
         executionData.accountAddress,
         TxStatus.PENDING,
       );
 
-      // Parse error message for user-friendly response
       if (error.message?.includes('Insufficient wallet balance')) {
         const match = error.message.match(
           /Required: (\d+) wei, Available: (\d+) wei/,
@@ -118,12 +163,6 @@ export class TransactionExecutorService {
             `Insufficient account balance. Required: ${requiredEth.toFixed(ETH_DISPLAY_DECIMALS)} ETH, Available: ${availableEth.toFixed(ETH_DISPLAY_DECIMALS)} ETH`,
           );
         }
-      }
-
-      if (error.message?.includes('Transaction reverted')) {
-        throw new BadRequestException(
-          'Transaction reverted on-chain. Please check contract conditions.',
-        );
       }
 
       throw new BadRequestException(

@@ -153,6 +153,7 @@ export class RelayerService {
       leafCount: number;
       index: number;
     }[],
+    onTxSubmitted?: (txHash: string) => Promise<void>,
   ): Promise<{ txHash: string }> {
     const { publicClient, walletClient, chain } = this.getChainClient(chainId);
 
@@ -338,7 +339,7 @@ export class RelayerService {
 
     this.logger.log(`Gas estimate for execute: ${gasEstimate}`);
 
-    // 4. Execute
+    // 4. Submit transaction to chain
     const txHash = await walletClient.writeContract({
       address: accountAddress as `0x${string}`,
       abi: METAMULTISIG_ABI,
@@ -351,7 +352,13 @@ export class RelayerService {
 
     this.logger.log(`Execute tx sent: ${txHash}`);
 
-    // 5. Wait for receipt and verify status
+    // 5. Notify caller of txHash before waiting for receipt
+    //    (caller should persist txHash to DB at this point)
+    if (onTxSubmitted) {
+      await onTxSubmitted(txHash);
+    }
+
+    // 6. Wait for receipt and verify status
     const receipt = await waitForReceiptWithRetry(publicClient, txHash);
 
     if (receipt.status === 'reverted') {
