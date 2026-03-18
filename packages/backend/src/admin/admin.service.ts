@@ -4,6 +4,7 @@ import { PrismaService } from '@/database/prisma.service';
 import { TxType } from '@/generated/prisma/client';
 import { AnalyticsReportDto } from './dto/analytics-report.dto';
 import { EXPLORER_URLS } from '@/common/constants/campaign';
+import { TxStatus, VoteType } from '@polypay/shared';
 
 interface AnalyticsRecord {
   timestamp: Date;
@@ -67,6 +68,26 @@ export class AdminService {
     }
   }
 
+  /**
+   * Build commitment → walletAddress map from loginHistory (batch query)
+   */
+  private async buildCommitmentToAddressMap(
+    commitments: string[],
+  ): Promise<Map<string, string>> {
+    if (commitments.length === 0) return new Map();
+
+    const uniqueCommitments = [...new Set(commitments)];
+    const loginHistories = await this.prisma.loginHistory.findMany({
+      where: { commitment: { in: uniqueCommitments } },
+      orderBy: { createdAt: 'desc' },
+      distinct: ['commitment'],
+    });
+
+    return new Map(
+      loginHistories.map((lh) => [lh.commitment, lh.walletAddress]),
+    );
+  }
+
   async generateAnalyticsReport(dto?: AnalyticsReportDto): Promise<string> {
     const records: AnalyticsRecord[] = [];
 
@@ -110,36 +131,66 @@ export class AdminService {
       orderBy: { createdAt: 'asc' },
     });
 
-    for (const account of accounts) {
-      const creator = account.signers[0];
-      if (!creator) continue;
+    // Batch load wallet addresses for account creators
+    const creatorCommitments = accounts
+      .map((a) => a.signers[0]?.user.commitment)
+      .filter(Boolean);
 
-      // Get wallet address from LoginHistory
-      const loginHistory = await this.prisma.loginHistory.findFirst({
-        where: { commitment: creator.user.commitment },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      records.push({
-        timestamp: account.createdAt,
-        action: 'CREATE_ACCOUNT',
-        userAddress: loginHistory?.walletAddress || 'UNKNOWN',
-        multisigWallet: account.address,
-        txHash: account.address,
-      });
-    }
-
-    // 3. APPROVE votes (includes TRANSFER, BATCH_TRANSFER, ADD_SIGNER, etc.)
+    // 3. APPROVE votes
     const approveVotes = await this.prisma.vote.findMany({
       where: {
-        voteType: 'APPROVE',
+        voteType: VoteType.APPROVE,
         ...(hasDateFilter ? { createdAt: dateFilter } : {}),
       },
       include: { transaction: true },
       orderBy: { createdAt: 'asc' },
     });
 
-    // Group votes by txId to find first vote (proposer)
+    // 4. DENY votes
+    const denyVotes = dto?.includeDeny
+      ? await this.prisma.vote.findMany({
+          where: {
+            voteType: VoteType.DENY,
+            ...(hasDateFilter ? { createdAt: dateFilter } : {}),
+          },
+          include: { transaction: true },
+          orderBy: { createdAt: 'asc' },
+        })
+      : [];
+
+    // 5. EXECUTE records
+    const executedTxs = await this.prisma.transaction.findMany({
+      where: {
+        status: TxStatus.EXECUTED,
+        ...(hasDateFilter ? { executedAt: dateFilter } : {}),
+      },
+      orderBy: { executedAt: 'asc' },
+    });
+
+    // Batch load all commitment → walletAddress mappings in one query
+    const allCommitments = [
+      ...creatorCommitments,
+      ...approveVotes.map((v) => v.voterCommitment),
+      ...denyVotes.map((v) => v.voterCommitment),
+      ...executedTxs.map((tx) => tx.createdBy),
+    ];
+    const addressMap = await this.buildCommitmentToAddressMap(allCommitments);
+
+    // Process accounts
+    for (const account of accounts) {
+      const creator = account.signers[0];
+      if (!creator) continue;
+
+      records.push({
+        timestamp: account.createdAt,
+        action: 'CREATE_ACCOUNT',
+        userAddress: addressMap.get(creator.user.commitment) || 'UNKNOWN',
+        multisigWallet: account.address,
+        txHash: account.address,
+      });
+    }
+
+    // Process approve votes - group by txId to find first vote (proposer)
     const votesByTx: Record<number, typeof approveVotes> = {};
     for (const vote of approveVotes) {
       if (!votesByTx[vote.txId]) {
@@ -148,7 +199,6 @@ export class AdminService {
       votesByTx[vote.txId].push(vote);
     }
 
-    // Sort each group by createdAt and determine action
     for (const txId in votesByTx) {
       const votes = votesByTx[txId].sort(
         (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
@@ -156,55 +206,31 @@ export class AdminService {
 
       for (let i = 0; i < votes.length; i++) {
         const vote = votes[i];
-        const isFirstVote = i === 0;
-
-        // First vote = propose action (TRANSFER, ADD_SIGNER, etc.)
-        // Subsequent votes = APPROVE
-        const action = isFirstVote
-          ? this.mapTxTypeToAction(vote.transaction.type)
-          : 'APPROVE';
-
-        const loginHistory = await this.prisma.loginHistory.findFirst({
-          where: { commitment: vote.voterCommitment },
-          orderBy: { createdAt: 'desc' },
-        });
+        const action =
+          i === 0 ? this.mapTxTypeToAction(vote.transaction.type) : 'APPROVE';
 
         records.push({
           timestamp: vote.createdAt,
-          action: action,
-          userAddress: loginHistory?.walletAddress || 'UNKNOWN',
+          action,
+          userAddress: addressMap.get(vote.voterCommitment) || 'UNKNOWN',
           multisigWallet: vote.transaction.accountAddress,
           txHash: vote.zkVerifyTxHash || 'PENDING',
         });
       }
     }
 
-    if (dto?.includeDeny) {
-      const denyVotes = await this.prisma.vote.findMany({
-        where: {
-          voteType: 'DENY',
-          ...(hasDateFilter ? { createdAt: dateFilter } : {}),
-        },
-        include: { transaction: true },
-        orderBy: { createdAt: 'asc' },
+    // Process deny votes
+    for (const vote of denyVotes) {
+      records.push({
+        timestamp: vote.createdAt,
+        action: 'DENY',
+        userAddress: addressMap.get(vote.voterCommitment) || 'UNKNOWN',
+        multisigWallet: vote.transaction.accountAddress,
+        txHash: null,
       });
-
-      for (const vote of denyVotes) {
-        const loginHistory = await this.prisma.loginHistory.findFirst({
-          where: { commitment: vote.voterCommitment },
-          orderBy: { createdAt: 'desc' },
-        });
-
-        records.push({
-          timestamp: vote.createdAt,
-          action: 'DENY',
-          userAddress: loginHistory?.walletAddress || 'UNKNOWN',
-          multisigWallet: vote.transaction.accountAddress,
-          txHash: null,
-        });
-      }
     }
 
+    // Process claims
     if (dto?.includeClaim) {
       const claimHistories = await this.prisma.claimHistory.findMany({
         where: hasDateFilter ? { createdAt: dateFilter } : undefined,
@@ -222,25 +248,12 @@ export class AdminService {
       }
     }
 
-    // 5. EXECUTE records
-    const executedTxs = await this.prisma.transaction.findMany({
-      where: {
-        status: 'EXECUTED',
-        ...(hasDateFilter ? { executedAt: dateFilter } : {}),
-      },
-      orderBy: { executedAt: 'asc' },
-    });
-
+    // Process executed transactions
     for (const tx of executedTxs) {
-      const loginHistory = await this.prisma.loginHistory.findFirst({
-        where: { commitment: tx.createdBy },
-        orderBy: { createdAt: 'desc' },
-      });
-
       records.push({
         timestamp: tx.executedAt || tx.updatedAt,
         action: 'EXECUTE',
-        userAddress: loginHistory?.walletAddress || 'UNKNOWN',
+        userAddress: addressMap.get(tx.createdBy) || 'UNKNOWN',
         multisigWallet: tx.accountAddress,
         txHash: tx.txHash || 'PENDING',
       });

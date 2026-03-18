@@ -501,34 +501,7 @@ export class TransactionService {
     // Remove extra item if exists
     const rawData = hasMore ? transactions.slice(0, limit) : transactions;
 
-    // Transform data to include voterName in votes
-    const data = rawData.map((tx) => {
-      // Create map: commitment -> displayName
-      const signerMap = new Map(
-        tx.account.signers.map((s) => [s.user.commitment, s.displayName]),
-      );
-
-      // Parse signerData from JSON string to object
-      let parsedSignerData = null;
-      if (tx.signerData) {
-        try {
-          parsedSignerData = JSON.parse(tx.signerData);
-        } catch {
-          parsedSignerData = null;
-        }
-      }
-
-      return {
-        ...tx,
-        votes: tx.votes.map((vote) => ({
-          ...vote,
-          voterName: signerMap.get(vote.voterCommitment) || null,
-        })),
-        signerData: parsedSignerData,
-        // Remove account.signers from response to reduce payload
-        account: undefined,
-      };
-    });
+    const data = rawData.map((tx) => this.formatTransactionResponse(tx));
 
     // Get next cursor from last item
     const nextCursor =
@@ -747,6 +720,31 @@ export class TransactionService {
     };
 
     logByType[txType]?.();
+  }
+
+  private formatTransactionResponse(tx: any) {
+    const signerMap = new Map(
+      tx.account.signers.map((s: any) => [s.user.commitment, s.displayName]),
+    );
+
+    let parsedSignerData = null;
+    if (tx.signerData) {
+      try {
+        parsedSignerData = JSON.parse(tx.signerData);
+      } catch {
+        parsedSignerData = null;
+      }
+    }
+
+    return {
+      ...tx,
+      votes: tx.votes.map((vote: any) => ({
+        ...vote,
+        voterName: signerMap.get(vote.voterCommitment) || null,
+      })),
+      signerData: parsedSignerData,
+      account: undefined,
+    };
   }
 
   private async getSignerDisplayName(

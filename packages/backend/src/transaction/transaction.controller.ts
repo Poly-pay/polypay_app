@@ -25,6 +25,7 @@ import {
   ExecuteTransactionDto,
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
+  TxStatus,
 } from '@polypay/shared';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/auth/decorators/current-user.decorator';
@@ -100,7 +101,7 @@ export class TransactionController {
     name: 'status',
     required: false,
     description: 'Transaction status filter',
-    enum: ['PENDING', 'EXECUTED', 'FAILED'],
+    enum: [TxStatus.PENDING, TxStatus.EXECUTED, TxStatus.FAILED],
   })
   @ApiQuery({
     name: 'limit',
