@@ -23,7 +23,7 @@
     "next:serve": "yarn workspace @se-2/nextjs serve",
     "precommit": "lint-staged",
     "start:frontend": "yarn workspace @polypay/frontend dev",
-    "start:backend": "yarn workspace @polypay/backend start",
+    "start:backend": "yarn workspace @polypay/backend start:dev",
     "typecheck:shared": "yarn workspace @polypay/shared typecheck",
     "test": "yarn hardhat:test",
     "vercel": "yarn workspace @se-2/nextjs vercel",

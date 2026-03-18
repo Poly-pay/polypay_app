@@ -3980,6 +3980,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nestjs/throttler@npm:^6.5.0":
+  version: 6.5.0
+  resolution: "@nestjs/throttler@npm:6.5.0"
+  peerDependencies:
+    "@nestjs/common": ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0
+    "@nestjs/core": ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0
+    reflect-metadata: ^0.1.13 || ^0.2.0
+  checksum: 60310fbf4f2d928c87e94fda77be5fc16a6e40d04dadb61ad856ff255fef3fdc35073b88e7ce81872e309ca14e984b719a944063541505d125b70f6a1f967289
+  languageName: node
+  linkType: hard
+
 "@nestjs/websockets@npm:^11.1.10":
   version: 11.1.12
   resolution: "@nestjs/websockets@npm:11.1.12"
@@ -4910,6 +4921,7 @@ __metadata:
     "@nestjs/swagger": ^8.0.7
     "@nestjs/terminus": ^11.0.0
     "@nestjs/testing": ^11.0.1
+    "@nestjs/throttler": ^6.5.0
     "@nestjs/websockets": ^11.1.10
     "@noir-lang/noir_js": 1.0.0-beta.6
     "@polypay/shared": 1.0.0

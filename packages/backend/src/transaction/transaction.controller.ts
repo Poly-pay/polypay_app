@@ -17,6 +17,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { TransactionService } from './transaction.service';
 import {
   CreateTransactionDto,
@@ -34,6 +35,7 @@ import { User } from '@/generated/prisma/client';
 
 @ApiTags('transactions')
 @Controller('transactions')
+@UseGuards(ThrottlerGuard)
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
@@ -43,6 +45,7 @@ export class TransactionController {
    */
   @Post()
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create a new transaction with auto-approval',
@@ -174,6 +177,7 @@ export class TransactionController {
    */
   @Post(':txId/approve')
   @UseGuards(JwtAuthGuard, TransactionAccessGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Approve a transaction with ZK proof',
@@ -223,6 +227,7 @@ export class TransactionController {
    */
   @Post(':txId/deny')
   @UseGuards(JwtAuthGuard, TransactionAccessGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Deny/Reject a transaction',
@@ -256,6 +261,7 @@ export class TransactionController {
    */
   @Post(':txId/execute')
   @UseGuards(JwtAuthGuard, TransactionAccessGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Execute approved transaction on-chain',
@@ -295,6 +301,7 @@ export class TransactionController {
    */
   @Post('reserve-nonce')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Reserve a nonce for new transaction',

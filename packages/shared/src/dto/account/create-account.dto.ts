@@ -1,10 +1,12 @@
 import {
+  ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
 } from "class-validator";
 import { SignerData } from "../../types/index";
@@ -12,6 +14,7 @@ import { SignerData } from "../../types/index";
 export class CreateAccountDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(100)
   name: string;
 
   @IsNotEmpty()
@@ -21,6 +24,7 @@ export class CreateAccountDto {
 
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayMaxSize(10)
   signers: SignerData[];
 
   @IsNotEmpty()
@@ -29,12 +33,14 @@ export class CreateAccountDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(42)
   userAddress?: string;
 }
 
 export class CreateAccountBatchDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(100)
   name: string;
 
   @IsNotEmpty()
@@ -44,13 +50,16 @@ export class CreateAccountBatchDto {
 
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayMaxSize(10)
   signers: SignerData[];
 
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayMaxSize(10)
   chainIds: number[];
 
   @IsOptional()
   @IsString()
+  @MaxLength(42)
   userAddress?: string;
 }
