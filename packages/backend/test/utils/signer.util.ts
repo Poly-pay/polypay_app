@@ -1,12 +1,7 @@
-import {
-  createWalletClient,
-  http,
-  type WalletClient,
-  type Hex,
-} from "viem";
-import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
-import { type TestUser } from "../fixtures/test-users";
-import { horizenMainnet, horizenTestnet, NetworkValue } from "@polypay/shared";
+import { createWalletClient, http, type WalletClient, type Hex } from 'viem';
+import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
+import { type TestUser } from '../fixtures/test-users';
+import { horizenMainnet, horizenTestnet, NetworkValue } from '@polypay/shared';
 
 /**
  * Test signer with wallet client and account info
@@ -49,7 +44,7 @@ export function createTestSigner(testUser: TestUser): TestSigner {
  */
 export async function signMessage(
   signer: TestSigner,
-  message: string | { raw: Hex }
+  message: string | { raw: Hex },
 ): Promise<Hex> {
   // Use account.signMessage for local signing (no RPC call)
   const signature = await signer.account.signMessage({
@@ -66,7 +61,7 @@ export async function signMessage(
  */
 export async function signRawMessage(
   signer: TestSigner,
-  rawBytes: Hex
+  rawBytes: Hex,
 ): Promise<Hex> {
   const signature = await signer.account.signMessage({
     message: { raw: rawBytes },

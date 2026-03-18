@@ -1,7 +1,7 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { INestApplication, ValidationPipe } from "@nestjs/common";
-import { AppModule } from "../src/app.module";
-import { truncateAllTables } from "./utils/cleanup.util";
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { AppModule } from '../src/app.module';
+import { truncateAllTables } from './utils/cleanup.util';
 
 let app: INestApplication;
 
@@ -21,11 +21,11 @@ export async function setupTestApp(): Promise<INestApplication> {
     new ValidationPipe({
       whitelist: true,
       transform: true,
-    })
+    }),
   );
 
   // Set global prefix
-  app.setGlobalPrefix("api");
+  app.setGlobalPrefix('api');
 
   await app.init();
 
@@ -37,7 +37,7 @@ export async function setupTestApp(): Promise<INestApplication> {
  */
 export function getTestApp(): INestApplication {
   if (!app) {
-    throw new Error("Test app not initialized. Call setupTestApp() first.");
+    throw new Error('Test app not initialized. Call setupTestApp() first.');
   }
   return app;
 }
@@ -47,7 +47,7 @@ export function getTestApp(): INestApplication {
  */
 export function getHttpServer() {
   if (!app) {
-    throw new Error("Test app not initialized. Call setupTestApp() first.");
+    throw new Error('Test app not initialized. Call setupTestApp() first.');
   }
   return app.getHttpServer();
 }
@@ -66,7 +66,7 @@ export async function teardownTestApp(): Promise<void> {
  */
 export async function resetDatabase(): Promise<void> {
   if (!app) {
-    throw new Error("Test app not initialized. Call setupTestApp() first.");
+    throw new Error('Test app not initialized. Call setupTestApp() first.');
   }
   await truncateAllTables(app);
 }

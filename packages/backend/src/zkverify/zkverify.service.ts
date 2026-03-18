@@ -146,7 +146,7 @@ export class ZkVerifyService {
     );
 
     if (submitResponse.data.optimisticVerify !== 'success') {
-      return { jobId: '', status: 'Failed' };
+      throw new BadRequestException('Proof verification failed');
     }
 
     this.logger.log(`Proof submitted, jobId: ${submitResponse.data.jobId}`);

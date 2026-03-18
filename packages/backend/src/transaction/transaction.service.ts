@@ -136,7 +136,7 @@ export class TransactionService {
       );
     }
 
-    // 4. Submit proof to zkVerify
+    // 4. Submit proof to zkVerify (throws on failure)
     const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized(
       {
         proof: dto.proof,
@@ -146,10 +146,6 @@ export class TransactionService {
       'transaction',
       account.chainId,
     );
-
-    if (proofResult.status === 'Failed') {
-      throw new BadRequestException('Proof verification failed');
-    }
 
     // 5. Create transaction + first vote + delete reservation
     const transaction = await this.prisma.$transaction(async (prisma) => {
@@ -314,7 +310,7 @@ export class TransactionService {
       throw new BadRequestException('Nullifier already used');
     }
 
-    // 4. Submit proof to zkVerify
+    // 4. Submit proof to zkVerify (throws on failure)
     const proofResult = await this.zkVerifyService.submitProofAndWaitFinalized(
       {
         proof: dto.proof,
@@ -324,10 +320,6 @@ export class TransactionService {
       'transaction',
       transaction.account.chainId,
     );
-
-    if (proofResult.status === 'Failed') {
-      throw new BadRequestException('Proof verification failed');
-    }
 
     const voterName = await this.getSignerDisplayName(
       transaction.accountAddress,

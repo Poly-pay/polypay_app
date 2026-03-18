@@ -1,10 +1,6 @@
 import * as request from 'supertest';
 import { type Hex } from 'viem';
-import {
-  API_ENDPOINTS,
-  CreateAccountDto,
-  TxType,
-} from '@polypay/shared';
+import { API_ENDPOINTS, CreateAccountDto, TxType } from '@polypay/shared';
 import { parseTokenAmount } from '@polypay/shared';
 import { getHttpServer } from '../setup';
 import { getAuthHeader } from './auth.util';
@@ -99,10 +95,7 @@ export async function apiApproveTransaction(
     .expect(201);
 }
 
-export async function apiExecuteTransaction(
-  accessToken: string,
-  txId: string,
-) {
+export async function apiExecuteTransaction(accessToken: string, txId: string) {
   const server = getHttpServer();
 
   const response = await request(server)
@@ -161,7 +154,11 @@ export async function generateVotePayload(
     callData,
   );
 
-  const proof = await generateTestProof(identity.signer, identity.secret, txHash);
+  const proof = await generateTestProof(
+    identity.signer,
+    identity.secret,
+    txHash,
+  );
 
   return {
     proof: proof.proof,
@@ -217,7 +214,7 @@ export async function transferErc20FromSigner(
   const publicClient = createTestPublicClient();
   await waitForReceiptWithRetry(publicClient as any, hash);
 
-  return hash as Hex;
+  return hash;
 }
 
 /**
@@ -244,7 +241,5 @@ export async function getErc20Balance(
     args: [accountAddress],
   });
 
-  return balance as bigint;
+  return balance;
 }
-
-

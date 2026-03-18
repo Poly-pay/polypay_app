@@ -126,7 +126,9 @@ describe('Transaction Staging E2E', () => {
 
       // 3 single transfers (ETH, ZEN, USDC)
       for (const amount of scenarioAmounts) {
-        console.log(`[${amount.scenario.name}] Create single transaction - start`);
+        console.log(
+          `[${amount.scenario.name}] Create single transaction - start`,
+        );
 
         const { nonce } = await stagingReserveNonce(
           tokensA.accessToken,
@@ -159,13 +161,21 @@ describe('Transaction Staging E2E', () => {
           nullifier: votePayloadA.nullifier,
           ...(amount.scenario.isNative
             ? {}
-            : { tokenAddress: amount.scenario.tokenAddress as `0x${string}` }),
+            : { tokenAddress: amount.scenario.tokenAddress }),
         });
 
-        createdTxs.push({ kind: 'single', scenario: amount.scenario, amount, txId });
-        console.log(`[${amount.scenario.name}] Create single transaction - done`, {
+        createdTxs.push({
+          kind: 'single',
+          scenario: amount.scenario,
+          amount,
           txId,
         });
+        console.log(
+          `[${amount.scenario.name}] Create single transaction - done`,
+          {
+            txId,
+          },
+        );
       }
 
       // 1 batch tx (ETH + ZEN + USDC, same amounts)
@@ -183,10 +193,7 @@ describe('Transaction Staging E2E', () => {
       }
       console.log('Batch: Create batch items - done', { batchItemIds });
 
-      const batchCallData = buildBatchCallData(
-        scenarioAmounts,
-        TEST_RECIPIENT,
-      );
+      const batchCallData = buildBatchCallData(scenarioAmounts, TEST_RECIPIENT);
 
       const { nonce: batchNonce } = await stagingReserveNonce(
         tokensA.accessToken,
@@ -197,7 +204,7 @@ describe('Transaction Staging E2E', () => {
         identityA,
         accountAddress,
         BigInt(batchNonce),
-        accountAddress as `0x${string}`,
+        accountAddress,
         0n,
         batchCallData,
       );
@@ -244,14 +251,16 @@ describe('Transaction Staging E2E', () => {
           if (txDetails.batchData == null) {
             throw new Error(`Batch tx ${txId} missing batchData`);
           }
-          const parsedBatch = JSON.parse(txDetails.batchData) as ParsedBatchItem[];
+          const parsedBatch = JSON.parse(
+            txDetails.batchData,
+          ) as ParsedBatchItem[];
           const callDataApprove = buildBatchCallDataFromParsed(parsedBatch);
 
           const votePayloadB = await generateVotePayload(
             identityB,
             accountAddress,
             BigInt(txDetails.nonce),
-            accountAddress as `0x${string}`,
+            accountAddress,
             0n,
             callDataApprove,
           );
@@ -261,8 +270,11 @@ describe('Transaction Staging E2E', () => {
             votePayloadB,
           );
         } else {
-          const { to: toApprove, value: valueApprove, callData: callDataApprove } =
-            buildSingleApproveParams(txDetails);
+          const {
+            to: toApprove,
+            value: valueApprove,
+            callData: callDataApprove,
+          } = buildSingleApproveParams(txDetails);
 
           const votePayloadB = await generateVotePayload(
             identityB,
@@ -319,17 +331,17 @@ describe('Transaction Staging E2E', () => {
         } | null;
 
         expect(finalTx).not.toBeNull();
-        expect(finalTx!.status).toBe(TxStatus.EXECUTED);
+        expect(finalTx.status).toBe(TxStatus.EXECUTED);
 
         if (entry.kind === 'single') {
           if (entry.scenario.isNative) {
-            expect(finalTx!.tokenAddress).toBeNull();
+            expect(finalTx.tokenAddress).toBeNull();
           } else {
-            expect(finalTx!.tokenAddress?.toLowerCase()).toBe(
+            expect(finalTx.tokenAddress?.toLowerCase()).toBe(
               (entry.scenario.tokenAddress as string).toLowerCase(),
             );
           }
-          expect(finalTx!.value).toBe(entry.amount.amountString);
+          expect(finalTx.value).toBe(entry.amount.amountString);
         }
 
         console.log(`[${label}] Final verification - done`, {
@@ -342,4 +354,3 @@ describe('Transaction Staging E2E', () => {
     });
   });
 });
-

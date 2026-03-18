@@ -15,11 +15,11 @@ export interface TestUser {
 export function getSignerA(): TestUser {
   const privateKey = process.env.TEST_SIGNER_A_KEY;
   if (!privateKey) {
-    throw new Error("TEST_SIGNER_A_KEY environment variable is not set");
+    throw new Error('TEST_SIGNER_A_KEY environment variable is not set');
   }
   return {
     privateKey: privateKey as `0x${string}`,
-    name: "Signer A",
+    name: 'Signer A',
   };
 }
 
@@ -30,10 +30,10 @@ export function getSignerA(): TestUser {
 export function getSignerB(): TestUser {
   const privateKey = process.env.TEST_SIGNER_B_KEY;
   if (!privateKey) {
-    throw new Error("TEST_SIGNER_B_KEY environment variable is not set");
+    throw new Error('TEST_SIGNER_B_KEY environment variable is not set');
   }
   return {
     privateKey: privateKey as `0x${string}`,
-    name: "Signer B",
+    name: 'Signer B',
   };
 }
