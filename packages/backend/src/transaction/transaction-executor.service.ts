@@ -116,7 +116,8 @@ export class TransactionExecutorService {
       if (submittedTxHash) {
         // Tx was submitted on-chain — need to distinguish revert vs unknown failure
         const isOnChainRevert =
-          error.message?.includes('reverted') || error.message?.includes('Transaction reverted');
+          error.message?.includes('reverted') ||
+          error.message?.includes('Transaction reverted');
 
         if (isOnChainRevert) {
           // Tx confirmed as REVERTED on-chain — safe to revert to PENDING
