@@ -58,7 +58,6 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       const { nonce } = await reserveNonce(metaMultiSigWallet.address);
 
       // 2. Get current threshold and commitments
-      startStep(1);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
       // 3. Prepare batch data
