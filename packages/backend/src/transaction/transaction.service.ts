@@ -199,43 +199,12 @@ export class TransactionService {
       `Created transaction txId: ${transaction.txId}, nonce: ${transaction.nonce}`,
     );
 
-    this.analyticsLogger.logApprove(
+    this.logTransactionAnalytics(
+      dto.type,
       dto.userAddress,
       transaction.accountAddress,
       proofResult.txHash,
     );
-
-    if (dto.type === TxType.ADD_SIGNER) {
-      this.analyticsLogger.logAddSigner(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    } else if (dto.type === TxType.REMOVE_SIGNER) {
-      this.analyticsLogger.logRemoveSigner(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    } else if (dto.type === TxType.SET_THRESHOLD) {
-      this.analyticsLogger.logUpdateThreshold(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    } else if (dto.type === TxType.TRANSFER) {
-      this.analyticsLogger.logTransfer(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    } else if (dto.type === TxType.BATCH) {
-      this.analyticsLogger.logBatchTransfer(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    }
 
     // Emit realtime event
     const eventData: TxCreatedEventData = {
@@ -342,43 +311,12 @@ export class TransactionService {
 
     this.logger.log(`Vote APPROVE added for txId: ${txId}`);
 
-    this.analyticsLogger.logApprove(
+    this.logTransactionAnalytics(
+      transaction.type as TxType,
       dto.userAddress,
       transaction.accountAddress,
       proofResult.txHash,
     );
-
-    if (transaction.type === TxType.ADD_SIGNER) {
-      this.analyticsLogger.logAddSigner(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    } else if (transaction.type === TxType.REMOVE_SIGNER) {
-      this.analyticsLogger.logRemoveSigner(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    } else if (transaction.type === TxType.SET_THRESHOLD) {
-      this.analyticsLogger.logUpdateThreshold(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    } else if (transaction.type === TxType.TRANSFER) {
-      this.analyticsLogger.logTransfer(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    } else if (transaction.type === TxType.BATCH) {
-      this.analyticsLogger.logBatchTransfer(
-        dto.userAddress,
-        transaction.accountAddress,
-        proofResult.txHash,
-      );
-    }
 
     // Calculate approve count
     const approveCount = await this.prisma.vote.count({
@@ -1362,6 +1300,42 @@ export class TransactionService {
 
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private logTransactionAnalytics(
+    txType: TxType,
+    userAddress: string | undefined,
+    accountAddress: string,
+    txHash?: string,
+  ) {
+    this.analyticsLogger.logApprove(userAddress, accountAddress, txHash);
+
+    const logByType: Partial<Record<TxType, () => void>> = {
+      [TxType.ADD_SIGNER]: () =>
+        this.analyticsLogger.logAddSigner(userAddress, accountAddress, txHash),
+      [TxType.REMOVE_SIGNER]: () =>
+        this.analyticsLogger.logRemoveSigner(
+          userAddress,
+          accountAddress,
+          txHash,
+        ),
+      [TxType.SET_THRESHOLD]: () =>
+        this.analyticsLogger.logUpdateThreshold(
+          userAddress,
+          accountAddress,
+          txHash,
+        ),
+      [TxType.TRANSFER]: () =>
+        this.analyticsLogger.logTransfer(userAddress, accountAddress, txHash),
+      [TxType.BATCH]: () =>
+        this.analyticsLogger.logBatchTransfer(
+          userAddress,
+          accountAddress,
+          txHash,
+        ),
+    };
+
+    logByType[txType]?.();
   }
 
   private async getSignerDisplayName(
