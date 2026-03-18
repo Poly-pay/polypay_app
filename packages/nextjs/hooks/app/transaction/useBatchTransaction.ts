@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createTransactionSteps } from "./transactionSteps";
 import { BatchItem, TxType, ZERO_ADDRESS, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
@@ -8,15 +9,15 @@ import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useIdentityStore } from "~~/services/store";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
-import { createTransactionSteps } from "./transactionSteps";
 
 interface UseBatchTransactionOptions {
   onSuccess?: () => void;
 }
 
 export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
-  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
-    useStepLoading(createTransactionSteps("batch"));
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } = useStepLoading(
+    createTransactionSteps("batch"),
+  );
 
   const { data: walletClient } = useWalletClient();
   const { secret, commitment: myCommitment } = useIdentityStore();

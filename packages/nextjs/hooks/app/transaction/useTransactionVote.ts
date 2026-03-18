@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createTransactionSteps } from "./transactionSteps";
 import {
   SignerData,
   TxStatus,
@@ -20,7 +21,6 @@ import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
-import { createTransactionSteps } from "./transactionSteps";
 
 interface UseTransactionVoteOptions {
   onSuccess?: () => void;

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createTransactionSteps } from "./transactionSteps";
 import { ResolvedToken, TxType, ZERO_ADDRESS, encodeERC20Transfer, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
 import { useWalletClient } from "wagmi";
@@ -8,7 +9,6 @@ import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
-import { createTransactionSteps } from "./transactionSteps";
 
 interface TransferParams {
   recipient: string;
@@ -22,8 +22,9 @@ interface UseTransferTransactionOptions {
 }
 
 export const useTransferTransaction = (options?: UseTransferTransactionOptions) => {
-  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
-    useStepLoading(createTransactionSteps("transfer"));
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } = useStepLoading(
+    createTransactionSteps("transfer"),
+  );
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createTransactionSteps } from "./transactionSteps";
 import { SignerData, TxType, encodeAddSigners, encodeRemoveSigners, encodeUpdateThreshold } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
 import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
@@ -6,15 +7,15 @@ import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransacti
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
-import { createTransactionSteps } from "./transactionSteps";
 
 interface UseSignerTransactionOptions {
   onSuccess?: () => void;
 }
 
 export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
-  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
-    useStepLoading(createTransactionSteps("proposal"));
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } = useStepLoading(
+    createTransactionSteps("proposal"),
+  );
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
