@@ -5,6 +5,7 @@ import Image from "next/image";
 import ModalContainer from "./ModalContainer";
 import { X } from "lucide-react";
 import { ModalProps } from "~~/types/modal";
+import { formatCommitment } from "~~/utils/format";
 
 interface RemoveSignerModalProps extends ModalProps {
   signer?: {
@@ -15,11 +16,6 @@ interface RemoveSignerModalProps extends ModalProps {
 }
 
 const RemoveSignerModal: React.FC<RemoveSignerModalProps> = ({ isOpen, onClose, signer, onRemove }) => {
-  const formatCommitment = (commitment: string) => {
-    if (!commitment) return "";
-    return `${commitment.slice(0, 4)}...${commitment.slice(-3)}`;
-  };
-
   const handleRemove = () => {
     onRemove?.();
     onClose();

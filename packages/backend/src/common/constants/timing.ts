@@ -24,3 +24,22 @@ export const ZEN_TRANSFER_MAX_RETRIES = 3;
 // TTL
 export const NONCE_RESERVATION_TTL = 2 * 60 * 1000; // 2min
 export const DB_CONNECTION_TIMEOUT = 30_000; // 30s
+export const RECENT_AGGREGATION_THRESHOLD = 2 * 60 * 1000; // 2min
+
+// Limits
+export const MAX_SIGNERS_PER_TRANSACTION = 10;
+export const MAX_LEADERBOARD_RANK_FOR_REWARD = 100;
+export const PRICE_API_RETRY_ATTEMPTS = 3;
+export const HTTP_STATUS_RATE_LIMIT = 429;
+
+// Gas buffers
+export const GAS_BUFFER_EXECUTE = 50_000n;
+export const GAS_BUFFER_ZEN_TRANSFER = 10_000n;
+
+// Display
+export const ADDRESS_LOG_PREVIEW_LENGTH = 10;
+export const ETH_DISPLAY_DECIMALS = 6;
+export const WEI_PER_ETH = 1e18;
+
+// Analytics
+export const ANALYTICS_LOG_WRITE_DELAY_MAX = 500;

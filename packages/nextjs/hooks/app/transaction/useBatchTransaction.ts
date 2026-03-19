@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createTransactionSteps } from "./transactionSteps";
 import { BatchItem, TxType, ZERO_ADDRESS, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
 import { useMetaMultiSigWallet } from "~~/hooks";
@@ -13,16 +14,10 @@ interface UseBatchTransactionOptions {
   onSuccess?: () => void;
 }
 
-const BATCH_STEPS = [
-  { id: 1, label: "Preparing your batch..." },
-  { id: 2, label: "Waiting for wallet approval..." },
-  { id: 3, label: "Securing your transaction..." },
-  { id: 4, label: "Almost done, submitting..." },
-];
-
 export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
-  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } =
-    useStepLoading(BATCH_STEPS);
+  const { isLoading, loadingState, loadingStep, totalSteps, startStep, setStepByLabel, reset } = useStepLoading(
+    createTransactionSteps("batch"),
+  );
 
   const { data: walletClient } = useWalletClient();
   const { secret, commitment: myCommitment } = useIdentityStore();
@@ -58,7 +53,6 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       const { nonce } = await reserveNonce(metaMultiSigWallet.address);
 
       // 2. Get current threshold and commitments
-      startStep(1);
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
       // 3. Prepare batch data

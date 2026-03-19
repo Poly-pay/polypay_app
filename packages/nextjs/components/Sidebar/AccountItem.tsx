@@ -9,6 +9,7 @@ import { useModalApp } from "~~/hooks";
 import { useUpdateAccount } from "~~/hooks/api/useAccount";
 import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
+import { usePortfolioValue } from "~~/hooks/app/usePortfolioValue";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useAccountStore } from "~~/services/store";
 import { getAccountAvatar } from "~~/utils/avatar";
@@ -50,14 +51,7 @@ export default function AccountItem({
 
   const isLoading = isLoadingBalances || isLoadingPrices;
 
-  // Calculate total USD value
-  const totalUsdValue = React.useMemo(() => {
-    return tokens.reduce((sum, token) => {
-      const balance = balances[token.address] || "0";
-      const price = getPriceBySymbol(token.symbol);
-      return sum + parseFloat(balance) * price;
-    }, 0);
-  }, [balances, getPriceBySymbol, tokens]);
+  const { totalUsdValue } = usePortfolioValue(tokens, balances, getPriceBySymbol);
 
   const formattedTotalUsd = totalUsdValue.toLocaleString("en-US", {
     minimumFractionDigits: 0,

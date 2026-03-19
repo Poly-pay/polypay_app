@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { PriceService } from '@/price/price.service';
+import { MAX_LEADERBOARD_RANK_FOR_REWARD } from '@/common/constants/timing';
 import {
   ClaimableWeek,
   ClaimSummary,
@@ -140,8 +141,7 @@ export class RewardService {
       // Get user rank for this week
       const rank = await this.getUserRankForWeek(commitment, week);
 
-      // Skip if no rank or rank > 100
-      if (!rank || rank > 100) continue;
+      if (!rank || rank > MAX_LEADERBOARD_RANK_FOR_REWARD) continue;
 
       const expired = isClaimExpired(week);
       const claimDeadline = getClaimDeadline(week).toISOString();

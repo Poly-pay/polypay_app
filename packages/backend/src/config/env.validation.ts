@@ -36,4 +36,8 @@ export const validationSchema = Joi.object({
     'string.empty': 'RELAYER_WALLET_KEY is required',
     'any.required': 'RELAYER_WALLET_KEY is required',
   }),
+
+  // Telegram alerts - optional
+  TELEGRAM_BOT_TOKEN: Joi.string().optional(),
+  TELEGRAM_CHAT_ID: Joi.string().optional(),
 });

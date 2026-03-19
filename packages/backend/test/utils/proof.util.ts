@@ -93,8 +93,8 @@ export async function generateTestProof(
   const { bytecode, abi } = loadCircuit('circuit');
 
   // Dynamic import Noir libraries
-  const { Noir } = await import("@noir-lang/noir_js");
-  const { UltraPlonkBackend } = await import("@aztec/bb.js");
+  const { Noir } = await import('@noir-lang/noir_js');
+  const { UltraPlonkBackend } = await import('@aztec/bb.js');
 
   // Initialize Noir and backend
   const backend = new UltraPlonkBackend(bytecode);
@@ -104,7 +104,7 @@ export async function generateTestProof(
   const { witness } = await noir.execute(circuitInputs);
 
   // Generate proof
-  const {proof, publicInputs} = await backend.generateProof(witness);
+  const { proof, publicInputs } = await backend.generateProof(witness);
 
   // 7. Format output
   const proofArray = Array.from(proof);

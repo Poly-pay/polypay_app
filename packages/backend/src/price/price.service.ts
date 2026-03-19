@@ -4,7 +4,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { firstValueFrom } from 'rxjs';
 import { getCoingeckoIds } from '@polypay/shared';
-import { ZEN_COINGECKO_ID } from '@/common/constants';
+import { ZEN_COINGECKO_ID, COINGECKO_API_URL } from '@/common/constants';
 import {
   PRICE_CACHE_TTL,
   PRICE_CAPTURE_MAX_RETRIES,
@@ -21,8 +21,7 @@ export class PriceService {
   private readonly logger = new Logger(PriceService.name);
   private readonly CACHE_KEY = 'token-prices';
   private readonly CACHE_TTL = PRICE_CACHE_TTL;
-  private readonly COINGECKO_API =
-    'https://api.coingecko.com/api/v3/simple/price';
+  private readonly COINGECKO_API = COINGECKO_API_URL;
 
   constructor(
     private httpService: HttpService,

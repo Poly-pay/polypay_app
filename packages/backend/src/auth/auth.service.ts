@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
 import { LoginDto, RefreshDto } from '@polypay/shared';
@@ -34,6 +29,7 @@ export class AuthService {
 
     let proofResult;
     try {
+      // submitProofAndWaitFinalized throws on failure
       proofResult = await this.zkVerifyService.submitProofAndWaitFinalized(
         {
           proof: dto.proof,
@@ -42,10 +38,6 @@ export class AuthService {
         },
         'auth',
       );
-
-      if (proofResult.status === 'Failed') {
-        throw new BadRequestException('Proof verification failed');
-      }
     } catch (error) {
       this.logger.error(`Proof verification failed: ${error.message}`);
       throw new UnauthorizedException('Invalid proof');

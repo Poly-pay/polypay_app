@@ -1,10 +1,10 @@
 import axios from 'axios';
-import {
-  API_ENDPOINTS,
-  CreateAccountDto,
-  TxType,
-} from '@polypay/shared';
-import type { CreateTransactionPayload, ApproveTransactionPayload, CreateBatchItemPayload } from './transaction.util';
+import { API_ENDPOINTS, CreateAccountDto, TxType } from '@polypay/shared';
+import type {
+  CreateTransactionPayload,
+  ApproveTransactionPayload,
+  CreateBatchItemPayload,
+} from './transaction.util';
 import type { AuthTokens } from './auth.util';
 import { generateTestAuthProof } from './proof.util';
 
@@ -21,14 +21,11 @@ export async function stagingLogin(
 ): Promise<AuthTokens> {
   const authProof = await generateTestAuthProof(secret);
 
-  const response = await axios.post(
-    `${BASE_URL}${API_ENDPOINTS.auth.login}`,
-    {
-      commitment,
-      proof: authProof.proof,
-      publicInputs: authProof.publicInputs,
-    },
-  );
+  const response = await axios.post(`${BASE_URL}${API_ENDPOINTS.auth.login}`, {
+    commitment,
+    proof: authProof.proof,
+    publicInputs: authProof.publicInputs,
+  });
 
   return {
     accessToken: response.data.accessToken,
@@ -173,10 +170,7 @@ export async function stagingExecuteTransaction(
   }
 }
 
-export async function stagingGetTransaction(
-  accessToken: string,
-  txId: string,
-) {
+export async function stagingGetTransaction(accessToken: string, txId: string) {
   try {
     const response = await axios.get(
       `${BASE_URL}${API_ENDPOINTS.transactions.byTxId(Number(txId))}`,
@@ -194,4 +188,3 @@ export async function stagingGetTransaction(
     throw error;
   }
 }
-

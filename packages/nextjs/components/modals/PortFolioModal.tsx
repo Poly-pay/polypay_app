@@ -12,6 +12,7 @@ import { useMetaMultiSigWallet } from "~~/hooks";
 import { useTokenPrices } from "~~/hooks/api/usePrice";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
+import { usePortfolioValue } from "~~/hooks/app/usePortfolioValue";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useAccountStore } from "~~/services/store";
@@ -77,26 +78,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
 
   const isLoading = isLoadingBalances || isLoadingPrices;
 
-  // Calculate total portfolio USD value
-  const totalUsdValue = React.useMemo(() => {
-    return tokens.reduce((sum, token) => {
-      const balance = balances[token.address] || "0";
-      const price = getPriceBySymbol(token.symbol);
-      return sum + parseFloat(balance) * price;
-    }, 0);
-  }, [balances, getPriceBySymbol, tokens]);
-
-  // Get USD value for a specific token
-  const getTokenUsdValue = (token: ResolvedToken): number => {
-    const balance = balances[token.address] || "0";
-    const price = getPriceBySymbol(token.symbol);
-    return parseFloat(balance) * price;
-  };
-
-  // Get balance for a specific token
-  const getTokenBalance = (token: ResolvedToken): string => {
-    return balances[token.address] || "0";
-  };
+  const { totalUsdValue, getTokenUsdValue, getTokenBalance } = usePortfolioValue(tokens, balances, getPriceBySymbol);
 
   const toggleShowBalance = () => {
     setShowBalance(!showBalance);
