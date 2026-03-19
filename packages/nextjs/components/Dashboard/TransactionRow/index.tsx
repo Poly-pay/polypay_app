@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { ActionButtons, AwaitingBadge, StatusBadge } from "./Badges";
+import { BatchRowMenu } from "./BatchRowMenu";
 import { SignerList } from "./SignerList";
 import { TxDetails } from "./TxDetails";
 import { TxHeader } from "./TxHeader";
 import { getTxTypeLabel } from "./utils";
-import { TxStatus } from "@polypay/shared";
+import { TxStatus, TxType } from "@polypay/shared";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { TransactionRowData, useTransactionVote, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { formatAddress } from "~~/utils/format";
@@ -127,7 +128,10 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
             <span className="text-sm font-medium text-grey-500 tracking-tight">{getTxTypeLabel(tx.type)}</span>
             {!expanded && <TxDetails tx={tx} />}
           </div>
-          <div onClick={e => e.stopPropagation()}>{renderRightSide()}</div>
+          <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+            {renderRightSide()}
+            {tx.type === TxType.BATCH && tx.batchData && <BatchRowMenu batchData={tx.batchData} />}
+          </div>
         </div>
 
         {expanded && (
