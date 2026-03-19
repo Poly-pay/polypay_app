@@ -4,12 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Contact, ContactGroup } from "@polypay/shared";
-import { Search } from "lucide-react";
+import { ChevronDown, Search, Upload, Users } from "lucide-react";
 import { ContactDetailDrawer } from "~~/components/contact-book/ContactDetailDrawer";
 import { ContactList } from "~~/components/contact-book/ContactList";
 import { EditContact } from "~~/components/contact-book/Editcontact";
 import { modalManager } from "~~/components/modals/ModalLayout";
 import { useContacts, useGroups } from "~~/hooks";
+import { useClickOutside } from "~~/hooks/useClickOutside";
 import { useAccountStore } from "~~/services/store";
 import { formatAddress } from "~~/utils/format";
 
@@ -23,7 +24,10 @@ export default function AddressBookPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editing, setEditing] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [batchDropdownOpen, setBatchDropdownOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const batchDropdownRef = useRef<HTMLDivElement>(null);
+  useClickOutside(batchDropdownRef, () => setBatchDropdownOpen(false), { isActive: batchDropdownOpen });
 
   const { data: groups = [], refetch: refetchGroups } = useGroups(accountId);
   const {
@@ -131,17 +135,40 @@ export default function AddressBookPage() {
                 <Image src="/contact-book/new-group.svg" alt="New group" width={20} height={20} />
                 New group
               </button>
-              <button
-                className="bg-main-black text-white rounded-lg text-sm font-medium transition-colors cursor-pointer h-12 px-3 flex items-center gap-1"
-                onClick={() =>
-                  modalManager.openModal?.("createBatchFromContacts", {
-                    accountId,
-                  })
-                }
-              >
-                <Image src="/contact-book/create-batch.svg" alt="Create batch" width={20} height={20} />
-                Create batch
-              </button>
+              <div ref={batchDropdownRef} className="relative">
+                <button
+                  className="bg-main-black text-white rounded-lg text-sm font-medium transition-colors cursor-pointer h-12 px-3 flex items-center gap-1"
+                  onClick={() => setBatchDropdownOpen(prev => !prev)}
+                >
+                  <Image src="/contact-book/create-batch.svg" alt="Create batch" width={20} height={20} />
+                  Create batch
+                  <ChevronDown size={16} />
+                </button>
+                {batchDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-grey-200 py-1 z-50 min-w-[160px]">
+                    <button
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-grey-800 hover:bg-grey-50 w-full cursor-pointer"
+                      onClick={() => {
+                        setBatchDropdownOpen(false);
+                        modalManager.openModal?.("createBatchFromContacts", { accountId });
+                      }}
+                    >
+                      <Users size={16} />
+                      Manual
+                    </button>
+                    <button
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-grey-800 hover:bg-grey-50 w-full cursor-pointer"
+                      onClick={() => {
+                        setBatchDropdownOpen(false);
+                        modalManager.openModal?.("createBatchFromContacts", { accountId, mode: "csv" });
+                      }}
+                    >
+                      <Upload size={16} />
+                      Upload CSV
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 className="bg-main-violet text-white rounded-lg text-sm font-medium transition-colors cursor-pointer h-12 px-3 flex items-center gap-1"
                 onClick={() =>
