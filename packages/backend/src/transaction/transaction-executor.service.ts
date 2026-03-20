@@ -62,6 +62,12 @@ export class TransactionExecutorService {
       throw new NotFoundException(`Transaction ${txId} not found`);
     }
 
+    if (transaction.status !== TxStatus.PENDING) {
+      throw new BadRequestException(
+        `Transaction cannot be executed (current status: ${transaction.status})`,
+      );
+    }
+
     // Mark as EXECUTING
     await this.updateStatusAndEmit(
       txId,
@@ -120,14 +126,14 @@ export class TransactionExecutorService {
           error.message?.includes('Transaction reverted');
 
         if (isOnChainRevert) {
-          // Tx confirmed as REVERTED on-chain — safe to revert to PENDING
+          // Tx confirmed as REVERTED on-chain — only revert if still EXECUTING
+          // (another concurrent call may have already set EXECUTED)
           this.logger.warn(
-            `txId ${txId} reverted on-chain (txHash: ${submittedTxHash}). Reverting to PENDING.`,
+            `txId ${txId} reverted on-chain (txHash: ${submittedTxHash}). Reverting to PENDING if still EXECUTING.`,
           );
-          await this.updateStatusAndEmit(
+          await this.conditionalRevertToPending(
             txId,
             executionData.accountAddress,
-            TxStatus.PENDING,
           );
           throw new BadRequestException(
             'Transaction reverted on-chain. Please check contract conditions.',
@@ -144,12 +150,8 @@ export class TransactionExecutorService {
         );
       }
 
-      // Tx was NOT submitted on-chain — safe to revert to PENDING
-      await this.updateStatusAndEmit(
-        txId,
-        executionData.accountAddress,
-        TxStatus.PENDING,
-      );
+      // Tx was NOT submitted on-chain — only revert if still EXECUTING
+      await this.conditionalRevertToPending(txId, executionData.accountAddress);
 
       if (error.message?.includes('Insufficient wallet balance')) {
         const match = error.message.match(
@@ -621,6 +623,37 @@ export class TransactionExecutorService {
       await this.sleep(CROSS_CHAIN_FINALIZATION_WAIT);
     } else {
       this.logger.log('All aggregations are old (> 2 minutes), skipping wait');
+    }
+  }
+
+  /**
+   * Revert status to PENDING only if current status is EXECUTING.
+   * Prevents race condition where a concurrent call already set EXECUTED.
+   */
+  private async conditionalRevertToPending(
+    txId: number,
+    accountAddress: string,
+  ) {
+    const result = await this.prisma.transaction.updateMany({
+      where: { txId, status: TxStatus.EXECUTING },
+      data: { status: TxStatus.PENDING, txHash: null },
+    });
+
+    if (result.count > 0) {
+      const eventData: TxStatusEventData = {
+        txId,
+        status: TxStatus.PENDING,
+      };
+      this.eventsService.emitToAccount(
+        accountAddress,
+        TX_STATUS_EVENT,
+        eventData,
+      );
+      this.logger.log(`txId ${txId} reverted to PENDING`);
+    } else {
+      this.logger.log(
+        `txId ${txId} not reverted — status is no longer EXECUTING`,
+      );
     }
   }
 
