@@ -101,6 +101,16 @@ export class AdminService {
     }
     const hasDateFilter = Object.keys(dateFilter).length > 0;
 
+    // Build included tx types based on params
+    const includedTxTypes: TxType[] = [TxType.TRANSFER, TxType.BATCH];
+    if (dto?.includeSignerOps) {
+      includedTxTypes.push(
+        TxType.ADD_SIGNER,
+        TxType.REMOVE_SIGNER,
+        TxType.SET_THRESHOLD,
+      );
+    }
+
     // 1. LOGIN records
     if (dto?.includeLogin) {
       const loginRecords = await this.prisma.loginHistory.findMany({
@@ -136,10 +146,11 @@ export class AdminService {
       .map((a) => a.signers[0]?.user.commitment)
       .filter(Boolean);
 
-    // 3. APPROVE votes
+    // 3. APPROVE votes (filtered by includedTxTypes)
     const approveVotes = await this.prisma.vote.findMany({
       where: {
         voteType: VoteType.APPROVE,
+        transaction: { type: { in: includedTxTypes } },
         ...(hasDateFilter ? { createdAt: dateFilter } : {}),
       },
       include: { transaction: true },
@@ -151,6 +162,7 @@ export class AdminService {
       ? await this.prisma.vote.findMany({
           where: {
             voteType: VoteType.DENY,
+            transaction: { type: { in: includedTxTypes } },
             ...(hasDateFilter ? { createdAt: dateFilter } : {}),
           },
           include: { transaction: true },
@@ -158,10 +170,11 @@ export class AdminService {
         })
       : [];
 
-    // 5. EXECUTE records
+    // 5. EXECUTE records (filtered by includedTxTypes)
     const executedTxs = await this.prisma.transaction.findMany({
       where: {
         status: TxStatus.EXECUTED,
+        type: { in: includedTxTypes },
         ...(hasDateFilter ? { executedAt: dateFilter } : {}),
       },
       orderBy: { executedAt: 'asc' },

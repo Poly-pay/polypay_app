@@ -45,4 +45,13 @@ export class AnalyticsReportDto {
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   includeClaim?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Include ADD_SIGNER, REMOVE_SIGNER, UPDATE_THRESHOLD records',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  includeSignerOps?: boolean;
 }
