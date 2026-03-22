@@ -6,12 +6,15 @@ import { AnalyticsReportDto } from './dto/analytics-report.dto';
 import { EXPLORER_URLS } from '@/common/constants/campaign';
 import { TxStatus, VoteType } from '@polypay/shared';
 
+const BASE_CHAIN_IDS = [8453, 84532];
+
 interface AnalyticsRecord {
   timestamp: Date;
   action: string;
   userAddress: string;
   multisigWallet: string | null;
   txHash: string | null;
+  chainId?: number | null;
 }
 
 @Injectable()
@@ -20,6 +23,8 @@ export class AdminService {
     ZKVERIFY_EXPLORER: string;
     HORIZEN_EXPLORER_ADDRESS: string;
     HORIZEN_EXPLORER_TX: string;
+    BASE_EXPLORER_ADDRESS: string;
+    BASE_EXPLORER_TX: string;
   };
 
   constructor(
@@ -32,10 +37,7 @@ export class AdminService {
       EXPLORER_URLS.mainnet;
   }
 
-  /**
-   * Map TxType to Action name
-   */
-  private mapTxTypeToAction(txType: TxType): string {
+  private mapTxTypeSuffix(txType: TxType): string {
     switch (txType) {
       case TxType.TRANSFER:
         return 'TRANSFER';
@@ -52,25 +54,50 @@ export class AdminService {
     }
   }
 
-  /**
-   * Get blockchain based on action
-   */
-  private getBlockchain(action: string): string {
-    switch (action) {
-      case 'EXECUTE':
-      case 'CREATE_ACCOUNT':
-      case 'CLAIM':
-        return 'Horizen';
-      case 'DENY':
-        return '';
-      default:
-        return 'zkVerify';
-    }
+  private mapTxTypeToAction(txType: TxType): string {
+    return `PROPOSE_${this.mapTxTypeSuffix(txType)}`;
   }
 
-  /**
-   * Build commitment → walletAddress map from loginHistory (batch query)
-   */
+  private mapTxTypeToApproveAction(txType: TxType): string {
+    return `APPROVE_${this.mapTxTypeSuffix(txType)}`;
+  }
+
+  private mapTxTypeToDenyAction(txType: TxType): string {
+    return `DENY_${this.mapTxTypeSuffix(txType)}`;
+  }
+
+  private mapTxTypeToExecuteAction(txType: TxType): string {
+    return `EXECUTE_${this.mapTxTypeSuffix(txType)}`;
+  }
+
+  private getBlockchain(action: string, chainId?: number | null): string {
+    if (
+      action.startsWith('PROPOSE_') ||
+      action.startsWith('APPROVE_') ||
+      action === 'LOGIN'
+    ) {
+      return 'zkVerify';
+    }
+
+    if (action.startsWith('DENY_')) {
+      return '';
+    }
+
+    if (action === 'CLAIM') {
+      return 'Horizen';
+    }
+
+    // EXECUTE_* and CREATE_ACCOUNT: determine from chainId
+    if (chainId === 8453 || chainId === 84532) {
+      return 'Base';
+    }
+    if (chainId === 2651420 || chainId === 26514) {
+      return 'Horizen';
+    }
+
+    return 'Horizen';
+  }
+
   private async buildCommitmentToAddressMap(
     commitments: string[],
   ): Promise<Map<string, string>> {
@@ -101,6 +128,14 @@ export class AdminService {
     }
     const hasDateFilter = Object.keys(dateFilter).length > 0;
 
+    // Base chain filter
+    const excludeBaseFilter = !dto?.includeBase
+      ? { chainId: { notIn: BASE_CHAIN_IDS } }
+      : {};
+    const excludeBaseAccountFilter = !dto?.includeBase
+      ? { account: { chainId: { notIn: BASE_CHAIN_IDS } } }
+      : {};
+
     // Build included tx types based on params
     const includedTxTypes: TxType[] = [TxType.TRANSFER, TxType.BATCH];
     if (dto?.includeSignerOps) {
@@ -130,16 +165,21 @@ export class AdminService {
     }
 
     // 2. CREATE_ACCOUNT records
-    const accounts = await this.prisma.account.findMany({
-      where: hasDateFilter ? { createdAt: dateFilter } : undefined,
-      include: {
-        signers: {
-          where: { isCreator: true },
-          include: { user: true },
-        },
-      },
-      orderBy: { createdAt: 'asc' },
-    });
+    const accounts = dto?.includeCreateAccount
+      ? await this.prisma.account.findMany({
+          where: {
+            ...(hasDateFilter ? { createdAt: dateFilter } : {}),
+            ...excludeBaseFilter,
+          },
+          include: {
+            signers: {
+              where: { isCreator: true },
+              include: { user: true },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        })
+      : [];
 
     // Batch load wallet addresses for account creators
     const creatorCommitments = accounts
@@ -150,10 +190,13 @@ export class AdminService {
     const approveVotes = await this.prisma.vote.findMany({
       where: {
         voteType: VoteType.APPROVE,
-        transaction: { type: { in: includedTxTypes } },
+        transaction: {
+          type: { in: includedTxTypes },
+          ...excludeBaseAccountFilter,
+        },
         ...(hasDateFilter ? { createdAt: dateFilter } : {}),
       },
-      include: { transaction: true },
+      include: { transaction: { include: { account: true } } },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -162,10 +205,13 @@ export class AdminService {
       ? await this.prisma.vote.findMany({
           where: {
             voteType: VoteType.DENY,
-            transaction: { type: { in: includedTxTypes } },
+            transaction: {
+              type: { in: includedTxTypes },
+              ...excludeBaseAccountFilter,
+            },
             ...(hasDateFilter ? { createdAt: dateFilter } : {}),
           },
-          include: { transaction: true },
+          include: { transaction: { include: { account: true } } },
           orderBy: { createdAt: 'asc' },
         })
       : [];
@@ -175,8 +221,10 @@ export class AdminService {
       where: {
         status: TxStatus.EXECUTED,
         type: { in: includedTxTypes },
+        ...excludeBaseAccountFilter,
         ...(hasDateFilter ? { executedAt: dateFilter } : {}),
       },
+      include: { account: true },
       orderBy: { executedAt: 'asc' },
     });
 
@@ -200,6 +248,7 @@ export class AdminService {
         userAddress: addressMap.get(creator.user.commitment) || 'UNKNOWN',
         multisigWallet: account.address,
         txHash: account.address,
+        chainId: account.chainId,
       });
     }
 
@@ -220,7 +269,9 @@ export class AdminService {
       for (let i = 0; i < votes.length; i++) {
         const vote = votes[i];
         const action =
-          i === 0 ? this.mapTxTypeToAction(vote.transaction.type) : 'APPROVE';
+          i === 0
+            ? this.mapTxTypeToAction(vote.transaction.type)
+            : this.mapTxTypeToApproveAction(vote.transaction.type);
 
         records.push({
           timestamp: vote.createdAt,
@@ -228,6 +279,7 @@ export class AdminService {
           userAddress: addressMap.get(vote.voterCommitment) || 'UNKNOWN',
           multisigWallet: vote.transaction.accountAddress,
           txHash: vote.zkVerifyTxHash || 'PENDING',
+          chainId: vote.transaction.account.chainId,
         });
       }
     }
@@ -236,10 +288,11 @@ export class AdminService {
     for (const vote of denyVotes) {
       records.push({
         timestamp: vote.createdAt,
-        action: 'DENY',
+        action: this.mapTxTypeToDenyAction(vote.transaction.type),
         userAddress: addressMap.get(vote.voterCommitment) || 'UNKNOWN',
         multisigWallet: vote.transaction.accountAddress,
         txHash: null,
+        chainId: vote.transaction.account.chainId,
       });
     }
 
@@ -265,37 +318,78 @@ export class AdminService {
     for (const tx of executedTxs) {
       records.push({
         timestamp: tx.executedAt || tx.updatedAt,
-        action: 'EXECUTE',
+        action: this.mapTxTypeToExecuteAction(tx.type),
         userAddress: addressMap.get(tx.createdBy) || 'UNKNOWN',
         multisigWallet: tx.accountAddress,
         txHash: tx.txHash || 'PENDING',
+        chainId: tx.account.chainId,
       });
     }
 
     // Sort all records by timestamp
     records.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
-    // Generate CSV
     // Count totals by blockchain
     const totalZkVerify = records.filter(
-      (r) => this.getBlockchain(r.action) === 'zkVerify',
+      (r) => this.getBlockchain(r.action, r.chainId) === 'zkVerify',
     ).length;
     const totalHorizen = records.filter(
-      (r) => this.getBlockchain(r.action) === 'Horizen',
+      (r) => this.getBlockchain(r.action, r.chainId) === 'Horizen',
+    ).length;
+    const totalBase = records.filter(
+      (r) => this.getBlockchain(r.action, r.chainId) === 'Base',
     ).length;
 
     // Generate CSV
-    return this.generateCSV(records, totalZkVerify, totalHorizen);
+    return this.generateCSV(records, totalZkVerify, totalHorizen, totalBase);
+  }
+
+  private getTxHashLink(
+    action: string,
+    txHash: string,
+    chainId?: number | null,
+  ): string {
+    const isBase = chainId === 8453 || chainId === 84532;
+
+    const explorerMap = {
+      zkVerify: this.explorerConfig.ZKVERIFY_EXPLORER,
+      chainTx: isBase
+        ? this.explorerConfig.BASE_EXPLORER_TX
+        : this.explorerConfig.HORIZEN_EXPLORER_TX,
+      chainAddress: isBase
+        ? this.explorerConfig.BASE_EXPLORER_ADDRESS
+        : this.explorerConfig.HORIZEN_EXPLORER_ADDRESS,
+    };
+
+    let explorerKey: keyof typeof explorerMap | null = null;
+
+    if (
+      action.startsWith('PROPOSE_') ||
+      action.startsWith('APPROVE_') ||
+      action === 'LOGIN'
+    ) {
+      explorerKey = 'zkVerify';
+    } else if (action === 'CREATE_ACCOUNT') {
+      explorerKey = 'chainAddress';
+    } else if (action.startsWith('EXECUTE_') || action === 'CLAIM') {
+      explorerKey = 'chainTx';
+    }
+
+    if (!explorerKey) return '';
+
+    return `${explorerMap[explorerKey]}/${txHash}`;
   }
 
   private generateCSV(
     records: AnalyticsRecord[],
     totalZkVerify: number,
     totalHorizen: number,
+    totalBase: number,
   ): string {
     const totalsHeader = [
       `Total zkVerify,${totalZkVerify}`,
       `Total Horizen,${totalHorizen}`,
+      `Total Base,${totalBase}`,
       '', // empty line
     ];
 
@@ -305,7 +399,7 @@ export class AdminService {
     const rows = records.map((record) => {
       const timestamp = record.timestamp.toISOString();
       const action = record.action;
-      const blockchain = this.getBlockchain(record.action);
+      const blockchain = this.getBlockchain(record.action, record.chainId);
       const userAddress = record.userAddress
         ? `${this.explorerConfig.HORIZEN_EXPLORER_ADDRESS}/${record.userAddress}`
         : '';
@@ -315,23 +409,11 @@ export class AdminService {
 
       let txHash = '';
       if (record.txHash && record.txHash !== 'PENDING') {
-        if (
-          record.action === 'LOGIN' ||
-          record.action === 'APPROVE' ||
-          record.action === 'TRANSFER' ||
-          record.action === 'BATCH_TRANSFER' ||
-          record.action === 'ADD_SIGNER' ||
-          record.action === 'REMOVE_SIGNER' ||
-          record.action === 'UPDATE_THRESHOLD'
-        ) {
-          txHash = `${this.explorerConfig.ZKVERIFY_EXPLORER}/${record.txHash}`;
-        } else if (record.action === 'CREATE_ACCOUNT') {
-          txHash = `${this.explorerConfig.HORIZEN_EXPLORER_ADDRESS}/${record.txHash}`;
-        } else if (record.action === 'EXECUTE') {
-          txHash = `${this.explorerConfig.HORIZEN_EXPLORER_TX}/${record.txHash}`;
-        } else if (record.action === 'CLAIM') {
-          txHash = `${this.explorerConfig.HORIZEN_EXPLORER_TX}/${record.txHash}`;
-        }
+        txHash = this.getTxHashLink(
+          record.action,
+          record.txHash,
+          record.chainId,
+        );
       } else if (record.txHash === 'PENDING') {
         txHash = 'PENDING';
       }
