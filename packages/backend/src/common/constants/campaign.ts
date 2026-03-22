@@ -27,11 +27,15 @@ export const EXPLORER_URLS = {
     ZKVERIFY_EXPLORER: 'https://zkverify.subscan.io/tx',
     HORIZEN_EXPLORER_ADDRESS: 'https://horizen.calderaexplorer.xyz/address',
     HORIZEN_EXPLORER_TX: 'https://horizen.calderaexplorer.xyz/tx',
+    BASE_EXPLORER_ADDRESS: 'https://basescan.org/address',
+    BASE_EXPLORER_TX: 'https://basescan.org/tx',
   },
   testnet: {
     ZKVERIFY_EXPLORER: 'https://zkverify-testnet.subscan.io/tx',
     HORIZEN_EXPLORER_ADDRESS:
       'https://horizen-testnet.explorer.caldera.xyz/address',
     HORIZEN_EXPLORER_TX: 'https://horizen-testnet.explorer.caldera.xyz/tx',
+    BASE_EXPLORER_ADDRESS: 'https://sepolia.basescan.org/address',
+    BASE_EXPLORER_TX: 'https://sepolia.basescan.org/tx',
   },
 } as const;
