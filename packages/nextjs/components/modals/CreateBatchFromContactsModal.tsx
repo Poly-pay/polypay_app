@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Contact, ContactGroup, CreateBatchItemDto, ZERO_ADDRESS } from "@polypay/shared";
 import { ArrowLeft, GripVertical, X } from "lucide-react";
@@ -12,18 +12,22 @@ import { useContacts, useCreateBatchItem, useGroups } from "~~/hooks";
 import { useBatchTransaction } from "~~/hooks";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { formatAddress } from "~~/utils/format";
+import { parseBatchCsv } from "~~/utils/parseBatchCsv";
 import { notification } from "~~/utils/scaffold-eth";
 
-interface BatchContactEntry {
+export interface BatchContactEntry {
   contact: Contact;
   amount: string;
   tokenAddress: string;
+  isSynthetic?: boolean;
 }
 
 interface CreateBatchFromContactsModalProps {
   isOpen: boolean;
   onClose: () => void;
   accountId?: string;
+  mode?: "manual" | "csv";
+  initialBatchItems?: BatchContactEntry[];
   [key: string]: any;
 }
 
@@ -33,16 +37,20 @@ export default function CreateBatchFromContactsModal({
   isOpen,
   onClose,
   accountId,
+  mode = "manual",
+  initialBatchItems,
 }: CreateBatchFromContactsModalProps) {
   const [step, setStep] = useState<Step>(1);
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [batchEntries, setBatchEntries] = useState<BatchContactEntry[]>([]);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const hasAppliedInitialItems = useRef(false);
 
   const { data: contacts = [] } = useContacts(accountId || null, selectedGroupId || undefined);
   const { data: allContacts = [] } = useContacts(accountId || null);
   const { data: groups = [] } = useGroups(accountId || null);
-  const { tokens, nativeEth } = useNetworkTokens();
+  const { tokens, nativeEth, chainId } = useNetworkTokens();
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const {
     proposeBatch,
@@ -52,7 +60,6 @@ export default function CreateBatchFromContactsModal({
     totalSteps,
   } = useBatchTransaction({
     onSuccess: () => {
-      notification.success("Batch transaction created!");
       handleReset();
       onClose();
     },
@@ -60,11 +67,22 @@ export default function CreateBatchFromContactsModal({
 
   const defaultToken = nativeEth || tokens[0];
 
+  // Skip to step 2 when initialBatchItems is provided (duplicate flow)
+  useEffect(() => {
+    if (isOpen && initialBatchItems && initialBatchItems.length > 0 && !hasAppliedInitialItems.current) {
+      setBatchEntries(initialBatchItems);
+      setStep(2);
+      hasAppliedInitialItems.current = true;
+    }
+  }, [isOpen, initialBatchItems]);
+
   const handleReset = () => {
     setStep(1);
     setSelectedContactIds(new Set());
     setSelectedGroupId(null);
     setBatchEntries([]);
+    setCsvFile(null);
+    hasAppliedInitialItems.current = false;
   };
 
   const handleClose = () => {
@@ -108,6 +126,55 @@ export default function CreateBatchFromContactsModal({
     setStep(2);
   };
 
+  // CSV continue handler
+  const handleCsvContinue = () => {
+    if (!csvFile) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target?.result as string;
+      if (!text) return;
+
+      const { validEntries, invalidCount } = parseBatchCsv(text, chainId);
+
+      if (invalidCount > 0) {
+        notification.error(`${invalidCount} row(s) skipped (invalid address, amount, or token)`);
+      }
+
+      if (validEntries.length === 0) {
+        notification.error("No valid rows found");
+        return;
+      }
+
+      const entries: BatchContactEntry[] = validEntries.map(entry => ({
+        contact: {
+          id: crypto.randomUUID(),
+          name: "",
+          address: entry.address,
+          accountId: "",
+          groups: [],
+          createdAt: "",
+          updatedAt: "",
+        } as Contact,
+        amount: entry.amount,
+        tokenAddress: entry.tokenAddress,
+        isSynthetic: true,
+      }));
+
+      setBatchEntries(entries);
+      setStep(2);
+    };
+    reader.readAsText(csvFile);
+  };
+
+  // Back button logic
+  const handleBack = () => {
+    if (step === 2 && initialBatchItems && initialBatchItems.length > 0) {
+      handleClose();
+      return;
+    }
+    setStep((step - 1) as Step);
+  };
+
   // Step 2: Amount & Token
   const updateEntryAmount = (index: number, amount: string) => {
     setBatchEntries(prev => prev.map((entry, i) => (i === index ? { ...entry, amount } : entry)));
@@ -143,7 +210,7 @@ export default function CreateBatchFromContactsModal({
             recipient: entry.contact.address,
             amount: amountInSmallestUnit,
             tokenAddress: entry.tokenAddress === ZERO_ADDRESS ? undefined : entry.tokenAddress,
-            contactId: entry.contact.id,
+            contactId: entry.isSynthetic ? undefined : entry.contact.id,
           };
           return createBatchItem(dto);
         }),
@@ -154,118 +221,323 @@ export default function CreateBatchFromContactsModal({
     }
   };
 
-  const title = step === 1 ? "Choose contact" : step === 2 ? "Add to batch" : "Transactions summary";
+  const isCsvMode = mode === "csv";
+  const title =
+    step === 1 ? (isCsvMode ? "Upload CSV" : "Choose contact") : step === 2 ? "Add to batch" : "Transactions summary";
 
   return (
     <ModalContainer
       isOpen={isOpen}
       onClose={handleClose}
       isCloseButton={false}
-      className="w-[700px] bg-white p-0 flex flex-col max-h-[85vh]"
+      className="w-[700px] bg-white p-0 !max-h-[85vh]"
       preventClose={isProposing}
       loadingTransaction={isProposing}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 shrink-0">
-        {step > 1 ? (
-          <button onClick={() => setStep((step - 1) as Step)} className="p-2.5 rounded-lg cursor-pointer">
-            <ArrowLeft size={24} />
+      <div className="flex flex-col max-h-[85vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 shrink-0">
+          {step > 1 ? (
+            <button onClick={handleBack} className="p-2.5 rounded-lg cursor-pointer">
+              <ArrowLeft size={24} />
+            </button>
+          ) : (
+            <div className="w-11" />
+          )}
+          <p className="font-semibold text-xl uppercase tracking-tight">{title}</p>
+          <button onClick={handleClose} className="p-2.5 rounded-lg border border-grey-200 cursor-pointer">
+            <X size={18} />
           </button>
-        ) : (
-          <div className="w-11" />
-        )}
-        <p className="font-semibold text-xl uppercase tracking-tight">{title}</p>
-        <button onClick={handleClose} className="p-2.5 rounded-lg border border-grey-200 cursor-pointer">
-          <X size={18} />
-        </button>
-      </div>
+        </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {step === 1 && (
-          <StepChooseContact
-            contacts={contacts}
-            groups={groups}
-            selectedGroupId={selectedGroupId}
-            selectedContactIds={selectedContactIds}
-            onSelectGroup={setSelectedGroupId}
-            onToggleContact={toggleContact}
-            onSelectAll={handleSelectAll}
-            allSelected={allSelected}
-          />
-        )}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
+          {step === 1 &&
+            (isCsvMode ? (
+              <StepUploadCsv onFileReady={setCsvFile} onFileRemoved={() => setCsvFile(null)} />
+            ) : (
+              <StepChooseContact
+                contacts={contacts}
+                groups={groups}
+                selectedGroupId={selectedGroupId}
+                selectedContactIds={selectedContactIds}
+                onSelectGroup={setSelectedGroupId}
+                onToggleContact={toggleContact}
+                onSelectAll={handleSelectAll}
+                allSelected={allSelected}
+              />
+            ))}
 
-        {step === 2 && (
-          <StepAddToBatch
-            entries={batchEntries}
-            resolveToken={resolveToken}
-            onUpdateAmount={updateEntryAmount}
-            onUpdateToken={updateEntryToken}
-            onRemove={removeEntry}
-          />
-        )}
-
-        {step === 3 && <StepTransactionSummary entries={batchEntries} resolveToken={resolveToken} />}
-      </div>
-
-      {/* Footer */}
-      <div className="bg-grey-50 border-t border-grey-200 flex gap-2 items-center px-5 py-4 shrink-0">
-        <button
-          onClick={handleClose}
-          className="bg-grey-100 rounded-lg font-medium text-sm h-9 w-[90px] cursor-pointer"
-        >
-          Cancel
-        </button>
-        <div className="flex-1">
-          {step === 1 && (
-            <button
-              onClick={goToStep2}
-              disabled={selectedContactIds.size === 0}
-              className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-40"
-            >
-              Continue
-            </button>
-          )}
           {step === 2 && (
-            <button
-              onClick={goToStep3}
-              disabled={!allEntriesFilled}
-              className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-40"
-            >
-              Review
-            </button>
+            <StepAddToBatch
+              entries={batchEntries}
+              resolveToken={resolveToken}
+              onUpdateAmount={updateEntryAmount}
+              onUpdateToken={updateEntryToken}
+              onRemove={removeEntry}
+            />
           )}
-          {step === 3 && (
-            <div className="flex flex-col gap-2">
-              {isProposing && loadingState && loadingStep > 0 && (
-                <div className="flex flex-col items-center gap-1.5 w-full">
-                  <div className="text-xs text-gray-500">
-                    Step {loadingStep} of {totalSteps} — {loadingState}
-                  </div>
-                  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${(loadingStep / totalSteps) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+
+          {step === 3 && <StepTransactionSummary entries={batchEntries} resolveToken={resolveToken} />}
+        </div>
+
+        {/* Footer */}
+        <div className="bg-grey-50 border-t border-grey-200 flex gap-2 items-center px-5 py-4 shrink-0">
+          <button
+            onClick={handleClose}
+            className="bg-grey-100 rounded-lg font-medium text-sm h-9 w-[90px] cursor-pointer"
+          >
+            Cancel
+          </button>
+          <div className="flex-1">
+            {step === 1 &&
+              (isCsvMode ? (
+                <button
+                  onClick={handleCsvContinue}
+                  disabled={!csvFile}
+                  className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-40"
+                >
+                  Continue
+                </button>
+              ) : (
+                <button
+                  onClick={goToStep2}
+                  disabled={selectedContactIds.size === 0}
+                  className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-40"
+                >
+                  Continue
+                </button>
+              ))}
+            {step === 2 && (
               <button
-                onClick={handleProposeBatch}
-                disabled={isProposing}
-                className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-50"
+                onClick={goToStep3}
+                disabled={!allEntriesFilled}
+                className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-40"
               >
-                {isProposing ? loadingState || "Processing..." : "Propose batch"}
+                Review
               </button>
-            </div>
-          )}
+            )}
+            {step === 3 && (
+              <div className="flex flex-col gap-2">
+                {isProposing && loadingState && loadingStep > 0 && (
+                  <div className="flex flex-col items-center gap-1.5 w-full">
+                    <div className="text-xs text-gray-500">
+                      Step {loadingStep} of {totalSteps} — {loadingState}
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${(loadingStep / totalSteps) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={handleProposeBatch}
+                  disabled={isProposing}
+                  className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-50"
+                >
+                  {isProposing ? loadingState || "Processing..." : "Propose batch"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </ModalContainer>
   );
 }
 
-// --- Step 1: Choose Contact ---
+// --- Step 1a: Upload CSV ---
+type CsvUploadState = "idle" | "importing" | "loaded";
+
+function StepUploadCsv({
+  onFileReady,
+  onFileRemoved,
+}: {
+  onFileReady: (file: File) => void;
+  onFileRemoved: () => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadState, setUploadState] = useState<CsvUploadState>("idle");
+  const [file, setFile] = useState<File | null>(null);
+  const [importProgress, setImportProgress] = useState(0);
+  const [templateDownloading, setTemplateDownloading] = useState(false);
+  const [templateProgress, setTemplateProgress] = useState(0);
+  const importTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleFile = (selectedFile: File) => {
+    if (!selectedFile.name.endsWith(".csv")) {
+      notification.error("Please upload a CSV file");
+      return;
+    }
+    setFile(selectedFile);
+    setUploadState("importing");
+    setImportProgress(0);
+
+    // Simulate import progress (local file read is near-instant)
+    let progress = 0;
+    importTimerRef.current = setInterval(() => {
+      progress += 20;
+      setImportProgress(Math.min(progress, 100));
+      if (progress >= 100) {
+        if (importTimerRef.current) clearInterval(importTimerRef.current);
+        setUploadState("loaded");
+        onFileReady(selectedFile);
+      }
+    }, 100);
+  };
+
+  const handleCancelImport = () => {
+    if (importTimerRef.current) clearInterval(importTimerRef.current);
+    setUploadState("idle");
+    setFile(null);
+    setImportProgress(0);
+    onFileRemoved();
+  };
+
+  const handleRemoveFile = () => {
+    setUploadState("idle");
+    setFile(null);
+    setImportProgress(0);
+    onFileRemoved();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) handleFile(droppedFile);
+  };
+
+  const handleDownloadTemplate = () => {
+    setTemplateDownloading(true);
+    setTemplateProgress(0);
+
+    // Simulate brief download progress
+    let progress = 0;
+    const timer = setInterval(() => {
+      progress += 25;
+      setTemplateProgress(Math.min(progress, 100));
+      if (progress >= 100) {
+        clearInterval(timer);
+        setTemplateDownloading(false);
+        setTemplateProgress(0);
+      }
+    }, 150);
+
+    // Trigger actual download
+    const link = document.createElement("a");
+    link.href = "/templates/batch-template.csv";
+    link.download = "batch-template.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (importTimerRef.current) clearInterval(importTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      {/* Drop zone */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={e => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onClick={() => uploadState === "idle" && fileInputRef.current?.click()}
+        className={`flex flex-col items-center justify-center gap-4 border border-dashed rounded-2xl h-[240px] transition-colors ${
+          uploadState !== "idle"
+            ? "border-grey-300 bg-grey-50"
+            : isDragging
+              ? "border-main-pink bg-pink-50 cursor-pointer"
+              : "border-grey-300 bg-grey-50 cursor-pointer hover:border-grey-400"
+        }`}
+      >
+        <Image src="/icons/batch/export-upload.svg" alt="Upload" width={44} height={44} className="opacity-50" />
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-base font-medium text-grey-950 tracking-tight">Import CSV file</p>
+          <p className="text-sm font-medium text-grey-500 tracking-tight">Drop the file or click here to choose file</p>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={e => {
+            const selected = e.target.files?.[0];
+            if (selected) handleFile(selected);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
+      {/* File info card - importing state */}
+      {uploadState === "importing" && file && (
+        <div className="flex items-center gap-2 border border-main-pink rounded-[14px] px-3 py-2">
+          <Image src="/icons/batch/export-upload.svg" alt="Uploading" width={28} height={28} />
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-medium text-grey-950 tracking-tight truncate">{file.name}</p>
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-medium text-grey-900 tracking-tight">{importProgress}%</span>
+              <div className="size-[14px] animate-spin rounded-full border-2 border-grey-300 border-t-main-pink" />
+            </div>
+          </div>
+          <button onClick={handleCancelImport} className="shrink-0 cursor-pointer">
+            <Image src="/icons/batch/close-circle.svg" alt="Cancel" width={20} height={20} />
+          </button>
+        </div>
+      )}
+
+      {/* File info card - loaded state */}
+      {uploadState === "loaded" && file && (
+        <div className="flex items-center gap-2 border border-grey-300 rounded-[14px] px-3 py-2">
+          <Image src="/icons/batch/csv-file.svg" alt="CSV" width={28} height={28} />
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-medium text-grey-950 tracking-tight truncate">{file.name}</p>
+            <p className="text-sm font-medium text-grey-900 tracking-tight">{formatFileSize(file.size)}</p>
+          </div>
+          <button onClick={handleRemoveFile} className="shrink-0 cursor-pointer">
+            <Image src="/contact-book/trash.svg" alt="Remove" width={20} height={20} />
+          </button>
+        </div>
+      )}
+
+      {/* Download template link */}
+      <div className="flex items-center gap-1">
+        <Image src="/icons/batch/document-download.svg" alt="Download" width={20} height={20} />
+        <button
+          onClick={handleDownloadTemplate}
+          className="flex-1 text-sm font-medium text-grey-500 tracking-tight text-left cursor-pointer hover:text-grey-700"
+        >
+          Download CSV template (21 B)
+        </button>
+        {templateDownloading && (
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-medium text-grey-900 tracking-tight">{templateProgress}%</span>
+            <div className="size-[14px] animate-spin rounded-full border-2 border-grey-300 border-t-main-pink" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Step 1b: Choose Contact ---
 function StepChooseContact({
   contacts,
   groups,
@@ -395,10 +667,19 @@ function StepAddToBatch({
               <span className="text-sm font-medium text-main-violet">Transfer</span>
               <Image src="/avatars/default-avt.svg" alt="avatar" width={40} height={40} className="rounded-full" />
               <div className="flex flex-col gap-1">
-                <span className="font-medium text-grey-950">{entry.contact.name}</span>
-                <span className="text-sm text-grey-500">
-                  {formatAddress(entry.contact.address, { start: 4, end: 4 })}
-                </span>
+                {!entry.contact.name && (
+                  <span className="font-medium text-grey-950">
+                    {formatAddress(entry.contact.address, { start: 4, end: 4 })}
+                  </span>
+                )}
+                {entry.contact.name && (
+                  <>
+                    <span className="font-medium text-grey-950">{entry.contact.name}</span>
+                    <span className="text-sm text-grey-500">
+                      {formatAddress(entry.contact.address, { start: 4, end: 4 })}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 

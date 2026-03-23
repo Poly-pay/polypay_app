@@ -39,7 +39,7 @@ export class AnalyticsReportDto {
 
   @ApiPropertyOptional({
     description: 'Include CLAIM records',
-    default: true,
+    default: false,
   })
   @IsOptional()
   @IsBoolean()
@@ -54,4 +54,22 @@ export class AnalyticsReportDto {
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   includeSignerOps?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Include CREATE_ACCOUNT records',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  includeCreateAccount?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Include Base chain (chainId 8453, 84532) records',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  includeBase?: boolean;
 }

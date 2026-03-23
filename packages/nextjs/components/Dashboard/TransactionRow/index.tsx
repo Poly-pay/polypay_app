@@ -127,7 +127,9 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
             <span className="text-sm font-medium text-grey-500 tracking-tight">{getTxTypeLabel(tx.type)}</span>
             {!expanded && <TxDetails tx={tx} />}
           </div>
-          <div onClick={e => e.stopPropagation()}>{renderRightSide()}</div>
+          <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+            {renderRightSide()}
+          </div>
         </div>
 
         {expanded && (
@@ -140,6 +142,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
               loading={loading}
               initiatorCommitment={initiatorCommitment}
               initiatorName={initiatorName}
+              batchData={tx.batchData}
             />
             <SignerList
               members={tx.members}

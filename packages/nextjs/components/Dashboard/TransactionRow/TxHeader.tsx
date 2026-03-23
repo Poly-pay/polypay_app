@@ -1,9 +1,15 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import { AddressWithContact } from "./AddressWithContact";
 import { getExpandedHeaderText } from "./utils";
-import { TxType, getTokenByAddress } from "@polypay/shared";
-import { TransactionRowData, VoteStatus, useNetworkTokens } from "~~/hooks";
+import { TxType, ZERO_ADDRESS, formatTokenAmount, getTokenByAddress } from "@polypay/shared";
+import { Contact } from "@polypay/shared";
+import { BatchContactEntry } from "~~/components/modals/CreateBatchFromContactsModal";
+import { modalManager } from "~~/components/modals/ModalLayout";
+import { BatchTransfer, TransactionRowData, VoteStatus, useNetworkTokens } from "~~/hooks";
+import { useAccountStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
 
 interface TxHeaderProps {
@@ -14,6 +20,7 @@ interface TxHeaderProps {
   loading: boolean;
   initiatorName?: string;
   initiatorCommitment: string;
+  batchData?: BatchTransfer[];
 }
 
 function SignerBadgeList({ signerData }: { signerData: TransactionRowData["signerData"] }) {
@@ -56,46 +63,92 @@ export function TxHeader({
   loading,
   initiatorCommitment,
   initiatorName,
+  batchData,
 }: TxHeaderProps) {
   const headerText = getExpandedHeaderText(tx.type);
   const shortCommitment = formatAddress(initiatorCommitment, { start: 4, end: 4 });
   const { chainId } = useNetworkTokens();
+  const { currentAccount } = useAccountStore();
+
+  const handleDuplicate = () => {
+    if (!batchData) return;
+
+    const initialBatchItems: BatchContactEntry[] = batchData.map(transfer => {
+      const token = getTokenByAddress(transfer.tokenAddress, chainId);
+      const amount = formatTokenAmount(transfer.amount, token.decimals);
+
+      const contact: Contact = {
+        id: crypto.randomUUID(),
+        name: transfer.contactName || formatAddress(transfer.recipient, { start: 6, end: 4 }),
+        address: transfer.recipient,
+        accountId: "",
+        groups: [],
+        createdAt: "",
+        updatedAt: "",
+      } as Contact;
+
+      return {
+        contact,
+        amount,
+        tokenAddress: transfer.tokenAddress || ZERO_ADDRESS,
+        isSynthetic: true,
+      };
+    });
+
+    modalManager.openModal?.("createBatchFromContacts", {
+      accountId: currentAccount?.id,
+      initialBatchItems,
+    });
+  };
 
   const renderHeaderRow = () => (
     <div className="flex items-center justify-between mb-4">
       <div className="text-lg font-semibold">
         {tx.type === TxType.BATCH ? (
-          <span>{tx.batchData?.length ?? 0} transactions</span>
+          <span>{tx.batchData?.length ?? 0} Transactions</span>
         ) : (
           <span>
             {headerText} {initiatorName ? `${initiatorName} (${shortCommitment})` : shortCommitment}
           </span>
         )}
       </div>
-      {myVoteStatus === null && (
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
+        {tx.type === TxType.BATCH && batchData && (
           <button
             onClick={e => {
               e.stopPropagation();
-              onDeny();
+              handleDuplicate();
             }}
-            disabled={loading}
-            className="px-6 py-2 text-sm font-medium text-main-black bg-white rounded-full hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
+            className="bg-grey-100 rounded-lg px-6 h-7 text-sm font-medium text-main-black cursor-pointer hover:bg-grey-200 transition-colors"
           >
-            Deny
+            Duplicate
           </button>
-          <button
-            onClick={e => {
-              e.stopPropagation();
-              onApprove();
-            }}
-            disabled={loading}
-            className="px-6 py-2 text-sm font-medium text-main-black bg-pink-350 rounded-full hover:bg-pink-450 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {loading ? "Processing..." : "Approve"}
-          </button>
-        </div>
-      )}
+        )}
+        {myVoteStatus === null && (
+          <>
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                onDeny();
+              }}
+              disabled={loading}
+              className="px-6 py-2 text-sm font-medium text-main-black bg-white rounded-full hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Deny
+            </button>
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                onApprove();
+              }}
+              disabled={loading}
+              className="px-6 py-2 text-sm font-medium text-main-black bg-pink-350 rounded-full hover:bg-pink-450 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {loading ? "Processing..." : "Approve"}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 
