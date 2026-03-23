@@ -341,7 +341,13 @@ export class AdminService {
     ).length;
 
     // Generate CSV
-    return this.generateCSV(records, totalZkVerify, totalHorizen, totalBase);
+    return this.generateCSV(
+      records,
+      totalZkVerify,
+      totalHorizen,
+      totalBase,
+      dto?.includeBase,
+    );
   }
 
   private getTxHashLink(
@@ -385,11 +391,13 @@ export class AdminService {
     totalZkVerify: number,
     totalHorizen: number,
     totalBase: number,
+    includeBase?: boolean,
   ): string {
     const totalsHeader = [
       `Total zkVerify,${totalZkVerify}`,
       `Total Horizen,${totalHorizen}`,
-      `Total Base,${totalBase}`,
+      `Total (zkVerify + Horizen),${totalZkVerify + totalHorizen}`,
+      ...(includeBase ? [`Total Base,${totalBase}`] : []),
       '', // empty line
     ];
 
