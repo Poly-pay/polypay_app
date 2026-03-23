@@ -12,8 +12,6 @@ interface ParseBatchCsvResult {
   invalidCount: number;
 }
 
-const HEADER_PATTERN = /^address,amount,token$/i;
-
 export function parseBatchCsv(csvText: string, chainId: number): ParseBatchCsvResult {
   // Strip BOM
   const cleaned = csvText.replace(/^\uFEFF/, "");
@@ -23,8 +21,10 @@ export function parseBatchCsv(csvText: string, chainId: number): ParseBatchCsvRe
     return { validEntries: [], invalidCount: 0 };
   }
 
+  // Skip header row: if the first field is not a valid Ethereum address, treat it as a header
   let startIndex = 0;
-  if (HEADER_PATTERN.test(lines[0].trim())) {
+  const firstField = lines[0].split(",")[0].trim();
+  if (!isAddress(firstField)) {
     startIndex = 1;
   }
 
@@ -64,5 +64,21 @@ export function parseBatchCsv(csvText: string, chainId: number): ParseBatchCsvRe
     }
   }
 
-  return { validEntries, invalidCount };
+  // Merge entries with same address + tokenAddress by summing amounts
+  const mergeKey = (entry: ParsedBatchEntry) => `${entry.address.toLowerCase()}_${entry.tokenAddress.toLowerCase()}`;
+  const mergedMap = new Map<string, ParsedBatchEntry>();
+
+  for (const entry of validEntries) {
+    const key = mergeKey(entry);
+    const existing = mergedMap.get(key);
+    if (existing) {
+      // Use toFixed(18) to avoid floating-point precision issues (e.g., 0.1 + 0.2 = 0.30000000000000004)
+      const sum = parseFloat(existing.amount) + parseFloat(entry.amount);
+      existing.amount = parseFloat(sum.toFixed(18)).toString();
+    } else {
+      mergedMap.set(key, { ...entry });
+    }
+  }
+
+  return { validEntries: Array.from(mergedMap.values()), invalidCount };
 }

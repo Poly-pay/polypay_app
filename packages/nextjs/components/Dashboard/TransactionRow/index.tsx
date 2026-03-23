@@ -2,12 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { ActionButtons, AwaitingBadge, StatusBadge } from "./Badges";
-import { BatchRowMenu } from "./BatchRowMenu";
 import { SignerList } from "./SignerList";
 import { TxDetails } from "./TxDetails";
 import { TxHeader } from "./TxHeader";
 import { getTxTypeLabel } from "./utils";
-import { TxStatus, TxType } from "@polypay/shared";
+import { TxStatus } from "@polypay/shared";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { TransactionRowData, useTransactionVote, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { formatAddress } from "~~/utils/format";
@@ -130,7 +129,6 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
           </div>
           <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
             {renderRightSide()}
-            {tx.type === TxType.BATCH && tx.batchData && <BatchRowMenu batchData={tx.batchData} />}
           </div>
         </div>
 
@@ -144,6 +142,7 @@ export function TransactionRow({ tx, onSuccess }: TransactionRowProps) {
               loading={loading}
               initiatorCommitment={initiatorCommitment}
               initiatorName={initiatorName}
+              batchData={tx.batchData}
             />
             <SignerList
               members={tx.members}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Contact, ContactGroup, CreateBatchItemDto, ZERO_ADDRESS } from "@polypay/shared";
-import { ArrowLeft, GripVertical, Upload, X } from "lucide-react";
+import { ArrowLeft, GripVertical, X } from "lucide-react";
 import { parseUnits } from "viem";
 import { Checkbox } from "~~/components/Common";
 import ModalContainer from "~~/components/modals/ModalContainer";
@@ -44,6 +44,7 @@ export default function CreateBatchFromContactsModal({
   const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [batchEntries, setBatchEntries] = useState<BatchContactEntry[]>([]);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const hasAppliedInitialItems = useRef(false);
 
   const { data: contacts = [] } = useContacts(accountId || null, selectedGroupId || undefined);
@@ -80,6 +81,7 @@ export default function CreateBatchFromContactsModal({
     setSelectedContactIds(new Set());
     setSelectedGroupId(null);
     setBatchEntries([]);
+    setCsvFile(null);
     hasAppliedInitialItems.current = false;
   };
 
@@ -124,8 +126,9 @@ export default function CreateBatchFromContactsModal({
     setStep(2);
   };
 
-  // CSV upload handler
-  const handleCsvUpload = (file: File) => {
+  // CSV continue handler
+  const handleCsvContinue = () => {
+    if (!csvFile) return;
     const reader = new FileReader();
     reader.onload = e => {
       const text = e.target?.result as string;
@@ -145,7 +148,7 @@ export default function CreateBatchFromContactsModal({
       const entries: BatchContactEntry[] = validEntries.map(entry => ({
         contact: {
           id: crypto.randomUUID(),
-          name: formatAddress(entry.address, { start: 6, end: 4 }),
+          name: "",
           address: entry.address,
           accountId: "",
           groups: [],
@@ -160,7 +163,7 @@ export default function CreateBatchFromContactsModal({
       setBatchEntries(entries);
       setStep(2);
     };
-    reader.readAsText(file);
+    reader.readAsText(csvFile);
   };
 
   // Back button logic
@@ -251,7 +254,7 @@ export default function CreateBatchFromContactsModal({
         <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
           {step === 1 &&
             (isCsvMode ? (
-              <StepUploadCsv onUpload={handleCsvUpload} />
+              <StepUploadCsv onFileReady={setCsvFile} onFileRemoved={() => setCsvFile(null)} />
             ) : (
               <StepChooseContact
                 contacts={contacts}
@@ -287,15 +290,24 @@ export default function CreateBatchFromContactsModal({
             Cancel
           </button>
           <div className="flex-1">
-            {step === 1 && !isCsvMode && (
-              <button
-                onClick={goToStep2}
-                disabled={selectedContactIds.size === 0}
-                className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-40"
-              >
-                Continue
-              </button>
-            )}
+            {step === 1 &&
+              (isCsvMode ? (
+                <button
+                  onClick={handleCsvContinue}
+                  disabled={!csvFile}
+                  className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-40"
+                >
+                  Continue
+                </button>
+              ) : (
+                <button
+                  onClick={goToStep2}
+                  disabled={selectedContactIds.size === 0}
+                  className="bg-main-pink rounded-lg font-medium text-sm h-9 w-full cursor-pointer disabled:opacity-40"
+                >
+                  Continue
+                </button>
+              ))}
             {step === 2 && (
               <button
                 onClick={goToStep3}
@@ -337,69 +349,189 @@ export default function CreateBatchFromContactsModal({
 }
 
 // --- Step 1a: Upload CSV ---
-function StepUploadCsv({ onUpload }: { onUpload: (file: File) => void }) {
+type CsvUploadState = "idle" | "importing" | "loaded";
+
+function StepUploadCsv({
+  onFileReady,
+  onFileRemoved,
+}: {
+  onFileReady: (file: File) => void;
+  onFileRemoved: () => void;
+}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadState, setUploadState] = useState<CsvUploadState>("idle");
+  const [file, setFile] = useState<File | null>(null);
+  const [importProgress, setImportProgress] = useState(0);
+  const [templateDownloading, setTemplateDownloading] = useState(false);
+  const [templateProgress, setTemplateProgress] = useState(0);
+  const importTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleFile = (file: File) => {
-    if (!file.name.endsWith(".csv")) {
+  const handleFile = (selectedFile: File) => {
+    if (!selectedFile.name.endsWith(".csv")) {
       notification.error("Please upload a CSV file");
       return;
     }
-    onUpload(file);
+    setFile(selectedFile);
+    setUploadState("importing");
+    setImportProgress(0);
+
+    // Simulate import progress (local file read is near-instant)
+    let progress = 0;
+    importTimerRef.current = setInterval(() => {
+      progress += 20;
+      setImportProgress(Math.min(progress, 100));
+      if (progress >= 100) {
+        if (importTimerRef.current) clearInterval(importTimerRef.current);
+        setUploadState("loaded");
+        onFileReady(selectedFile);
+      }
+    }, 100);
+  };
+
+  const handleCancelImport = () => {
+    if (importTimerRef.current) clearInterval(importTimerRef.current);
+    setUploadState("idle");
+    setFile(null);
+    setImportProgress(0);
+    onFileRemoved();
+  };
+
+  const handleRemoveFile = () => {
+    setUploadState("idle");
+    setFile(null);
+    setImportProgress(0);
+    onFileRemoved();
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) handleFile(droppedFile);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const handleDownloadTemplate = () => {
+    setTemplateDownloading(true);
+    setTemplateProgress(0);
+
+    // Simulate brief download progress
+    let progress = 0;
+    const timer = setInterval(() => {
+      progress += 25;
+      setTemplateProgress(Math.min(progress, 100));
+      if (progress >= 100) {
+        clearInterval(timer);
+        setTemplateDownloading(false);
+        setTemplateProgress(0);
+      }
+    }, 150);
+
+    // Trigger actual download
+    const link = document.createElement("a");
+    link.href = "/templates/batch-template.csv";
+    link.download = "batch-template.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (importTimerRef.current) clearInterval(importTimerRef.current);
+    };
+  }, []);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-2.5">
+      {/* Drop zone */}
       <div
         onDrop={handleDrop}
-        onDragOver={handleDragOver}
+        onDragOver={e => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
         onDragLeave={() => setIsDragging(false)}
-        onClick={() => fileInputRef.current?.click()}
-        className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl p-10 cursor-pointer transition-colors ${
-          isDragging ? "border-main-pink bg-pink-50" : "border-grey-300 hover:border-grey-400"
+        onClick={() => uploadState === "idle" && fileInputRef.current?.click()}
+        className={`flex flex-col items-center justify-center gap-4 border border-dashed rounded-2xl h-[240px] transition-colors ${
+          uploadState !== "idle"
+            ? "border-grey-300 bg-grey-50"
+            : isDragging
+              ? "border-main-pink bg-pink-50 cursor-pointer"
+              : "border-grey-300 bg-grey-50 cursor-pointer hover:border-grey-400"
         }`}
       >
-        <Upload size={32} className="text-grey-400" />
-        <p className="text-sm text-grey-600">
-          Drag & drop a CSV file here, or <span className="text-main-violet font-medium">browse</span>
-        </p>
+        <Image src="/icons/batch/export-upload.svg" alt="Upload" width={44} height={44} className="opacity-50" />
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-base font-medium text-grey-950 tracking-tight">Import CSV file</p>
+          <p className="text-sm font-medium text-grey-500 tracking-tight">Drop the file or click here to choose file</p>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
           accept=".csv"
           className="hidden"
           onChange={e => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
+            const selected = e.target.files?.[0];
+            if (selected) handleFile(selected);
             e.target.value = "";
           }}
         />
       </div>
 
-      <div className="bg-grey-50 rounded-xl p-4">
-        <p className="text-sm font-medium text-grey-800 mb-2">Expected CSV format:</p>
-        <code className="text-xs text-grey-600 block bg-white rounded-lg p-3 font-mono">
-          address,amount,token
-          <br />
-          0x1234...abcd,1.5,ETH
-          <br />
-          0x5678...efgh,50.5,USDC
-          <br />
-          0x5678...ef12,4.8,ZEN
-        </code>
+      {/* File info card - importing state */}
+      {uploadState === "importing" && file && (
+        <div className="flex items-center gap-2 border border-main-pink rounded-[14px] px-3 py-2">
+          <Image src="/icons/batch/export-upload.svg" alt="Uploading" width={28} height={28} />
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-medium text-grey-950 tracking-tight truncate">{file.name}</p>
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-medium text-grey-900 tracking-tight">{importProgress}%</span>
+              <div className="size-[14px] animate-spin rounded-full border-2 border-grey-300 border-t-main-pink" />
+            </div>
+          </div>
+          <button onClick={handleCancelImport} className="shrink-0 cursor-pointer">
+            <Image src="/icons/batch/close-circle.svg" alt="Cancel" width={20} height={20} />
+          </button>
+        </div>
+      )}
+
+      {/* File info card - loaded state */}
+      {uploadState === "loaded" && file && (
+        <div className="flex items-center gap-2 border border-grey-300 rounded-[14px] px-3 py-2">
+          <Image src="/icons/batch/csv-file.svg" alt="CSV" width={28} height={28} />
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-medium text-grey-950 tracking-tight truncate">{file.name}</p>
+            <p className="text-sm font-medium text-grey-900 tracking-tight">{formatFileSize(file.size)}</p>
+          </div>
+          <button onClick={handleRemoveFile} className="shrink-0 cursor-pointer">
+            <Image src="/contact-book/trash.svg" alt="Remove" width={20} height={20} />
+          </button>
+        </div>
+      )}
+
+      {/* Download template link */}
+      <div className="flex items-center gap-1">
+        <Image src="/icons/batch/document-download.svg" alt="Download" width={20} height={20} />
+        <button
+          onClick={handleDownloadTemplate}
+          className="flex-1 text-sm font-medium text-grey-500 tracking-tight text-left cursor-pointer hover:text-grey-700"
+        >
+          Download CSV template (21 B)
+        </button>
+        {templateDownloading && (
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-medium text-grey-900 tracking-tight">{templateProgress}%</span>
+            <div className="size-[14px] animate-spin rounded-full border-2 border-grey-300 border-t-main-pink" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -535,10 +667,19 @@ function StepAddToBatch({
               <span className="text-sm font-medium text-main-violet">Transfer</span>
               <Image src="/avatars/default-avt.svg" alt="avatar" width={40} height={40} className="rounded-full" />
               <div className="flex flex-col gap-1">
-                <span className="font-medium text-grey-950">{entry.contact.name}</span>
-                <span className="text-sm text-grey-500">
-                  {formatAddress(entry.contact.address, { start: 4, end: 4 })}
-                </span>
+                {!entry.contact.name && (
+                  <span className="font-medium text-grey-950">
+                    {formatAddress(entry.contact.address, { start: 4, end: 4 })}
+                  </span>
+                )}
+                {entry.contact.name && (
+                  <>
+                    <span className="font-medium text-grey-950">{entry.contact.name}</span>
+                    <span className="text-sm text-grey-500">
+                      {formatAddress(entry.contact.address, { start: 4, end: 4 })}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 

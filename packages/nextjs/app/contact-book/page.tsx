@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Contact, ContactGroup } from "@polypay/shared";
-import { ChevronDown, Search, Upload, Users } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { ContactDetailDrawer } from "~~/components/contact-book/ContactDetailDrawer";
 import { ContactList } from "~~/components/contact-book/ContactList";
 import { EditContact } from "~~/components/contact-book/Editcontact";
@@ -145,25 +145,25 @@ export default function AddressBookPage() {
                   <ChevronDown size={16} />
                 </button>
                 {batchDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-grey-200 py-1 z-50 min-w-[160px]">
+                  <div className="absolute right-0 top-full mt-1 bg-white rounded-lg border border-grey-200 shadow-[0px_0px_11px_0px_rgba(0,0,0,0.1)] z-50 min-w-[160px] overflow-hidden">
                     <button
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-grey-800 hover:bg-grey-50 w-full cursor-pointer"
+                      className="flex items-center gap-[5px] p-3 text-sm font-medium text-main-black hover:bg-grey-50 w-full cursor-pointer border-b border-b-grey-200"
                       onClick={() => {
                         setBatchDropdownOpen(false);
                         modalManager.openModal?.("createBatchFromContacts", { accountId });
                       }}
                     >
-                      <Users size={16} />
+                      <Image src="/icons/batch/user-edit.svg" alt="Manual" width={16} height={16} />
                       Manual
                     </button>
                     <button
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-grey-800 hover:bg-grey-50 w-full cursor-pointer"
+                      className="flex items-center gap-[5px] p-3 text-sm font-medium text-main-black hover:bg-grey-50 w-full cursor-pointer"
                       onClick={() => {
                         setBatchDropdownOpen(false);
                         modalManager.openModal?.("createBatchFromContacts", { accountId, mode: "csv" });
                       }}
                     >
-                      <Upload size={16} />
+                      <Image src="/icons/batch/export-upload.svg" alt="Upload CSV" width={16} height={16} />
                       Upload CSV
                     </button>
                   </div>
