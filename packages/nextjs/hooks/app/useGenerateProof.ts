@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
 import { useNetworkGuard } from "./useNetworkGuard";
-import { getPublicKeyXY, hexToByteArray, poseidonHash2 } from "@polypay/shared";
+import { ULTRAHONK_CONTRACT_VERSION, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "@polypay/shared";
 import { type Hex } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 import { useAccountStore } from "~~/services/store";
@@ -117,7 +117,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       let publicInputs: string[];
       let vk: string | undefined;
 
-      if (currentAccount?.contractVersion && currentAccount.contractVersion >= 2) {
+      if (currentAccount?.contractVersion && currentAccount.contractVersion >= ULTRAHONK_CONTRACT_VERSION) {
         const { UltraHonkBackend } = await import("@aztec/bb.js");
         const backend = new UltraHonkBackend(bytecode, { threads: 2 });
         ({ proof, publicInputs } = await backend.generateProof(execResult.witness, { keccak: true }));

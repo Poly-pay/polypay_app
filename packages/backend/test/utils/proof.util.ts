@@ -6,6 +6,7 @@ import {
   hexToByteArray,
   getPublicKeyXY,
   BN254_MODULUS,
+  ULTRAHONK_CONTRACT_VERSION,
 } from '@polypay/shared';
 import { TestSigner, signRawMessage } from './signer.util';
 
@@ -60,7 +61,7 @@ export async function generateTestProof(
   signer: TestSigner,
   secret: bigint,
   txHash: Hex,
-  contractVersion: number = 2,
+  contractVersion: number = ULTRAHONK_CONTRACT_VERSION,
 ): Promise<ProofResult> {
   // 1. Sign txHash (local signing, no RPC)
   const signature = await signRawMessage(signer, txHash);
@@ -109,7 +110,7 @@ export async function generateTestProof(
   let publicInputs: string[];
   let vk: string | undefined;
 
-  if (contractVersion >= 2) {
+  if (contractVersion >= ULTRAHONK_CONTRACT_VERSION) {
     const { UltraHonkBackend } = await import('@aztec/bb.js');
     const backend = new UltraHonkBackend(bytecode);
     ({ proof, publicInputs } = await backend.generateProof(witness, { keccak: true }));

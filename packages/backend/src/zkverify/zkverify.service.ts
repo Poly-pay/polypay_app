@@ -12,6 +12,7 @@ import {
   horizenTestnet,
   NetworkType,
   NetworkValue,
+  ULTRAHONK_CONTRACT_VERSION,
 } from '@polypay/shared';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import {
@@ -25,7 +26,9 @@ import {
 export type CircuitType = 'transaction' | 'auth';
 
 function getProofType(contractVersion: number): string {
-  return contractVersion >= 2 ? 'ultrahonk' : 'ultraplonk';
+  return contractVersion >= ULTRAHONK_CONTRACT_VERSION
+    ? 'ultrahonk'
+    : 'ultraplonk';
 }
 
 function bytesToHex(bytes: Uint8Array): string {
@@ -141,7 +144,7 @@ export class ZkVerifyService {
 
     let params: Record<string, unknown>;
 
-    if (contractVersion >= 2) {
+    if (contractVersion >= ULTRAHONK_CONTRACT_VERSION) {
       // UltraHonk: hex proof + separate publicSignals
       params = {
         proofType,
@@ -256,7 +259,7 @@ export class ZkVerifyService {
 
     let params: Record<string, unknown>;
 
-    if (contractVersion >= 2) {
+    if (contractVersion >= ULTRAHONK_CONTRACT_VERSION) {
       // UltraHonk: hex VK
       const hexVk =
         typeof vk === 'string' && !vk.startsWith('0x') ? `0x${vk}` : vk;

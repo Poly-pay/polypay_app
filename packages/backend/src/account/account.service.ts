@@ -9,6 +9,7 @@ import {
   CreateAccountDto,
   CreateAccountBatchDto,
   UpdateAccountDto,
+  ULTRAHONK_CONTRACT_VERSION,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { EventsService } from '@/events/events.service';
@@ -86,7 +87,7 @@ export class AccountService {
           name: dto.name,
           threshold: dto.threshold,
           chainId: dto.chainId,
-          contractVersion: 2,
+          contractVersion: ULTRAHONK_CONTRACT_VERSION,
         },
       });
 
@@ -236,7 +237,7 @@ export class AccountService {
             name: dto.name,
             threshold: dto.threshold,
             chainId: deployment.chainId,
-            contractVersion: 2,
+            contractVersion: ULTRAHONK_CONTRACT_VERSION,
           },
         });
 
@@ -301,7 +302,7 @@ export class AccountService {
     }
 
     return createdAccounts.map((account) =>
-      this.formatAccountResponse(account),
+      AccountService.formatAccountResponse(account),
     );
   }
 
@@ -324,7 +325,7 @@ export class AccountService {
       throw new NotFoundException('Account not found');
     }
 
-    return this.formatAccountResponse(account);
+    return AccountService.formatAccountResponse(account);
   }
 
   /**
@@ -342,10 +343,12 @@ export class AccountService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return accounts.map((account) => this.formatAccountResponse(account));
+    return accounts.map((account) =>
+      AccountService.formatAccountResponse(account),
+    );
   }
 
-  private formatAccountResponse(account: {
+  static formatAccountResponse(account: {
     id: string;
     address: string;
     name: string | null;
