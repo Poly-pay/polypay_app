@@ -86,6 +86,7 @@ export class AccountService {
           name: dto.name,
           threshold: dto.threshold,
           chainId: dto.chainId,
+          contractVersion: 2,
         },
       });
 
@@ -235,6 +236,7 @@ export class AccountService {
             name: dto.name,
             threshold: dto.threshold,
             chainId: deployment.chainId,
+            contractVersion: 2,
           },
         });
 
@@ -349,6 +351,7 @@ export class AccountService {
     name: string | null;
     threshold: number;
     chainId: number;
+    contractVersion: number;
     createdAt: Date;
     signers: Array<{
       isCreator: boolean;
@@ -362,6 +365,7 @@ export class AccountService {
       name: account.name,
       threshold: account.threshold,
       chainId: account.chainId,
+      contractVersion: account.contractVersion,
       createdAt: account.createdAt,
       signers: account.signers.map((as) => ({
         commitment: as.user.commitment,

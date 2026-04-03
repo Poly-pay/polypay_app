@@ -37,6 +37,8 @@ export class AuthService {
           vk: dto.vk,
         },
         'auth',
+        undefined,
+        2,
       );
     } catch (error) {
       this.logger.error(`Proof verification failed: ${error.message}`);

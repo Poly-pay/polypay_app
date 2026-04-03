@@ -93,7 +93,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
         nullifier: nullifier.toString(),
         batchItemIds: selectedIds,
         userAddress: walletClient.account.address,
-        vk: vk ? Buffer.from(vk).toString("base64") : undefined,
+        vk,
       });
 
       if (result) {

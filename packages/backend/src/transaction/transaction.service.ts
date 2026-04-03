@@ -125,6 +125,7 @@ export class TransactionService {
       },
       'transaction',
       account.chainId,
+      account.contractVersion,
     );
 
     // 5. Create transaction + first vote + delete reservation
@@ -268,6 +269,7 @@ export class TransactionService {
       },
       'transaction',
       transaction.account.chainId,
+      transaction.account.contractVersion,
     );
 
     const voterName = await this.getSignerDisplayName(
