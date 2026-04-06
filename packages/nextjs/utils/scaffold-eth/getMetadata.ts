@@ -43,5 +43,8 @@ export const getMetadata = ({
       description: description,
       images: [imageUrl],
     },
+    other: {
+      "base:app_id": "69d354e880e73e14cb680357",
+    },
   };
 };
