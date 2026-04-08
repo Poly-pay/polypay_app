@@ -25,11 +25,18 @@ export class TransactionReconcilerScheduler {
     return client;
   }
 
-  // 13:00 Vietnam time = 06:00 UTC
-  @Cron('0 6 * * *', { timeZone: 'UTC' })
+  @Cron('0 */2 * * *', { timeZone: 'UTC' })
   async reconcileStuckTransactions() {
-    this.logger.log('Running daily transaction reconciliation');
+    this.logger.log('Running transaction reconciliation');
 
+    await this.reconcileTxsWithHash();
+    await this.reconcileStaleTxsWithoutHash();
+  }
+
+  /**
+   * Reconcile stuck transactions that have a txHash (submitted on-chain but status not updated)
+   */
+  private async reconcileTxsWithHash() {
     const stuckTxs = await this.prisma.transaction.findMany({
       where: {
         txHash: { not: null },
@@ -39,7 +46,7 @@ export class TransactionReconcilerScheduler {
     });
 
     if (stuckTxs.length === 0) {
-      this.logger.log('No stuck transactions found');
+      this.logger.log('No stuck transactions with txHash found');
       return;
     }
 
@@ -83,7 +90,41 @@ export class TransactionReconcilerScheduler {
     }
 
     this.logger.log(
-      `Reconciliation complete: ${reconciled} executed, ${reverted} reverted, ${skipped} skipped`,
+      `Reconciliation (with txHash): ${reconciled} executed, ${reverted} reverted, ${skipped} skipped`,
     );
+  }
+
+  /**
+   * Safety net: reset EXECUTING transactions without txHash that are older than 30 minutes.
+   * These are caused by pre-submission failures (e.g. proof aggregation timeout).
+   */
+  private async reconcileStaleTxsWithoutHash() {
+    const staleThreshold = new Date(Date.now() - 30 * 60 * 1000);
+
+    const staleTxs = await this.prisma.transaction.findMany({
+      where: {
+        txHash: null,
+        status: TxStatus.EXECUTING,
+        updatedAt: { lt: staleThreshold },
+      },
+    });
+
+    if (staleTxs.length === 0) {
+      return;
+    }
+
+    this.logger.log(
+      `Found ${staleTxs.length} stale EXECUTING transactions without txHash`,
+    );
+
+    for (const tx of staleTxs) {
+      await this.prisma.transaction.update({
+        where: { txId: tx.txId },
+        data: { status: TxStatus.PENDING, txHash: null },
+      });
+      this.logger.warn(
+        `txId ${tx.txId} stale EXECUTING (no txHash), reset to PENDING`,
+      );
+    }
   }
 }

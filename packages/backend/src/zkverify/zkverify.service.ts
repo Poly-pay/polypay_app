@@ -164,6 +164,7 @@ export class ZkVerifyService {
     try {
       const response = await axios.get<ZkVerifyJobStatusResponse>(
         `${this.apiUrl}/job-status/${this.apiKey}/${jobId}`,
+        { timeout: 30_000 },
       );
       return response.data;
     } catch (error) {
