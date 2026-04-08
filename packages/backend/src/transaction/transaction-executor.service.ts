@@ -75,13 +75,12 @@ export class TransactionExecutorService {
       TxStatus.EXECUTING,
     );
 
-    // 1. Get execution data
-    const executionData = await this.getExecutionData(txId, transaction);
-
     // Track whether tx was submitted on-chain (txHash saved to DB)
     let submittedTxHash: string | null = null;
 
     try {
+      // 1. Get execution data (inside try-catch so aggregation timeout reverts to PENDING)
+      const executionData = await this.getExecutionData(txId, transaction);
       // 2. Execute via relayer
       const { txHash } = await this.relayerService.executeTransaction(
         executionData.accountAddress,
@@ -133,7 +132,7 @@ export class TransactionExecutorService {
           );
           await this.conditionalRevertToPending(
             txId,
-            executionData.accountAddress,
+            transaction.accountAddress,
           );
           throw new BadRequestException(
             'Transaction reverted on-chain. Please check contract conditions.',
@@ -151,7 +150,7 @@ export class TransactionExecutorService {
       }
 
       // Tx was NOT submitted on-chain — only revert if still EXECUTING
-      await this.conditionalRevertToPending(txId, executionData.accountAddress);
+      await this.conditionalRevertToPending(txId, transaction.accountAddress);
 
       if (error.message?.includes('Insufficient wallet balance')) {
         const match = error.message.match(
