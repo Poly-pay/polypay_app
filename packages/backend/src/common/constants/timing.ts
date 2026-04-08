@@ -16,7 +16,7 @@ export const CROSS_CHAIN_FINALIZATION_WAIT = 40_000; // 40s
 // Retry limits
 export const ZK_API_MAX_RETRIES = 3;
 export const ZK_FINALIZE_MAX_ATTEMPTS = 30;
-export const PROOF_AGGREGATION_MAX_ATTEMPTS = 30;
+export const PROOF_AGGREGATION_MAX_ATTEMPTS = 60;
 export const RECEIPT_WAIT_MAX_RETRIES = 5;
 export const PRICE_CAPTURE_MAX_RETRIES = 10;
 export const ZEN_TRANSFER_MAX_RETRIES = 3;
