@@ -113,7 +113,9 @@ export async function generateTestProof(
   if (contractVersion >= ULTRAHONK_CONTRACT_VERSION) {
     const { UltraHonkBackend } = await import('@aztec/bb.js');
     const backend = new UltraHonkBackend(bytecode);
-    ({ proof, publicInputs } = await backend.generateProof(witness, { keccak: true }));
+    ({ proof, publicInputs } = await backend.generateProof(witness, {
+      keccak: true,
+    }));
     const rawVk = await backend.getVerificationKey({ keccak: true });
     vk = '0x' + Buffer.from(rawVk).toString('hex');
   } else {
@@ -161,7 +163,9 @@ export async function generateTestAuthProof(
   const noir = new Noir({ bytecode, abi } as any);
 
   const { witness } = await noir.execute(circuitInputs);
-  const { proof, publicInputs } = await backend.generateProof(witness, { keccak: true });
+  const { proof, publicInputs } = await backend.generateProof(witness, {
+    keccak: true,
+  });
   const rawVk = await backend.getVerificationKey({ keccak: true });
   const vk = '0x' + Buffer.from(rawVk).toString('hex');
 

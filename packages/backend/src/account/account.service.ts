@@ -81,6 +81,7 @@ export class AccountService {
       );
 
       // Create account
+      // UltraHonk contract (v2) is deployed on all supported chains
       const newAccount = await prisma.account.create({
         data: {
           address,
@@ -231,6 +232,7 @@ export class AccountService {
       const accounts = [];
 
       for (const deployment of deployments) {
+        // UltraHonk contract (v2) is deployed on all supported chains
         const newAccount = await prisma.account.create({
           data: {
             address: deployment.address,

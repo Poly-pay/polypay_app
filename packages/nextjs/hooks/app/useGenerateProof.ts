@@ -149,6 +149,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       setLoadingState,
       chain?.id,
       currentAccount?.chainId,
+      currentAccount?.contractVersion,
       isWrongNetwork,
       targetChainId,
     ],

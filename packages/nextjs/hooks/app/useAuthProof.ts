@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ULTRAHONK_CONTRACT_VERSION } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { createCommitment, createSecret } from "~~/utils/multisig";
@@ -9,6 +10,7 @@ interface AuthProofResult {
   proof: number[];
   publicInputs: string[];
   vk?: string;
+  contractVersion: number;
   walletAddress: string; // For analytics only
 }
 
@@ -68,6 +70,7 @@ export const useAuthProof = () => {
         proof: proofArray,
         publicInputs,
         vk,
+        contractVersion: ULTRAHONK_CONTRACT_VERSION,
         walletAddress, // For analytics only - NOT stored in database
       };
     } catch (err: any) {

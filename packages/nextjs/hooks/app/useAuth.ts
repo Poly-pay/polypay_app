@@ -41,6 +41,7 @@ export const useAuth = () => {
         proof: proofResult.proof,
         publicInputs: proofResult.publicInputs,
         vk: proofResult.vk,
+        contractVersion: proofResult.contractVersion,
         walletAddress: proofResult.walletAddress, // For analytics only
       });
 

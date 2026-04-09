@@ -277,38 +277,39 @@ export class ZkVerifyService {
       };
     }
 
+    this.logger.log(`Registering VK for ${circuitType} circuit...`);
+    const response = await axios.post(
+      `${this.apiUrl}/register-vk/${this.apiKey}`,
+      params,
+    );
+
+    const dir = path.dirname(vkeyPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    fs.writeFileSync(vkeyPath, JSON.stringify(response.data));
+    this.logger.log(`VK registered successfully for ${circuitType} circuit`);
+  }
+
+  /**
+   * Read and validate vkHash from cached file.
+   * Returns vkHash if valid, null otherwise.
+   */
+  private readVkHash(vkeyPath: string): string | null {
     try {
-      this.logger.log(`Registering VK for ${circuitType} circuit...`);
-      const response = await axios.post(
-        `${this.apiUrl}/register-vk/${this.apiKey}`,
-        params,
-      );
-
-      const dir = path.dirname(vkeyPath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-
-      fs.writeFileSync(vkeyPath, JSON.stringify(response.data));
-      this.logger.log(`VK registered successfully for ${circuitType} circuit`);
-    } catch (error: any) {
-      this.logger.error(
-        `VK registration failed for ${circuitType}:`,
-        error.message,
-      );
-      this.logger.warn('VK registration error, saving response...');
-
-      const dir = path.dirname(vkeyPath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-
-      fs.writeFileSync(vkeyPath, JSON.stringify(error.response?.data || {}));
+      if (!fs.existsSync(vkeyPath)) return null;
+      const vkData = JSON.parse(fs.readFileSync(vkeyPath, 'utf-8'));
+      const vkHash = vkData.vkHash || vkData.meta?.vkHash;
+      return vkHash || null;
+    } catch {
+      return null;
     }
   }
 
   /**
-   * Load or register VK for a specific circuit type
+   * Load or register VK for a specific circuit type.
+   * Self-healing: if the cached file is invalid, it re-registers automatically.
    */
   private async loadOrRegisterVk(
     circuitType: CircuitType,
@@ -318,23 +319,61 @@ export class ZkVerifyService {
   ): Promise<string> {
     const vkeyPath = this.getVkeyPath(circuitType, contractVersion);
 
-    if (!fs.existsSync(vkeyPath)) {
-      if (!vk) {
-        throw new BadRequestException(
-          `VK required for first registration of ${circuitType} circuit (${getProofType(contractVersion)})`,
-        );
-      }
-      await this.registerVk(
-        circuitType,
-        contractVersion,
-        vk,
-        numberOfPublicInputs,
+    // Try reading from cached file first
+    const cachedVkHash = this.readVkHash(vkeyPath);
+    if (cachedVkHash) return cachedVkHash;
+
+    // Need to register — vk is required
+    if (!vk) {
+      throw new BadRequestException(
+        `VK required for first registration of ${circuitType} circuit (${getProofType(contractVersion)})`,
       );
-      await new Promise((resolve) => setTimeout(resolve, ZK_POLLING_DELAY));
     }
 
-    const vkData = JSON.parse(fs.readFileSync(vkeyPath, 'utf-8'));
-    const vkHash = vkData.vkHash || vkData.meta?.vkHash;
+    // Clean up invalid file if exists
+    if (fs.existsSync(vkeyPath)) {
+      this.logger.warn(`Removing invalid VK cache file: ${vkeyPath}`);
+      fs.unlinkSync(vkeyPath);
+    }
+
+    // Retry registration up to 3 times
+    const maxRetries = ZK_API_MAX_RETRIES;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.registerVk(
+          circuitType,
+          contractVersion,
+          vk,
+          numberOfPublicInputs,
+        );
+        await this.sleep(ZK_POLLING_DELAY);
+        break;
+      } catch (error: any) {
+        this.logger.error(
+          `VK registration attempt ${attempt}/${maxRetries} failed for ${circuitType}: ${error.message}`,
+        );
+        if (attempt === maxRetries) {
+          // Re-check cache — another concurrent request may have succeeded
+          const concurrentVkHash = this.readVkHash(vkeyPath);
+          if (concurrentVkHash) return concurrentVkHash;
+
+          if (fs.existsSync(vkeyPath)) fs.unlinkSync(vkeyPath);
+          throw new BadRequestException(
+            `VK registration failed for ${circuitType} circuit after ${maxRetries} attempts`,
+          );
+        }
+        await this.sleep(RETRY_DELAY_BASE * Math.pow(2, attempt - 1));
+      }
+    }
+
+    const vkHash = this.readVkHash(vkeyPath);
+    if (!vkHash) {
+      if (fs.existsSync(vkeyPath)) fs.unlinkSync(vkeyPath);
+      throw new BadRequestException(
+        `VK registration succeeded but failed to read vkHash for ${circuitType} circuit`,
+      );
+    }
+
     return vkHash;
   }
 

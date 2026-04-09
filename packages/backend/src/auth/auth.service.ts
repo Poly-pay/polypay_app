@@ -42,7 +42,7 @@ export class AuthService {
         },
         'auth',
         undefined,
-        ULTRAHONK_CONTRACT_VERSION,
+        dto.contractVersion ?? ULTRAHONK_CONTRACT_VERSION,
       );
     } catch (error) {
       this.logger.error(`Proof verification failed: ${error.message}`);
