@@ -9,11 +9,13 @@ import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
+import { SnagModule } from '@/snag/snag.module';
 
 @Module({
   imports: [
     DatabaseModule,
     ZkVerifyModule,
+    SnagModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
