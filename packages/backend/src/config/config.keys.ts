@@ -24,4 +24,8 @@ export const CONFIG_KEYS = {
   // Telegram
   TELEGRAM_BOT_TOKEN: 'telegram.botToken',
   TELEGRAM_CHAT_ID: 'telegram.chatId',
+
+  // Snag Solutions
+  SNAG_API_KEY: 'snag.apiKey',
+  SNAG_RULE_ID: 'snag.ruleId',
 } as const;

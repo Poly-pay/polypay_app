@@ -6,6 +6,7 @@ import { PrismaService } from '@/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
+import { SnagService } from '@/snag/snag.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
     private readonly zkVerifyService: ZkVerifyService,
     private readonly configService: ConfigService,
     private readonly analyticsLogger: AnalyticsLoggerService,
+    private readonly snagService: SnagService,
   ) {}
 
   /**
@@ -74,6 +76,12 @@ export class AuthService {
     const tokens = this.generateTokens(commitment);
 
     this.logger.log(`Login successful for commitment: ${commitment}`);
+
+    // Notify Snag Solutions for loyalty reward (non-blocking)
+    // Uses user.id (CUID ~25 chars) as idempotencyKey so each user can only claim once
+    if (dto.walletAddress) {
+      this.snagService.completeRule(dto.walletAddress, user.id).catch(() => {});
+    }
 
     return {
       user,
