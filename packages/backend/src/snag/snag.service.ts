@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
 import { firstValueFrom } from 'rxjs';
 
-const SNAG_BASE_URL = 'https://api.snagsolutions.io';
+const SNAG_BASE_URL = 'https://zenrise.horizen.io';
 
 @Injectable()
 export class SnagService {
@@ -37,7 +37,7 @@ export class SnagService {
       const response = await firstValueFrom(
         this.httpService.post<{ message: string }>(
           `${SNAG_BASE_URL}/api/loyalty/rules/${ruleId}/complete`,
-          { users: [walletAddress], idempotencyKey },
+          { walletAddress, idempotencyKey },
           {
             headers: {
               'Content-Type': 'application/json',
