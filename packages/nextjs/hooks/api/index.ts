@@ -7,3 +7,4 @@ export * from "./useNotification";
 export * from "./usePrice";
 export * from "./useQuest";
 export * from "./useClaim";
+export * from "./useX402Deposit";

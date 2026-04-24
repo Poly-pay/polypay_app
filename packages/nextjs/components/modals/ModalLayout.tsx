@@ -55,6 +55,7 @@ const modals: ModalRegistry = {
   claimReward: dynamic(() => import("./ClaimRewardModal"), { ssr: false }),
   questIntro: dynamic(() => import("./QuestIntroModal"), { ssr: false }),
   createBatchFromContacts: dynamic(() => import("./CreateBatchFromContactsModal"), { ssr: false }),
+  depositX402: dynamic(() => import("./DepositModal"), { ssr: false }),
 };
 
 type ModalInstance = {

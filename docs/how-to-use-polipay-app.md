@@ -8,6 +8,7 @@ Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web
 - Create and manage a multisig account
 - Hide signers(multisig account owners) identities with ZK proofs
 - Execute payroll payments: Transfer funds to multiple recipients
+- **Deposit USDC into a multisig gaslessly via x402 (Base only)**
 - View transaction history
 - View multisig account balance
 - View multisig account address
@@ -51,3 +52,7 @@ Create a new multisig account by adding signer commitments and setting the thres
 Send funds to single or multiple recipients with ZK proof generation.
 
 ![Transfer](.gitbook/assets/transfer.png)
+
+### Gasless USDC Deposit (x402)
+
+Open the Portfolio panel of a Base multisig and click **Deposit** to fund the multisig with USDC in a single signature, no ETH required. The flow uses the [x402 protocol](https://www.x402.org/) and works for human users and AI agents alike. See [Gasless USDC Deposits (x402)](x402-deposits.md) for the full guide and developer integration.
