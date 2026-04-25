@@ -21,6 +21,7 @@ PolyPay uses **zero-knowledge proofs** and **multi-chain deployment** (Horizen a
 * **Private Payments**: Salary amounts and recipients stay confidential
 * **Private Multisig**: Team approvals without exposing signer identities
 * **Flexible Payment Logic**: Single and batch transfers
+* **Gasless USDC Deposit (x402)**: Fund a multisig on Base with one signature, no ETH required — works for human users and AI agents via the [x402 protocol](https://www.x402.org/)
 
 ### Who Is It For?
 
@@ -40,3 +41,4 @@ PolyPay uses **zero-knowledge proofs** and **multi-chain deployment** (Horizen a
 * Fiat on/off-ramp integration
 * Escrow and milestone-based payments
 * Recurring transfers
+* Expand x402 to additional networks and tokens beyond USDC on Base

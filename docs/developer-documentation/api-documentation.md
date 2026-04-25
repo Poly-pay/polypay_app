@@ -198,6 +198,16 @@ http://localhost:4000/api
 |--------|----------|-------------|---------------|
 | GET | `/claims/summary` | Get claim summary for all weeks | Yes |
 | POST | `/claims` | Claim weekly reward | Yes |
+
+#### x402 Gasless USDC Deposit (`/api/x402`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/x402/deposit/:multisigAddress` | Returns HTTP 402 with x402 v1 payment requirements for the multisig | No |
+| POST | `/x402/deposit/:multisigAddress` | Settles an EIP-3009 USDC deposit through an x402 facilitator. Requires `X-PAYMENT` header with a base64 x402 v1 payment payload. | No |
+
+See [Gasless USDC Deposits (x402)](../x402-deposits.md) for the full integration guide, request/response shapes, supported networks, limits, and security model.
+
 ## Authentication
 
 PolyPay uses JWT (JSON Web Tokens) for authentication.
@@ -281,14 +291,22 @@ Content-Type: application/json
 | 201 | Created | Resource created successfully |
 | 400 | Bad Request | Invalid request data |
 | 401 | Unauthorized | Missing or invalid authentication |
+| 402 | Payment Required | x402 discovery response — caller must include a valid `X-PAYMENT` header to retry |
 | 403 | Forbidden | Insufficient permissions |
 | 404 | Not Found | Resource not found |
 | 409 | Conflict | Resource conflict (duplicate) |
+| 429 | Too Many Requests | Rate limit exceeded (per IP or per multisig) |
 | 500 | Internal Server Error | Server error |
 
 ## Rate Limiting
 
-Currently, there is no rate limiting on the API. This may be added in future versions.
+Most endpoints are not rate limited. The x402 deposit endpoint applies the following caps:
+
+| Scope | Limit |
+|-------|-------|
+| `GET /api/x402/deposit/:multisigAddress` per IP | 60 requests / 60s |
+| `POST /api/x402/deposit/:multisigAddress` per IP | 10 requests / 60s |
+| `POST /api/x402/deposit/:multisigAddress` per multisig | 30 requests / 60s |
 
 ## CORS Configuration
 

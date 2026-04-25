@@ -23,7 +23,7 @@ async function bootstrap() {
   app.enableCors({
     origin: configService.get<string>('app.corsOrigin'),
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT'],
   });
 
   // API prefix

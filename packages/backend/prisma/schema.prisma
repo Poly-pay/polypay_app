@@ -279,6 +279,32 @@ model WeeklyZenPrice {
   @@map("weekly_zen_prices")
 }
 
+model X402Deposit {
+  id                 String            @id @default(cuid())
+  buyerAddress       String            @map("buyer_address")
+  multisigAddress    String            @map("multisig_address")
+  principalAmount    String            @map("principal_amount")
+  principalAuthNonce String            @unique @map("principal_auth_nonce")
+  principalTxHash    String?           @map("principal_tx_hash")
+  chainId            Int               @map("chain_id")
+  status             X402DepositStatus @default(PENDING)
+  errorMessage       String?           @map("error_message")
+  memo               String?
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  @@index([multisigAddress])
+  @@index([buyerAddress])
+  @@index([createdAt])
+  @@map("x402_deposits")
+}
+
+enum X402DepositStatus {
+  PENDING
+  SETTLED
+  FAILED
+}
+
 enum TxType {
   TRANSFER
   ADD_SIGNER

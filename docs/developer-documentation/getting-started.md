@@ -73,12 +73,16 @@ yarn start:frontend
 
 ### Environment Variables
 
-| Variable                   | Description                    |
-| -------------------------- | ------------------------------ |
-| `DATABASE_URL`             | PostgreSQL connection string   |
-| `RELAYER_WALLET_KEY`       | Private key for relayer wallet |
-| `RELAYER_ZKVERIFY_API_KEY` | API key from zkVerify          |
-| `NEXT_PUBLIC_API_URL`      | Backend API URL                |
+| Variable                          | Description                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                    | PostgreSQL connection string                                                                               |
+| `RELAYER_WALLET_KEY`              | Private key for relayer wallet                                                                             |
+| `RELAYER_ZKVERIFY_API_KEY`        | API key from zkVerify                                                                                      |
+| `NEXT_PUBLIC_API_URL`             | Backend API URL                                                                                            |
+| `FEATURE_X402_DEPOSIT`            | `true` to enable the x402 gasless deposit endpoint and UI (default `false`)                                |
+| `X402_FACILITATOR_URL`            | x402 facilitator base URL — `https://facilitator.payai.network` (default, supports Base mainnet + Sepolia, no API key)                  |
+| `X402_FACILITATOR_BEARER_TOKEN`   | Optional bearer token; leave empty for facilitators that do not require auth (e.g. PayAI)                |
+| `NEXT_PUBLIC_FEATURE_X402_DEPOSIT`| Frontend flag to render the Deposit button in the Portfolio panel (matches backend flag)                  |
 
 
 ### User Workflow
