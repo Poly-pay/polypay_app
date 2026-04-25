@@ -21,6 +21,9 @@ import { QuestModule } from './quest/quest.module';
 import { RewardModule } from './reward/reward.module';
 import { BalanceAlertModule } from './balance-alert/balance-alert.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { X402Module } from './x402/x402.module';
+
+const featureX402 = process.env.FEATURE_X402_DEPOSIT === 'true';
 
 @Module({
   imports: [
@@ -47,6 +50,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     RewardModule,
     BalanceAlertModule,
     ScheduleModule.forRoot(),
+    ...(featureX402 ? [X402Module] : []),
   ],
 })
 export class AppModule implements NestModule {

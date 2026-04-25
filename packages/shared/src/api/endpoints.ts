@@ -86,4 +86,10 @@ export const API_ENDPOINTS = {
     base: "/api/claims",
     summary: "/api/claims/summary",
   },
+
+  x402: {
+    /** Build the path-based endpoint for a specific multisig. */
+    deposit: (multisigAddress: string): string =>
+      `/api/x402/deposit/${multisigAddress}`,
+  },
 } as const;
