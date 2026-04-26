@@ -15,9 +15,20 @@ export const useCommitmentGuard = () => {
   const dontShowFor30Days = useDisclaimerStore(state => state.dontShowFor30Days);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasOpenedRef = useRef(false);
 
   useEffect(() => {
     if (!hasHydrated) return;
+
+    // Reset the trigger once the guard no longer wants the modal open
+    // (commitment created, logged in, or wallet disconnected).
+    const needsCommitment = walletClient?.account && !commitment && !isAuthenticated;
+    if (!needsCommitment) {
+      hasOpenedRef.current = false;
+      return;
+    }
+
+    if (hasOpenedRef.current) return;
 
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -25,13 +36,8 @@ export const useCommitmentGuard = () => {
 
     timeoutRef.current = setTimeout(() => {
       const canProceed = useDisclaimerStore.getState().canProceed();
-
-      // Only open if:
-      // 1. Wallet connected
-      // 2. No commitment
-      // 3. Not in middle of logout (check wallet still exists)
-      // 4. Disclaimer agreed
       if (canProceed && walletClient?.account && !commitment && !isAuthenticated) {
+        hasOpenedRef.current = true;
         openModal("generateCommitment");
       }
     }, 300);
