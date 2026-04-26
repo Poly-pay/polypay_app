@@ -45,6 +45,7 @@ jobs:
             --platform linux/amd64 \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
             --build-arg NEXT_PUBLIC_NETWORK=${{ vars.NEXT_PUBLIC_NETWORK }} \
+            --build-arg NEXT_PUBLIC_FEATURE_X402_DEPOSIT=${{ vars.NEXT_PUBLIC_FEATURE_X402_DEPOSIT }} \
             -f docker/frontend.Dockerfile \
             -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
             .
