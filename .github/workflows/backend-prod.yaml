@@ -22,6 +22,8 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider: "projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ vars.GCP_WIF_POOL }}/providers/${{ vars.GCP_WIF_PROVIDER }}"
           service_account: ${{ vars.GCP_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+          token_format: "access_token"
+          export_environment_variables: true
 
       - name: Configure Docker
         run: gcloud auth configure-docker ${{ vars.GCP_LOCATION }}-docker.pkg.dev
@@ -37,6 +39,7 @@ jobs:
           GCP_IMAGE: backend-test
         run: |
           docker build \
+            --progress=auto \
             --platform linux/amd64 \
             -f docker/backend.Dockerfile \
             -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APP_NAME}/${GCP_IMAGE}:${SHORT_SHA} \
@@ -44,7 +47,7 @@ jobs:
 
           docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APP_NAME}/${GCP_IMAGE}:${SHORT_SHA}
 
-          
+
       # - name: Update and Run Prisma Migration Job
       #   env:
       #     GCP_LOCATION: ${{ vars.GCP_LOCATION }}
