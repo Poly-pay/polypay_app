@@ -39,7 +39,7 @@ jobs:
           GCP_IMAGE: backend-test
         run: |
           docker build \
-            --progress=auto \
+            --quiet \
             --platform linux/amd64 \
             -f docker/backend.Dockerfile \
             -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APP_NAME}/${GCP_IMAGE}:${SHORT_SHA} \
