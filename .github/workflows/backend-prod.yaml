@@ -3,7 +3,7 @@ name: Backend Production
 on:
   push:
     branches:
-      - "feature/terraform/deployapp"
+      - "feature/terraform-deployapp"
 
 jobs:
   build-and-deploy:
