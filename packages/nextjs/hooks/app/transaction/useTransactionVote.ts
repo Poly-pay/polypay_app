@@ -172,7 +172,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
           publicInputs: proofData.publicInputs,
           nullifier: proofData.nullifier,
           userAddress: walletClient.account.address,
-          vk: proofData.vk ? Buffer.from(proofData.vk).toString("base64") : undefined,
+          vk: proofData.vk,
         },
       });
 

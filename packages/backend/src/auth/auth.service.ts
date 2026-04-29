@@ -1,7 +1,11 @@
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ZkVerifyService } from '@/zkverify/zkverify.service';
-import { LoginDto, RefreshDto } from '@polypay/shared';
+import {
+  LoginDto,
+  RefreshDto,
+  ULTRAHONK_CONTRACT_VERSION,
+} from '@polypay/shared';
 import { PrismaService } from '@/database/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CONFIG_KEYS } from '@/config/config.keys';
@@ -39,6 +43,8 @@ export class AuthService {
           vk: dto.vk,
         },
         'auth',
+        undefined,
+        dto.contractVersion ?? ULTRAHONK_CONTRACT_VERSION,
       );
     } catch (error) {
       this.logger.error(`Proof verification failed: ${error.message}`);

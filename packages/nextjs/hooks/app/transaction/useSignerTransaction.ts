@@ -72,7 +72,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       publicInputs,
       nullifier,
       userAddress: walletClient.account.address,
-      vk: vk ? Buffer.from(vk).toString("base64") : undefined,
+      vk,
       ...txPayload,
     });
 

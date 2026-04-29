@@ -29,6 +29,7 @@ export interface ApproveTransactionPayload {
   proof: number[];
   publicInputs: string[];
   nullifier: string;
+  vk?: string;
 }
 
 export interface ParsedTokenAmount {
@@ -164,6 +165,7 @@ export async function generateVotePayload(
     proof: proof.proof,
     publicInputs: proof.publicInputs,
     nullifier: proof.nullifier,
+    vk: proof.vk,
   };
 }
 

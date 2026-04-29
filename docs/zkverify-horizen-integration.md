@@ -4,7 +4,7 @@
 
 PolyPay uses multiple blockchain layers for privacy-preserving multisig operations:
 
-- **[zkVerify](https://docs.zkverify.io/)**: Verifies zero-knowledge proofs (ultraplonk) off-chain, providing proof verification and aggregation as a service
+- **[zkVerify](https://docs.zkverify.io/)**: Verifies zero-knowledge proofs off-chain (UltraHonk for new accounts, UltraPlonk for legacy accounts), providing proof verification and aggregation as a service
 - **[Horizen](https://www.horizen.io/)**: EVM-compatible L3 blockchain where multisig accounts (`MetaMultiSigWallet` contracts) are deployed and transactions are executed
 - **[Base](https://base.org/)**: EVM-compatible L2 blockchain, also supported as a destination chain for account deployment and transaction execution
 
@@ -33,7 +33,7 @@ User proves ownership of their commitment without revealing the secret.
 
 ![Authentication Flow](.gitbook/assets/zkverify-horizen/authentication-flow.png)
 
-- **zkVerify**: Verify ultraplonk proof, return `jobId` and `zkVerifyTxHash`
+- **zkVerify**: Verify proof (UltraHonk or UltraPlonk based on account version), return `jobId` and `zkVerifyTxHash`
 - **Destination chain**: No interaction
 
 ### 2. Account Creation (CREATE_ACCOUNT)
