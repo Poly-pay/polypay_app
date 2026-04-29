@@ -31,7 +31,7 @@ export const LeaderBoardTable = ({ filter, week }: LeaderBoardTableProps) => {
         {/* Header */}
         <div className="flex items-center h-10 px-3 text-sm font-medium text-grey-500 italic">
           <div className="w-[15%] text-center">#</div>
-          <div className="w-[45%] px-2">Commitment</div>
+          <div className="w-[45%] px-2">Membership ID</div>
           <div className="flex-1 text-right px-2">Points</div>
         </div>
         <div className="flex items-center justify-center h-[300px]">
@@ -47,7 +47,7 @@ export const LeaderBoardTable = ({ filter, week }: LeaderBoardTableProps) => {
         {/* Header */}
         <div className="flex items-center h-10 px-3 text-sm font-medium text-grey-500 italic">
           <div className="w-[15%] text-center">#</div>
-          <div className="w-[45%] px-2">Commitment</div>
+          <div className="w-[45%] px-2">Membership ID</div>
           <div className="flex-1 text-right px-2">Points</div>
         </div>
         <div className="flex items-center justify-center h-[300px] text-grey-500">No leaderboard data available</div>
@@ -60,7 +60,7 @@ export const LeaderBoardTable = ({ filter, week }: LeaderBoardTableProps) => {
       {/* Header */}
       <div className="flex items-center h-10 px-3 text-sm font-medium text-grey-500 italic">
         <div className="w-[15%] text-center">#</div>
-        <div className="w-[45%] px-2">Commitment</div>
+        <div className="w-[45%] px-2">Membership ID</div>
         <div className="flex-1 text-right px-2">Points</div>
       </div>
 

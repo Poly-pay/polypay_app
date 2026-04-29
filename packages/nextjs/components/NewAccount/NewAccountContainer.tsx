@@ -48,7 +48,7 @@ export default function NewAccountContainer() {
 
   const handleNextStep = () => {
     if (!commitment) {
-      notification.error("You need to have an identity commitment to create an account.");
+      notification.error("You need to have a membership ID to create an account.");
       return;
     }
     setCurrentStep(prev => prev + 1);
@@ -60,7 +60,7 @@ export default function NewAccountContainer() {
 
   const handleCreateAccount = async () => {
     if (!commitment) {
-      notification.error("You need to have an identity commitment to create an account.");
+      notification.error("You need to have a membership ID to create an account.");
       return;
     }
 
@@ -73,7 +73,7 @@ export default function NewAccountContainer() {
       // Ensure creator commitment is in the list
       const hasCreator = validSigners.some((s: { commitment: string; name?: string }) => s.commitment === commitment);
       if (!hasCreator) {
-        notification.error("Your commitment must be included in the signers list.");
+        notification.error("Your membership ID must be included in the signers list.");
         return;
       }
 

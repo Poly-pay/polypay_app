@@ -29,7 +29,7 @@ PolyPay uses multiple blockchain layers for privacy-preserving multisig operatio
 
 ### 1. Authentication (LOGIN)
 
-User proves ownership of their commitment without revealing the secret.
+User proves ownership of their membership ID without revealing the secret.
 
 ![Authentication Flow](.gitbook/assets/zkverify-horizen/authentication-flow.png)
 

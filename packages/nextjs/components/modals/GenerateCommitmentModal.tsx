@@ -35,7 +35,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-2">
             <DecoreCircleIcon width={36} height={36} color="var(--color-main-violet)" />
             <span className="flex flex-col">
-              <span className="font-semibold text-gray-900 uppercase">Generate commitment</span>
+              <span className="font-semibold text-gray-900 uppercase">Generate membership ID</span>
             </span>
           </div>
           {commitment && (
@@ -60,20 +60,20 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
 
           {commitment ? (
             <>
-              <h3 className="font-semibold text-gray-900 text-2xl uppercase">Your commitment is on the way</h3>
+              <h3 className="font-semibold text-gray-900 text-2xl uppercase">Your membership ID is on the way</h3>
               <span className="block text-sm text-gray-500 leading-relaxed text-[13px]">
-                Your commitment is being created for you. Use the commitment to create a multisig account or provide
-                this to the account creator to add you as a signer.
+                Your membership ID is being created for you. Use the membership ID to create a multisig account or
+                provide this to the account creator to add you as a signer.
               </span>
             </>
           ) : (
             <>
-              <h3 className="font-semibold text-gray-900 text-2xl uppercase">commitment</h3>
+              <h3 className="font-semibold text-gray-900 text-2xl uppercase">membership ID</h3>
               <span className="block text-sm text-gray-500 leading-relaxed m-0">
                 PolyPay is a privacy preserving multisig wallet with payroll features.
               </span>
               <span className="block text-sm text-gray-500 leading-relaxed m-0">
-                In order to improve your experience you need to generate a commitment to log-in in a &apos;private
+                In order to improve your experience you need to generate a membership ID to log-in in a &apos;private
                 way&apos;
               </span>
             </>
@@ -82,7 +82,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             <div
               className="w-[296px] h-[31px] flex items-center px-2.5 py-[7px] gap-2 bg-pink-350/10 border border-main-pink rounded-full cursor-pointer hover:bg-pink-350/20 transition-colors"
               onClick={() => {
-                copyToClipboard(commitment || "", "Commitment copied to clipboard");
+                copyToClipboard(commitment || "", "Membership ID copied to clipboard");
               }}
             >
               {/* Commitment text */}

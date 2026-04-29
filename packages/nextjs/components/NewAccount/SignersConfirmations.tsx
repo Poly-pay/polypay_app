@@ -69,7 +69,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
         <div className="w-full flex flex-col gap-2">
           <div className="text-text-secondary text-base font-medium">Account signers</div>
           <span className="w-[420px] text-sm text-gray-700 mb-1">
-            Those commitments added to the signers list below will play an important role in approving future
+            Those membership IDs added to the signers list below will play an important role in approving future
             transactions as team members.
           </span>
 
@@ -97,7 +97,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                         type="text"
                         {...register(`signers.${index}.commitment`)}
                         disabled
-                        placeholder="Signer commitment"
+                        placeholder="Signer membership ID"
                         className={`h-input flex-1 px-4 py-3 rounded-[16px] border bg-gray-50 text-base focus:outline-none opacity-60 cursor-not-allowed`}
                       />
                     </TooltipTrigger>
@@ -106,7 +106,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                       sideOffset={8}
                       className="max-w-[500px] bg-[#444444] rounded-md px-4 py-1.5 text-white text-xs leading-5"
                     >
-                      <span className="block">This is your commitment.</span>
+                      <span className="block">This is your membership ID.</span>
                       <span className="w-full block">
                         You can&apos;t edit or delete it, but you can add a name to easily distinguish it from others.
                       </span>
@@ -117,7 +117,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                   <input
                     type="text"
                     {...register(`signers.${index}.commitment`)}
-                    placeholder="Signer commitment"
+                    placeholder="Signer membership ID"
                     className={`h-input flex-1 px-4 py-3 rounded-[16px] border bg-gray-50 text-base focus:outline-none ${hasDuplicate || hasInvalidFormat ? "border-red-500 focus:border-red-500 bg-red-50" : "border-gray-200 focus:border-primary"}`}
                   />
                 )}

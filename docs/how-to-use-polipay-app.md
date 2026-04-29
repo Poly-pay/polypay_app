@@ -43,7 +43,7 @@ Overview of your multisig account including balance, pending transactions, and s
 
 #### Create New Account
 
-Create a new multisig account by adding signer commitments and setting the threshold.
+Create a new multisig account by adding signer membership IDs and setting the threshold.
 
 ![Create New Account](.gitbook/assets/new_account.png)
 
