@@ -56,6 +56,7 @@ const modals: ModalRegistry = {
   questIntro: dynamic(() => import("./QuestIntroModal"), { ssr: false }),
   createBatchFromContacts: dynamic(() => import("./CreateBatchFromContactsModal"), { ssr: false }),
   depositX402: dynamic(() => import("./DepositModal"), { ssr: false }),
+  receiveMethod: dynamic(() => import("./ReceiveMethodModal"), { ssr: false }),
 };
 
 type ModalInstance = {
