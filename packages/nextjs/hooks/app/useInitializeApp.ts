@@ -6,7 +6,9 @@ import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { ErrorCode, handleError, parseError } from "~~/utils/errorHandler";
 
 // Routes that don't require an account (only need login/commitment)
-const ROUTES_WITHOUT_ACCOUNT = [Routes.QUEST.path, Routes.LEADERBOARD.path];
+// Quest & Leaderboard temporarily hidden — kept for future reuse.
+// const ROUTES_WITHOUT_ACCOUNT = [Routes.QUEST.path, Routes.LEADERBOARD.path];
+const ROUTES_WITHOUT_ACCOUNT: string[] = [];
 
 // Helper function to check if route requires account
 const requiresAccount = (pathname: string) => {

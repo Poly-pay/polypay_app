@@ -32,14 +32,15 @@ const sectionItems = [
       { icon: Routes.BATCH.icon, label: Routes.BATCH.title, link: Routes.BATCH.path },
     ],
   },
-  {
-    label: "Quest",
-    requireAccount: false,
-    menuItems: [
-      { icon: Routes.QUEST.icon, label: Routes.QUEST.title, link: Routes.QUEST.path },
-      { icon: Routes.LEADERBOARD.icon, label: Routes.LEADERBOARD.title, link: Routes.LEADERBOARD.path },
-    ],
-  },
+  // Quest & Leaderboard temporarily hidden — kept for future reuse.
+  // {
+  //   label: "Quest",
+  //   requireAccount: false,
+  //   menuItems: [
+  //     { icon: Routes.QUEST.icon, label: Routes.QUEST.title, link: Routes.QUEST.path },
+  //     { icon: Routes.LEADERBOARD.icon, label: Routes.LEADERBOARD.title, link: Routes.LEADERBOARD.path },
+  //   ],
+  // },
 ];
 
 const SectionItem = ({
