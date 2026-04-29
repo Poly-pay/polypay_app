@@ -94,7 +94,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
         publicInputs,
         nullifier: nullifier.toString(),
         userAddress: walletClient.account.address,
-        vk: vk ? Buffer.from(vk).toString("base64") : undefined,
+        vk,
       });
 
       if (result) {

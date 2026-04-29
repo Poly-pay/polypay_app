@@ -16,7 +16,7 @@ interface IVerifyProofAggregation {
 
 contract MetaMultiSigWallet {
     // ============ Constants ============
-    bytes32 public constant PROVING_SYSTEM_ID = keccak256(abi.encodePacked("ultraplonk"));
+    bytes32 public constant PROVING_SYSTEM_ID = keccak256(abi.encodePacked("ultrahonk"));
     bytes32 public constant VERSION_HASH = sha256(abi.encodePacked(""));
     uint256 public constant BN254_PRIME = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
 

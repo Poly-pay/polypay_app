@@ -9,6 +9,7 @@ import {
   CreateAccountDto,
   CreateAccountBatchDto,
   UpdateAccountDto,
+  ULTRAHONK_CONTRACT_VERSION,
 } from '@polypay/shared';
 import { RelayerService } from '@/relayer-wallet/relayer-wallet.service';
 import { EventsService } from '@/events/events.service';
@@ -80,12 +81,14 @@ export class AccountService {
       );
 
       // Create account
+      // UltraHonk contract (v2) is deployed on all supported chains
       const newAccount = await prisma.account.create({
         data: {
           address,
           name: dto.name,
           threshold: dto.threshold,
           chainId: dto.chainId,
+          contractVersion: ULTRAHONK_CONTRACT_VERSION,
         },
       });
 
@@ -229,12 +232,14 @@ export class AccountService {
       const accounts = [];
 
       for (const deployment of deployments) {
+        // UltraHonk contract (v2) is deployed on all supported chains
         const newAccount = await prisma.account.create({
           data: {
             address: deployment.address,
             name: dto.name,
             threshold: dto.threshold,
             chainId: deployment.chainId,
+            contractVersion: ULTRAHONK_CONTRACT_VERSION,
           },
         });
 
@@ -299,7 +304,7 @@ export class AccountService {
     }
 
     return createdAccounts.map((account) =>
-      this.formatAccountResponse(account),
+      AccountService.formatAccountResponse(account),
     );
   }
 
@@ -322,7 +327,7 @@ export class AccountService {
       throw new NotFoundException('Account not found');
     }
 
-    return this.formatAccountResponse(account);
+    return AccountService.formatAccountResponse(account);
   }
 
   /**
@@ -340,15 +345,18 @@ export class AccountService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return accounts.map((account) => this.formatAccountResponse(account));
+    return accounts.map((account) =>
+      AccountService.formatAccountResponse(account),
+    );
   }
 
-  private formatAccountResponse(account: {
+  static formatAccountResponse(account: {
     id: string;
     address: string;
     name: string | null;
     threshold: number;
     chainId: number;
+    contractVersion: number;
     createdAt: Date;
     signers: Array<{
       isCreator: boolean;
@@ -362,6 +370,7 @@ export class AccountService {
       name: account.name,
       threshold: account.threshold,
       chainId: account.chainId,
+      contractVersion: account.contractVersion,
       createdAt: account.createdAt,
       signers: account.signers.map((as) => ({
         commitment: as.user.commitment,

@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { useMetaMultiSigWallet } from "./useMetaMultiSigWallet";
 import { useNetworkGuard } from "./useNetworkGuard";
-import { getPublicKeyXY, hexToByteArray, poseidonHash2 } from "@polypay/shared";
+import { ULTRAHONK_CONTRACT_VERSION, getPublicKeyXY, hexToByteArray, poseidonHash2 } from "@polypay/shared";
 import { type Hex } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 import { useAccountStore } from "~~/services/store";
@@ -15,7 +15,7 @@ export interface GenerateProofResult {
   publicInputs: string[];
   nullifier: string;
   commitment: string;
-  vk?: any;
+  vk?: string;
 }
 
 export interface UseGenerateProofOptions {
@@ -94,10 +94,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
 
       // 5. Dynamic import Noir libraries
       setLoadingState("Loading ZK libraries...");
-      const [{ Noir }, { UltraPlonkBackend }] = await Promise.all([
-        import("@noir-lang/noir_js"),
-        import("@aztec/bb.js"),
-      ]);
+      const { Noir } = await import("@noir-lang/noir_js");
 
       // 6. Execute Noir circuit
       const input = {
@@ -114,11 +111,25 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       const noir = new Noir({ bytecode, abi } as any);
       const execResult = await noir.execute(input);
 
-      // 7. Generate proof
+      // 7. Generate proof — use UltraHonk for contractVersion >= 2
       setLoadingState("Securing your transaction...");
-      const plonk = new UltraPlonkBackend(bytecode, { threads: 2 });
-      const { proof, publicInputs } = await plonk.generateProof(execResult.witness);
-      // const vk = await plonk.getVerificationKey();
+      let proof: Uint8Array;
+      let publicInputs: string[];
+      let vk: string | undefined;
+
+      if (currentAccount?.contractVersion && currentAccount.contractVersion >= ULTRAHONK_CONTRACT_VERSION) {
+        const { UltraHonkBackend } = await import("@aztec/bb.js");
+        const backend = new UltraHonkBackend(bytecode, { threads: 2 });
+        ({ proof, publicInputs } = await backend.generateProof(execResult.witness, { keccak: true }));
+        const rawVk = await backend.getVerificationKey({ keccak: true });
+        vk = "0x" + Buffer.from(rawVk).toString("hex");
+      } else {
+        const { UltraPlonkBackend } = await import("@aztec/bb.js");
+        const backend = new UltraPlonkBackend(bytecode, { threads: 2 });
+        ({ proof, publicInputs } = await backend.generateProof(execResult.witness));
+        const rawVk = await backend.getVerificationKey();
+        vk = Buffer.from(rawVk).toString("base64");
+      }
 
       setLoadingState("");
 
@@ -127,7 +138,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
         publicInputs,
         nullifier: nullifier.toString(),
         commitment,
-        // vk
+        vk,
       };
     },
     [
@@ -138,6 +149,7 @@ export function useGenerateProof(options?: UseGenerateProofOptions) {
       setLoadingState,
       chain?.id,
       currentAccount?.chainId,
+      currentAccount?.contractVersion,
       isWrongNetwork,
       targetChainId,
     ],

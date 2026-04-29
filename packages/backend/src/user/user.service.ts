@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
 import { CreateUserDto } from '@polypay/shared';
+import { AccountService } from '@/account/account.service';
 
 @Injectable()
 export class UserService {
@@ -75,19 +76,9 @@ export class UserService {
       },
     });
 
-    return accounts.map((account) => ({
-      id: account.id,
-      address: account.address,
-      name: account.name,
-      threshold: account.threshold,
-      chainId: account.chainId,
-      createdAt: account.createdAt,
-      signers: account.signers.map((signer) => ({
-        commitment: signer.user.commitment,
-        name: signer.displayName,
-        isCreator: signer.isCreator,
-      })),
-    }));
+    return accounts.map((account) =>
+      AccountService.formatAccountResponse(account),
+    );
   }
 
   /**
