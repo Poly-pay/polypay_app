@@ -32,4 +32,5 @@ export type ModalName =
   | "claimReward"
   | "questIntro"
   | "createBatchFromContacts"
-  | "depositX402";
+  | "depositX402"
+  | "receiveMethod";

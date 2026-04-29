@@ -58,7 +58,7 @@ function DialogContent({
           {showCloseButton && (
             <DialogPrimitive.Close
               data-slot="dialog-close"
-              className="h-8 w-8 p-1.5 text-black bg-white cursor-pointer hover:bg-gray-200 absolute top-5 right-5 rounded-md "
+              className="h-8 w-8 p-1.5 text-black bg-white cursor-pointer hover:bg-gray-200 absolute top-1 right-3 rounded-md "
             >
               <X className="w-5 h-5" />
             </DialogPrimitive.Close>

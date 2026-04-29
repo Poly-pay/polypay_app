@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "../ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "../ui/sheet";
 import { ResolvedToken, isX402SupportedChain } from "@polypay/shared";
-import { ArrowDownToLine, Eye, EyeOff, MoveDown, MoveUp, X } from "lucide-react";
+import { Eye, EyeOff, MoveDown, MoveUp, X } from "lucide-react";
 import { Address } from "viem";
 import NetworkBadge from "~~/components/Common/NetworkBadge";
 import { useMetaMultiSigWallet } from "~~/hooks";
@@ -142,14 +142,24 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
 
               {/* Action Buttons */}
               {(() => {
-                const showDeposit =
+                const x402Enabled =
                   process.env.NEXT_PUBLIC_FEATURE_X402_DEPOSIT === "true" && isX402SupportedChain(chainId);
-                const btnPad = showDeposit ? "px-2" : "px-6";
-                const txtSize = showDeposit ? "text-sm" : "text-base";
-                const iconSize = showDeposit ? "h-4 w-4" : "h-5 w-5";
-                const btnClass = `flex-1 min-w-0 h-icon-btn ${btnPad} py-2 gap-1 bg-[rgba(248,248,248,0.13)] hover:bg-[rgba(248,248,248,0.25)] rounded-xl border border-[rgba(255,255,255,0.25)] cursor-pointer`;
-                const labelClass = `text-grey-50 ${txtSize} font-normal leading-[19px]`;
-                const iconClass = `${iconSize} text-grey-50 shrink-0`;
+                const btnClass =
+                  "flex-1 min-w-0 h-icon-btn px-6 py-2 gap-1 bg-[rgba(248,248,248,0.13)] hover:bg-[rgba(248,248,248,0.25)] rounded-xl border border-[rgba(255,255,255,0.25)] cursor-pointer";
+                const labelClass = "text-grey-50 text-base font-normal leading-[19px]";
+                const iconClass = "h-5 w-5 text-grey-50 shrink-0";
+                const handleReceive = () => {
+                  // On Base (with x402 flag on), show method selector first.
+                  // On Horizen (or flag off), open QR directly as before.
+                  if (x402Enabled) {
+                    openModal("receiveMethod", {
+                      multisigAddress: metaMultiSigWallet?.address as `0x${string}`,
+                      multisigChainId: chainId,
+                    });
+                  } else {
+                    openModal("qrAddressReceiver", { address: metaMultiSigWallet?.address as Address });
+                  }
+                };
                 return (
                   <div className="flex gap-1 p-1 bg-[rgba(0,0,0,0.47)] backdrop-blur-[15px] rounded-[15px]">
                     <SheetClose asChild>
@@ -158,31 +168,10 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({ children }) => {
                         <span className={labelClass}>Transfer</span>
                       </Button>
                     </SheetClose>
-                    <Button
-                      className={btnClass}
-                      onClick={() =>
-                        openModal("qrAddressReceiver", { address: metaMultiSigWallet?.address as Address })
-                      }
-                    >
+                    <Button className={btnClass} onClick={handleReceive}>
                       <MoveDown className={iconClass} />
                       <span className={labelClass}>Receive</span>
                     </Button>
-                    {showDeposit && (
-                      <SheetClose asChild>
-                        <Button
-                          className={btnClass}
-                          onClick={() =>
-                            openModal("depositX402", {
-                              multisigAddress: metaMultiSigWallet?.address as `0x${string}`,
-                              multisigChainId: chainId,
-                            })
-                          }
-                        >
-                          <ArrowDownToLine className={iconClass} />
-                          <span className={labelClass}>Deposit</span>
-                        </Button>
-                      </SheetClose>
-                    )}
                   </div>
                 );
               })()}

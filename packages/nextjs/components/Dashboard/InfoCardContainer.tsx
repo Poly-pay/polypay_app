@@ -49,15 +49,20 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
               <Image src="/icons/actions/rotate-360.svg" alt="Refresh" width={18} height={18} />
             </span>
           </div>
-          <div className="flex flex-row gap-2 items-center">
-            <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
-              <Image src={avatarSrc} alt="Account" width={40} height={40} className="rounded-[9px]" />
-              <div className="absolute -bottom-1 -right-1">
-                <NetworkBadge chainId={chainId} size={16} />
+          <div className="flex flex-row gap-2 items-center justify-between">
+            <div className="flex flex-row gap-2 items-center min-w-0">
+              <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+                <Image src={avatarSrc} alt="Account" width={40} height={40} className="rounded-[9px]" />
+                <div className="absolute -bottom-1 -right-1">
+                  <NetworkBadge chainId={chainId} size={16} />
+                </div>
               </div>
+              <span className="font-family-repetition text-[32px] text-white leading-none tracking-[-0.01em] max-w-[122px] truncate">
+                {currentAccount?.name ?? "Default account"}
+              </span>
             </div>
-            <span className="font-family-repetition text-[32px] text-white leading-none tracking-[-0.01em] max-w-[122px] truncate">
-              {currentAccount?.name ?? "Default account"}
+            <span className="text-white text-sm font-medium leading-none shrink-0 self-end">
+              ver {currentAccount?.contractVersion ?? 1}.0
             </span>
           </div>
         </div>
