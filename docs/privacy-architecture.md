@@ -2,35 +2,35 @@
 
 ### Traditional vs Privacy Multisig
 
-| Aspect          | Traditional Multisig             | PolyPay                   |
-| --------------- | -------------------------------- | ------------------------- |
-| Signer Identity | Public addresses stored on-chain | Hidden behind commitments |
-| Who Signed      | Visible to everyone              | Commitment visible, EOA hidden |
+| Aspect          | Traditional Multisig             | PolyPay                                   |
+| --------------- | -------------------------------- | ----------------------------------------- |
+| Signer Identity | Public addresses stored on-chain | Hidden behind membership IDs              |
+| Who Signed      | Visible to everyone              | Membership ID visible, EOA hidden         |
 
-### Commitment-Based Identity
+### Membership ID-Based Identity
 
-Instead of storing addresses, PolyPay stores **commitments** (hash(secret, secret)):
+Instead of storing addresses, PolyPay stores **membership IDs** (hash(secret, secret)):
 
 * The **secret** is derived from signing a message with your wallet
-* The **commitment** is stored on-chain in a signers list
-* Only you know the secret that matches your commitment
+* The **membership ID** is stored on-chain in a signers list
+* Only you know the secret that matches your membership ID
 
 ### How It Works
 
-1. **Setup**: Each signer generates a secret and computes their commitment
-2. **Registration**: Commitments are added to the smart contract's signers list
-3. **Signing**: To approve a transaction, signers prove they know the secret for their commitment using ZK proofs
-4. **Verification**: The smart contract checks if the commitment exists in the signers list
+1. **Setup**: Each signer generates a secret and computes their membership ID
+2. **Registration**: Membership IDs are added to the smart contract's signers list
+3. **Signing**: To approve a transaction, signers prove they know the secret for their membership ID using ZK proofs
+4. **Verification**: The smart contract checks if the membership ID exists in the signers list
 
 ### Privacy Model
 
 When you sign a transaction:
 
-* The ZK proof verifies you know the secret for your commitment
-* The contract checks your commitment is in the authorized signers list
+* The ZK proof verifies you know the secret for your membership ID
+* The contract checks your membership ID is in the authorized signers list
 * Your Ethereum address (EOA) is never revealed on-chain
 
-This means observers can see which commitment signed, but cannot link it back to your wallet address.
+This means observers can see which membership ID signed, but cannot link it back to your wallet address.
 
 ### Relayer Privacy
 

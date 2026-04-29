@@ -2,9 +2,11 @@
 
 This page provides a detailed explanation of the [Noir](https://noir-lang.org) circuit used in PolyPay for generating zero-knowledge proofs.
 
+> The user identifier shown in the PolyPay UI as **Membership ID** is the same value referred to in code, contracts, and circuits as `commitment`. Circuit input names below preserve `commitment` for accuracy.
+
 ## Overview
 
-The circuit file is located at `packages/nextjs/public/circuit/src/main.nr`. It proves four things in a single proof: transaction hash commitment is correct, ECDSA signature is valid, prover knows the secret for their commitment, and nullifier prevents double-signing.
+The circuit file is located at `packages/nextjs/public/circuit/src/main.nr`. It proves four things in a single proof: transaction hash commitment is correct, ECDSA signature is valid, prover knows the secret for their membership ID, and nullifier prevents double-signing.
 
 ## Circuit Structure
 
@@ -33,7 +35,7 @@ These inputs are visible on-chain and used for verification:
 | Input | Type | Description |
 |-------|------|-------------|
 | tx_hash_commitment | Field | Poseidon hash of tx_hash |
-| commitment | Field | hash(secret, secret) - checked against signers list |
+| commitment | Field | hash(secret, secret) - the user's membership ID, checked against signers list |
 | nullifier | Field | Unique identifier to prevent double-signing |
 
 ## Step-by-Step Explanation
@@ -50,11 +52,11 @@ The circuit reconstructs Ethereum's `personal_sign` prefix `"\x19Ethereum Signed
 
 **Why prefix?** Ethereum wallets always add this prefix when signing. We must match the exact message that was signed.
 
-### Step 3: Verify Commitment Ownership
+### Step 3: Verify Membership ID Ownership
 
-The circuit computes commitment from secret using `commitment = hash(secret, secret)`, then compares with public `commitment`.
+The circuit computes the membership ID from secret using `commitment = hash(secret, secret)`, then compares with the public `commitment` input.
 
-**How authorization works:** The circuit proves "I know the secret for this commitment". Then the smart contract checks "Is this commitment in the signers list?" This two-step verification ensures only authorized signers can sign transactions.
+**How authorization works:** The circuit proves "I know the secret for this membership ID". Then the smart contract checks "Is this membership ID in the signers list?" This two-step verification ensures only authorized signers can sign transactions.
 
 ### Step 4: Verify Nullifier
 
@@ -77,7 +79,7 @@ Wrapper for [Poseidon](https://www.poseidon-hash.info) hash with 2 inputs.
 | Attack | Prevention |
 |--------|------------|
 | Fake signature | ECDSA verification in circuit |
-| Non-member signing | Commitment checked against signers list on-chain |
+| Non-member signing | Membership ID checked against signers list on-chain |
 | Double signing | Nullifier stored on-chain |
 | Transaction tampering | tx_hash_commitment verification |
 | Replay attack | Nonce included in tx_hash |

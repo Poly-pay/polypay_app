@@ -32,7 +32,7 @@ PolyPay uses **PostgreSQL 16** as its database, managed by **Prisma ORM**.
 
 The database contains 12 tables:
 
-- `users` - User accounts with commitment-based identity
+- `users` - User accounts with membership-ID-based identity (the database column is named `commitment` for backwards compatibility)
 - `accounts` - Multi-signature accounts
 - `account_signers` - Many-to-many relationship between users and accounts
 - `transactions` - Transaction records (TRANSFER, BATCH, ADD_SIGNER, etc.)

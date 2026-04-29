@@ -18,8 +18,9 @@ export type CreateGroupFormData = z.infer<typeof createGroupSchema>;
 
 // ==================== Account ====================
 
+// Note: `commitment` is the Poseidon ZK identity commitment, exposed in the UI as "Membership ID".
 const signerSchema = z.object({
-  commitment: z.string().min(1, "Signer commitment is required"),
+  commitment: z.string().min(1, "Signer membership ID is required"),
   name: z.string().optional(),
 });
 
@@ -58,7 +59,8 @@ export const editAccountNameSchema = z.object({
 export type EditAccountNameFormData = z.infer<typeof editAccountNameSchema>;
 
 export const addSignerSchema = z.object({
-  signerCommitment: z.string().min(1, "Signer commitment is required"),
+  // signerCommitment maps to UI label "Membership ID".
+  signerCommitment: z.string().min(1, "Signer membership ID is required"),
   threshold: z.number().min(1, "Threshold must be at least 1"),
 });
 export type AddSignerFormData = z.infer<typeof addSignerSchema>;

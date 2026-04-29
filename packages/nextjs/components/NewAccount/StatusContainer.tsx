@@ -159,7 +159,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
                           </div>
                           <div
                             className="text-[11px] font-mono text-gray-500 truncate cursor-pointer hover:text-gray-700"
-                            onClick={() => copyToClipboard(signer.commitment, "Commitment copied to clipboard")}
+                            onClick={() => copyToClipboard(signer.commitment, "Membership ID copied to clipboard")}
                           >
                             {signer.commitment.slice(0, 12)}...{signer.commitment.slice(-4)}
                           </div>
