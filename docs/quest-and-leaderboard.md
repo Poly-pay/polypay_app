@@ -1,5 +1,7 @@
 # Quest & Leaderboard
 
+> **Note:** The Quest & Leaderboard feature is currently disabled in the app. This page is kept for reference and future reuse.
+
 ## Overview
 
 Polypay Quest is a 2-week campaign where users earn points by creating accounts and making transactions. Top performers on the weekly leaderboard receive ZEN token rewards.

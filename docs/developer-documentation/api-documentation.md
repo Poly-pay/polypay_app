@@ -184,6 +184,8 @@ http://localhost:4000/api
 |--------|----------|-------------|---------------|
 | POST | `/feature-requests` | Submit feature request | Yes |
 
+<!-- Quest, Leaderboard & Claim endpoints temporarily hidden — kept for future reuse. -->
+<!--
 #### Quests (`/api/quests`)
 
 | Method | Endpoint | Description | Auth Required |
@@ -200,6 +202,7 @@ http://localhost:4000/api
 |--------|----------|-------------|---------------|
 | GET | `/claims/summary` | Get claim summary for all weeks | Yes |
 | POST | `/claims` | Claim weekly reward | Yes |
+-->
 
 #### x402 Gasless USDC Deposit (`/api/x402`)
 
