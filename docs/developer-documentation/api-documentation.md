@@ -2,6 +2,8 @@
 
 PolyPay provides a comprehensive RESTful API for privacy-preserving payroll operations. This guide covers how to interact with the API using various methods.
 
+> The user identifier shown in the PolyPay UI as **Membership ID** is sent and received over the API as the JSON field `commitment`. The field name is preserved for backwards compatibility.
+
 ## Quick Links
 
 - **Swagger UI (Interactive)**: `http://localhost:4000/api/swagger`

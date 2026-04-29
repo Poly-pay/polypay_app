@@ -25,7 +25,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
     try {
       await navigator.clipboard.writeText(senderCommitment);
       setCopied(true);
-      toast.success("Commitment copied!");
+      toast.success("Membership ID copied!");
 
       setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
     } catch (error) {
@@ -51,7 +51,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
         {!notification.read && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
 
         <div className="flex flex-col">
-          <span className="text-sm text-gray-500">Someone sent you a commitment</span>
+          <span className="text-sm text-gray-500">Someone sent you a membership ID</span>
           <span className="font-mono text-sm text-grey-850">{truncatedCommitment}</span>
         </div>
       </div>
@@ -60,7 +60,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
       <button
         onClick={handleCopy}
         className="p-2 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
-        title="Copy commitment"
+        title="Copy membership ID"
       >
         {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-500" />}
       </button>
