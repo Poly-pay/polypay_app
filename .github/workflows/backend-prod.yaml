@@ -62,6 +62,7 @@ jobs:
             --region ${{ vars.GCP_LOCATION }} \
             --wait
 
+            
       # - name: Deploy to Cloud Run
       #   env:
       #     GCP_LOCATION: ${{ vars.GCP_LOCATION }}
