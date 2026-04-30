@@ -47,20 +47,20 @@ jobs:
 
           docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APP_NAME}/${GCP_IMAGE}:${SHORT_SHA}
 
-      - name: Update and Run Prisma Migration Job
-        env:
-          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
-          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          APP_NAME: ${{ vars.APP_NAME }}
-          GCP_IMAGE: backend-test
-        run: |
-          gcloud run jobs update ${{ vars.GCP_BACKEND_NAME }} \
-            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APP_NAME}/${GCP_IMAGE}:${SHORT_SHA} \
-            --region ${{ vars.GCP_LOCATION }}
+      # - name: Update and Run Prisma Migration Job
+      #   env:
+      #     GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+      #     GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      #     APP_NAME: ${{ vars.APP_NAME }}
+      #     GCP_IMAGE: backend-test
+      #   run: |
+      #     gcloud run jobs update ${{ vars.GCP_BACKEND_NAME }} \
+      #       --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APP_NAME}/${GCP_IMAGE}:${SHORT_SHA} \
+      #       --region ${{ vars.GCP_LOCATION }}
 
-          gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
-            --region ${{ vars.GCP_LOCATION }} \
-            --wait
+      #     gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
+      #       --region ${{ vars.GCP_LOCATION }} \
+      #       --wait
 
             
       # - name: Deploy to Cloud Run
