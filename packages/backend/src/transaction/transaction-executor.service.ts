@@ -34,7 +34,8 @@ import {
 import { EventsService } from '@/events/events.service';
 import { Transaction } from '@/generated/prisma/client';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
-import { QuestService } from '@/quest/quest.service';
+// Quest disabled — see app.module.ts.
+// import { QuestService } from '@/quest/quest.service';
 
 @Injectable()
 export class TransactionExecutorService {
@@ -46,7 +47,7 @@ export class TransactionExecutorService {
     private readonly relayerService: RelayerService,
     private readonly eventsService: EventsService,
     private readonly analyticsLogger: AnalyticsLoggerService,
-    private readonly questService: QuestService,
+    // private readonly questService: QuestService,
   ) {}
 
   /**
@@ -106,7 +107,7 @@ export class TransactionExecutorService {
       );
 
       // 3. Mark as executed only on success
-      const { pointsAwarded } = await this.markExecuted(txId, txHash);
+      await this.markExecuted(txId, txHash);
 
       this.analyticsLogger.logExecute(
         userAddress,
@@ -114,7 +115,7 @@ export class TransactionExecutorService {
         txHash,
       );
 
-      return { txId, txHash, status: TxStatus.EXECUTED, pointsAwarded };
+      return { txId, txHash, status: TxStatus.EXECUTED };
     } catch (error) {
       this.logger.error(`Execute failed for txId ${txId}: ${error.message}`);
 
@@ -265,27 +266,6 @@ export class TransactionExecutorService {
         },
       });
 
-      // Award quest points (only for TRANSFER and BATCH transactions)
-      let pointsAwarded = 0;
-      if (
-        transaction.type === TxType.TRANSFER ||
-        transaction.type === TxType.BATCH
-      ) {
-        try {
-          const successfulTxPoints = await this.questService.awardSuccessfulTx(
-            txId,
-            transaction.createdBy,
-          );
-          const firstTxPoints = await this.questService.awardAccountFirstTx(
-            transaction.accountAddress,
-            txId,
-          );
-          pointsAwarded = successfulTxPoints + firstTxPoints;
-        } catch (error) {
-          this.logger.error(`Failed to award quest points: ${error.message}`);
-        }
-      }
-
       // Emit event for status update
       const eventData: TxStatusEventData = {
         txId,
@@ -298,8 +278,7 @@ export class TransactionExecutorService {
         eventData,
       );
 
-      const result = await updatedTx;
-      return { ...result, pointsAwarded };
+      return updatedTx;
     });
   }
 

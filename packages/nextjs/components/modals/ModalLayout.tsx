@@ -52,8 +52,9 @@ const modals: ModalRegistry = {
   }),
   switchAccount: dynamic(() => import("./SwitchAccountModal"), { ssr: false }),
   disclaimer: dynamic(() => import("./DisclaimerModal"), { ssr: false }),
-  claimReward: dynamic(() => import("./ClaimRewardModal"), { ssr: false }),
-  questIntro: dynamic(() => import("./QuestIntroModal"), { ssr: false }),
+  // Quest + Leaderboard hidden — modals orphaned.
+  // claimReward: dynamic(() => import("./ClaimRewardModal"), { ssr: false }),
+  // questIntro: dynamic(() => import("./QuestIntroModal"), { ssr: false }),
   createBatchFromContacts: dynamic(() => import("./CreateBatchFromContactsModal"), { ssr: false }),
   depositX402: dynamic(() => import("./DepositModal"), { ssr: false }),
   receiveMethod: dynamic(() => import("./ReceiveMethodModal"), { ssr: false }),

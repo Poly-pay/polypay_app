@@ -9,7 +9,8 @@ import { RelayerModule } from '@/relayer-wallet/relayer-wallet.module';
 import { BatchItemModule } from '@/batch-item/batch-item.module';
 import { EventsModule } from '@/events/events.module';
 import { AnalyticsLoggerService } from '@/common/analytics-logger.service';
-import { QuestModule } from '@/quest/quest.module';
+// Quest disabled — see app.module.ts.
+// import { QuestModule } from '@/quest/quest.module';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { QuestModule } from '@/quest/quest.module';
     RelayerModule,
     BatchItemModule,
     EventsModule,
-    QuestModule,
+    // QuestModule,
   ],
   controllers: [TransactionController],
   providers: [
