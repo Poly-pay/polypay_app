@@ -16,9 +16,11 @@ import { AuthModule } from './auth/auth.module';
 import { PriceModule } from './price/price.module';
 import { FeatureRequestModule } from './feature-request/feature-request.module';
 import { AdminModule } from './admin/admin.module';
-import { PartnerModule } from './partner/partner.module';
-import { QuestModule } from './quest/quest.module';
-import { RewardModule } from './reward/reward.module';
+// Hidden: Partner account-report endpoint disabled per ops request.
+// import { PartnerModule } from './partner/partner.module';
+// Hidden: Quest + Leaderboard + Reward/Claim flows disabled (FE already hidden in #245).
+// import { QuestModule } from './quest/quest.module';
+// import { RewardModule } from './reward/reward.module';
 import { BalanceAlertModule } from './balance-alert/balance-alert.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { X402Module } from './x402/x402.module';
@@ -45,9 +47,9 @@ const featureX402 = process.env.FEATURE_X402_DEPOSIT === 'true';
     PriceModule,
     FeatureRequestModule,
     AdminModule,
-    PartnerModule,
-    QuestModule,
-    RewardModule,
+    // PartnerModule,
+    // QuestModule,
+    // RewardModule,
     BalanceAlertModule,
     ScheduleModule.forRoot(),
     ...(featureX402 ? [X402Module] : []),
