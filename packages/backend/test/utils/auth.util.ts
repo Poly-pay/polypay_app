@@ -27,6 +27,7 @@ export async function loginUser(
       commitment,
       proof: authProof.proof,
       publicInputs: authProof.publicInputs,
+      vk: authProof.vk,
     })
     .expect(201);
 

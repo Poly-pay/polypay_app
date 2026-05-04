@@ -97,9 +97,9 @@ export default function TransferContainer() {
 
     const data = form.getValues();
 
-    // Validate commitment
+    // Validate commitment (shown in UI as "Membership ID")
     if (!commitment) {
-      notification.error("No commitment found. Please create identity first.");
+      notification.error("No membership ID found. Please create identity first.");
       return;
     }
 

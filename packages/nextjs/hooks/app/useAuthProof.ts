@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ULTRAHONK_CONTRACT_VERSION } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { createCommitment, createSecret } from "~~/utils/multisig";
@@ -8,7 +9,8 @@ interface AuthProofResult {
   commitment: string;
   proof: number[];
   publicInputs: string[];
-  vk?: any;
+  vk?: string;
+  contractVersion: number;
   walletAddress: string; // For analytics only
 }
 
@@ -46,17 +48,18 @@ export const useAuthProof = () => {
       };
 
       // 5. Generate proof
-      const [{ Noir }, { UltraPlonkBackend }] = await Promise.all([
+      const [{ Noir }, { UltraHonkBackend }] = await Promise.all([
         import("@noir-lang/noir_js"),
         import("@aztec/bb.js"),
       ]);
 
-      const backend = new UltraPlonkBackend(bytecode);
+      const backend = new UltraHonkBackend(bytecode);
       const noir = new Noir({ bytecode, abi } as any);
 
       const { witness } = await noir.execute(circuitInputs);
-      const { proof, publicInputs } = await backend.generateProof(witness);
-      const vk = await backend.getVerificationKey();
+      const { proof, publicInputs } = await backend.generateProof(witness, { keccak: true });
+      const rawVk = await backend.getVerificationKey({ keccak: true });
+      const vk = "0x" + Buffer.from(rawVk).toString("hex");
 
       // 6. Format output
       const proofArray = Array.from(proof);
@@ -67,6 +70,7 @@ export const useAuthProof = () => {
         proof: proofArray,
         publicInputs,
         vk,
+        contractVersion: ULTRAHONK_CONTRACT_VERSION,
         walletAddress, // For analytics only - NOT stored in database
       };
     } catch (err: any) {

@@ -4,6 +4,8 @@ import {
   IsString,
   IsArray,
   IsOptional,
+  IsInt,
+  Min,
   MaxLength,
 } from "class-validator";
 
@@ -28,6 +30,11 @@ export class LoginDto {
   @IsString()
   @MaxLength(65536)
   vk?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  contractVersion?: number;
 
   @IsOptional()
   @IsString()

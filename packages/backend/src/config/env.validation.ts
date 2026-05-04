@@ -44,4 +44,13 @@ export const validationSchema = Joi.object({
   // Snag Solutions - optional
   SNAG_API_KEY: Joi.string().optional(),
   SNAG_RULE_ID: Joi.string().optional(),
+
+  // x402 gasless deposit (optional; module loads only when FEATURE_X402_DEPOSIT=true)
+  FEATURE_X402_DEPOSIT: Joi.string().valid('true', 'false').default('false'),
+  X402_FACILITATOR_URL: Joi.alternatives().conditional('FEATURE_X402_DEPOSIT', {
+    is: 'true',
+    then: Joi.string().uri().required(),
+    otherwise: Joi.string().uri().optional(),
+  }),
+  X402_FACILITATOR_BEARER_TOKEN: Joi.string().optional().allow(''),
 });

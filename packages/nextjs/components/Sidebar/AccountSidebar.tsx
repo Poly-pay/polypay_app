@@ -168,7 +168,7 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
       {/* Commitment Section */}
       <div className="flex flex-col gap-[3px]">
         {/* Label */}
-        <span className="xl:block hidden text-sm font-medium text-grey-400 tracking-[-0.04em]">Commitment</span>
+        <span className="xl:block hidden text-sm font-medium text-grey-400 tracking-[-0.04em]">Membership ID</span>
 
         {/* Commitment Box */}
         <div
@@ -198,12 +198,12 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
                 width={16}
                 height={16}
                 className="justify-items-end cursor-pointer hover:opacity-80"
-                onClick={() => copyToClipboard(commitment || "", "Commitment copied to clipboard")}
+                onClick={() => copyToClipboard(commitment || "", "Membership ID copied to clipboard")}
               />
             </>
           ) : (
             <span className="flex-1 xl:block hidden text-sm font-medium text-main-white text-center tracking-[-0.06em]">
-              Generate your commitment
+              Generate your membership ID
             </span>
           )}
         </div>

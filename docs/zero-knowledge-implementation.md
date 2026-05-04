@@ -15,12 +15,12 @@ In a traditional multisig account:
 - Signer addresses are public on blockchain
 
 In PolyPay:
-- You prove "I know the secret for an authorized commitment" without revealing your EOA address
-- Your Ethereum address stays private, only the commitment is visible
+- You prove "I know the secret for an authorized membership ID" without revealing your EOA address
+- Your Ethereum address stays private, only the membership ID is visible
 
 ## The Four Proofs
 
-When you sign a transaction in PolyPay, the ZK circuit proves four things simultaneously. The circuit is written in [Noir](https://noir-lang.org), a domain-specific language for zero-knowledge proofs, and compiled to [UltraPlonk](https://rknhr-uec.github.io/aztec-protocol-spec/protocol-specs/cryptography/proving-system/overview) for efficient verification.
+When you sign a transaction in PolyPay, the ZK circuit proves four things simultaneously. The circuit is written in [Noir](https://noir-lang.org), a domain-specific language for zero-knowledge proofs. New accounts use [UltraHonk](https://docs.zkverify.io/architecture/verification_pallets/ultrahonk) as the proving backend, while legacy accounts (contractVersion 1) continue using UltraPlonk.
 
 ### Proof 1: "I know the transaction"
 
@@ -47,9 +47,9 @@ When you sign a transaction in PolyPay, the ZK circuit proves four things simult
 **Problem:** How to prove you're in the signers list?
 
 **Solution:**
-- Each signer has a secret "commitment" stored as: `commitment = hash(secret, secret)`
-- The circuit proves you know the secret for a given commitment
-- The smart contract checks if that commitment exists in the signers list
+- Each signer has a membership ID stored as: `commitment = hash(secret, secret)` (the field is named `commitment` on-chain and in the circuit)
+- The circuit proves you know the secret for a given membership ID
+- The smart contract checks if that membership ID exists in the signers list
 
 **Analogy:** Imagine a club membership list. You prove "I know the password for one of these memberships" and the club verifies that membership is on the list.
 
@@ -80,7 +80,7 @@ This two-step verification ensures only authorized signers can sign transactions
 
 3. **Backend Verifies via zkVerify:** Proof submitted to [zkVerify](https://docs.zkverify.io) for verification → Returns aggregation_id, attestation
 
-4. **Smart Contract Executes:** When threshold signatures reached, contract verifies all proofs on-chain, checks nullifiers not used, checks each commitment is in current signers list, then executes transaction
+4. **Smart Contract Executes:** When threshold signatures reached, contract verifies all proofs on-chain, checks nullifiers not used, checks each membership ID is in the current signers list, then executes transaction
 
 ## Circuit Inputs Reference
 
@@ -99,7 +99,7 @@ This two-step verification ensures only authorized signers can sign transactions
 | Input | Type | Description |
 |-------|------|-------------|
 | tx_hash_commitment | Field | Poseidon hash of tx_hash |
-| commitment | Field | hash(secret, secret) - checked against signers list |
+| commitment | Field | hash(secret, secret) - the user's membership ID, checked against signers list |
 | nullifier | Field | Prevents double-signing |
 
 ## More Detail
@@ -108,5 +108,5 @@ This two-step verification ensures only authorized signers can sign transactions
 ## Learn More
 
 - [Noir Language Documentation](https://noir-lang.org/docs)
-- [UltraPlonk Proving System](https://rknhr-uec.github.io/aztec-protocol-spec/protocol-specs/cryptography/proving-system/overview)
+- [UltraHonk Proving System](https://docs.zkverify.io/architecture/verification_pallets/ultrahonk)
 - [zkVerify Documentation](https://docs.zkverify.io)

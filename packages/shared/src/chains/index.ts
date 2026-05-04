@@ -16,6 +16,8 @@ export const getChain = (network: NetworkType) => {
   return network === NetworkValue.mainnet ? horizenMainnet : horizenTestnet;
 };
 
+export * from "./facilitator-network";
+
 // New helper: resolve chain by EVM chainId for multi-chain features.
 export const getChainById = (chainId: number) => {
   switch (chainId) {

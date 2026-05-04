@@ -52,9 +52,12 @@ const modals: ModalRegistry = {
   }),
   switchAccount: dynamic(() => import("./SwitchAccountModal"), { ssr: false }),
   disclaimer: dynamic(() => import("./DisclaimerModal"), { ssr: false }),
-  claimReward: dynamic(() => import("./ClaimRewardModal"), { ssr: false }),
-  questIntro: dynamic(() => import("./QuestIntroModal"), { ssr: false }),
+  // Quest + Leaderboard hidden — modals orphaned.
+  // claimReward: dynamic(() => import("./ClaimRewardModal"), { ssr: false }),
+  // questIntro: dynamic(() => import("./QuestIntroModal"), { ssr: false }),
   createBatchFromContacts: dynamic(() => import("./CreateBatchFromContactsModal"), { ssr: false }),
+  depositX402: dynamic(() => import("./DepositModal"), { ssr: false }),
+  receiveMethod: dynamic(() => import("./ReceiveMethodModal"), { ssr: false }),
 };
 
 type ModalInstance = {
@@ -80,14 +83,19 @@ export const ModalLayout: React.FC<{ children: ReactNode }> = ({ children }) => 
   const modalIdCounter = useRef(0);
 
   const openModal = useCallback((modalName: ModalName, props: Record<string, any> = {}) => {
-    if (modals[modalName]) {
+    if (!modals[modalName]) return;
+    setActiveModals(prev => {
+      // Prevent stacking duplicate modals of the same name.
+      // Callers (effects, double-clicks, race conditions) may fire openModal
+      // multiple times before the first instance is closed.
+      if (prev.some(m => m.name === modalName)) return prev;
       const newModal: ModalInstance = {
         id: `modal-${modalIdCounter.current++}`,
         name: modalName,
         props,
       };
-      setActiveModals(prev => [...prev, newModal]);
-    }
+      return [...prev, newModal];
+    });
   }, []);
 
   const closeModal = useCallback((modalId?: string) => {

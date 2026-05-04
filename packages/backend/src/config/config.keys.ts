@@ -28,4 +28,9 @@ export const CONFIG_KEYS = {
   // Snag Solutions
   SNAG_API_KEY: 'snag.apiKey',
   SNAG_RULE_ID: 'snag.ruleId',
+
+  // x402 gasless USDC deposit
+  X402_ENABLED: 'x402.enabled',
+  X402_FACILITATOR_URL: 'x402.facilitatorUrl',
+  X402_FACILITATOR_BEARER_TOKEN: 'x402.facilitatorBearerToken',
 } as const;

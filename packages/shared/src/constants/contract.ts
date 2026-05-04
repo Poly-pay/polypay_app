@@ -1,0 +1,1 @@
+export const ULTRAHONK_CONTRACT_VERSION = 2;

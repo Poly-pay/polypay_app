@@ -6,6 +6,7 @@ import {
   hexToByteArray,
   getPublicKeyXY,
   BN254_MODULUS,
+  ULTRAHONK_CONTRACT_VERSION,
 } from '@polypay/shared';
 import { TestSigner, signRawMessage } from './signer.util';
 
@@ -17,6 +18,7 @@ export interface ProofResult {
   publicInputs: string[];
   nullifier: string;
   commitment: string;
+  vk?: string;
 }
 
 /**
@@ -25,6 +27,7 @@ export interface ProofResult {
 export interface AuthProofResult {
   proof: number[];
   publicInputs: string[];
+  vk: string;
 }
 
 /**
@@ -58,6 +61,7 @@ export async function generateTestProof(
   signer: TestSigner,
   secret: bigint,
   txHash: Hex,
+  contractVersion: number = ULTRAHONK_CONTRACT_VERSION,
 ): Promise<ProofResult> {
   // 1. Sign txHash (local signing, no RPC)
   const signature = await signRawMessage(signer, txHash);
@@ -94,17 +98,33 @@ export async function generateTestProof(
 
   // Dynamic import Noir libraries
   const { Noir } = await import('@noir-lang/noir_js');
-  const { UltraPlonkBackend } = await import('@aztec/bb.js');
 
-  // Initialize Noir and backend
-  const backend = new UltraPlonkBackend(bytecode);
+  // Initialize Noir
   const noir = new Noir({ bytecode, abi } as any);
 
   // Execute circuit
   const { witness } = await noir.execute(circuitInputs);
 
-  // Generate proof
-  const { proof, publicInputs } = await backend.generateProof(witness);
+  // Generate proof — branch by contractVersion
+  let proof: Uint8Array;
+  let publicInputs: string[];
+  let vk: string | undefined;
+
+  if (contractVersion >= ULTRAHONK_CONTRACT_VERSION) {
+    const { UltraHonkBackend } = await import('@aztec/bb.js');
+    const backend = new UltraHonkBackend(bytecode);
+    ({ proof, publicInputs } = await backend.generateProof(witness, {
+      keccak: true,
+    }));
+    const rawVk = await backend.getVerificationKey({ keccak: true });
+    vk = '0x' + Buffer.from(rawVk).toString('hex');
+  } else {
+    const { UltraPlonkBackend } = await import('@aztec/bb.js');
+    const backend = new UltraPlonkBackend(bytecode);
+    ({ proof, publicInputs } = await backend.generateProof(witness));
+    const rawVk = await backend.getVerificationKey();
+    vk = Buffer.from(rawVk).toString('base64');
+  }
 
   // 7. Format output
   const proofArray = Array.from(proof);
@@ -114,6 +134,7 @@ export async function generateTestProof(
     publicInputs: publicInputs,
     nullifier: nullifier.toString(),
     commitment: commitment.toString(),
+    vk,
   };
 }
 
@@ -136,17 +157,22 @@ export async function generateTestAuthProof(
   const { bytecode, abi } = loadCircuit('auth-circuit');
 
   const { Noir } = await import('@noir-lang/noir_js');
-  const { UltraPlonkBackend } = await import('@aztec/bb.js');
+  const { UltraHonkBackend } = await import('@aztec/bb.js');
 
-  const backend = new UltraPlonkBackend(bytecode);
+  const backend = new UltraHonkBackend(bytecode);
   const noir = new Noir({ bytecode, abi } as any);
 
   const { witness } = await noir.execute(circuitInputs);
-  const { proof, publicInputs } = await backend.generateProof(witness);
+  const { proof, publicInputs } = await backend.generateProof(witness, {
+    keccak: true,
+  });
+  const rawVk = await backend.getVerificationKey({ keccak: true });
+  const vk = '0x' + Buffer.from(rawVk).toString('hex');
 
   return {
     proof: Array.from(proof),
     publicInputs: publicInputs,
+    vk,
   };
 }
 

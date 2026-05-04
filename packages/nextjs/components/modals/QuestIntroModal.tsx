@@ -17,7 +17,7 @@ const STEPS = [
           Just <span className="font-semibold text-grey-1000">Connect your Wallet</span>
         </li>
         <li>
-          Generate your <span className="font-semibold text-grey-1000">Commitment</span> and you are eligible to
+          Generate your <span className="font-semibold text-grey-1000">Membership ID</span> and you are eligible to
           participate
         </li>
       </ul>

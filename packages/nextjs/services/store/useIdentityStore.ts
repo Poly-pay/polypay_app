@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+// Note: `commitment` is the Poseidon ZK identity commitment — kept as the internal
+// variable name. It is exposed in the UI as "Membership ID".
 interface IdentityState {
   // Identity
   secret: string | null;

@@ -296,7 +296,7 @@ function SignerRow({ signer, isLast, copyToClipboard }: SignerRowProps) {
             className={`flex items-center justify-center px-1.5 h-[18px] rounded-full cursor-pointer transition-colors bg-main-pink hover:bg-pink-550`}
             onClick={e => {
               e.stopPropagation();
-              copyToClipboard(signer.commitment, "Commitment copied to clipboard");
+              copyToClipboard(signer.commitment, "Membership ID copied to clipboard");
             }}
           >
             <span className="text-xs font-medium text-main-white tracking-[-0.02em] leading-none">

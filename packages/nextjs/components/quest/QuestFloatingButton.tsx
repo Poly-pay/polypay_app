@@ -1,15 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useModalApp } from "~~/hooks";
+
+// import { useModalApp } from "~~/hooks";
 
 export const QuestFloatingButton = () => {
-  const { openModal } = useModalApp();
+  // const { openModal } = useModalApp();
 
   return (
     <>
       <button
-        onClick={() => openModal("questIntro")}
+        // onClick={() => openModal("questIntro")}
         className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3 cursor-pointer hover:scale-105 transition-transform"
       >
         {/* Circle with gradient background */}

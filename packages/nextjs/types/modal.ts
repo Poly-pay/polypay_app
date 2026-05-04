@@ -29,6 +29,9 @@ export type ModalName =
   | "signerList"
   | "switchAccount"
   | "disclaimer"
-  | "claimReward"
-  | "questIntro"
-  | "createBatchFromContacts";
+  // Quest + Leaderboard hidden — modal names retained as comments for future restore.
+  // | "claimReward"
+  // | "questIntro"
+  | "createBatchFromContacts"
+  | "depositX402"
+  | "receiveMethod";

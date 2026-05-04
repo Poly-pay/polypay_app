@@ -65,6 +65,8 @@ export async function getPublicKeyXY(
   return { pubKeyX, pubKeyY };
 }
 
+// Generates the Poseidon ZK identity commitment from a user's secret.
+// The returned value is shown in the UI as "Membership ID".
 export async function createCommitment(secret: bigint): Promise<bigint> {
   return await poseidonHash2(secret, secret);
 }
