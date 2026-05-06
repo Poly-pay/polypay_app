@@ -24,6 +24,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, createdAccount
   const router = useAppRouter();
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
   const [fundAddress, setFundAddress] = useState("");
+  const [fundChainId, setFundChainId] = useState<number | undefined>(undefined);
 
   const { currentAccount } = useAccountStore();
   const { openManageAccountsWithExpand } = useSidebarStore();
@@ -35,8 +36,9 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, createdAccount
     router.goToDashboard();
   };
 
-  const handleFund = (address: string) => {
+  const handleFund = (address: string, chainId?: number) => {
     setFundAddress(address);
+    setFundChainId(chainId);
     setIsReceiveModalOpen(true);
   };
 
@@ -108,7 +110,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, createdAccount
 
                       {/* Fund button */}
                       <button
-                        onClick={() => handleFund(acc.address)}
+                        onClick={() => handleFund(acc.address, acc.chainId)}
                         className="shrink-0 bg-primary text-black text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-pink-400 transition-colors"
                       >
                         Fund
@@ -142,7 +144,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, createdAccount
                   <span className="font-semibold text-base text-center text-white">See your account</span>
                 </button>
                 <button
-                  onClick={() => handleFund(currentAccount?.address || "")}
+                  onClick={() => handleFund(currentAccount?.address || "", currentAccount?.chainId)}
                   className="flex-1 bg-primary flex items-center justify-center px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
                 >
                   <span className="font-semibold text-base text-center text-black">Fund your account</span>
@@ -157,6 +159,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ className, createdAccount
         isOpen={isReceiveModalOpen}
         onClose={() => setIsReceiveModalOpen(false)}
         address={fundAddress || currentAccount?.address || ""}
+        chainId={fundChainId ?? currentAccount?.chainId}
       />
     </div>
   );
