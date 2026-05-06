@@ -123,21 +123,8 @@ const SwitchAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
             {step === 1 ? "Choose network" : "Choose your account"}
           </span>
 
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="w-[38px] h-icon-btn flex items-center justify-center rounded-lg border border-grey-200 hover:bg-grey-100 transition-colors"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path
-                d="M4.5 4.5L13.5 13.5M4.5 13.5L13.5 4.5"
-                stroke="#363636"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+          {/* Spacer to balance back button so title stays centered */}
+          <div className="w-[38px] h-icon-btn" />
         </div>
 
         {/* Content */}

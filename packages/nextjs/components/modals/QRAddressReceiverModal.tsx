@@ -7,11 +7,13 @@ import { notification } from "~~/utils/scaffold-eth";
 
 interface QRAddressReceiverModalProps extends ModalProps {
   address?: string;
+  chainId?: number;
 }
 
-const QRAddressReceiverModal: React.FC<QRAddressReceiverModalProps> = ({ isOpen, onClose, address }) => {
+const QRAddressReceiverModal: React.FC<QRAddressReceiverModalProps> = ({ isOpen, onClose, address, chainId }) => {
   const { currentAccount } = useAccountStore();
-  const networkIcon = currentAccount?.chainId ? getNetworkMeta(currentAccount.chainId).icon : "/logo/polypay-icon.svg";
+  const resolvedChainId = chainId ?? currentAccount?.chainId;
+  const networkIcon = resolvedChainId ? getNetworkMeta(resolvedChainId).icon : "/logo/polypay-icon.svg";
   const handleCopy = () => {
     navigator.clipboard.writeText(address ?? "");
     notification.success("Address copied to clipboard");

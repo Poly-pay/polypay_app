@@ -14,6 +14,7 @@ interface ModalProps {
   desc?: string;
   icon?: string;
   isCloseButton?: boolean;
+  closeButtonClassName?: string;
   className?: string;
   loadingTransaction?: boolean;
   preventClose?: boolean;
@@ -34,6 +35,7 @@ const ModalContainer = forwardRef<ModalRef, ModalProps>(
       desc,
       icon,
       isCloseButton = true,
+      closeButtonClassName,
       className,
       loadingTransaction = false,
       preventClose = false,
@@ -64,6 +66,7 @@ const ModalContainer = forwardRef<ModalRef, ModalProps>(
         <DialogContent
           className={cn("rounded-3xl w-[600px] px-1.5 py-4 shadow-modal", className)}
           showCloseButton={isCloseButton}
+          closeButtonClassName={closeButtonClassName}
           onEscapeKeyDown={e => loadingTransaction && e.preventDefault()}
           onPointerDownOutside={e => loadingTransaction && e.preventDefault()}
         >
