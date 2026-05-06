@@ -143,6 +143,23 @@ export default function TransferContainer() {
   const watchedAmount = form.watch("amount");
   const isAmountValid = watchedAmount !== "" && parseFloat(watchedAmount) > 0;
 
+  const hasInsufficientBalance = (() => {
+    if (!isAmountValid || isLoadingBalances) return false;
+    try {
+      const amountBI = isNativeETH
+        ? parseEther(watchedAmount)
+        : BigInt(parseTokenAmount(watchedAmount, selectedToken.decimals));
+      const balanceBI = isNativeETH
+        ? parseEther(currentBalance)
+        : BigInt(parseTokenAmount(currentBalance, selectedToken.decimals));
+      return amountBI > balanceBI;
+    } catch {
+      return false;
+    }
+  })();
+
+  const canSubmit = isAmountValid && !!watchedRecipient && !hasInsufficientBalance && !isLoading;
+
   return (
     <div className="overflow-hidden relative w-full h-full flex flex-col rounded-lg">
       {/* Background images */}
@@ -209,7 +226,10 @@ export default function TransferContainer() {
           </div>
 
           {form.formState.errors.amount && (
-            <p className="text-red-500 text-xs">{form.formState.errors.amount.message}</p>
+            <p className="text-red-500 text-xs text-center">{form.formState.errors.amount.message}</p>
+          )}
+          {hasInsufficientBalance && !form.formState.errors.amount && (
+            <p className="text-red-500 text-xs text-center">Insufficient {selectedToken.symbol} balance</p>
           )}
         </div>
         {/* Visual divider */}
@@ -264,7 +284,7 @@ export default function TransferContainer() {
         <div className="flex gap-2 items-center justify-center w-full max-w-xs">
           <button
             onClick={handleAddToBatch}
-            disabled={isLoading || !isAmountValid || !watchedRecipient}
+            disabled={!canSubmit}
             className="bg-main-black flex items-center justify-center gap-2 px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
           >
             {isLoading && <Spinner />}
@@ -274,7 +294,7 @@ export default function TransferContainer() {
           </button>
           <button
             onClick={form.handleSubmit(handleTransfer)}
-            disabled={isLoading || !isAmountValid || !watchedRecipient}
+            disabled={!canSubmit}
             className="bg-pink-350 flex items-center justify-center gap-2 px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 hover:bg-pink-450 transition-colors"
           >
             {isLoading && <Spinner />}

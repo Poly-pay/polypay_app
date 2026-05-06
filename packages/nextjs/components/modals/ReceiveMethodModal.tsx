@@ -35,9 +35,10 @@ const ReceiveMethodModal: React.FC<ReceiveMethodModalProps> = ({
       onClose={onClose}
       title="Select a receive method"
       isCloseButton
-      className="bg-white rounded-3xl w-[min(560px,92vw)] px-5 py-5 shadow-modal"
+      closeButtonClassName="top-1 right-2"
+      className="bg-white rounded-3xl w-[min(560px,92vw)] p-5 shadow-modal"
     >
-      <div className="flex flex-col gap-3 pt-6">
+      <div className="flex flex-col gap-3 pt-5">
         {/* Option 1 — QR */}
         <button
           type="button"
