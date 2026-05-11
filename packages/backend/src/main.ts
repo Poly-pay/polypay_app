@@ -1,8 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { LlmsTxtService } from './llms-txt/llms-txt.service';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -26,10 +27,15 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-PAYMENT'],
   });
 
-  // API prefix
+  // API prefix (llms.txt + llms-full.txt are served at the root, outside the prefix)
   const apiPrefix = configService.get<string>('app.apiPrefix');
   if (apiPrefix) {
-    app.setGlobalPrefix(apiPrefix);
+    app.setGlobalPrefix(apiPrefix, {
+      exclude: [
+        { path: 'llms.txt', method: RequestMethod.GET },
+        { path: 'llms-full.txt', method: RequestMethod.GET },
+      ],
+    });
   }
 
   // Swagger configuration
@@ -89,12 +95,22 @@ async function bootstrap() {
     },
   });
 
+  // Generate llms.txt + llms-full.txt from the same OpenAPI document, cache in service.
+  // Output uses relative paths so the file is portable across environments.
+  app.get(LlmsTxtService).initialize(document, {
+    apiPrefix: apiPrefix ?? '',
+  });
+
   const port = configService.get<number>('app.port');
   await app.listen(port);
 
   logger.log(`🚀 Application is running on: http://localhost:${port}`);
   logger.log(
     `📚 Swagger documentation available at: http://localhost:${port}/${swaggerPath}`,
+  );
+  logger.log(`🤖 llms.txt available at: http://localhost:${port}/llms.txt`);
+  logger.log(
+    `🤖 llms-full.txt available at: http://localhost:${port}/llms-full.txt`,
   );
 }
 
