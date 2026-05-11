@@ -53,4 +53,22 @@ export const validationSchema = Joi.object({
     otherwise: Joi.string().uri().optional(),
   }),
   X402_FACILITATOR_BEARER_TOKEN: Joi.string().optional().allow(''),
+
+  // Stealth payments (optional; module loads only when FEATURE_STEALTH=true)
+  FEATURE_STEALTH: Joi.string().valid('true', 'false').default('false'),
+  STEALTH_RELAYER_PRIVATE_KEY: Joi.alternatives().conditional(
+    'FEATURE_STEALTH',
+    {
+      is: 'true',
+      then: Joi.string()
+        .pattern(/^0x[a-fA-F0-9]{64}$/)
+        .required(),
+      otherwise: Joi.string().optional().allow(''),
+    },
+  ),
+  STEALTH_RPC_URL: Joi.alternatives().conditional('FEATURE_STEALTH', {
+    is: 'true',
+    then: Joi.string().uri().required(),
+    otherwise: Joi.string().uri().optional(),
+  }),
 });

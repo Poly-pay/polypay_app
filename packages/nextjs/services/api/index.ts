@@ -12,3 +12,4 @@ export { queryClient } from "../queryClient";
 // export { questApi } from "./questApi";
 // export { claimApi } from "./claimApi";
 export { x402Api, encodeXPaymentHeader } from "./x402Api";
+export { stealthApi } from "./stealthApi";

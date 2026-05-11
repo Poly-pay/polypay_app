@@ -126,16 +126,17 @@ model Vote {
 }
 
 model BatchItem {
-  id           String   @id @default(cuid())
-  userId       String   @map("user_id")
-  contactId    String?  @map("contact_id")
-  recipient    String
-  amount       String
-  tokenAddress String?  @map("token_address")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  contact      Contact? @relation(fields: [contactId], references: [id])
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  contactId      String?  @map("contact_id")
+  recipient      String
+  amount         String
+  tokenAddress   String?  @map("token_address")
+  sendPrivately  Boolean  @default(false) @map("send_privately")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  contact        Contact? @relation(fields: [contactId], references: [id])
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("batch_items")

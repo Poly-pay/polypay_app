@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -26,4 +27,8 @@ export class CreateBatchItemDto {
   @IsOptional()
   @MaxLength(256)
   contactId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  sendPrivately?: boolean;
 }

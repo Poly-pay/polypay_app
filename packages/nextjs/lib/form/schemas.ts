@@ -41,6 +41,7 @@ export const transferSchema = z.object({
       message: "Invalid address format",
     }),
   amount: z.string(),
+  sendPrivately: z.boolean().optional(),
 });
 export type TransferFormData = z.infer<typeof transferSchema>;
 

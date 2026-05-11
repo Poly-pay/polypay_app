@@ -28,6 +28,7 @@ export class BatchItemService {
         amount: dto.amount,
         tokenAddress: dto.tokenAddress,
         contactId: dto.contactId,
+        sendPrivately: dto.sendPrivately ?? false,
       },
       include: {
         contact: true,

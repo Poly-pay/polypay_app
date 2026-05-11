@@ -33,4 +33,9 @@ export const CONFIG_KEYS = {
   X402_ENABLED: 'x402.enabled',
   X402_FACILITATOR_URL: 'x402.facilitatorUrl',
   X402_FACILITATOR_BEARER_TOKEN: 'x402.facilitatorBearerToken',
+
+  // Stealth payments (Umbra)
+  STEALTH_ENABLED: 'stealth.enabled',
+  STEALTH_RELAYER_PRIVATE_KEY: 'stealth.relayerPrivateKey',
+  STEALTH_RPC_URL: 'stealth.rpcUrl',
 } as const;

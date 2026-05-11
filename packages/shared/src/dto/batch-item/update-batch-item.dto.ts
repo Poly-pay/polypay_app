@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Matches } from "class-validator";
+import { IsBoolean, IsOptional, IsString, Matches } from "class-validator";
 
 export class UpdateBatchItemDto {
   @IsOptional()
@@ -17,4 +17,8 @@ export class UpdateBatchItemDto {
   @IsString()
   @IsOptional()
   contactId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  sendPrivately?: boolean;
 }
