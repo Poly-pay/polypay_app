@@ -11,15 +11,7 @@ export class LlmsTxtController {
   @Header('Content-Type', 'text/plain; charset=utf-8')
   @Header('Access-Control-Allow-Origin', '*')
   @Header('Cache-Control', 'public, max-age=3600')
-  getIndex(): string {
-    return this.service.getIndex();
-  }
-
-  @Get('llms-full.txt')
-  @Header('Content-Type', 'text/plain; charset=utf-8')
-  @Header('Access-Control-Allow-Origin', '*')
-  @Header('Cache-Control', 'public, max-age=3600')
-  getFull(): string {
-    return this.service.getFull();
+  get(): string {
+    return this.service.get();
   }
 }
