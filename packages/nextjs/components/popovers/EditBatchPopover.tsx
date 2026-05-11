@@ -5,6 +5,7 @@ import Image from "next/image";
 import { TokenPillPopover } from "./TokenPillPopover";
 import { BatchItem, ResolvedToken, ZERO_ADDRESS, getTokenByAddress } from "@polypay/shared";
 import { formatEther, formatUnits } from "viem";
+import { StealthToggle } from "~~/components/Transfer/StealthToggle";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { useContacts } from "~~/hooks";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
@@ -18,7 +19,13 @@ interface EditBatchPopoverProps {
   item: BatchItem;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { recipient: string; amount: string; token: ResolvedToken; contactId?: string }) => void;
+  onSave: (data: {
+    recipient: string;
+    amount: string;
+    token: ResolvedToken;
+    contactId?: string;
+    sendPrivately?: boolean;
+  }) => void;
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
@@ -53,6 +60,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
       tokenAddress: item.tokenAddress || ZERO_ADDRESS,
       contactId: item.contact?.id || undefined,
       contactName: item.contact?.name || undefined,
+      sendPrivately: item.sendPrivately ?? false,
     },
   });
 
@@ -122,6 +130,7 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
       amount: data.amount,
       token: token,
       contactId: data.contactId || undefined,
+      sendPrivately: data.sendPrivately,
     });
     onClose();
   };
@@ -238,6 +247,14 @@ export default function EditBatchPopover({ item, isOpen, onClose, onSave, trigge
             <span className="text-red-500 text-xs">{form.formState.errors.recipient.message}</span>
           )}
         </div>
+
+        <StealthToggle
+          checked={!!form.watch("sendPrivately")}
+          onChange={next => form.setValue("sendPrivately", next, { shouldValidate: false })}
+          chainId={selectedAccount?.chainId}
+          tokenAddress={watchedTokenAddress || ZERO_ADDRESS}
+          recipientAddress={watchedRecipient || undefined}
+        />
 
         <div className="flex gap-2 pt-2">
           <button

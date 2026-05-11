@@ -70,7 +70,16 @@ function BatchTransactions({
   onSelectAll: () => void;
   onSelectItem: (id: string) => void;
   onRemove: (id: string) => void;
-  onEdit: (id: string, data: { recipient: string; amount: string; token: ResolvedToken; contactId?: string }) => void;
+  onEdit: (
+    id: string,
+    data: {
+      recipient: string;
+      amount: string;
+      token: ResolvedToken;
+      contactId?: string;
+      sendPrivately?: boolean;
+    },
+  ) => void;
   isLoading?: boolean;
   isRemoving?: boolean;
   accountId: string | null;
@@ -355,7 +364,16 @@ export default function BatchContainer() {
   );
 
   const handleEdit = useCallback(
-    async (id: string, data: { recipient: string; amount: string; token: ResolvedToken; contactId?: string }) => {
+    async (
+      id: string,
+      data: {
+        recipient: string;
+        amount: string;
+        token: ResolvedToken;
+        contactId?: string;
+        sendPrivately?: boolean;
+      },
+    ) => {
       try {
         const amountInSmallestUnit = parseTokenAmount(data.amount, data.token.decimals);
 
@@ -366,6 +384,7 @@ export default function BatchContainer() {
             amount: amountInSmallestUnit,
             tokenAddress: data.token.address,
             contactId: data.contactId,
+            sendPrivately: data.sendPrivately,
           },
         });
 

@@ -24,8 +24,10 @@ import { AdminModule } from './admin/admin.module';
 import { BalanceAlertModule } from './balance-alert/balance-alert.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { X402Module } from './x402/x402.module';
+import { StealthModule } from './stealth/stealth.module';
 
 const featureX402 = process.env.FEATURE_X402_DEPOSIT === 'true';
+const featureStealth = process.env.FEATURE_STEALTH === 'true';
 
 @Module({
   imports: [
@@ -53,6 +55,7 @@ const featureX402 = process.env.FEATURE_X402_DEPOSIT === 'true';
     BalanceAlertModule,
     ScheduleModule.forRoot(),
     ...(featureX402 ? [X402Module] : []),
+    ...(featureStealth ? [StealthModule] : []),
   ],
 })
 export class AppModule implements NestModule {

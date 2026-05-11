@@ -5,6 +5,7 @@ export interface BatchItem {
   amount: string;
   tokenAddress?: string;
   contactId?: string;
+  sendPrivately?: boolean;
   contact?: {
     id: string;
     name: string;

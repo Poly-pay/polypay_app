@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { ResolvedToken, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
+import { StealthToggle } from "~~/components/Transfer/StealthToggle";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
 import { Spinner } from "~~/components/ui/Spinner";
@@ -85,6 +86,7 @@ export default function TransferContainer() {
       amount: data.amount,
       token: selectedToken,
       contactId: selectedContactId,
+      sendPrivately: data.sendPrivately,
     });
   };
 
@@ -113,6 +115,7 @@ export default function TransferContainer() {
         amount: valueInSmallestUnit,
         tokenAddress: isNativeETH ? undefined : selectedToken.address,
         contactId: selectedContactId || undefined,
+        sendPrivately: data.sendPrivately,
       });
 
       notification.success(
@@ -265,6 +268,17 @@ export default function TransferContainer() {
           {form.formState.errors.recipient && (
             <p className="text-red-500 text-sm">{form.formState.errors.recipient.message}</p>
           )}
+
+          <div className="w-full mt-3">
+            <StealthToggle
+              checked={!!form.watch("sendPrivately")}
+              onChange={next => form.setValue("sendPrivately", next, { shouldValidate: false })}
+              chainId={selectedAccount?.chainId}
+              tokenAddress={selectedToken.address}
+              recipientAddress={watchedRecipient || undefined}
+              disabled={isLoading}
+            />
+          </div>
         </div>
 
         {/* Action buttons */}
