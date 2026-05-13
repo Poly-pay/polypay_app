@@ -62,8 +62,10 @@ export function useX402Deposit() {
     },
     onSuccess: (_data, params) => {
       notification.success("Deposit submitted");
+      // x402 only operates on Base, so the chainId in the query key is the
+      // wallet's current connected chain.
       void queryClient.invalidateQueries({
-        queryKey: accountKeys.byAddress(params.multisigAddress),
+        queryKey: accountKeys.byAddress(params.multisigAddress, chainId),
       });
     },
     onError: (err: Error) => {

@@ -80,8 +80,10 @@ export class QuestService {
       return 0;
     }
 
-    // Get account and creator
-    const account = await this.prisma.account.findUnique({
+    // Get account and creator. Address is no longer globally unique
+    // (per-chain), so we use findFirst — quest module is currently disabled
+    // anyway and ambiguity is acceptable for points accounting.
+    const account = await this.prisma.account.findFirst({
       where: { address: accountAddress },
       include: {
         signers: {

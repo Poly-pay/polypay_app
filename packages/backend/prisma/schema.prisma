@@ -25,7 +25,7 @@ model User {
 
 model Account {
   id              String          @id @default(cuid())
-  address         String          @unique
+  address         String
   name            String
   threshold       Int
   chainId         Int             @default(26514) @map("chain_id")
@@ -37,6 +37,11 @@ model Account {
   contacts        Contact[]
   transactions    Transaction[]
 
+  // Contract addresses derive from (relayer, nonce) without including chainId,
+  // so the same wallet can produce identical addresses on different chains
+  // (Horizen vs Base) when nonces align. The pair (address, chainId) is the
+  // real uniqueness key for a deployed multisig.
+  @@unique([address, chainId])
   @@map("accounts")
 }
 
@@ -64,6 +69,7 @@ model Transaction {
   value          String?
   tokenAddress   String?   @map("token_address")
   accountAddress String    @map("account_address")
+  chainId        Int       @map("chain_id")
   contactId      String?   @map("contact_id")
   signerData     String?   @map("signer_data")
   newThreshold   Int?      @map("new_threshold")
@@ -74,13 +80,13 @@ model Transaction {
   executedAt     DateTime? @map("executed_at")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
-  account        Account   @relation(fields: [accountAddress], references: [address])
+  account        Account   @relation(fields: [accountAddress, chainId], references: [address, chainId])
   contact        Contact?  @relation(fields: [contactId], references: [id])
   votes          Vote[]
 
-  @@unique([accountAddress, nonce])
+  @@unique([accountAddress, chainId, nonce])
   @@index([status])
-  @@index([accountAddress])
+  @@index([accountAddress, chainId])
   @@index([contactId])
   @@map("transactions")
 }
@@ -88,11 +94,12 @@ model Transaction {
 model ReservedNonce {
   id             String   @id @default(cuid())
   accountAddress String   @map("account_address")
+  chainId        Int      @map("chain_id")
   nonce          Int
   expiresAt      DateTime @map("expires_at")
   createdAt      DateTime @default(now()) @map("created_at")
 
-  @@unique([accountAddress, nonce])
+  @@unique([accountAddress, chainId, nonce])
   @@map("reserved_nonces")
 }
 

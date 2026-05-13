@@ -18,6 +18,7 @@ import { accountKeys, useMetaMultiSigWallet, userKeys } from "~~/hooks";
 import { useApproveTransaction, useDenyTransaction, useExecuteTransaction } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
+import { useAccountStore } from "~~/services/store";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
@@ -124,6 +125,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
     useStepLoading(createTransactionSteps("approval"));
 
   const { commitment } = useIdentityStore();
+  const { currentAccount } = useAccountStore();
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
 
@@ -239,7 +241,7 @@ export const useTransactionVote = (options?: UseTransactionVoteOptions) => {
 
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       queryClient.invalidateQueries({
-        queryKey: accountKeys.byAddress(metaMultiSigWallet?.address || ""),
+        queryKey: accountKeys.byAddress(metaMultiSigWallet?.address || "", currentAccount?.chainId ?? 0),
       });
       options?.onSuccess?.();
     } catch (error: any) {

@@ -7,7 +7,7 @@ import InfoCardContainer from "./InfoCardContainer";
 import { TransactionRow, convertToRowData } from "./TransactionRow";
 import { useInfiniteScroll, useMetaMultiSigWallet } from "~~/hooks";
 import { useTransactionRealtime, useTransactionsInfinite } from "~~/hooks/api/useTransaction";
-import { useIdentityStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
 
 export interface WalletData {
   signers: string[];
@@ -28,13 +28,17 @@ function Header() {
 
 export default function DashboardContainer() {
   const { commitment } = useIdentityStore();
+  const { currentAccount } = useAccountStore();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const accountAddress = metaMultiSigWallet?.address || "";
+  const chainId = currentAccount?.chainId ?? 0;
 
-  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
-    useTransactionsInfinite(accountAddress);
+  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useTransactionsInfinite(
+    accountAddress,
+    chainId,
+  );
 
-  useTransactionRealtime(accountAddress);
+  useTransactionRealtime(accountAddress, chainId);
 
   const { ref } = useInfiniteScroll({
     hasNextPage,

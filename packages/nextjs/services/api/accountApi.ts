@@ -12,13 +12,19 @@ export const accountApi = {
     return data;
   },
 
-  getByAddress: async (address: string): Promise<Account> => {
-    const { data } = await apiClient.get<Account>(API_ENDPOINTS.accounts.byAddress(address));
+  // Address is no longer globally unique — `chainId` disambiguates which
+  // multisig (Horizen vs Base) when the same address exists on both chains.
+  getByAddress: async (address: string, chainId: number): Promise<Account> => {
+    const { data } = await apiClient.get<Account>(API_ENDPOINTS.accounts.byAddress(address), {
+      params: { chainId },
+    });
     return data;
   },
 
-  update: async (address: string, dto: UpdateAccountDto): Promise<Account> => {
-    const { data } = await apiClient.patch<Account>(API_ENDPOINTS.accounts.byAddress(address), dto);
+  update: async (address: string, chainId: number, dto: UpdateAccountDto): Promise<Account> => {
+    const { data } = await apiClient.patch<Account>(API_ENDPOINTS.accounts.byAddress(address), dto, {
+      params: { chainId },
+    });
     return data;
   },
 };

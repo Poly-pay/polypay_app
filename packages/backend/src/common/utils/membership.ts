@@ -4,19 +4,26 @@ import { NOT_MEMBER_OF_ACCOUNT } from '@/common/constants';
 
 /**
  * Check if user is a signer of the account. Throws ForbiddenException if not.
- * @param prisma - PrismaService instance
- * @param accountLookup - Either { accountId } or { accountAddress } to identify the account
- * @param userCommitment - User's commitment string
+ *
+ * Account lookup MUST be precise: either `accountId` (a CUID) or the composite
+ * `{ accountAddress, chainId }`. Using address alone is unsafe — the same
+ * address can exist on multiple chains, so an address-only check could match
+ * a signer of a different multisig that happens to share the address.
  */
 export async function checkAccountMembership(
   prisma: PrismaService,
-  accountLookup: { accountId: string } | { accountAddress: string },
+  accountLookup:
+    | { accountId: string }
+    | { accountAddress: string; chainId: number },
   userCommitment: string,
 ): Promise<void> {
   const accountWhere =
     'accountId' in accountLookup
       ? { id: accountLookup.accountId }
-      : { address: accountLookup.accountAddress };
+      : {
+          address: accountLookup.accountAddress,
+          chainId: accountLookup.chainId,
+        };
 
   const membership = await prisma.accountSigner.findFirst({
     where: {
