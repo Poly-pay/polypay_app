@@ -9,6 +9,7 @@
 - [ZK Authentication](zk-authentication.md)
 - [zkVerify, Horizen & Base Integration](zkverify-horizen-integration.md)
 - [Gasless USDC Deposits (x402)](x402-deposits.md)
+- [PolyPay for AI Agents](llms-txt-for-agents.md)
 - [Architecture](architecture.md)
 - [Developer Documentation](developer-documentation/README.md)
   - [Getting Started](developer-documentation/getting-started.md)

@@ -78,7 +78,7 @@ const account = privateKeyToAccount(process.env.AGENT_PRIVATE_KEY as `0x${string
 const fetchWithPay = wrapFetchWithPayment(fetch, account);
 
 const res = await fetchWithPay(
-  "https://api.polypay.xyz/api/x402/deposit/0xYOUR_POLYPAY_MULTISIG",
+  "https://api.polypay.pro/api/x402/deposit/0xYOUR_POLYPAY_MULTISIG",
   {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -96,11 +96,11 @@ The `x402-fetch` library handles discovery, signing, and the X-PAYMENT header au
 
 ```bash
 # 1. Discovery
-curl https://api.polypay.xyz/api/x402/deposit/0xMULTISIG
+curl https://api.polypay.pro/api/x402/deposit/0xMULTISIG
 
 # 2. Sign EIP-3009 with your wallet (off-chain)
 # 3. POST with X-PAYMENT header
-curl -X POST https://api.polypay.xyz/api/x402/deposit/0xMULTISIG \
+curl -X POST https://api.polypay.pro/api/x402/deposit/0xMULTISIG \
   -H "Content-Type: application/json" \
   -H "X-PAYMENT: <base64-x402-v1-payload>" \
   -d '{}'
