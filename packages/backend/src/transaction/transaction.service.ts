@@ -52,17 +52,19 @@ export class TransactionService {
   async createTransaction(dto: CreateTransactionDto, userCommitment: string) {
     await checkAccountMembership(
       this.prisma,
-      { accountAddress: dto.accountAddress },
+      { accountAddress: dto.accountAddress, chainId: dto.chainId },
       userCommitment,
     );
 
     // 1. Validate based on type
     this.validateTransactionDto(dto);
 
-    // 2. Validate nonce is reserved
+    // 2. Validate nonce is reserved (scoped by chainId — same address on
+    //    different chains has independent nonce reservations).
     const reserved = await this.prisma.reservedNonce.findFirst({
       where: {
         accountAddress: dto.accountAddress,
+        chainId: dto.chainId,
         nonce: dto.nonce,
         expiresAt: { gt: new Date() },
       },
@@ -74,9 +76,16 @@ export class TransactionService {
       );
     }
 
-    // 3. Check account exists and get total signers count
+    // 3. Check account exists and get total signers count. (address, chainId)
+    //    is the composite key — a wallet may produce identical addresses on
+    //    different chains, so we must scope by chainId from the DTO.
     const account = await this.prisma.account.findUnique({
-      where: { address: dto.accountAddress },
+      where: {
+        address_chainId: {
+          address: dto.accountAddress,
+          chainId: dto.chainId,
+        },
+      },
       include: { signers: true },
     });
 
@@ -140,6 +149,7 @@ export class TransactionService {
           nonce: dto.nonce,
           type: dto.type,
           accountAddress: dto.accountAddress,
+          chainId: dto.chainId,
           threshold: dto.threshold,
           to: dto.to,
           value: dto.value,
@@ -274,6 +284,7 @@ export class TransactionService {
 
     const voterName = await this.getSignerDisplayName(
       transaction.accountAddress,
+      transaction.chainId,
       userCommitment,
     );
 
@@ -396,6 +407,7 @@ export class TransactionService {
 
     const voterName = await this.getSignerDisplayName(
       transaction.accountAddress,
+      transaction.chainId,
       userCommitment,
     );
 
@@ -451,6 +463,7 @@ export class TransactionService {
    */
   async getTransactions(
     accountAddress: string,
+    chainId: number,
     userCommitment: string,
     status?: string,
     limit: number = DEFAULT_PAGE_SIZE,
@@ -459,12 +472,12 @@ export class TransactionService {
     if (userCommitment) {
       await checkAccountMembership(
         this.prisma,
-        { accountAddress },
+        { accountAddress, chainId },
         userCommitment,
       );
     }
 
-    const where: any = { accountAddress };
+    const where: any = { accountAddress, chainId };
     if (status) {
       where.status = status;
     }
@@ -523,10 +536,14 @@ export class TransactionService {
     return this.transactionExecutor.executeOnChain(txId, userAddress);
   }
 
-  async reserveNonce(accountAddress: string, userCommitment: string) {
+  async reserveNonce(
+    accountAddress: string,
+    chainId: number,
+    userCommitment: string,
+  ) {
     await checkAccountMembership(
       this.prisma,
-      { accountAddress },
+      { accountAddress, chainId },
       userCommitment,
     );
 
@@ -536,15 +553,16 @@ export class TransactionService {
         where: { expiresAt: { lt: new Date() } },
       });
 
-      // 2. Find next available nonce
+      // 2. Find next available nonce (scoped to this chain — the same address
+      //    on another chain has an independent on-chain nonce counter).
       const maxTxNonce = await tx.transaction.findFirst({
-        where: { accountAddress },
+        where: { accountAddress, chainId },
         orderBy: { nonce: 'desc' },
         select: { nonce: true },
       });
 
       const maxReservedNonce = await tx.reservedNonce.findFirst({
-        where: { accountAddress },
+        where: { accountAddress, chainId },
         orderBy: { nonce: 'desc' },
         select: { nonce: true },
       });
@@ -558,7 +576,7 @@ export class TransactionService {
       const expiresAt = new Date(Date.now() + NONCE_RESERVATION_TTL);
 
       await tx.reservedNonce.create({
-        data: { accountAddress, nonce: nextNonce, expiresAt },
+        data: { accountAddress, chainId, nonce: nextNonce, expiresAt },
       });
 
       return { nonce: nextNonce, expiresAt };
@@ -751,11 +769,12 @@ export class TransactionService {
 
   private async getSignerDisplayName(
     accountAddress: string,
+    chainId: number,
     commitment: string,
   ): Promise<string | null> {
     const signer = await this.prisma.accountSigner.findFirst({
       where: {
-        account: { address: accountAddress },
+        account: { address: accountAddress, chainId },
         user: { commitment },
       },
     });

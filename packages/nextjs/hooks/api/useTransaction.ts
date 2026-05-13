@@ -25,9 +25,9 @@ import { useIdentityStore } from "~~/services/store";
 
 export const transactionKeys = {
   all: ["transactions"] as const,
-  byAccount: (accountAddress: string) => [...transactionKeys.all, accountAddress] as const,
-  byAccountAndStatus: (accountAddress: string, status: TxStatus) =>
-    [...transactionKeys.all, accountAddress, status] as const,
+  byAccount: (accountAddress: string, chainId: number) => [...transactionKeys.all, accountAddress, chainId] as const,
+  byAccountAndStatus: (accountAddress: string, chainId: number, status: TxStatus) =>
+    [...transactionKeys.all, accountAddress, chainId, status] as const,
   byTxId: (txId: number) => [...transactionKeys.all, "detail", txId] as const,
 };
 
@@ -43,7 +43,7 @@ export const useCreateTransaction = () => {
     mutationFn: transactionApi.create,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: transactionKeys.byAccount(variables.accountAddress),
+        queryKey: transactionKeys.byAccount(variables.accountAddress, variables.chainId),
       });
     },
   });
@@ -52,22 +52,22 @@ export const useCreateTransaction = () => {
 /**
  * Infinite scroll hook for transactions
  */
-export const useTransactionsInfinite = (accountAddress: string, status?: TxStatus) => {
+export const useTransactionsInfinite = (accountAddress: string, chainId: number, status?: TxStatus) => {
   const { accessToken } = useIdentityStore();
 
   return useInfiniteQuery({
     queryKey: status
-      ? [...transactionKeys.byAccountAndStatus(accountAddress, status), "infinite"]
-      : [...transactionKeys.byAccount(accountAddress), "infinite"],
+      ? [...transactionKeys.byAccountAndStatus(accountAddress, chainId, status), "infinite"]
+      : [...transactionKeys.byAccount(accountAddress, chainId), "infinite"],
     queryFn: ({ pageParam }) =>
-      transactionApi.getAll(accountAddress, status, {
+      transactionApi.getAll(accountAddress, chainId, status, {
         limit: DEFAULT_PAGE_SIZE,
         cursor: pageParam,
       }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: PaginatedResponse<Transaction>) =>
       lastPage.hasMore ? lastPage.nextCursor : undefined,
-    enabled: !!accessToken && !!accountAddress,
+    enabled: !!accessToken && !!accountAddress && !!chainId,
   });
 };
 
@@ -147,7 +147,8 @@ export const useExecuteTransaction = () => {
  */
 export const useReserveNonce = () => {
   return useMutation({
-    mutationFn: transactionApi.reserveNonce,
+    mutationFn: ({ accountAddress, chainId }: { accountAddress: string; chainId: number }) =>
+      transactionApi.reserveNonce(accountAddress, chainId),
   });
 };
 
@@ -156,35 +157,35 @@ export const useReserveNonce = () => {
 /**
  * Get pending transactions for an account
  */
-export const usePendingTransactions = (accountAddress: string) => {
-  return useTransactionsInfinite(accountAddress, TxStatus.PENDING);
+export const usePendingTransactions = (accountAddress: string, chainId: number) => {
+  return useTransactionsInfinite(accountAddress, chainId, TxStatus.PENDING);
 };
 
 /**
  * Listen for realtime transaction updates
  * Use this in components that display transaction list
  */
-export const useTransactionRealtime = (accountAddress: string | undefined) => {
+export const useTransactionRealtime = (accountAddress: string | undefined, chainId: number | undefined) => {
   const queryClient = useQueryClient();
 
   // Handle new transaction created
   const handleTxCreated = useCallback(
     (data: TxCreatedEventData) => {
       console.log("[Socket] TX created:", data);
-      if (accountAddress) {
-        queryClient.invalidateQueries({ queryKey: transactionKeys.byAccount(accountAddress) });
+      if (accountAddress && chainId) {
+        queryClient.invalidateQueries({ queryKey: transactionKeys.byAccount(accountAddress, chainId) });
       }
     },
-    [queryClient, accountAddress],
+    [queryClient, accountAddress, chainId],
   );
 
   // Handle transaction status change
   const handleTxStatus = useCallback(
     (data: TxStatusEventData) => {
       console.log("[Socket] TX status:", data);
-      if (accountAddress) {
+      if (accountAddress && chainId) {
         queryClient.invalidateQueries({
-          queryKey: transactionKeys.byAccount(accountAddress),
+          queryKey: transactionKeys.byAccount(accountAddress, chainId),
         });
 
         // Refetch contract data when tx executed
@@ -198,20 +199,20 @@ export const useTransactionRealtime = (accountAddress: string | undefined) => {
         }
       }
     },
-    [queryClient, accountAddress],
+    [queryClient, accountAddress, chainId],
   );
 
   // Handle transaction voted
   const handleTxVoted = useCallback(
     (data: TxVotedEventData) => {
       console.log("[Socket] TX voted:", data);
-      if (accountAddress) {
+      if (accountAddress && chainId) {
         queryClient.invalidateQueries({
-          queryKey: transactionKeys.byAccount(accountAddress),
+          queryKey: transactionKeys.byAccount(accountAddress, chainId),
         });
       }
     },
-    [queryClient, accountAddress],
+    [queryClient, accountAddress, chainId],
   );
 
   // Subscribe to socket events

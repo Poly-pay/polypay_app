@@ -7,12 +7,14 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
   Body,
   Param,
   Patch,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -128,8 +130,12 @@ export class AccountController {
     description: 'Forbidden - Not an account signer',
   })
   @ApiResponse({ status: 404, description: 'Account not found' })
-  async findByAddress(@Param('address') address: string) {
-    return this.accountService.findByAddress(address);
+  async findByAddress(
+    @Param('address') address: string,
+    @Query('chainId') chainIdRaw: string,
+  ) {
+    const chainId = parseChainIdQuery(chainIdRaw);
+    return this.accountService.findByAddress(address, chainId);
   }
 
   /**
@@ -170,8 +176,22 @@ export class AccountController {
   @ApiResponse({ status: 404, description: 'Account not found' })
   async update(
     @Param('address') address: string,
+    @Query('chainId') chainIdRaw: string,
     @Body() dto: UpdateAccountDto,
   ) {
-    return this.accountService.update(address, dto);
+    const chainId = parseChainIdQuery(chainIdRaw);
+    return this.accountService.update(address, chainId, dto);
   }
+}
+
+// (address, chainId) is the real account key; refuse requests that omit it
+// rather than silently picking the first match.
+function parseChainIdQuery(value: string | undefined): number {
+  const chainId = Number.parseInt(value ?? '', 10);
+  if (!Number.isFinite(chainId) || chainId <= 0) {
+    throw new BadRequestException(
+      'chainId query parameter is required (e.g. ?chainId=8453)',
+    );
+  }
+  return chainId;
 }

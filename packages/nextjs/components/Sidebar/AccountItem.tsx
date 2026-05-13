@@ -72,7 +72,7 @@ export default function AccountItem({
     const trimmedName = editedName.trim();
     if (trimmedName && trimmedName !== account.name) {
       updateAccount(
-        { address: account.address, dto: { name: trimmedName } },
+        { address: account.address, chainId: account.chainId, dto: { name: trimmedName } },
         {
           onError: () => {
             // Revert if error occurs

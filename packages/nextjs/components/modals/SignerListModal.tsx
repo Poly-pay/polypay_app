@@ -4,13 +4,15 @@ import React from "react";
 import Image from "next/image";
 import ModalContainer from "./ModalContainer";
 import { useAccount, useMetaMultiSigWallet } from "~~/hooks";
+import { useAccountStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
 import { copyToClipboard } from "~~/utils/copy";
 import { formatAddress } from "~~/utils/format";
 
 const SignerListModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { data: account } = useAccount(metaMultiSigWallet?.address || "");
+  const { currentAccount } = useAccountStore();
+  const { data: account } = useAccount(metaMultiSigWallet?.address || "", currentAccount?.chainId ?? 0);
 
   return (
     <ModalContainer isOpen={isOpen} onClose={onClose}>

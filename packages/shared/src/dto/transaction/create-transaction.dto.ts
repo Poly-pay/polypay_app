@@ -31,6 +31,13 @@ export class CreateTransactionDto {
   @Matches(ETH_ADDRESS_REGEX, { message: "Invalid account address" })
   accountAddress: string;
 
+  // The chain the target multisig lives on. Required because the same
+  // (relayer, nonce) can produce identical addresses on different chains,
+  // so (accountAddress, chainId) is the real account key.
+  @IsNotEmpty()
+  @IsNumber()
+  chainId: number;
+
   @IsNotEmpty()
   @IsNumber()
   @Min(1)

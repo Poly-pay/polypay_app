@@ -12,7 +12,7 @@ import { notification } from "~~/utils/scaffold-eth/notification";
 
 export const accountKeys = {
   all: ["accounts"] as const,
-  byAddress: (address: string) => [...accountKeys.all, address] as const,
+  byAddress: (address: string, chainId: number) => [...accountKeys.all, address, chainId] as const,
 };
 
 export const useCreateAccount = () => {
@@ -22,7 +22,7 @@ export const useCreateAccount = () => {
     mutationFn: accountApi.create,
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: accountKeys.all });
-      queryClient.setQueryData(accountKeys.byAddress(data.address), data);
+      queryClient.setQueryData(accountKeys.byAddress(data.address, data.chainId), data);
       queryClient.invalidateQueries({ queryKey: userKeys.meAccounts });
       queryClient.invalidateQueries({ queryKey: userKeys.me });
     },
@@ -37,7 +37,7 @@ export const useCreateAccountBatch = () => {
     onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: accountKeys.all });
       data.forEach(account => {
-        queryClient.setQueryData(accountKeys.byAddress(account.address), account);
+        queryClient.setQueryData(accountKeys.byAddress(account.address, account.chainId), account);
       });
       queryClient.invalidateQueries({ queryKey: userKeys.meAccounts });
       queryClient.invalidateQueries({ queryKey: userKeys.me });
@@ -45,11 +45,11 @@ export const useCreateAccountBatch = () => {
   });
 };
 
-export const useAccount = (address: string) => {
+export const useAccount = (address: string, chainId: number) => {
   return useAuthenticatedQuery({
-    queryKey: accountKeys.byAddress(address),
-    queryFn: () => accountApi.getByAddress(address),
-    enabled: !!address,
+    queryKey: accountKeys.byAddress(address, chainId),
+    queryFn: () => accountApi.getByAddress(address, chainId),
+    enabled: !!address && !!chainId,
   });
 };
 
@@ -57,9 +57,10 @@ export const useUpdateAccount = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ address, dto }: { address: string; dto: UpdateAccountDto }) => accountApi.update(address, dto),
+    mutationFn: ({ address, chainId, dto }: { address: string; chainId: number; dto: UpdateAccountDto }) =>
+      accountApi.update(address, chainId, dto),
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: accountKeys.byAddress(variables.address) });
+      queryClient.invalidateQueries({ queryKey: accountKeys.byAddress(variables.address, variables.chainId) });
       queryClient.invalidateQueries({ queryKey: accountKeys.all });
       queryClient.invalidateQueries({ queryKey: userKeys.meAccounts });
     },

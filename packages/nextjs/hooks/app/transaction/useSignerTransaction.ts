@@ -5,6 +5,7 @@ import { useWalletClient } from "wagmi";
 import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalletThreshold } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
+import { useAccountStore } from "~~/services/store";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -19,6 +20,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
+  const { currentAccount } = useAccountStore();
   const { generateProof } = useGenerateProof({
     onLoadingStateChange: setStepByLabel,
   });
@@ -49,7 +51,10 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
 
     startStep(1);
 
-    const { nonce } = await reserveNonce(metaMultiSigWallet.address);
+    const { nonce } = await reserveNonce({
+      accountAddress: metaMultiSigWallet.address,
+      chainId: currentAccount!.chainId,
+    });
     const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
     const txHash = (await metaMultiSigWallet.read.getTransactionHash([
@@ -67,6 +72,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       nonce,
       type,
       accountAddress: metaMultiSigWallet.address,
+      chainId: currentAccount!.chainId,
       threshold: Number(currentThreshold),
       proof,
       publicInputs,

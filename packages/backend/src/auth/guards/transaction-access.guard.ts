@@ -1,8 +1,8 @@
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@/database/prisma.service';
@@ -25,20 +25,24 @@ export class TransactionAccessGuard implements CanActivate {
       throw new ForbiddenException('Transaction ID not provided');
     }
 
-    // Find transaction and its wallet
     const transaction = await this.prisma.transaction.findUnique({
       where: { txId },
-      include: { account: true },
+      select: { accountAddress: true, chainId: true },
     });
 
     if (!transaction) {
       throw new NotFoundException('Transaction not found');
     }
 
-    // Check if user is a member of the wallet
+    // Scope membership by both address AND chainId — the same address can
+    // live on multiple chains, and only the signer of the exact multisig
+    // (this transaction's chain) should be allowed access.
     const membership = await this.prisma.accountSigner.findFirst({
       where: {
-        account: { address: transaction.account.address },
+        account: {
+          address: transaction.accountAddress,
+          chainId: transaction.chainId,
+        },
         user: { commitment: userCommitment },
       },
     });
