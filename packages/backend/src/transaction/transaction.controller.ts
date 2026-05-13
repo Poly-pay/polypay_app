@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -101,6 +102,13 @@ export class TransactionController {
     example: '0x1234567890abcdef1234567890abcdef12345678',
   })
   @ApiQuery({
+    name: 'chainId',
+    required: true,
+    description:
+      'Chain ID for the multisig (same address can exist on multiple chains)',
+    example: 8453,
+  })
+  @ApiQuery({
     name: 'status',
     required: false,
     description: 'Transaction status filter',
@@ -122,10 +130,12 @@ export class TransactionController {
   async getTransactions(
     @CurrentUser() user: User,
     @Query('accountAddress') accountAddress: string,
+    @Query('chainId') chainIdParam: string,
     @Query('status') status?: string,
     @Query('limit') limitParam?: string,
     @Query('cursor') cursor?: string,
   ) {
+    const chainId = parseRequiredChainId(chainIdParam);
     const limit = Math.min(
       parseInt(limitParam || String(DEFAULT_PAGE_SIZE), 10) ||
         DEFAULT_PAGE_SIZE,
@@ -134,6 +144,7 @@ export class TransactionController {
 
     return this.transactionService.getTransactions(
       accountAddress,
+      chainId,
       user.commitment,
       status,
       limit,
@@ -311,11 +322,17 @@ export class TransactionController {
   @ApiBody({
     schema: {
       type: 'object',
+      required: ['accountAddress', 'chainId'],
       properties: {
         accountAddress: {
           type: 'string',
           example: '0x1234567890abcdef1234567890abcdef12345678',
           description: 'Account contract address',
+        },
+        chainId: {
+          type: 'number',
+          example: 8453,
+          description: 'Chain ID of the multisig',
         },
       },
     },
@@ -325,10 +342,27 @@ export class TransactionController {
   async reserveNonce(
     @CurrentUser() user: User,
     @Body('accountAddress') accountAddress: string,
+    @Body('chainId') chainId: number,
   ) {
+    if (typeof chainId !== 'number' || !Number.isFinite(chainId)) {
+      throw new BadRequestException('chainId is required in the request body');
+    }
     return this.transactionService.reserveNonce(
       accountAddress,
+      chainId,
       user.commitment,
     );
   }
+}
+
+// (address, chainId) is the real account key — refuse requests without chainId
+// rather than silently picking the first matching account.
+function parseRequiredChainId(value: string | undefined): number {
+  const chainId = Number.parseInt(value ?? '', 10);
+  if (!Number.isFinite(chainId) || chainId <= 0) {
+    throw new BadRequestException(
+      'chainId query parameter is required (e.g. ?chainId=8453)',
+    );
+  }
+  return chainId;
 }

@@ -8,7 +8,7 @@ import { ActionMode, ExistingSigner, ModalStep, PendingSigner } from "./types";
 import ModalContainer from "~~/components/modals/ModalContainer";
 import { WARNING_AUTO_HIDE } from "~~/constants/timing";
 import { useAccount, useMetaMultiSigWallet, useSignerTransaction } from "~~/hooks";
-import { useIdentityStore, useSidebarStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore, useSidebarStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
@@ -16,8 +16,9 @@ import { notification } from "~~/utils/scaffold-eth";
 const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const { commitment: myCommitment } = useIdentityStore();
   const { closeManageAccounts } = useSidebarStore();
+  const { currentAccount } = useAccountStore();
   const metaMultiSigWallet = useMetaMultiSigWallet();
-  const { data: account } = useAccount(metaMultiSigWallet?.address || "");
+  const { data: account } = useAccount(metaMultiSigWallet?.address || "", currentAccount?.chainId ?? 0);
 
   const {
     addSigner,

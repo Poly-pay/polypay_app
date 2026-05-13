@@ -6,7 +6,7 @@ import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
-import { useIdentityStore } from "~~/services/store";
+import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -21,6 +21,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
 
   const { data: walletClient } = useWalletClient();
   const { secret, commitment: myCommitment } = useIdentityStore();
+  const { currentAccount } = useAccountStore();
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { mutateAsync: createTransaction } = useCreateTransaction();
   const { mutateAsync: reserveNonce } = useReserveNonce();
@@ -50,7 +51,10 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
 
       // 1. Reserve nonce from backend
       startStep(1);
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
+      const { nonce } = await reserveNonce({
+        accountAddress: metaMultiSigWallet.address,
+        chainId: currentAccount!.chainId,
+      });
 
       // 2. Get current threshold and commitments
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
@@ -85,6 +89,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
         nonce,
         type: TxType.BATCH,
         accountAddress: metaMultiSigWallet.address,
+        chainId: currentAccount!.chainId,
         threshold: Number(currentThreshold),
         to: metaMultiSigWallet.address,
         value: "0",

@@ -26,11 +26,13 @@ export const transactionApi = {
 
   getAll: async (
     accountAddress: string,
+    chainId: number,
     status?: TxStatus,
     pagination?: PaginationParams,
   ): Promise<PaginatedResponse<Transaction>> => {
     const params = new URLSearchParams();
     params.append("accountAddress", accountAddress);
+    params.append("chainId", String(chainId));
 
     if (status) {
       params.append("status", status);
@@ -100,8 +102,11 @@ export const transactionApi = {
     return data;
   },
 
-  reserveNonce: async (accountAddress: string): Promise<{ nonce: number; expiresAt: string }> => {
-    const { data } = await apiClient.post(API_ENDPOINTS.transactions.reserveNonce, { accountAddress });
+  reserveNonce: async (accountAddress: string, chainId: number): Promise<{ nonce: number; expiresAt: string }> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.transactions.reserveNonce, {
+      accountAddress,
+      chainId,
+    });
     return data;
   },
 };

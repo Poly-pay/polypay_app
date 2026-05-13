@@ -148,7 +148,7 @@ export class AccountService {
       );
     }
 
-    return this.findByAddress(address);
+    return this.findByAddress(address, dto.chainId);
   }
 
   async createBatch(
@@ -309,11 +309,15 @@ export class AccountService {
   }
 
   /**
-   * Get multisig account by address with signers
+   * Get multisig account by (address, chainId) — the composite uniqueness key.
+   * The same address can exist on multiple chains (Horizen vs Base) when
+   * relayer nonces align, so chainId is mandatory to disambiguate.
    */
-  async findByAddress(address: string) {
+  async findByAddress(address: string, chainId: number) {
     const account = await this.prisma.account.findUnique({
-      where: { address },
+      where: {
+        address_chainId: { address, chainId },
+      },
       include: {
         signers: {
           include: {
@@ -383,9 +387,11 @@ export class AccountService {
   /**
    * Update multisig account by address
    */
-  async update(address: string, dto: UpdateAccountDto) {
+  async update(address: string, chainId: number, dto: UpdateAccountDto) {
     const account = await this.prisma.account.findUnique({
-      where: { address },
+      where: {
+        address_chainId: { address, chainId },
+      },
     });
 
     if (!account) {
@@ -393,12 +399,12 @@ export class AccountService {
     }
 
     await this.prisma.account.update({
-      where: { address },
+      where: { id: account.id },
       data: {
         name: dto.name,
       },
     });
 
-    return this.findByAddress(address);
+    return this.findByAddress(address, chainId);
   }
 }

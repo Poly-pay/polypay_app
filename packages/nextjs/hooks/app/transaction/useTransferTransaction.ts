@@ -7,6 +7,7 @@ import { useMetaMultiSigWallet } from "~~/hooks";
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
+import { useAccountStore } from "~~/services/store";
 import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -28,6 +29,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
 
   const { data: walletClient } = useWalletClient();
   const metaMultiSigWallet = useMetaMultiSigWallet();
+  const { currentAccount } = useAccountStore();
   const { mutateAsync: createTransaction } = useCreateTransaction();
   const { mutateAsync: reserveNonce } = useReserveNonce();
   const { generateProof } = useGenerateProof({
@@ -44,7 +46,10 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
     try {
       // 1. Reserve nonce from backend
       startStep(1);
-      const { nonce } = await reserveNonce(metaMultiSigWallet.address);
+      const { nonce } = await reserveNonce({
+        accountAddress: metaMultiSigWallet.address,
+        chainId: currentAccount!.chainId,
+      });
 
       // 2. Get current threshold and commitments
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
@@ -85,6 +90,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
         nonce,
         type: TxType.TRANSFER,
         accountAddress: metaMultiSigWallet.address,
+        chainId: currentAccount!.chainId,
         threshold: Number(currentThreshold),
         to: recipient,
         value: valueInSmallestUnit,

@@ -18,12 +18,12 @@ const InfoCardContainer: React.FC<InfoCardContainerProps> = () => {
 
   const accountAddress = metaMultiSigWallet?.address || "";
 
-  const { data } = usePendingTransactions(accountAddress);
-  const { data: walletCommitments } = useWalletCommitments();
-
   const { currentAccount } = useAccountStore();
   const { data: accounts = [] } = useMyAccounts();
   const chainId = (currentAccount as any)?.chainId ?? getDefaultChainId();
+
+  const { data } = usePendingTransactions(accountAddress, chainId);
+  const { data: walletCommitments } = useWalletCommitments();
   const avatarSrc = currentAccount ? getAccountAvatar(currentAccount, accounts) : "/sidebar/account-icon.svg";
 
   // Memoize flattened transactions to avoid re-computing on every render
