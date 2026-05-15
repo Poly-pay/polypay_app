@@ -35,6 +35,15 @@ import {
   PER_MULTISIG_RATE_LIMIT_WINDOW_MS,
 } from './constants';
 
+// Which facilitator (and thus which bazaar) a request is routed through.
+// PayAI is the default path used by the UI and docs.
+// CDP is the bazaar-only path that lets Coinbase agentic.market index us.
+export const Facilitator = {
+  PayAI: 'payai',
+  CDP: 'cdp',
+} as const;
+export type Facilitator = (typeof Facilitator)[keyof typeof Facilitator];
+
 const USDC_AUTHORIZATION_STATE_ABI = [
   {
     name: 'authorizationState',
@@ -63,13 +72,16 @@ export class X402Service {
   async buildDiscoveryResponse(
     multisigAddress: string,
     resourceUrl: string,
+    facilitator: Facilitator = Facilitator.PayAI,
   ): Promise<X402DiscoveryResponse> {
+    if (facilitator === Facilitator.CDP) this.assertCdpEnabled();
     const account = await this.assertAccount(multisigAddress);
     const requirements = this.buildPaymentRequirements(
       account.chainId,
       account.address,
       resourceUrl,
       MAX_DEPOSIT.toString(),
+      facilitator,
     );
     return { accepts: [requirements] };
   }
@@ -79,7 +91,9 @@ export class X402Service {
     paymentHeader: string | undefined,
     memo: string | undefined,
     resourceUrl: string,
+    facilitator: Facilitator = Facilitator.PayAI,
   ): Promise<X402DepositResponse> {
+    if (facilitator === Facilitator.CDP) this.assertCdpEnabled();
     if (!paymentHeader) {
       throw new BadRequestException('Missing X-PAYMENT header');
     }
@@ -116,11 +130,16 @@ export class X402Service {
       account.address,
       resourceUrl,
       payload.payload.authorization.value,
+      facilitator,
     );
 
     try {
-      await this.facilitatorVerify(payload, requirements);
-      const txHash = await this.facilitatorSettle(payload, requirements);
+      await this.facilitatorVerify(payload, requirements, facilitator);
+      const txHash = await this.facilitatorSettle(
+        payload,
+        requirements,
+        facilitator,
+      );
       const updated = await this.prisma.x402Deposit.update({
         where: { id: deposit.id },
         data: { status: 'SETTLED', principalTxHash: txHash },
@@ -272,14 +291,23 @@ export class X402Service {
 
   // ---------- facilitator ----------
 
+  private assertCdpEnabled(): void {
+    if (!this.config.get<boolean>(CONFIG_KEYS.X402_CDP_ENABLED)) {
+      throw new BadRequestException(
+        'CDP bazaar path not configured (set CDP_API_KEY_ID + CDP_API_KEY_SECRET)',
+      );
+    }
+  }
+
   private buildPaymentRequirements(
     chainId: number,
     payTo: string,
     resourceUrl: string,
     maxAmountRequired: string,
+    facilitator: Facilitator,
   ): X402PaymentRequirements {
     const domain = this.domainCache.get(chainId);
-    return {
+    const base: X402PaymentRequirements = {
       scheme: 'exact',
       network: chainIdToFacilitatorNetwork(chainId),
       asset: USDC_TOKEN.addresses[chainId],
@@ -302,13 +330,93 @@ export class X402Service {
         maxDeposit: MAX_DEPOSIT.toString(),
       },
     };
+
+    if (facilitator === Facilitator.CDP) {
+      // CDP Bazaar needs a strict-validated discovery extension to index the
+      // route. Without it the route still settles but never appears in catalog.
+      base.extensions = this.buildCdpBazaarExtension();
+    } else {
+      // PayAI / pay.sh use the discoverable flag inside outputSchema.input.
+      base.outputSchema = {
+        input: { type: 'http', method: 'POST', discoverable: true },
+      };
+    }
+    return base;
   }
 
-  private facilitatorUrl(action: 'verify' | 'settle'): string {
-    const base = this.config
-      .get<string>(CONFIG_KEYS.X402_FACILITATOR_URL)
-      .replace(/\/$/, '');
-    if (base.includes('cdp.coinbase.com')) {
+  // Matches @x402/extensions/bazaar `declareDiscoveryExtension` output shape
+  // for a POST body endpoint. Inlined to avoid pulling the extensions package.
+  private buildCdpBazaarExtension(): Record<string, unknown> {
+    const inputExample = {
+      multisigAddress: '0x0000000000000000000000000000000000000000',
+    };
+    const inputSchema = {
+      type: 'object',
+      properties: {
+        multisigAddress: {
+          type: 'string',
+          description: 'PolyPay multisig address that will receive the USDC.',
+        },
+      },
+      required: ['multisigAddress'],
+    };
+    const outputExample = {
+      principalTxHash: '0x...',
+      multisigAddress: '0x...',
+      depositedAmount: '1000000',
+      chainId: 8453,
+      status: 'SETTLED',
+    };
+    return {
+      bazaar: {
+        info: {
+          input: {
+            type: 'http',
+            method: 'POST',
+            bodyType: 'json',
+            body: inputExample,
+            pathParams: inputExample,
+          },
+          output: { type: 'json', example: outputExample },
+        },
+        schema: {
+          $schema: 'https://json-schema.org/draft/2020-12/schema',
+          type: 'object',
+          properties: {
+            input: {
+              type: 'object',
+              properties: {
+                type: { type: 'string', const: 'http' },
+                method: { type: 'string', enum: ['POST'] },
+                bodyType: { type: 'string', enum: ['json'] },
+                body: { type: 'object' },
+                pathParams: inputSchema,
+              },
+              required: ['type', 'method'],
+              additionalProperties: false,
+            },
+            output: { type: 'object' },
+          },
+          required: ['input'],
+        },
+      },
+    };
+  }
+
+  private facilitatorBaseUrl(facilitator: Facilitator): string {
+    const key =
+      facilitator === Facilitator.CDP
+        ? CONFIG_KEYS.X402_CDP_FACILITATOR_URL
+        : CONFIG_KEYS.X402_FACILITATOR_URL;
+    return (this.config.get<string>(key) ?? '').replace(/\/$/, '');
+  }
+
+  private facilitatorUrl(
+    action: 'verify' | 'settle',
+    facilitator: Facilitator,
+  ): string {
+    const base = this.facilitatorBaseUrl(facilitator);
+    if (facilitator === Facilitator.CDP) {
       return base.endsWith('/v2/x402')
         ? `${base}/${action}`
         : `${base}/v2/x402/${action}`;
@@ -316,10 +424,33 @@ export class X402Service {
     return `${base}/${action}`;
   }
 
-  private facilitatorHeaders(): Record<string, string> {
+  private async facilitatorHeaders(
+    facilitator: Facilitator,
+    action: 'verify' | 'settle',
+  ): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
+
+    if (facilitator === Facilitator.CDP) {
+      // CDP uses Ed25519 JWT signed per-request (2 min TTL). The SDK helper
+      // computes the kid/sub/aud/uri claims correctly from the host + path.
+      const { createAuthHeader } = await import('@coinbase/x402');
+      const keyId = this.config.get<string>(CONFIG_KEYS.X402_CDP_API_KEY_ID);
+      const keySecret = this.config.get<string>(
+        CONFIG_KEYS.X402_CDP_API_KEY_SECRET,
+      );
+      const url = new URL(this.facilitatorUrl(action, Facilitator.CDP));
+      headers.Authorization = await createAuthHeader(
+        keyId,
+        keySecret,
+        'POST',
+        url.host,
+        url.pathname,
+      );
+      return headers;
+    }
+
     const token = this.config.get<string>(
       CONFIG_KEYS.X402_FACILITATOR_BEARER_TOKEN,
     );
@@ -330,15 +461,19 @@ export class X402Service {
   private async facilitatorVerify(
     payload: X402V1PaymentPayload,
     requirements: X402PaymentRequirements,
+    facilitator: Facilitator,
   ): Promise<void> {
     const resp = await axios.post(
-      this.facilitatorUrl('verify'),
+      this.facilitatorUrl('verify', facilitator),
       {
         x402Version: 1,
         paymentPayload: payload,
         paymentRequirements: requirements,
       },
-      { headers: this.facilitatorHeaders(), validateStatus: () => true },
+      {
+        headers: await this.facilitatorHeaders(facilitator, 'verify'),
+        validateStatus: () => true,
+      },
     );
     if (resp.status >= 400 || !this.isVerifyOk(resp.data)) {
       throw new BadRequestException(
@@ -357,15 +492,19 @@ export class X402Service {
   private async facilitatorSettle(
     payload: X402V1PaymentPayload,
     requirements: X402PaymentRequirements,
+    facilitator: Facilitator,
   ): Promise<string> {
     const resp = await axios.post(
-      this.facilitatorUrl('settle'),
+      this.facilitatorUrl('settle', facilitator),
       {
         x402Version: 1,
         paymentPayload: payload,
         paymentRequirements: requirements,
       },
-      { headers: this.facilitatorHeaders(), validateStatus: () => true },
+      {
+        headers: await this.facilitatorHeaders(facilitator, 'settle'),
+        validateStatus: () => true,
+      },
     );
     const data = resp.data as Record<string, unknown> | undefined;
     if (!data?.success || typeof data.transaction !== 'string') {

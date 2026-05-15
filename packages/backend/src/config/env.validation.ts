@@ -53,4 +53,9 @@ export const validationSchema = Joi.object({
     otherwise: Joi.string().uri().optional(),
   }),
   X402_FACILITATOR_BEARER_TOKEN: Joi.string().optional().allow(''),
+
+  // x402 Bazaar via Coinbase CDP — implicitly enabled when CDP_API_KEY_ID is set.
+  X402_CDP_FACILITATOR_URL: Joi.string().uri().optional(),
+  CDP_API_KEY_ID: Joi.string().optional().allow(''),
+  CDP_API_KEY_SECRET: Joi.string().optional().allow(''),
 });
