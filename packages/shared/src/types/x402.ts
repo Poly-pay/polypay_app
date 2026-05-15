@@ -55,6 +55,10 @@ export interface X402PaymentRequirements {
   mimeType: string;
   maxTimeoutSeconds: number;
   extra?: Record<string, unknown>;
+  // Discovery hints for the various x402 bazaars. Optional; populated only
+  // when the route is intended to be indexed.
+  outputSchema?: Record<string, unknown>; // PayAI / pay.sh: discoverable flag lives here
+  extensions?: Record<string, unknown>; // CDP: declareDiscoveryExtension output
 }
 
 export interface X402DiscoveryResponse {

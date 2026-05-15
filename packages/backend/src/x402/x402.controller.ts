@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { X402Service } from './x402.service';
+import { Facilitator, X402Service } from './x402.service';
 import { DepositRequestDto } from './dto/deposit-request.dto';
 import type { X402DepositResponse } from '@polypay/shared';
 
@@ -43,6 +43,7 @@ export class X402Controller {
     const body = await this.x402Service.buildDiscoveryResponse(
       multisigAddress,
       resourceUrlFromRequest(req),
+      Facilitator.PayAI,
     );
     res.status(HttpStatus.PAYMENT_REQUIRED).json(body);
   }
@@ -60,6 +61,42 @@ export class X402Controller {
       paymentHeader,
       body?.memo,
       resourceUrlFromRequest(req),
+      Facilitator.PayAI,
+    );
+  }
+
+  // Bazaar path — routed through Coinbase CDP so the endpoint is indexed at
+  // agentic.market. Same DTO shape as the PayAI path; only the facilitator
+  // differs. Returns 404 implicitly if CDP is not configured (service throws).
+  @Throttle({ default: { ttl: 60_000, limit: 60 } })
+  @Get('bazaar/deposit/:multisigAddress')
+  async bazaarDiscovery(
+    @Param('multisigAddress') multisigAddress: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const body = await this.x402Service.buildDiscoveryResponse(
+      multisigAddress,
+      resourceUrlFromRequest(req),
+      Facilitator.CDP,
+    );
+    res.status(HttpStatus.PAYMENT_REQUIRED).json(body);
+  }
+
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Post('bazaar/deposit/:multisigAddress')
+  async bazaarDeposit(
+    @Param('multisigAddress') multisigAddress: string,
+    @Headers('x-payment') paymentHeader: string | undefined,
+    @Body() body: DepositRequestDto,
+    @Req() req: Request,
+  ): Promise<X402DepositResponse> {
+    return this.x402Service.processDeposit(
+      multisigAddress,
+      paymentHeader,
+      body?.memo,
+      resourceUrlFromRequest(req),
+      Facilitator.CDP,
     );
   }
 }
