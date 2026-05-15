@@ -33,4 +33,8 @@ export const CONFIG_KEYS = {
   X402_ENABLED: 'x402.enabled',
   X402_FACILITATOR_URL: 'x402.facilitatorUrl',
   X402_FACILITATOR_BEARER_TOKEN: 'x402.facilitatorBearerToken',
+  X402_CDP_ENABLED: 'x402.cdpEnabled',
+  X402_CDP_FACILITATOR_URL: 'x402.cdpFacilitatorUrl',
+  X402_CDP_API_KEY_ID: 'x402.cdpApiKeyId',
+  X402_CDP_API_KEY_SECRET: 'x402.cdpApiKeySecret',
 } as const;

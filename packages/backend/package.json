@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@aztec/bb.js": "0.84.0",
+    "@coinbase/x402": "^2.1.0",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.0.1",
