@@ -331,86 +331,35 @@ export class X402Service {
       },
     };
 
-    if (facilitator === Facilitator.CDP) {
-      // CDP Bazaar needs a strict-validated discovery extension to index the
-      // route. Without it the route still settles but never appears in catalog.
-      base.extensions = this.buildCdpBazaarExtension();
-    } else {
-      // PayAI / pay.sh use the discoverable flag inside outputSchema.input.
-      base.outputSchema = {
-        input: { type: 'http', method: 'POST', discoverable: true },
-      };
-    }
+    // Both PayAI and CDP (under x402 protocol v1) opt into the bazaar catalog
+    // via outputSchema.input.discoverable. The `extensions.bazaar` block is
+    // v2-only; sending it with x402Version: 1 gets silently dropped by CDP
+    // (verified: EXTENSION-RESPONSES returns base64('{}') and merchant lookup
+    // stays not_found after a real settle).
+    base.outputSchema = {
+      input: {
+        type: 'http',
+        method: 'POST',
+        discoverable: true,
+        properties: {
+          memo: {
+            type: 'string',
+            description: 'Optional memo recorded with the deposit.',
+          },
+        },
+      },
+      output: {
+        type: 'json',
+        example: {
+          principalTxHash: '0x...',
+          multisigAddress: '0x...',
+          depositedAmount: '1000000',
+          chainId: 8453,
+          status: 'SETTLED',
+        },
+      },
+    };
     return base;
-  }
-
-  // Mirrors @x402/extensions/bazaar `createBodyDiscoveryExtension` exactly.
-  // Earlier hand-rolled shape added a `pathParams` field that CDP's strict
-  // validator silently rejected, leaving settlements un-indexed (verified via
-  // `/discovery/merchant?payTo=<addr>` returning not_found after a real settle).
-  private buildCdpBazaarExtension(): Record<string, unknown> {
-    const inputExample = { memo: 'optional payment memo' };
-    const inputBodySchema = {
-      type: 'object',
-      properties: {
-        memo: {
-          type: 'string',
-          description: 'Optional memo recorded with the deposit.',
-        },
-      },
-    };
-    const outputExample = {
-      principalTxHash: '0x...',
-      multisigAddress: '0x...',
-      depositedAmount: '1000000',
-      chainId: 8453,
-      status: 'SETTLED',
-    };
-    return {
-      bazaar: {
-        info: {
-          input: {
-            type: 'http',
-            method: 'POST',
-            bodyType: 'json',
-            body: inputExample,
-          },
-          output: { type: 'json', example: outputExample },
-        },
-        schema: {
-          $schema: 'https://json-schema.org/draft/2020-12/schema',
-          type: 'object',
-          properties: {
-            input: {
-              type: 'object',
-              properties: {
-                type: { type: 'string', const: 'http' },
-                method: {
-                  type: 'string',
-                  enum: ['POST', 'PUT', 'PATCH'],
-                },
-                bodyType: {
-                  type: 'string',
-                  enum: ['json', 'form-data', 'text'],
-                },
-                body: inputBodySchema,
-              },
-              required: ['type', 'bodyType', 'body'],
-              additionalProperties: false,
-            },
-            output: {
-              type: 'object',
-              properties: {
-                type: { type: 'string' },
-                example: { type: 'object' },
-              },
-              required: ['type'],
-            },
-          },
-          required: ['input'],
-        },
-      },
-    };
   }
 
   private facilitatorBaseUrl(facilitator: Facilitator): string {
