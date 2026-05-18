@@ -36,13 +36,59 @@ import {
 } from './constants';
 
 // Which facilitator (and thus which bazaar) a request is routed through.
-// PayAI is the default path used by the UI and docs.
-// CDP is the bazaar-only path that lets Coinbase agentic.market index us.
+// PayAI is the default path used by the UI and docs (x402 protocol v1).
+// CDP is the bazaar-only path that lets Coinbase agentic.market index us
+// (x402 protocol v2 — v1 entries stopped being indexed by CDP indexer).
 export const Facilitator = {
   PayAI: 'payai',
   CDP: 'cdp',
 } as const;
 export type Facilitator = (typeof Facilitator)[keyof typeof Facilitator];
+
+// --- x402 v2 wire types -----------------------------------------------------
+// Mirrors @x402/core/types/payments.ts. Inlined so we don't pull the package
+// just for type names. CDP requires v2 wire format for bazaar indexing today.
+
+interface V2ResourceInfo {
+  url: string;
+  description?: string;
+  mimeType?: string;
+}
+
+interface V2PaymentRequirements {
+  scheme: 'exact';
+  network: string; // CAIP-2 e.g. "eip155:8453"
+  asset: string;
+  amount: string; // v2 renames v1's maxAmountRequired -> amount
+  payTo: string;
+  maxTimeoutSeconds: number;
+  extra: Record<string, unknown>;
+}
+
+interface V2PaymentRequired {
+  x402Version: 2;
+  resource: V2ResourceInfo;
+  accepts: V2PaymentRequirements[];
+  extensions?: Record<string, unknown>;
+}
+
+interface V2PaymentPayload {
+  x402Version: 2;
+  resource?: V2ResourceInfo;
+  accepted: V2PaymentRequirements;
+  payload: {
+    authorization: {
+      from: string;
+      to: string;
+      value: string;
+      validAfter: string;
+      validBefore: string;
+      nonce: string;
+    };
+    signature: string;
+  };
+  extensions?: Record<string, unknown>;
+}
 
 const USDC_AUTHORIZATION_STATE_ABI = [
   {
@@ -73,8 +119,17 @@ export class X402Service {
     multisigAddress: string,
     resourceUrl: string,
     facilitator: Facilitator = Facilitator.PayAI,
-  ): Promise<X402DiscoveryResponse> {
-    if (facilitator === Facilitator.CDP) this.assertCdpEnabled();
+  ): Promise<X402DiscoveryResponse | V2PaymentRequired> {
+    if (facilitator === Facilitator.CDP) {
+      this.assertCdpEnabled();
+      const account = await this.assertAccount(multisigAddress);
+      return this.buildV2PaymentRequired(
+        account.chainId,
+        account.address,
+        resourceUrl,
+        MAX_DEPOSIT.toString(),
+      );
+    }
     const account = await this.assertAccount(multisigAddress);
     const requirements = this.buildPaymentRequirements(
       account.chainId,
@@ -125,15 +180,53 @@ export class X402Service {
 
     // For verify/settle: maxAmountRequired must be <= auth.value (facilitator
     // checks `auth.value >= maxAmountRequired`). Use the exact signed amount.
+    const signedAmount = payload.payload.authorization.value;
     const requirements = this.buildPaymentRequirements(
       account.chainId,
       account.address,
       resourceUrl,
-      payload.payload.authorization.value,
+      signedAmount,
       facilitator,
     );
 
     try {
+      if (facilitator === Facilitator.CDP) {
+        // CDP requires x402 v2 wire format for bazaar indexing. Translate the
+        // v1 X-PAYMENT (UI / bootstrap script send v1) into a v2 payload using
+        // the same EIP-3009 signature — cryptographic content is identical
+        // across versions, only the JSON wrapper changes.
+        const v2Requirements = this.buildV2PaymentRequirementsLeaf(
+          account.chainId,
+          account.address,
+          resourceUrl,
+          signedAmount,
+        );
+        const v2Payload: V2PaymentPayload = {
+          x402Version: 2,
+          resource: { url: resourceUrl },
+          accepted: v2Requirements,
+          payload: {
+            authorization: payload.payload.authorization,
+            signature: payload.payload.signature,
+          },
+          extensions: {},
+        };
+        await this.cdpVerify(v2Payload, v2Requirements);
+        const txHash = await this.cdpSettle(v2Payload, v2Requirements);
+        const updated = await this.prisma.x402Deposit.update({
+          where: { id: deposit.id },
+          data: { status: 'SETTLED', principalTxHash: txHash },
+        });
+        return {
+          principalTxHash: txHash,
+          multisigAddress: account.address,
+          depositedAmount: signedAmount,
+          chainId: account.chainId,
+          status: 'SETTLED',
+          timestamp: updated.updatedAt.toISOString(),
+        };
+      }
+
       await this.facilitatorVerify(payload, requirements, facilitator);
       const txHash = await this.facilitatorSettle(
         payload,
@@ -369,6 +462,177 @@ export class X402Service {
     return base;
   }
 
+  // --- x402 v2 builders for CDP path ----------------------------------------
+  // CDP indexer stopped picking up v1 (outputSchema) entries — verified
+  // empirically by 3 successful v1 settlements that never appeared in
+  // /discovery/merchant lookup. All CDP entries indexed today are v2 with
+  // extensions.bazaar at the PaymentRequired top level.
+
+  private buildV2PaymentRequirementsLeaf(
+    chainId: number,
+    payTo: string,
+    resourceUrl: string,
+    amount: string,
+  ): V2PaymentRequirements {
+    void resourceUrl; // resource lives on PaymentRequired, not on the leaf in v2
+    const domain = this.domainCache.get(chainId);
+    return {
+      scheme: 'exact',
+      network: `eip155:${chainId}`,
+      asset: USDC_TOKEN.addresses[chainId],
+      amount,
+      payTo,
+      maxTimeoutSeconds: 120,
+      extra: {
+        name: domain.name,
+        version: domain.version,
+        minDeposit: MIN_DEPOSIT.toString(),
+        maxDeposit: MAX_DEPOSIT.toString(),
+      },
+    };
+  }
+
+  private buildV2PaymentRequired(
+    chainId: number,
+    payTo: string,
+    resourceUrl: string,
+    amount: string,
+  ): V2PaymentRequired {
+    return {
+      x402Version: 2,
+      resource: {
+        url: resourceUrl,
+        description:
+          `Gasless USDC deposit to PolyPay multisig ${payTo}. Sign EIP-3009 ` +
+          `transferWithAuthorization for any amount in [${MIN_DEPOSIT}, ${MAX_DEPOSIT}] ` +
+          `(6-decimals USDC).`,
+        mimeType: 'application/json',
+      },
+      accepts: [
+        this.buildV2PaymentRequirementsLeaf(
+          chainId,
+          payTo,
+          resourceUrl,
+          amount,
+        ),
+      ],
+      extensions: { bazaar: this.buildCdpBazaarExtension() },
+    };
+  }
+
+  // Mirrors @x402/extensions/bazaar createBodyDiscoveryExtension(...) output
+  // for a POST endpoint with a JSON body. Shape verified byte-equal against
+  // the SDK and validateDiscoveryExtension() = true in offline tests.
+  private buildCdpBazaarExtension(): Record<string, unknown> {
+    const inputBodyExample = { memo: 'optional payment memo' };
+    const inputBodySchema = {
+      type: 'object',
+      properties: {
+        memo: {
+          type: 'string',
+          description: 'Optional memo recorded with the deposit.',
+        },
+      },
+    };
+    const outputExample = {
+      principalTxHash: '0x...',
+      multisigAddress: '0x...',
+      depositedAmount: '1000000',
+      chainId: 8453,
+      status: 'SETTLED',
+    };
+    return {
+      info: {
+        input: {
+          type: 'http',
+          method: 'POST',
+          bodyType: 'json',
+          body: inputBodyExample,
+        },
+        output: { type: 'json', example: outputExample },
+      },
+      schema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        properties: {
+          input: {
+            type: 'object',
+            properties: {
+              type: { type: 'string', const: 'http' },
+              method: { type: 'string', enum: ['POST', 'PUT', 'PATCH'] },
+              bodyType: {
+                type: 'string',
+                enum: ['json', 'form-data', 'text'],
+              },
+              body: inputBodySchema,
+            },
+            required: ['type', 'bodyType', 'body'],
+            additionalProperties: false,
+          },
+          output: {
+            type: 'object',
+            properties: {
+              type: { type: 'string' },
+              example: { type: 'object' },
+            },
+            required: ['type'],
+          },
+        },
+        required: ['input'],
+      },
+    };
+  }
+
+  private async cdpVerify(
+    paymentPayload: V2PaymentPayload,
+    paymentRequirements: V2PaymentRequirements,
+  ): Promise<void> {
+    const resp = await axios.post(
+      this.facilitatorUrl('verify', Facilitator.CDP),
+      { x402Version: 2, paymentPayload, paymentRequirements },
+      {
+        headers: await this.facilitatorHeaders(Facilitator.CDP, 'verify'),
+        validateStatus: () => true,
+      },
+    );
+    if (resp.status >= 400 || !this.isVerifyOk(resp.data)) {
+      throw new BadRequestException(
+        `CDP verify failed: ${JSON.stringify(resp.data ?? resp.status)}`,
+      );
+    }
+  }
+
+  private async cdpSettle(
+    paymentPayload: V2PaymentPayload,
+    paymentRequirements: V2PaymentRequirements,
+  ): Promise<string> {
+    const resp = await axios.post(
+      this.facilitatorUrl('settle', Facilitator.CDP),
+      { x402Version: 2, paymentPayload, paymentRequirements },
+      {
+        headers: await this.facilitatorHeaders(Facilitator.CDP, 'settle'),
+        validateStatus: () => true,
+      },
+    );
+    const extResp =
+      resp.headers['extension-responses'] ??
+      resp.headers['EXTENSION-RESPONSES'];
+    this.logger.warn(
+      `[cdp ext-resp v2] ${JSON.stringify(extResp ?? 'missing')}`,
+    );
+    const data = resp.data as Record<string, unknown> | undefined;
+    if (!data?.success || typeof data.transaction !== 'string') {
+      throw new Error(
+        `CDP settle failed: ${
+          (data?.errorMessage as string | undefined) ??
+          (data?.errorReason as string | undefined) ??
+          JSON.stringify(data ?? resp.status)
+        }`,
+      );
+    }
+    return data.transaction;
+  }
+
   private facilitatorBaseUrl(facilitator: Facilitator): string {
     const key =
       facilitator === Facilitator.CDP
@@ -424,24 +688,8 @@ export class X402Service {
     return headers;
   }
 
-  // CDP's bazaar indexer requires the resource URL to be present on the
-  // paymentPayload itself, not just on paymentRequirements. The x402 v1 spec
-  // does not include resource in PaymentPayload, so we only attach it for the
-  // CDP path; PayAI (and other strict facilitators) keep the spec shape.
-  // Docs: "If your service does not appear in CDP Bazaar discovery, ensure at
-  // least one successful settlement has completed through the CDP Facilitator
-  // with `paymentPayload.resource` set."
-  private payloadForFacilitator(
-    payload: X402V1PaymentPayload,
-    requirements: X402PaymentRequirements,
-    facilitator: Facilitator,
-  ): Record<string, unknown> {
-    if (facilitator === Facilitator.CDP) {
-      return { ...payload, resource: requirements.resource };
-    }
-    return payload as unknown as Record<string, unknown>;
-  }
-
+  // v1 verify/settle — used for the PayAI path. CDP goes through cdpVerify /
+  // cdpSettle with v2 wire format because CDP indexer no longer accepts v1.
   private async facilitatorVerify(
     payload: X402V1PaymentPayload,
     requirements: X402PaymentRequirements,
@@ -451,11 +699,7 @@ export class X402Service {
       this.facilitatorUrl('verify', facilitator),
       {
         x402Version: 1,
-        paymentPayload: this.payloadForFacilitator(
-          payload,
-          requirements,
-          facilitator,
-        ),
+        paymentPayload: payload,
         paymentRequirements: requirements,
       },
       {
@@ -486,11 +730,7 @@ export class X402Service {
       this.facilitatorUrl('settle', facilitator),
       {
         x402Version: 1,
-        paymentPayload: this.payloadForFacilitator(
-          payload,
-          requirements,
-          facilitator,
-        ),
+        paymentPayload: payload,
         paymentRequirements: requirements,
       },
       {
@@ -498,16 +738,6 @@ export class X402Service {
         validateStatus: () => true,
       },
     );
-    // CDP indicates Bazaar acceptance via EXTENSION-RESPONSES. Logging it
-    // lets us catch silent "extension rejected" cases that block indexing.
-    if (facilitator === Facilitator.CDP) {
-      const extResp =
-        resp.headers['extension-responses'] ??
-        resp.headers['EXTENSION-RESPONSES'];
-      this.logger.warn(
-        `[cdp ext-resp] ${JSON.stringify(extResp ?? 'missing')}`,
-      );
-    }
     const data = resp.data as Record<string, unknown> | undefined;
     if (!data?.success || typeof data.transaction !== 'string') {
       throw new Error(
