@@ -331,76 +331,42 @@ export class X402Service {
       },
     };
 
-    if (facilitator === Facilitator.CDP) {
-      // CDP Bazaar needs a strict-validated discovery extension to index the
-      // route. Without it the route still settles but never appears in catalog.
-      base.extensions = this.buildCdpBazaarExtension();
-    } else {
-      // PayAI / pay.sh use the discoverable flag inside outputSchema.input.
-      base.outputSchema = {
-        input: { type: 'http', method: 'POST', discoverable: true },
-      };
-    }
+    // Both PayAI and CDP (under x402 protocol v1) opt into the bazaar catalog
+    // via outputSchema.input.discoverable. The `extensions.bazaar` block is
+    // v2-only; sending it with x402Version: 1 gets silently dropped by CDP
+    // (verified: EXTENSION-RESPONSES returns base64('{}') and merchant lookup
+    // stays not_found after a real settle).
+    // Shape mirrors what the x402-express middleware emits for a POST
+    // endpoint (body fields under input.body, queryParams empty, structured
+    // output). Matches the v1 entries CDP is actively indexing today, e.g.
+    // x402.browserbase.com/browser/session/create.
+    base.outputSchema = {
+      input: {
+        type: 'http',
+        method: 'POST',
+        discoverable: true,
+        queryParams: {},
+        body: {
+          memo: {
+            type: 'string',
+            required: false,
+            description: 'Optional memo recorded with the deposit.',
+          },
+        },
+      },
+      output: {
+        type: 'object',
+        properties: {
+          principalTxHash: { type: 'string' },
+          multisigAddress: { type: 'string' },
+          depositedAmount: { type: 'string' },
+          chainId: { type: 'number' },
+          status: { type: 'string' },
+          timestamp: { type: 'string' },
+        },
+      },
+    };
     return base;
-  }
-
-  // Matches @x402/extensions/bazaar `declareDiscoveryExtension` output shape
-  // for a POST body endpoint. Inlined to avoid pulling the extensions package.
-  private buildCdpBazaarExtension(): Record<string, unknown> {
-    const inputExample = {
-      multisigAddress: '0x0000000000000000000000000000000000000000',
-    };
-    const inputSchema = {
-      type: 'object',
-      properties: {
-        multisigAddress: {
-          type: 'string',
-          description: 'PolyPay multisig address that will receive the USDC.',
-        },
-      },
-      required: ['multisigAddress'],
-    };
-    const outputExample = {
-      principalTxHash: '0x...',
-      multisigAddress: '0x...',
-      depositedAmount: '1000000',
-      chainId: 8453,
-      status: 'SETTLED',
-    };
-    return {
-      bazaar: {
-        info: {
-          input: {
-            type: 'http',
-            method: 'POST',
-            bodyType: 'json',
-            body: inputExample,
-            pathParams: inputExample,
-          },
-          output: { type: 'json', example: outputExample },
-        },
-        schema: {
-          $schema: 'https://json-schema.org/draft/2020-12/schema',
-          type: 'object',
-          properties: {
-            input: {
-              type: 'object',
-              properties: {
-                type: { type: 'string', const: 'http' },
-                method: { type: 'string', enum: ['POST'] },
-                bodyType: { type: 'string', enum: ['json'] },
-                body: { type: 'object' },
-                pathParams: inputSchema,
-              },
-              required: ['type', 'method'],
-              additionalProperties: false,
-            },
-            output: { type: 'object' },
-          },
-          required: ['input'],
-        },
-      },
-    };
   }
 
   private facilitatorBaseUrl(facilitator: Facilitator): string {
@@ -458,6 +424,24 @@ export class X402Service {
     return headers;
   }
 
+  // CDP's bazaar indexer requires the resource URL to be present on the
+  // paymentPayload itself, not just on paymentRequirements. The x402 v1 spec
+  // does not include resource in PaymentPayload, so we only attach it for the
+  // CDP path; PayAI (and other strict facilitators) keep the spec shape.
+  // Docs: "If your service does not appear in CDP Bazaar discovery, ensure at
+  // least one successful settlement has completed through the CDP Facilitator
+  // with `paymentPayload.resource` set."
+  private payloadForFacilitator(
+    payload: X402V1PaymentPayload,
+    requirements: X402PaymentRequirements,
+    facilitator: Facilitator,
+  ): Record<string, unknown> {
+    if (facilitator === Facilitator.CDP) {
+      return { ...payload, resource: requirements.resource };
+    }
+    return payload as unknown as Record<string, unknown>;
+  }
+
   private async facilitatorVerify(
     payload: X402V1PaymentPayload,
     requirements: X402PaymentRequirements,
@@ -467,7 +451,11 @@ export class X402Service {
       this.facilitatorUrl('verify', facilitator),
       {
         x402Version: 1,
-        paymentPayload: payload,
+        paymentPayload: this.payloadForFacilitator(
+          payload,
+          requirements,
+          facilitator,
+        ),
         paymentRequirements: requirements,
       },
       {
@@ -498,7 +486,11 @@ export class X402Service {
       this.facilitatorUrl('settle', facilitator),
       {
         x402Version: 1,
-        paymentPayload: payload,
+        paymentPayload: this.payloadForFacilitator(
+          payload,
+          requirements,
+          facilitator,
+        ),
         paymentRequirements: requirements,
       },
       {
@@ -506,6 +498,16 @@ export class X402Service {
         validateStatus: () => true,
       },
     );
+    // CDP indicates Bazaar acceptance via EXTENSION-RESPONSES. Logging it
+    // lets us catch silent "extension rejected" cases that block indexing.
+    if (facilitator === Facilitator.CDP) {
+      const extResp =
+        resp.headers['extension-responses'] ??
+        resp.headers['EXTENSION-RESPONSES'];
+      this.logger.warn(
+        `[cdp ext-resp] ${JSON.stringify(extResp ?? 'missing')}`,
+      );
+    }
     const data = resp.data as Record<string, unknown> | undefined;
     if (!data?.success || typeof data.transaction !== 'string') {
       throw new Error(
