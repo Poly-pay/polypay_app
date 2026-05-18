@@ -344,21 +344,20 @@ export class X402Service {
     return base;
   }
 
-  // Matches @x402/extensions/bazaar `declareDiscoveryExtension` output shape
-  // for a POST body endpoint. Inlined to avoid pulling the extensions package.
+  // Mirrors @x402/extensions/bazaar `createBodyDiscoveryExtension` exactly.
+  // Earlier hand-rolled shape added a `pathParams` field that CDP's strict
+  // validator silently rejected, leaving settlements un-indexed (verified via
+  // `/discovery/merchant?payTo=<addr>` returning not_found after a real settle).
   private buildCdpBazaarExtension(): Record<string, unknown> {
-    const inputExample = {
-      multisigAddress: '0x0000000000000000000000000000000000000000',
-    };
-    const inputSchema = {
+    const inputExample = { memo: 'optional payment memo' };
+    const inputBodySchema = {
       type: 'object',
       properties: {
-        multisigAddress: {
+        memo: {
           type: 'string',
-          description: 'PolyPay multisig address that will receive the USDC.',
+          description: 'Optional memo recorded with the deposit.',
         },
       },
-      required: ['multisigAddress'],
     };
     const outputExample = {
       principalTxHash: '0x...',
@@ -375,7 +374,6 @@ export class X402Service {
             method: 'POST',
             bodyType: 'json',
             body: inputExample,
-            pathParams: inputExample,
           },
           output: { type: 'json', example: outputExample },
         },
@@ -387,15 +385,27 @@ export class X402Service {
               type: 'object',
               properties: {
                 type: { type: 'string', const: 'http' },
-                method: { type: 'string', enum: ['POST'] },
-                bodyType: { type: 'string', enum: ['json'] },
-                body: { type: 'object' },
-                pathParams: inputSchema,
+                method: {
+                  type: 'string',
+                  enum: ['POST', 'PUT', 'PATCH'],
+                },
+                bodyType: {
+                  type: 'string',
+                  enum: ['json', 'form-data', 'text'],
+                },
+                body: inputBodySchema,
               },
-              required: ['type', 'method'],
+              required: ['type', 'bodyType', 'body'],
               additionalProperties: false,
             },
-            output: { type: 'object' },
+            output: {
+              type: 'object',
+              properties: {
+                type: { type: 'string' },
+                example: { type: 'object' },
+              },
+              required: ['type'],
+            },
           },
           required: ['input'],
         },
@@ -506,6 +516,16 @@ export class X402Service {
         validateStatus: () => true,
       },
     );
+    // CDP indicates Bazaar acceptance via EXTENSION-RESPONSES. Logging it
+    // lets us catch silent "extension rejected" cases that block indexing.
+    if (facilitator === Facilitator.CDP) {
+      const extResp =
+        resp.headers['extension-responses'] ??
+        resp.headers['EXTENSION-RESPONSES'];
+      this.logger.warn(
+        `[cdp ext-resp] ${JSON.stringify(extResp ?? 'missing')}`,
+      );
+    }
     const data = resp.data as Record<string, unknown> | undefined;
     if (!data?.success || typeof data.transaction !== 'string') {
       throw new Error(

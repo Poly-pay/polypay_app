@@ -1,3 +1,7 @@
+// Loads packages/backend/.env so BUYER_PRIVATE_KEY etc. can come from there
+// instead of being passed inline every time.
+import 'dotenv/config';
+
 /**
  * One-off bootstrap: makes a real USDC deposit through PolyPay's CDP bazaar
  * endpoint so Coinbase CDP indexes the route in agentic.market.
