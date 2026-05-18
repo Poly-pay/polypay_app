@@ -336,26 +336,33 @@ export class X402Service {
     // v2-only; sending it with x402Version: 1 gets silently dropped by CDP
     // (verified: EXTENSION-RESPONSES returns base64('{}') and merchant lookup
     // stays not_found after a real settle).
+    // Shape mirrors what the x402-express middleware emits for a POST
+    // endpoint (body fields under input.body, queryParams empty, structured
+    // output). Matches the v1 entries CDP is actively indexing today, e.g.
+    // x402.browserbase.com/browser/session/create.
     base.outputSchema = {
       input: {
         type: 'http',
         method: 'POST',
         discoverable: true,
-        properties: {
+        queryParams: {},
+        body: {
           memo: {
             type: 'string',
+            required: false,
             description: 'Optional memo recorded with the deposit.',
           },
         },
       },
       output: {
-        type: 'json',
-        example: {
-          principalTxHash: '0x...',
-          multisigAddress: '0x...',
-          depositedAmount: '1000000',
-          chainId: 8453,
-          status: 'SETTLED',
+        type: 'object',
+        properties: {
+          principalTxHash: { type: 'string' },
+          multisigAddress: { type: 'string' },
+          depositedAmount: { type: 'string' },
+          chainId: { type: 'number' },
+          status: { type: 'string' },
+          timestamp: { type: 'string' },
         },
       },
     };
@@ -417,6 +424,24 @@ export class X402Service {
     return headers;
   }
 
+  // CDP's bazaar indexer requires the resource URL to be present on the
+  // paymentPayload itself, not just on paymentRequirements. The x402 v1 spec
+  // does not include resource in PaymentPayload, so we only attach it for the
+  // CDP path; PayAI (and other strict facilitators) keep the spec shape.
+  // Docs: "If your service does not appear in CDP Bazaar discovery, ensure at
+  // least one successful settlement has completed through the CDP Facilitator
+  // with `paymentPayload.resource` set."
+  private payloadForFacilitator(
+    payload: X402V1PaymentPayload,
+    requirements: X402PaymentRequirements,
+    facilitator: Facilitator,
+  ): Record<string, unknown> {
+    if (facilitator === Facilitator.CDP) {
+      return { ...payload, resource: requirements.resource };
+    }
+    return payload as unknown as Record<string, unknown>;
+  }
+
   private async facilitatorVerify(
     payload: X402V1PaymentPayload,
     requirements: X402PaymentRequirements,
@@ -426,7 +451,11 @@ export class X402Service {
       this.facilitatorUrl('verify', facilitator),
       {
         x402Version: 1,
-        paymentPayload: payload,
+        paymentPayload: this.payloadForFacilitator(
+          payload,
+          requirements,
+          facilitator,
+        ),
         paymentRequirements: requirements,
       },
       {
@@ -457,7 +486,11 @@ export class X402Service {
       this.facilitatorUrl('settle', facilitator),
       {
         x402Version: 1,
-        paymentPayload: payload,
+        paymentPayload: this.payloadForFacilitator(
+          payload,
+          requirements,
+          facilitator,
+        ),
         paymentRequirements: requirements,
       },
       {
