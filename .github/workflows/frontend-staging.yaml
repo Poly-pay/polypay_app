@@ -65,8 +65,10 @@ jobs:
             --platform managed \
             --allow-unauthenticated
 
+      # --- Slack notifications ---
       - name: Notify Success to Slack Channel
         if: success()
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -76,9 +78,49 @@ jobs:
 
       - name: Notify Failure to Slack Channel
         if: failure()
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
           slack-message: "❌ [STAGING] Frontend Deployment Failed!\nRepository: polypay-frontend\nBranch: ${{ github.ref_name }}\nEnvironment: staging\nBuild Status: ${{ job.status }}\nTriggered by: ${{ github.actor }}\n${{ github.event.head_commit.url }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      # --- Discord notifications ---
+      - name: Notify Discord (Success)
+        if: success()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then echo "no Discord webhook configured"; exit 0; fi
+          payload=$(jq -n \
+            --arg branch "${{ github.ref_name }}" \
+            --arg actor "${{ github.actor }}" \
+            --arg url "${{ github.event.head_commit.url }}" \
+            '{content: (":white_check_mark: [STAGING] Frontend Deployment Successful!\n"
+              + "Repository: polypay-frontend\n"
+              + "Branch: " + $branch + "\n"
+              + "Environment: staging\n"
+              + "Build Status: success\n"
+              + "Triggered by: " + $actor + "\n"
+              + $url)}')
+          curl -sf -H "Content-Type: application/json" -X POST -d "$payload" "$DISCORD_WEBHOOK_URL"
+
+      - name: Notify Discord (Failure)
+        if: failure()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then echo "no Discord webhook configured"; exit 0; fi
+          payload=$(jq -n \
+            --arg branch "${{ github.ref_name }}" \
+            --arg actor "${{ github.actor }}" \
+            --arg url "${{ github.event.head_commit.url }}" \
+            '{content: (":x: [STAGING] Frontend Deployment Failed!\n"
+              + "Repository: polypay-frontend\n"
+              + "Branch: " + $branch + "\n"
+              + "Environment: staging\n"
+              + "Build Status: failure\n"
+              + "Triggered by: " + $actor + "\n"
+              + $url)}')
+          curl -sf -H "Content-Type: application/json" -X POST -d "$payload" "$DISCORD_WEBHOOK_URL"
