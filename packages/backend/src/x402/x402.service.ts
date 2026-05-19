@@ -149,8 +149,20 @@ export class X402Service {
     facilitator: Facilitator = Facilitator.PayAI,
   ): Promise<X402DepositResponse> {
     if (facilitator === Facilitator.CDP) this.assertCdpEnabled();
+    // No payment yet: respond with 402 + PaymentRequired body (canonical x402).
+    // The client retries with X-PAYMENT. This is also what the CDP Bazaar
+    // crawler expects — it POSTs the bazaar-extension input without a payment
+    // and requires a 402 to index the resource; a 400 here blocks indexing.
     if (!paymentHeader) {
-      throw new BadRequestException('Missing X-PAYMENT header');
+      const body = await this.buildDiscoveryResponse(
+        multisigAddress,
+        resourceUrl,
+        facilitator,
+      );
+      throw new HttpException(
+        body as unknown as Record<string, unknown>,
+        HttpStatus.PAYMENT_REQUIRED,
+      );
     }
     const account = await this.assertAccount(multisigAddress);
     const payload = decodeXPaymentHeader(paymentHeader);
@@ -201,15 +213,19 @@ export class X402Service {
           resourceUrl,
           signedAmount,
         );
+        // extractDiscoveryInfo (facilitator.ts) reads the bazaar extension from
+        // paymentPayload.extensions["bazaar"] for v2 — it is NOT read from the
+        // 402 response or paymentRequirements. A v1 X-PAYMENT (UI / bootstrap)
+        // carries no extensions, so we attach the same declaration here.
         const v2Payload: V2PaymentPayload = {
           x402Version: 2,
-          resource: { url: resourceUrl },
+          resource: this.buildV2Resource(resourceUrl, account.address),
           accepted: v2Requirements,
           payload: {
             authorization: payload.payload.authorization,
             signature: payload.payload.signature,
           },
-          extensions: {},
+          extensions: { bazaar: this.buildCdpBazaarExtension(resourceUrl) },
         };
         await this.cdpVerify(v2Payload, v2Requirements);
         const txHash = await this.cdpSettle(v2Payload, v2Requirements);
@@ -492,6 +508,20 @@ export class X402Service {
     };
   }
 
+  // extractDiscoveryInfo (SDK @x402/extensions/bazaar) reads resource.description
+  // and resource.mimeType into the catalog entry, so the same resource object is
+  // used for both the 402 response and the settle payload to avoid drift.
+  private buildV2Resource(resourceUrl: string, payTo: string): V2ResourceInfo {
+    return {
+      url: resourceUrl,
+      description:
+        `Gasless USDC deposit to PolyPay multisig ${payTo}. Sign EIP-3009 ` +
+        `transferWithAuthorization for any amount in [${MIN_DEPOSIT}, ${MAX_DEPOSIT}] ` +
+        `(6-decimals USDC).`,
+      mimeType: 'application/json',
+    };
+  }
+
   private buildV2PaymentRequired(
     chainId: number,
     payTo: string,
@@ -500,14 +530,7 @@ export class X402Service {
   ): V2PaymentRequired {
     return {
       x402Version: 2,
-      resource: {
-        url: resourceUrl,
-        description:
-          `Gasless USDC deposit to PolyPay multisig ${payTo}. Sign EIP-3009 ` +
-          `transferWithAuthorization for any amount in [${MIN_DEPOSIT}, ${MAX_DEPOSIT}] ` +
-          `(6-decimals USDC).`,
-        mimeType: 'application/json',
-      },
+      resource: this.buildV2Resource(resourceUrl, payTo),
       accepts: [
         this.buildV2PaymentRequirementsLeaf(
           chainId,
@@ -516,14 +539,24 @@ export class X402Service {
           amount,
         ),
       ],
-      extensions: { bazaar: this.buildCdpBazaarExtension() },
+      extensions: { bazaar: this.buildCdpBazaarExtension(resourceUrl) },
     };
   }
 
   // Mirrors @x402/extensions/bazaar createBodyDiscoveryExtension(...) output
-  // for a POST endpoint with a JSON body. Shape verified byte-equal against
-  // the SDK and validateDiscoveryExtension() = true in offline tests.
-  private buildCdpBazaarExtension(): Record<string, unknown> {
+  // for a POST endpoint with a JSON body. `info` is validated against `schema`
+  // by the facilitator's validateDiscoveryExtension (Ajv 2020); a mismatch
+  // makes extractDiscoveryInfo skip the resource.
+  //
+  // routeTemplate: the resource path ends in a high-cardinality multisig
+  // address. extractDiscoveryInfo (facilitator.ts) reads bazaarExtension.
+  // routeTemplate (sibling of info/schema) and uses it as the canonical
+  // catalog path, so we replace the address segment with :multisigAddress.
+  private buildCdpBazaarExtension(
+    resourceUrl: string,
+  ): Record<string, unknown> {
+    const path = new URL(resourceUrl).pathname;
+    const routeTemplate = path.replace(/\/[^/]+$/, '/:multisigAddress');
     const inputBodyExample = { memo: 'optional payment memo' };
     const inputBodySchema = {
       type: 'object',
@@ -542,6 +575,7 @@ export class X402Service {
       status: 'SETTLED',
     };
     return {
+      routeTemplate,
       info: {
         input: {
           type: 'http',
@@ -566,7 +600,7 @@ export class X402Service {
               },
               body: inputBodySchema,
             },
-            required: ['type', 'bodyType', 'body'],
+            required: ['type', 'method', 'bodyType', 'body'],
             additionalProperties: false,
           },
           output: {
