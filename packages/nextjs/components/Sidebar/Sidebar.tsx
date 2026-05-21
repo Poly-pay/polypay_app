@@ -6,9 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import AccountSidebar from "./AccountSidebar";
 import ManageAccountsSidebar from "./ManageAccountsSidebar";
 import NetworkChooserSidebar from "./NetworkChooserSidebar";
-import { useSwitchChain, useWalletClient } from "wagmi";
+import { isStealthSupportedChain } from "@polypay/shared";
+import { Shield } from "lucide-react";
+import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import Routes from "~~/configs/routes.config";
 import { useMyAccounts } from "~~/hooks";
+import { useStealthStatus } from "~~/hooks/api/useStealthStatus";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useAccountStore, useIdentityStore, useSidebarStore } from "~~/services/store";
@@ -161,7 +164,18 @@ export default function Sidebar() {
   const { data: accounts = [], isLoading: isLoadingAccounts } = useMyAccounts();
   const { commitment } = useIdentityStore();
   const { data: walletClient } = useWalletClient();
+  const { address: connectedAddress } = useAccount();
   const { currentAccount, setCurrentAccount } = useAccountStore();
+  // Stealth onboarding only makes sense when the user is operating in a
+  // Base-mainnet account context. Showing it while they're working on a
+  // Horizen multisig would be noise — they'd have to switch accounts to
+  // use the feature anyway. We keep the CTA visible after registration too
+  // so users have a one-click handle to confirm/share their setup; the
+  // shared modal already renders both setup and success states.
+  const isStealthChainContext = !!currentAccount?.chainId && isStealthSupportedChain(currentAccount.chainId);
+  const stealthStatus = useStealthStatus(isStealthChainContext && connectedAddress ? connectedAddress : null);
+  const showStealthPrompt = isStealthChainContext && !!connectedAddress && stealthStatus.isFetched;
+  const isStealthRegistered = stealthStatus.data?.registered === true;
   const { switchChainAsync } = useSwitchChain();
   const {
     isManageAccountsOpen,
@@ -270,6 +284,29 @@ export default function Sidebar() {
 
         {/* Bottom Section */}
         <div className="flex flex-col gap-2.5">
+          {/* Stealth-receive CTA — green icon + "ready" label once registered,
+              so the user has a one-click handle to confirm/share their setup. */}
+          {showStealthPrompt && (
+            <div
+              className="h-[36px] flex items-center gap-[5px] px-2.5 py-1.5 bg-main-white rounded-lg cursor-pointer hover:bg-grey-50"
+              onClick={() => openModal("receivePrivately")}
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                <Shield className={`h-4 w-4 ${isStealthRegistered ? "text-green-600" : "text-main-violet"}`} />
+              </div>
+              <span className="xl:block hidden flex-1 text-sm font-medium text-grey-700">
+                {isStealthRegistered ? "Private receive ready" : "Receive privately"}
+              </span>
+              <Image
+                src="/icons/arrows/arrow-right-purple.svg"
+                alt="Arrow"
+                width={16}
+                height={16}
+                className="xl:block hidden"
+              />
+            </div>
+          )}
+
           {/* Request new feature */}
           {commitment && (
             <div

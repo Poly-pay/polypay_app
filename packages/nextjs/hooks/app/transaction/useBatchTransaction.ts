@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { createTransactionSteps } from "./transactionSteps";
 import { BatchItem, TxType, ZERO_ADDRESS, encodeBatchTransfer, encodeBatchTransferMulti } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
@@ -35,7 +34,6 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       return;
     }
 
-    // Validate wallet connection
     if (!walletClient || !metaMultiSigWallet) {
       notification.error("Wallet not connected");
       return;
@@ -56,34 +54,35 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
         chainId: currentAccount!.chainId,
       });
 
-      // 2. Get current threshold and commitments
+      // 2. Get current threshold
       const currentThreshold = await metaMultiSigWallet.read.signaturesRequired();
 
-      // 3. Prepare batch data
+      // 3. Build (to, value, data)
       const recipients = selectedBatchItems.map(item => item.recipient as `0x${string}`);
       const amounts: bigint[] = selectedBatchItems.map(item => BigInt(item.amount));
       const tokenAddresses = selectedBatchItems.map(item => item.tokenAddress || ZERO_ADDRESS);
 
-      // Check if any ERC20 token in batch
       const hasERC20 = tokenAddresses.some(addr => addr !== ZERO_ADDRESS);
-
-      // 4. Encode function call based on token types
       const batchTransferData = hasERC20
         ? encodeBatchTransferMulti(recipients, amounts, tokenAddresses)
         : encodeBatchTransfer(recipients, amounts);
 
-      // 5. Calculate txHash (to = wallet itself, value = 0, data = batchTransfer call)
+      const toAddress = metaMultiSigWallet.address;
+      const txValue = 0n;
+      const txData = batchTransferData as `0x${string}`;
+
+      // 4. Calculate txHash
       const txHash = (await metaMultiSigWallet.read.getTransactionHash([
         BigInt(nonce),
-        metaMultiSigWallet.address,
-        0n,
-        batchTransferData,
+        toAddress,
+        txValue,
+        txData,
       ])) as `0x${string}`;
 
-      // 6. Generate ZK proof
+      // 5. Generate ZK proof
       const { proof, publicInputs, nullifier, vk } = await generateProof(txHash);
 
-      // 7. Submit to backend
+      // 6. Submit to backend
       startStep(4);
       const result = await createTransaction({
         nonce,
@@ -91,8 +90,8 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
         accountAddress: metaMultiSigWallet.address,
         chainId: currentAccount!.chainId,
         threshold: Number(currentThreshold),
-        to: metaMultiSigWallet.address,
-        value: "0",
+        to: toAddress,
+        value: txValue.toString(),
         proof: Array.from(proof),
         publicInputs,
         nullifier: nullifier.toString(),

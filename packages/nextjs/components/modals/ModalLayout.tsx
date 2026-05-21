@@ -58,6 +58,7 @@ const modals: ModalRegistry = {
   createBatchFromContacts: dynamic(() => import("./CreateBatchFromContactsModal"), { ssr: false }),
   depositX402: dynamic(() => import("./DepositModal"), { ssr: false }),
   receiveMethod: dynamic(() => import("./ReceiveMethodModal"), { ssr: false }),
+  receivePrivately: dynamic(() => import("./ReceivePrivatelyModal"), { ssr: false }),
 };
 
 type ModalInstance = {

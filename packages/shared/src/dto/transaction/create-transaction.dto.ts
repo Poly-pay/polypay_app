@@ -85,6 +85,15 @@ export class CreateTransactionDto {
   @IsString({ each: true })
   batchItemIds?: string[];
 
+  // STEALTH: JSON string of { to, value, data } to execute as-is. Used when the
+  // semantic fields above (recipient/token/value/batchData) describe what the
+  // user intends but the on-chain call routes through UmbraBatchSend with
+  // a derived stealth address. Backend validates shape on create.
+  @IsOptional()
+  @IsString()
+  @MaxLength(65536)
+  stealthData?: string;
+
   // Proof data
   @IsNotEmpty()
   @IsArray()

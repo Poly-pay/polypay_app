@@ -74,6 +74,7 @@ model Transaction {
   signerData     String?   @map("signer_data")
   newThreshold   Int?      @map("new_threshold")
   batchData      String?   @map("batch_data")
+  stealthData    String?   @map("stealth_data")
   createdBy      String    @map("created_by")
   threshold      Int
   txHash         String?   @map("tx_hash")

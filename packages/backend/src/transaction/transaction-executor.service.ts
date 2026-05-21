@@ -425,6 +425,25 @@ export class TransactionExecutorService {
     value: string;
     data: string;
   } {
+    // Stealth transactions ship the exact (to, value, data) the proposer
+    // hashed and proved. Re-deriving it from semantic fields is impossible
+    // (ephemeral entropy is client-side only) and any drift would make the
+    // contract's hash check fail. Always use the stored payload verbatim.
+    if (transaction.stealthData) {
+      try {
+        const parsed = JSON.parse(transaction.stealthData) as {
+          to: string;
+          value: string;
+          data: string;
+        };
+        return { to: parsed.to, value: parsed.value, data: parsed.data };
+      } catch (err) {
+        throw new BadRequestException(
+          `Corrupt stealthData for txId ${transaction.txId}: ${(err as Error).message}`,
+        );
+      }
+    }
+
     switch (transaction.type) {
       case TxType.TRANSFER:
         if (transaction?.tokenAddress) {

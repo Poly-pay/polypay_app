@@ -2,11 +2,23 @@ import React from "react";
 import Image from "next/image";
 import { AddressWithContact } from "./AddressWithContact";
 import { TxType, getTokenByAddress } from "@polypay/shared";
+import { ExternalLink } from "lucide-react";
+import { useAccount } from "wagmi";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~~/components/ui/tooltip";
 import { TransactionRowData, useNetworkTokens } from "~~/hooks";
 import { formatAddress, formatAmount } from "~~/utils/format";
 
+const UMBRA_APP_URL = "https://app.umbra.cash";
+
 export function TxDetails({ tx }: { tx: TransactionRowData }) {
   const { chainId } = useNetworkTokens();
+  const { address: connectedAddress } = useAccount();
+  const isStealthRecipient =
+    !!tx.stealthCall &&
+    !!connectedAddress &&
+    !!tx.recipientAddress &&
+    tx.recipientAddress.toLowerCase() === connectedAddress.toLowerCase();
+
   switch (tx.type) {
     case TxType.TRANSFER:
       return (
@@ -21,7 +33,29 @@ export function TxDetails({ tx }: { tx: TransactionRowData }) {
             <span className="font-medium">{formatAmount(tx.amount ?? "0", chainId, tx.tokenAddress)}</span>
           </div>
           <Image src="/icons/arrows/arrow-right-long-purple.svg" alt="Arrow Right" width={100} height={100} />
-          <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} />
+          <AddressWithContact
+            address={tx.recipientAddress ?? ""}
+            contactName={tx.contact?.name}
+            showRecipientDot={isStealthRecipient}
+          />
+          {isStealthRecipient && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href={UMBRA_APP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 text-green-800 text-xs font-medium hover:bg-green-200"
+                >
+                  Open Umbra
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[260px] bg-grey-1000 text-white">
+                Connect this wallet on app.umbra.cash, sign once to scan, then withdraw your funds.
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
       );
 

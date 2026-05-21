@@ -34,4 +34,5 @@ export type ModalName =
   // | "questIntro"
   | "createBatchFromContacts"
   | "depositX402"
-  | "receiveMethod";
+  | "receiveMethod"
+  | "receivePrivately";
