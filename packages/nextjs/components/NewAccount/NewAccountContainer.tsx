@@ -35,11 +35,8 @@ export default function NewAccountContainer() {
     schema: createAccountSchema,
     defaultValues: {
       name: "",
-      signers: [
-        { name: "", commitment: commitment || "" },
-        { name: "", commitment: "" },
-      ],
-      threshold: 2,
+      signers: [{ name: "", commitment: commitment || "" }],
+      threshold: 1,
     },
   });
 
@@ -114,11 +111,8 @@ export default function NewAccountContainer() {
     if (commitment) {
       form.reset({
         name: "",
-        signers: [
-          { name: "", commitment },
-          { name: "", commitment: "" },
-        ],
-        threshold: 2,
+        signers: [{ name: "", commitment }],
+        threshold: 1,
       });
       // Reset to step 1 when account changes
       setCurrentStep(1);
@@ -131,7 +125,7 @@ export default function NewAccountContainer() {
   const validSigners = getValidSigners(formData.signers);
   const isNameValid = formData.name.trim().length > 0;
   const isSignersValid =
-    validSigners.length >= 2 && formData.threshold >= 2 && formData.threshold <= validSigners.length;
+    validSigners.length >= 1 && formData.threshold >= 1 && formData.threshold <= validSigners.length;
   const isCreating = isCreatingSingle || isCreatingBatch;
 
   const EarthBackground = (
