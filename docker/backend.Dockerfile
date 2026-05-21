@@ -91,6 +91,9 @@ COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/prisma.config.ts
 # Copy assets folder
 COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/assets ./packages/backend/assets
 
+# Copy one-off maintenance scripts (run via `yarn <script>` from Cloud Run Jobs).
+COPY --chown=nestjs:nodejs --from=builder /app/packages/backend/scripts ./packages/backend/scripts
+
 USER nestjs
 
 WORKDIR /app/packages/backend
