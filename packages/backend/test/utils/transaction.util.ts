@@ -14,6 +14,7 @@ export interface CreateTransactionPayload {
   nonce: number;
   type: TxType;
   accountAddress: `0x${string}`;
+  chainId: number;
   to: `0x${string}`;
   value: string;
   threshold: number;
@@ -55,13 +56,14 @@ export async function apiCreateAccount(
 export async function apiReserveNonce(
   accessToken: string,
   accountAddress: `0x${string}`,
+  chainId: number,
 ) {
   const server = getHttpServer();
 
   const response = await request(server)
     .post(API_ENDPOINTS.transactions.reserveNonce)
     .set(getAuthHeader(accessToken))
-    .send({ accountAddress })
+    .send({ accountAddress, chainId })
     .expect(201);
 
   return response.body as { nonce: number };

@@ -82,11 +82,12 @@ export async function stagingCreateBatchItem(
 export async function stagingReserveNonce(
   accessToken: string,
   accountAddress: `0x${string}`,
+  chainId: number,
 ) {
   try {
     const response = await axios.post(
       `${BASE_URL}${API_ENDPOINTS.transactions.reserveNonce}`,
-      { accountAddress },
+      { accountAddress, chainId },
       { headers: authHeaders(accessToken) },
     );
 
@@ -151,23 +152,68 @@ export async function stagingExecuteTransaction(
   accessToken: string,
   txId: string,
 ) {
+  // Execute waits for on-chain receipt + zkVerify aggregation, which on a
+  // slow testnet can run several minutes. Most managed hosts (Cloudflare,
+  // Vercel, ALB) reset idle inbound connections somewhere between 60-300s
+  // regardless of how long the server keeps working. So we treat the
+  // initial POST as fire-and-forget: swallow socket hang-ups / undefined
+  // responses, then poll the transaction's status until EXECUTED or FAILED.
+  // The executor persists txHash to DB right after on-chain submission,
+  // so the poll can hand it back without a fresh server response.
   try {
     const response = await axios.post(
       `${BASE_URL}${API_ENDPOINTS.transactions.execute(Number(txId))}`,
       undefined,
-      { headers: authHeaders(accessToken) },
+      {
+        headers: authHeaders(accessToken),
+        timeout: 10 * 60_000,
+      },
     );
-
-    return response.data as { txHash: string };
-  } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      console.error('stagingExecuteTransaction error', {
-        status: error.response?.status,
-        data: error.response?.data,
-      });
+    if (response.data?.txHash) {
+      return response.data as { txHash: string };
     }
-    throw error;
+  } catch (error: any) {
+    const isSocketHangUp =
+      error?.code === 'ECONNRESET' ||
+      error?.message?.includes('socket hang up') ||
+      (axios.isAxiosError(error) && error.response === undefined);
+
+    if (!isSocketHangUp) {
+      if (axios.isAxiosError(error)) {
+        console.error('stagingExecuteTransaction error', {
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+      }
+      throw error;
+    }
+
+    console.warn(
+      `stagingExecuteTransaction: initial POST hung up, falling back to polling for txId=${txId}`,
+    );
   }
+
+  // Poll until status finalizes.
+  const POLL_INTERVAL_MS = 5_000;
+  const POLL_TIMEOUT_MS = 10 * 60_000;
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    const tx = await stagingGetTransaction(accessToken, txId);
+    if (tx?.status === 'EXECUTED' && tx?.txHash) {
+      return { txHash: tx.txHash };
+    }
+    if (tx?.status === 'FAILED') {
+      throw new Error(
+        `stagingExecuteTransaction: txId ${txId} ended in FAILED status`,
+      );
+    }
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+  }
+
+  throw new Error(
+    `stagingExecuteTransaction: timed out waiting for txId ${txId} to EXECUTE`,
+  );
 }
 
 export async function stagingGetTransaction(accessToken: string, txId: string) {

@@ -111,6 +111,7 @@ describe('Transaction E2E', () => {
         const { nonce } = await apiReserveNonce(
           tokensA.accessToken,
           accountAddress,
+          TEST_CHAIN_ID,
         );
 
         const { to, value, callData } = buildSingleTransferParams(
@@ -131,6 +132,7 @@ describe('Transaction E2E', () => {
           nonce,
           type: TxType.TRANSFER,
           accountAddress,
+          chainId: TEST_CHAIN_ID,
           to: TEST_RECIPIENT,
           value: amount.amountString,
           threshold: TEST_THRESHOLD,
@@ -176,6 +178,7 @@ describe('Transaction E2E', () => {
       const { nonce: batchNonce } = await apiReserveNonce(
         tokensA.accessToken,
         accountAddress,
+        TEST_CHAIN_ID,
       );
 
       const batchVotePayloadA = await generateVotePayload(
@@ -193,6 +196,7 @@ describe('Transaction E2E', () => {
           nonce: batchNonce,
           type: TxType.BATCH,
           accountAddress,
+          chainId: TEST_CHAIN_ID,
           to: accountAddress,
           value: '0',
           threshold: TEST_THRESHOLD,
