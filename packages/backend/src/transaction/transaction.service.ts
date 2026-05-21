@@ -160,6 +160,7 @@ export class TransactionService {
           createdBy: userCommitment,
           status: TxStatus.PENDING,
           batchData,
+          stealthData: dto.stealthData ?? null,
         },
       });
 
@@ -586,6 +587,10 @@ export class TransactionService {
   // ============ Private Methods ============
 
   private validateTransactionDto(dto: CreateTransactionDto) {
+    if (dto.stealthData !== undefined && dto.stealthData !== null) {
+      this.validateStealthData(dto.stealthData);
+    }
+
     switch (dto.type) {
       case TxType.TRANSFER:
         if (!dto.to || !dto.value) {
@@ -640,6 +645,35 @@ export class TransactionService {
           throw new BadRequestException('Batch requires "batchItemIds"');
         }
         break;
+    }
+  }
+
+  // stealthData is opaque to most of the system but the executor will submit
+  // it verbatim, so reject malformed payloads early. We don't validate the
+  // calldata target against a contract allowlist here because the proposer's
+  // ZK proof already binds (nonce, to, value, data); a wrong target only
+  // wastes the proposer's own gas reservation.
+  private validateStealthData(raw: string) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new BadRequestException('stealthData must be a JSON string');
+    }
+    if (!parsed || typeof parsed !== 'object') {
+      throw new BadRequestException('stealthData must be a JSON object');
+    }
+    const { to, value, data } = parsed as Record<string, unknown>;
+    if (typeof to !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(to)) {
+      throw new BadRequestException('stealthData.to must be a 0x address');
+    }
+    if (typeof value !== 'string' || !/^[0-9]+$/.test(value)) {
+      throw new BadRequestException(
+        'stealthData.value must be a decimal string',
+      );
+    }
+    if (typeof data !== 'string' || !/^0x[a-fA-F0-9]*$/.test(data)) {
+      throw new BadRequestException('stealthData.data must be hex-encoded');
     }
   }
 

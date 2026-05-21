@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { ResolvedToken, parseTokenAmount } from "@polypay/shared";
 import { parseEther } from "viem";
+import { StealthToggle } from "~~/components/Transfer/StealthToggle";
 import { ContactPicker } from "~~/components/contact-book/ContactPicker";
 import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
 import { Spinner } from "~~/components/ui/Spinner";
@@ -85,6 +86,7 @@ export default function TransferContainer() {
       amount: data.amount,
       token: selectedToken,
       contactId: selectedContactId,
+      sendPrivately: data.sendPrivately,
     });
   };
 
@@ -265,6 +267,17 @@ export default function TransferContainer() {
           {form.formState.errors.recipient && (
             <p className="text-red-500 text-sm">{form.formState.errors.recipient.message}</p>
           )}
+
+          <div className="w-full mt-3">
+            <StealthToggle
+              checked={!!form.watch("sendPrivately")}
+              onChange={next => form.setValue("sendPrivately", next, { shouldValidate: false })}
+              chainId={selectedAccount?.chainId}
+              tokenAddress={selectedToken.address}
+              recipientAddress={watchedRecipient || undefined}
+              disabled={isLoading}
+            />
+          </div>
         </div>
 
         {/* Action buttons */}
@@ -284,7 +297,8 @@ export default function TransferContainer() {
         <div className="flex gap-2 items-center justify-center w-full max-w-xs">
           <button
             onClick={handleAddToBatch}
-            disabled={!canSubmit}
+            disabled={!canSubmit || !!form.watch("sendPrivately")}
+            title={form.watch("sendPrivately") ? "Stealth send doesn't support batch — propose directly" : undefined}
             className="bg-main-black flex items-center justify-center gap-2 px-3 py-2 rounded-[10px] disabled:opacity-50 cursor-pointer border-0 flex-1 transition-colors"
           >
             {isLoading && <Spinner />}

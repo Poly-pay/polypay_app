@@ -10,6 +10,26 @@ PolyPay uses multiple blockchain layers for privacy-preserving multisig operatio
 
 > **"Destination Chain"** refers to the EVM chain where the multisig account is deployed — either **Horizen** (L3, chain ID 26514) or **Base** (L2, chain ID 8453). The user selects the destination chain when creating an account, and all subsequent operations for that account happen on the same chain.
 
+## Network support matrix
+
+Features available per destination chain. The ZK private multisig core works on every supported chain; integrations on top of it are EVM-ecosystem features that only some chains have.
+
+| Feature | Horizen Mainnet | Horizen Testnet | Base Mainnet | Base Sepolia |
+|---|---|---|---|---|
+| ZK private multisig (transfer, batch, signer mgmt, threshold) | ✅ | ✅ | ✅ | ✅ |
+| ETH transfers (native) | ✅ | ✅ | ✅ | ✅ |
+| ZEN transfers (bridged ERC20) | ✅ | ✅ | ✅ | ✅ |
+| USDC transfers (bridged ERC20) | ✅ | ✅ | ✅ | ✅ |
+| Gasless USDC deposit via x402 | — | — | ✅ | ✅ |
+| Stealth payments (Umbra) | — | — | ✅ | — |
+| Native gas token | ETH | ETH | ETH | ETH |
+
+Notes:
+
+- **x402 gasless deposits** ride on EIP-3009 USDC, available on Base where USDC is canonical.
+- **Stealth payments** rely on the Umbra protocol, which (among PolyPay's supported chains) is only deployed on Base mainnet. See [Stealth Payments](stealth-payments.md).
+- All four chains are EVM L2/L3 networks that use ETH for gas — there is no native ZEN gas token on any of them in PolyPay's current deployments.
+
 ## Blockchain Classification
 
 | Action | Blockchain | Description |

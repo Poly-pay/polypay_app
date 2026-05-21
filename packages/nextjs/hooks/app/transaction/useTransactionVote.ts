@@ -45,6 +45,12 @@ export interface BatchTransfer {
   tokenAddress?: string;
 }
 
+export interface StealthCall {
+  to: `0x${string}`;
+  value: string;
+  data: `0x${string}`;
+}
+
 export interface TransactionRowData {
   id: string;
   txId: number;
@@ -59,6 +65,7 @@ export interface TransactionRowData {
   oldThreshold?: number;
   newThreshold?: number;
   batchData?: BatchTransfer[];
+  stealthCall?: StealthCall;
   contact?: {
     id: string;
     name: string;
@@ -80,6 +87,17 @@ function buildTransactionParams(tx: TransactionRowData): {
   value: bigint;
   callData: `0x${string}`;
 } {
+  // Stealth transactions ship the verbatim (to, value, data) the proposer
+  // executed on chain. Voters must compute the same hash to generate valid
+  // proofs, so always prefer stealthCall when present.
+  if (tx.stealthCall) {
+    return {
+      to: tx.stealthCall.to,
+      value: BigInt(tx.stealthCall.value),
+      callData: tx.stealthCall.data,
+    };
+  }
+
   let callData: `0x${string}` = "0x";
   let to: `0x${string}` = tx.recipientAddress as `0x${string}`;
   let value = BigInt(tx.amount || "0");

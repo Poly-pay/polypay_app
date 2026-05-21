@@ -6,11 +6,35 @@ import { AddressWithContact } from "./AddressWithContact";
 import { getExpandedHeaderText } from "./utils";
 import { TxType, ZERO_ADDRESS, formatTokenAmount, getTokenByAddress } from "@polypay/shared";
 import { Contact } from "@polypay/shared";
+import { Shield } from "lucide-react";
+import { useAccount } from "wagmi";
 import { BatchContactEntry } from "~~/components/modals/CreateBatchFromContactsModal";
 import { modalManager } from "~~/components/modals/ModalLayout";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~~/components/ui/tooltip";
 import { BatchTransfer, TransactionRowData, VoteStatus, useNetworkTokens } from "~~/hooks";
 import { useAccountStore } from "~~/services/store";
 import { formatAddress, formatAmount } from "~~/utils/format";
+
+// Sender-facing badge for stealth transfers. On-chain the call routes
+// through UmbraBatchSend / Umbra, not directly to the displayed recipient
+// — without this marker co-signers might think they're approving a
+// straight transfer.
+function PrivateBadge() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-medium cursor-help">
+          <Shield className="w-3 h-3" />
+          Private
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[280px] bg-grey-1000 text-white">
+        Routed through Umbra. On-chain the call goes to UmbraBatchSend, not directly to the recipient. The recipient
+        withdraws from a one-time stealth address.
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 interface TxHeaderProps {
   tx: TransactionRowData;
@@ -69,6 +93,12 @@ export function TxHeader({
   const shortCommitment = formatAddress(initiatorCommitment, { start: 4, end: 4 });
   const { chainId } = useNetworkTokens();
   const { currentAccount } = useAccountStore();
+  const { address: connectedAddress } = useAccount();
+  const isStealthRecipient =
+    !!tx.stealthCall &&
+    !!connectedAddress &&
+    !!tx.recipientAddress &&
+    tx.recipientAddress.toLowerCase() === connectedAddress.toLowerCase();
 
   const handleDuplicate = () => {
     if (!batchData) return;
@@ -157,7 +187,10 @@ export function TxHeader({
       <div className="bg-violet-300 text-white p-4 rounded-lg">
         {renderHeaderRow()}
         <div className="flex items-center gap-4" key={tx.type}>
-          <span className="mr-10">Tranfer</span>
+          <div className="mr-10 flex items-center gap-2">
+            <span>Tranfer</span>
+            {tx.stealthCall && <PrivateBadge />}
+          </div>
           <Image
             src={getTokenByAddress(tx.tokenAddress, chainId).icon}
             alt={getTokenByAddress(tx.tokenAddress, chainId).symbol}
@@ -166,7 +199,12 @@ export function TxHeader({
           />
           <span>{formatAmount(tx.amount ?? "0", chainId, tx.tokenAddress)}</span>
           <Image src="/icons/arrows/arrow-right-long-white.svg" alt="Arrow Right" width={100} height={100} />
-          <AddressWithContact address={tx.recipientAddress ?? ""} contactName={tx.contact?.name} className="bg-white" />
+          <AddressWithContact
+            address={tx.recipientAddress ?? ""}
+            contactName={tx.contact?.name}
+            className="bg-white"
+            showRecipientDot={isStealthRecipient}
+          />
         </div>
       </div>
     );
@@ -200,6 +238,11 @@ export function TxHeader({
     return (
       <div className="bg-violet-300 text-white p-4 rounded-lg">
         {renderHeaderRow()}
+        {tx.stealthCall && (
+          <div className="mb-2">
+            <PrivateBadge />
+          </div>
+        )}
         <div className="space-y-2 max-h-[200px] overflow-y-auto">
           {tx.batchData.map((transfer, index) => (
             <div className="flex items-center gap-4" key={tx.type + index}>

@@ -41,6 +41,8 @@ export const transferSchema = z.object({
       message: "Invalid address format",
     }),
   amount: z.string(),
+  // Transient UI flag for stealth send (Transfer page only). Not persisted.
+  sendPrivately: z.boolean().optional(),
 });
 export type TransferFormData = z.infer<typeof transferSchema>;
 

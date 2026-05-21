@@ -1,5 +1,5 @@
 import { Transaction, TxType, VoteType } from "@polypay/shared";
-import { BatchTransfer, Member, TransactionRowData, VoteStatus } from "~~/hooks";
+import { BatchTransfer, Member, StealthCall, TransactionRowData, VoteStatus } from "~~/hooks";
 
 export function convertToRowData(tx: Transaction, myCommitment: string): TransactionRowData {
   const members: Member[] = tx.votes.map(vote => ({
@@ -27,6 +27,21 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     }
   }
 
+  let stealthCall: StealthCall | undefined;
+  if (tx.stealthData) {
+    try {
+      const parsed = JSON.parse(tx.stealthData) as StealthCall;
+      // Trust the shape because the backend validated it on create; if it
+      // ever drifts, voters will just see no stealthCall and fall back to
+      // the (broken) semantic rebuild — same result as before this feature.
+      if (parsed && parsed.to && parsed.value && parsed.data) {
+        stealthCall = parsed;
+      }
+    } catch {
+      stealthCall = undefined;
+    }
+  }
+
   return {
     id: tx.id,
     txId: tx.txId,
@@ -41,6 +56,7 @@ export function convertToRowData(tx: Transaction, myCommitment: string): Transac
     oldThreshold: tx.threshold,
     newThreshold: tx.newThreshold || undefined,
     batchData,
+    stealthCall,
     members,
     votedCount: tx.votes.length,
     threshold: tx.threshold,
