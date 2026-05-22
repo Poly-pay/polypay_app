@@ -14,7 +14,7 @@ import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useZodForm } from "~~/hooks/form";
 import { TransferFormData, transferSchema } from "~~/lib/form";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
-import { formatErrorMessage } from "~~/utils/formatError";
+import { notifyError } from "~~/utils/errorHandler";
 import { notification } from "~~/utils/scaffold-eth";
 
 export default function TransferContainer() {
@@ -129,7 +129,7 @@ export default function TransferContainer() {
       setSelectedContactId(null);
     } catch (error: any) {
       console.error("Add to batch error:", error);
-      notification.error(formatErrorMessage(error, "Failed to add to batch"));
+      notifyError(error, "Failed to add to batch");
     }
   };
 

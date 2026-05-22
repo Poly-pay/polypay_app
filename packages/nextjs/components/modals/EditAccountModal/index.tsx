@@ -10,7 +10,7 @@ import { WARNING_AUTO_HIDE } from "~~/constants/timing";
 import { useAccount, useMetaMultiSigWallet, useSignerTransaction } from "~~/hooks";
 import { useAccountStore, useIdentityStore, useSidebarStore } from "~~/services/store";
 import { ModalProps } from "~~/types/modal";
-import { formatErrorMessage } from "~~/utils/formatError";
+import { notifyError } from "~~/utils/errorHandler";
 import { notification } from "~~/utils/scaffold-eth";
 
 const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
@@ -151,7 +151,7 @@ const EditAccountModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       closeManageAccounts();
     } catch (error: any) {
       console.error("Failed to submit proposal:", error);
-      notification.error(formatErrorMessage(error, "Failed to submit proposal"));
+      notifyError(error, "Failed to submit proposal");
       setStep("confirm"); // Back to confirm on error
       setIsSubmitting(false);
     }

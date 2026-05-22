@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { ISigner } from "~~/types/form/account";
 import { copyToClipboard } from "~~/utils/copy";
+import { formatCommitment } from "~~/utils/format";
 import { getNetworkMeta } from "~~/utils/network";
 import { getValidSigners } from "~~/utils/signer";
 
@@ -161,7 +162,7 @@ const StatusContainer: React.FC<StatusContainerProps> = ({
                             className="text-[11px] font-mono text-gray-500 truncate cursor-pointer hover:text-gray-700"
                             onClick={() => copyToClipboard(signer.commitment, "Membership ID copied to clipboard")}
                           >
-                            {signer.commitment.slice(0, 12)}...{signer.commitment.slice(-4)}
+                            {formatCommitment(signer.commitment, { start: 12, end: 4 })}
                           </div>
                         </div>
                       </div>

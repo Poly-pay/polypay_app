@@ -7,7 +7,7 @@ import { useCreateTransaction, useReserveNonce } from "~~/hooks/api";
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
-import { formatErrorMessage } from "~~/utils/formatError";
+import { notifyError } from "~~/utils/errorHandler";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface UseBatchTransactionOptions {
@@ -108,7 +108,7 @@ export const useBatchTransaction = (options?: UseBatchTransactionOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Propose batch error:", error);
-      notification.error(formatErrorMessage(error, "Failed to propose batch"));
+      notifyError(error, "Failed to propose batch");
     } finally {
       reset();
     }

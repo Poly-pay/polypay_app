@@ -71,6 +71,14 @@ export function parseError(error: any): AppError {
 }
 
 /**
+ * Show an error notification with a user-friendly message.
+ * Thin wrapper to keep error-display consistent across components.
+ */
+export function notifyError(error: unknown, fallback?: string): void {
+  notification.error(formatErrorMessage(error, fallback));
+}
+
+/**
  * Handle error with notification and optional logout
  * @returns parsed AppError for further handling
  */

@@ -1,9 +1,22 @@
+import { formatErrorMessage } from "./formatError";
 import { notification } from "./scaffold-eth";
 
-export function copyToClipboard(text: string, textNotification?: string) {
-  if (navigator.clipboard && window.isSecureContext) {
-    // navigator clipboard api method'
-    notification.info(textNotification || "Copied to clipboard");
-    return navigator.clipboard.writeText(text);
+/**
+ * Copy text to the clipboard and show a success notification.
+ * Returns true on success, false if the clipboard is unavailable or the write fails.
+ */
+export async function copyToClipboard(text: string, successMessage = "Copied to clipboard"): Promise<boolean> {
+  if (!navigator.clipboard || !window.isSecureContext) {
+    notification.error("Clipboard is not available in this context");
+    return false;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    notification.success(successMessage);
+    return true;
+  } catch (error) {
+    notification.error(formatErrorMessage(error, "Failed to copy"));
+    return false;
   }
 }
