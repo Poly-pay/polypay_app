@@ -130,7 +130,6 @@ http://localhost:4000/api
 | POST | `/users` | Create new user | No |
 | GET | `/users/me` | Get current user | Yes |
 | GET | `/users/me/accounts` | Get user's accounts | Yes |
-| PATCH | `/users/me` | Update current user | Yes |
 
 #### Wallets (`/api/accounts`)
 
