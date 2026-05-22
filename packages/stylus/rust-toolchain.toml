@@ -1,0 +1,6 @@
+[toolchain]
+# cargo-stylus requires a SPECIFIC version (not "stable") for reproducible builds.
+# Match this to your installed toolchain.
+channel = "1.94.1"
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"
