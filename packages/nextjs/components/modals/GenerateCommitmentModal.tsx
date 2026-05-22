@@ -10,8 +10,8 @@ import { useAuth } from "~~/hooks";
 import { DecoreCircleIcon } from "~~/icons/DecoreCircleIcon";
 import { ModalProps } from "~~/types/modal";
 import { copyToClipboard } from "~~/utils/copy";
-import { formatErrorMessage } from "~~/utils/formatError";
-import { notification } from "~~/utils/scaffold-eth";
+import { notifyError } from "~~/utils/errorHandler";
+import { formatCommitment } from "~~/utils/format";
 
 const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const { login, isLoading, error, commitment } = useAuth();
@@ -24,7 +24,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
   const handleGenerateAndLogin = async () => {
     const success = await login();
     if (!success) {
-      notification.error(formatErrorMessage(error, "Login failed. Please try again."));
+      notifyError(error, "Login failed. Please try again.");
     }
   };
 
@@ -88,7 +88,7 @@ const GenerateCommitmentModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
               {/* Commitment text */}
               <span className="flex-1 text-pink-175 font-family-repetition text-[17px] tracking-[0.03em] truncate">
                 <DecryptedText
-                  text={`${commitment.slice(0, 24)}...${commitment.slice(-4)}`}
+                  text={formatCommitment(commitment, { start: 24, end: 4 })}
                   animateOn="view"
                   revealDirection="center"
                 />

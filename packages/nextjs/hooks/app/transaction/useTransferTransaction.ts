@@ -8,7 +8,7 @@ import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransacti
 import { useGenerateProof } from "~~/hooks/app/useGenerateProof";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useAccountStore } from "~~/services/store";
-import { formatErrorMessage } from "~~/utils/formatError";
+import { notifyError } from "~~/utils/errorHandler";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface TransferParams {
@@ -110,7 +110,7 @@ export const useTransferTransaction = (options?: UseTransferTransactionOptions) 
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Transfer error:", error);
-      notification.error(formatErrorMessage(error, "Failed to create transfer"));
+      notifyError(error, "Failed to create transfer");
     } finally {
       reset();
     }

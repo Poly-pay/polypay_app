@@ -91,7 +91,7 @@ This two-step verification ensures only authorized signers can sign transactions
 | signature | [u8; 64] | ECDSA signature (r, s) without recovery byte |
 | pub_key_x | [u8; 32] | Public key X coordinate |
 | pub_key_y | [u8; 32] | Public key Y coordinate |
-| secret | Field | Signer's secret (from signing "polypay-identity") |
+| secret | Field | Signer's secret (from signing "noir-identity") |
 | tx_hash_bytes | [u8; 32] | Transaction hash to sign |
 
 ### Public Inputs (Visible on-chain)

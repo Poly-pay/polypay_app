@@ -17,6 +17,7 @@ import { useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAccountStore, useIdentityStore } from "~~/services/store";
 import { getAccountAvatar, getAvatarByCommitment } from "~~/utils/avatar";
 import { copyToClipboard } from "~~/utils/copy";
+import { formatAddress, formatCommitment } from "~~/utils/format";
 import { getBlockExplorerAddressLink } from "~~/utils/scaffold-eth";
 
 interface AccountSidebarProps {
@@ -74,8 +75,8 @@ export default function AccountSidebar({ onOpenManageAccounts }: AccountSidebarP
   }
 
   // Format address
-  const shortAddress = `${walletClient.account.address.slice(0, 4)}...${walletClient.account.address.slice(-3)}`;
-  const shortCommitment = commitment ? `${commitment.slice(0, 4)}...${commitment.slice(-4)}` : null;
+  const shortAddress = formatAddress(walletClient.account.address, { start: 4, end: 3 });
+  const shortCommitment = commitment ? formatCommitment(commitment, { start: 4, end: 4 }) : null;
 
   return (
     <div className="p-3 bg-main-white border border-grey-200 rounded-xl flex flex-col gap-1.5">

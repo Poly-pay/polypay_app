@@ -6,7 +6,7 @@ import { useGenerateProof, useMetaMultiSigWallet, useWalletCommitments, useWalle
 import { useCreateTransaction, useReserveNonce } from "~~/hooks/api/useTransaction";
 import { useStepLoading } from "~~/hooks/app/useStepLoading";
 import { useAccountStore } from "~~/services/store";
-import { formatErrorMessage } from "~~/utils/formatError";
+import { notifyError } from "~~/utils/errorHandler";
 import { notification } from "~~/utils/scaffold-eth";
 
 interface UseSignerTransactionOptions {
@@ -118,7 +118,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Failed to add signer:", error);
-      notification.error(formatErrorMessage(error, "Failed to add signer"));
+      notifyError(error, "Failed to add signer");
     } finally {
       reset();
     }
@@ -168,7 +168,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Failed to remove signer:", error);
-      notification.error(formatErrorMessage(error, "Failed to remove signer"));
+      notifyError(error, "Failed to remove signer");
     } finally {
       reset();
     }
@@ -195,7 +195,7 @@ export const useSignerTransaction = (options?: UseSignerTransactionOptions) => {
       options?.onSuccess?.();
     } catch (error: any) {
       console.error("Failed to update threshold:", error);
-      notification.error(formatErrorMessage(error, "Failed to update threshold"));
+      notifyError(error, "Failed to update threshold");
     } finally {
       reset();
     }
