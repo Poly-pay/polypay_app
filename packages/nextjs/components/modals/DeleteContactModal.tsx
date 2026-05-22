@@ -6,9 +6,8 @@ import { Contact } from "@polypay/shared";
 import { X } from "lucide-react";
 import { useDeleteContact } from "~~/hooks";
 import { DecoreCircleIcon } from "~~/icons/DecoreCircleIcon";
+import { notifyError } from "~~/utils/errorHandler";
 import { formatAddress } from "~~/utils/format";
-import { formatErrorMessage } from "~~/utils/formatError";
-import { notification } from "~~/utils/scaffold-eth";
 
 interface DeleteContactModalProps {
   isOpen: boolean;
@@ -38,7 +37,7 @@ const DeleteContactModal = ({
       onSuccess?.();
       onClose();
     } catch (err) {
-      notification.error(formatErrorMessage(err, "Failed to delete contact"));
+      notifyError(err, "Failed to delete contact");
     }
   };
 

@@ -5,8 +5,8 @@ import { Notification } from "@polypay/shared";
 import { Check, Copy } from "lucide-react";
 import { COPY_FEEDBACK_DURATION } from "~~/constants/timing";
 import { useMarkNotificationAsRead } from "~~/hooks";
-import { formatErrorMessage } from "~~/utils/formatError";
-import { notification as toast } from "~~/utils/scaffold-eth";
+import { copyToClipboard } from "~~/utils/copy";
+import { formatCommitment } from "~~/utils/format";
 
 interface NotificationItemProps {
   notification: Notification;
@@ -17,19 +17,15 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({ notification
   const [copied, setCopied] = React.useState(false);
 
   const senderCommitment = notification.sender?.commitment || "";
-  const truncatedCommitment = `${senderCommitment.slice(0, 10)}...${senderCommitment.slice(-8)}`;
+  const truncatedCommitment = formatCommitment(senderCommitment, { start: 10, end: 8 });
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    try {
-      await navigator.clipboard.writeText(senderCommitment);
+    const ok = await copyToClipboard(senderCommitment, "Membership ID copied!");
+    if (ok) {
       setCopied(true);
-      toast.success("Membership ID copied!");
-
       setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION);
-    } catch (error) {
-      toast.error(formatErrorMessage(error, "Failed to copy"));
     }
   };
 

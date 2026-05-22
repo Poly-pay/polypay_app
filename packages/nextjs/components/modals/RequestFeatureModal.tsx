@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { FeatureRequestFormData, featureRequestSchema } from "~~/lib/form/schemas";
 import { featureRequestApi } from "~~/services/api";
 import { ModalProps } from "~~/types/modal";
-import { formatErrorMessage } from "~~/utils/formatError";
+import { notifyError } from "~~/utils/errorHandler";
 import { notification } from "~~/utils/scaffold-eth";
 
 const BUTTON_BASE_CLASS = "text-main-black font-medium h-9 text-sm rounded-lg disabled:opacity-50";
@@ -34,7 +34,7 @@ const RequestFeatureModal: React.FC<ModalProps> = ({ isOpen, onClose }) => {
       reset();
       onClose();
     } catch (error) {
-      notification.error(formatErrorMessage(error, "Failed to submit feature request"));
+      notifyError(error, "Failed to submit feature request");
     }
   };
 

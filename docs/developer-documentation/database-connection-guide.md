@@ -30,19 +30,26 @@ PolyPay uses **PostgreSQL 16** as its database, managed by **Prisma ORM**.
 
 ### Database Tables
 
-The database contains 12 tables:
+The database contains 18 application tables (plus Prisma's `_prisma_migrations`):
 
 - `users` - User accounts with membership-ID-based identity (the database column is named `commitment` for backwards compatibility)
 - `accounts` - Multi-signature accounts
 - `account_signers` - Many-to-many relationship between users and accounts
 - `transactions` - Transaction records (TRANSFER, BATCH, ADD_SIGNER, etc.)
+- `reserved_nonces` - Temporary nonce reservations (2-min TTL)
 - `votes` - ZK proof votes for transactions
 - `batch_items` - Items in batch payments
-- `contacts` - Saved recipient addresses
 - `contact_groups` - Contact groups
+- `contacts` - Saved recipient addresses
 - `contact_group_entries` - Many-to-many relationship between contacts and groups
 - `notifications` - User notifications
-- `reserved_nonces` - Temporary nonce reservations (2-min TTL)
+- `feature_requests` - User-submitted feature requests
+- `quests` - Quest / gamification definitions
+- `point_histories` - Point (Zen) earning history
+- `login_history` - User login history
+- `claim_histories` - Reward claim history
+- `weekly_zen_prices` - Weekly Zen price snapshots
+- `x402_deposits` - x402 protocol deposit records
 - `_prisma_migrations` - Migration history
 
 ---
@@ -285,21 +292,21 @@ SELECT * FROM "users";
 
 **Sample Output:**
 ```
-           id           |                         commitment                          | name  |         createdAt          |         updatedAt
-------------------------+-------------------------------------------------------------+-------+----------------------------+----------------------------
- cmjqwz6ma0000z30g7n5x7mng | 11929693182900301036129064097584397649043495813248127264764... | NULL  | 2025-12-29T01:46:24.322Z  | 2025-12-29T01:46:24.322Z
- cmjqx0lso0003z30g7mwgqw4t | 14477441120600890950319476616048398915250246163026472112136... | NULL  | 2025-12-29T01:47:30.648Z  | 2025-12-29T01:47:30.648Z
- cmjs9mv6u00043h0gwqz2eqbq | 60277843965429234127374181712568449813557139821167903709222... | NULL  | 2025-12-30T00:28:30.822Z  | 2025-12-30T00:28:30.822Z
- cmk23wr5d0009td0g9o6kbb53a | 83168478697521869364693811390424592439717889897640643770797... | me    | 2026-01-05T21:45:56.209Z  | 2026-01-05T22:16:18.148Z
- cmk26xi6e0002h10g835bdtj4 | 18712425590517920354542306734510523399880577119526949113387... | iAm   | 2026-01-05T23:10:30.086Z  | 2026-01-05T23:10:56.310Z
- cmk29lsla0000qb0gqsrdy54p | 13375761036262685922334882354442561603957609274167850327536... | MelAm | 2026-01-06T00:25:22.557Z  | 2026-01-06T03:24:07.054Z
- cmk3hhnqx0000rp0gdkgg41bk | 17521970379075944069981168887327936307280396119960104090322... | me    | 2026-01-06T20:53:52.761Z  | 2026-01-06T21:07:56.116Z
+           id            |                         commitment                          |        createdAt         |        updatedAt
+-------------------------+-------------------------------------------------------------+--------------------------+--------------------------
+ cmjqwz6ma0000z30g7n5x7mng | 11929693182900301036129064097584397649043495813248127264764... | 2025-12-29T01:46:24.322Z | 2025-12-29T01:46:24.322Z
+ cmjqx0lso0003z30g7mwgqw4t | 14477441120600890950319476616048398915250246163026472112136... | 2025-12-29T01:47:30.648Z | 2025-12-29T01:47:30.648Z
+ cmjs9mv6u00043h0gwqz2eqbq | 60277843965429234127374181712568449813557139821167903709222... | 2025-12-30T00:28:30.822Z | 2025-12-30T00:28:30.822Z
+ cmk23wr5d0009td0g9o6kbb53a | 83168478697521869364693811390424592439717889897640643770797... | 2026-01-05T21:45:56.209Z | 2026-01-05T22:16:18.148Z
+ cmk26xi6e0002h10g835bdtj4 | 18712425590517920354542306734510523399880577119526949113387... | 2026-01-05T23:10:30.086Z | 2026-01-05T23:10:56.310Z
+ cmk29lsla0000qb0gqsrdy54p | 13375761036262685922334882354442561603957609274167850327536... | 2026-01-06T00:25:22.557Z | 2026-01-06T03:24:07.054Z
+ cmk3hhnqx0000rp0gdkgg41bk | 17521970379075944069981168887327936307280396119960104090322... | 2026-01-06T20:53:52.761Z | 2026-01-06T21:07:56.116Z
 (7 rows)
 ```
 
 **Select specific columns:**
 ```sql
-SELECT id, name, "createdAt" FROM "users";
+SELECT id, commitment, "createdAt" FROM "users";
 ```
 
 **Filter results:**

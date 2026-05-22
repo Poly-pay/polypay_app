@@ -2,7 +2,7 @@
 
 ### Prerequisites
 
-- Node.js v18+
+- Node.js >=20.18.3
 - Yarn package manager
 - Docker (recommended)
 
@@ -35,7 +35,7 @@ docker compose up -d
 
 ```bash
 # 1. Clone the repository
-git clone clone git@github.com:Poly-pay/polypay_app.git
+git clone git@github.com:Poly-pay/polypay_app.git
 cd polypay_app
 
 # 2. Install dependencies

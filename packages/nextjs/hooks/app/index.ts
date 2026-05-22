@@ -13,3 +13,4 @@ export * from "./transaction/useBatchTransaction";
 export * from "./transaction/useTransactionVote";
 export * from "./useInfiniteScroll";
 export * from "./useNetworkTokens";
+export * from "./useTokenResolver";

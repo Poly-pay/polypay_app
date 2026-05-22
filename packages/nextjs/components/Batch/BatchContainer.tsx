@@ -7,14 +7,14 @@ import EditBatchPopover from "../popovers/EditBatchPopover";
 import { BatchSekeletons } from "../skeletons/BatchSkeletons";
 import TransactionSummary from "./TransactionSummary";
 import { TransactionSummaryDrawer } from "./TransactionSummaryDrawer";
-import { BatchItem, ResolvedToken, getTokenByAddress, parseTokenAmount } from "@polypay/shared";
+import { BatchItem, ResolvedToken, parseTokenAmount } from "@polypay/shared";
 import AddressNamedTooltip from "~~/components/tooltips/AddressNamedTooltip";
 import { useBatchTransaction, useContacts, useModalApp } from "~~/hooks";
 import { useDeleteBatchItem, useMyBatchItems, useUpdateBatchItem } from "~~/hooks/api";
-import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
+import { useTokenResolver } from "~~/hooks/app/useTokenResolver";
 import { useAccountStore } from "~~/services/store";
+import { notifyError } from "~~/utils/errorHandler";
 import { formatAddress, formatAmount } from "~~/utils/format";
-import { formatErrorMessage } from "~~/utils/formatError";
 import { notification } from "~~/utils/scaffold-eth";
 
 // ==================== Custom Checkbox ====================
@@ -76,11 +76,9 @@ function BatchTransactions({
   accountId: string | null;
 }) {
   const { openModal } = useModalApp();
-  const { chainId } = useNetworkTokens();
+  const { chainId, getToken } = useTokenResolver();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const { data: contacts = [] } = useContacts(accountId);
-
-  const getToken = useCallback((address: string | null | undefined) => getTokenByAddress(address, chainId), [chainId]);
 
   const editButtonRefs = useMemo<Record<string, React.RefObject<HTMLButtonElement | null>>>(() => {
     const refs: Record<string, React.RefObject<HTMLButtonElement | null>> = {};
@@ -276,9 +274,7 @@ export default function BatchContainer() {
   const { mutateAsync: updateBatchItem } = useUpdateBatchItem();
   const { data: batchItems = [], isLoading, refetch: refetchBatchItems } = useMyBatchItems();
   const { currentAccount } = useAccountStore();
-  const { chainId } = useNetworkTokens();
-
-  const getToken = useCallback((address: string | null | undefined) => getTokenByAddress(address, chainId), [chainId]);
+  const { chainId, getToken } = useTokenResolver();
 
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [activeItem, setActiveItem] = useState<string | null>(null);
@@ -348,7 +344,7 @@ export default function BatchContainer() {
 
         notification.success("Batch item removed successfully");
       } catch (error) {
-        notification.error(formatErrorMessage(error, "Failed to remove batch item"));
+        notifyError(error, "Failed to remove batch item");
       }
     },
     [deleteBatchItem, activeItem],
@@ -372,7 +368,7 @@ export default function BatchContainer() {
         notification.success("Batch item updated successfully");
         await refetchBatchItems();
       } catch (error) {
-        notification.error(formatErrorMessage(error, "Failed to update batch item"));
+        notifyError(error, "Failed to update batch item");
       }
     },
     [updateBatchItem, refetchBatchItems],
