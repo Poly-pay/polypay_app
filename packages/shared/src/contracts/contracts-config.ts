@@ -27,6 +27,18 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
       "0xb3c5381523a496996868370791ec7ae490be7e2c996296fb67708daed8a6ea38",
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
   },
+  421614: {
+    // Arbitrum Sepolia (testnet only — zkVerify has no Arbitrum One mainnet verifier yet).
+    // On this chain the account contract is the Stylus (Rust/WASM) port of
+    // MetaMultiSigWallet; it STATICCALLs the PoseidonT3 + zkVerify contracts below.
+    // zkVerifyAddress: zkVerify aggregation proxy on Arbitrum Sepolia.
+    zkVerifyAddress: "0xd007494945580eEb25522c8e0b2fa798B3F0FDE2",
+    vkHash:
+      "0xb3c5381523a496996868370791ec7ae490be7e2c996296fb67708daed8a6ea38",
+    // PoseidonT3 must be deployed on Arbitrum Sepolia. Use the deterministic
+    // address if redeployed via the same CREATE2 factory; otherwise update this.
+    poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
+  },
 } as const;
 
 export const getContractConfigByChainId = (chainId: number) => {
