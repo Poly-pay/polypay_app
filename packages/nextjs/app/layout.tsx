@@ -25,6 +25,14 @@ export const metadata = getMetadata({
   description: "A secure and user-friendly wallet for your digital assets",
 });
 
+// When mobile blocking is off (default), force a desktop-width viewport so
+// mobile browsers render the full desktop layout (zoomed out) instead of
+// breaking. When blocking is on, fall back to device-width so the /mobile
+// screen renders correctly. Temporary while mobile is unsupported.
+export const viewport = {
+  width: process.env.NEXT_PUBLIC_ENABLE_MOBILE_BLOCK === "true" ? "device-width" : 1440,
+};
+
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   return (
     <html suppressHydrationWarning className={`${barlow.variable} ${repetitionScroll.variable} font-barlow`}>
