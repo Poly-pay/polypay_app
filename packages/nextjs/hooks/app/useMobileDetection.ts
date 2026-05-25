@@ -10,6 +10,13 @@ export function useMobileDetection() {
   const router = useAppRouter();
 
   useEffect(() => {
+    // Mobile blocking is opt-in via env flag; disabled by default so mobile
+    // users see the (zoomed-out) desktop layout instead of the /mobile screen.
+    if (process.env.NEXT_PUBLIC_ENABLE_MOBILE_BLOCK !== "true") {
+      setIsLoading(false);
+      return;
+    }
+
     const checkMobile = () => {
       const isMobileDevice = window.innerWidth <= 780;
 
