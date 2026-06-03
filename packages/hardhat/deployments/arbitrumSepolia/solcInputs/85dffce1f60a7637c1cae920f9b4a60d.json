@@ -1,0 +1,36 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/MetaMultiSigWalletStylusFactory.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\n// EIP-1167 minimal-proxy factory for the Stylus MetaMultiSigWallet.\n//\n// The Stylus port of MetaMultiSigWallet is ~29 KB compressed on Arbitrum, which\n// exceeds the 24 KB EVM code-size limit. cargo-stylus deploys it as a\n// fragmented contract, which means the canonical StylusDeployer's single-\n// bytecode `deploy(bytecode, initData, ...)` path cannot represent it. Instead\n// we deploy the Stylus contract ONCE as an implementation, then for each user\n// account we deploy a tiny EIP-1167 proxy (~45 bytes of EVM bytecode, well\n// under the limit) that delegatecalls into the impl. The proxy holds its own\n// storage, so each account has independent signers/nonces/nullifiers while\n// sharing one piece of WASM logic.\n//\n// Stylus/EVM interop note: when an EVM contract DELEGATECALLs a Stylus\n// program, the Arbitrum runtime routes the call into the WASM VM with the\n// caller's storage context — confirmed compatible with EIP-1167 proxies (see\n// the Stylus Saturdays \"Writing proxies in Arbitrum Stylus\" issue).\ncontract MetaMultiSigWalletStylusFactory {\n    // Stylus impl whose code every proxy will delegatecall into. Immutable so\n    // the factory commits to a single, audited impl version per deployment.\n    address public immutable implementation;\n\n    event WalletCreated(address indexed wallet, uint256[] commitments, uint256 signaturesRequired);\n\n    constructor(address _implementation) {\n        require(_implementation != address(0), \"Invalid implementation\");\n        implementation = _implementation;\n    }\n\n    // Atomically clone the impl and call init() on the new proxy. Reverts if\n    // init reverts so we never return a half-initialized wallet address.\n    function createWallet(\n        address zkvContract,\n        bytes32 vkHash,\n        address poseidonT3,\n        uint256 chainId,\n        uint256[] calldata initialCommitments,\n        uint256 signaturesRequired\n    ) external returns (address wallet) {\n        wallet = _cloneEIP1167(implementation);\n\n        (bool ok, bytes memory ret) = wallet.call(\n            abi.encodeWithSignature(\n                \"init(address,bytes32,address,uint256,uint256[],uint256)\",\n                zkvContract,\n                vkHash,\n                poseidonT3,\n                chainId,\n                initialCommitments,\n                signaturesRequired\n            )\n        );\n        if (!ok) {\n            // Bubble up the original revert data so the relayer sees the real\n            // reason (e.g. WalletError(reason)) rather than a generic \"init\n            // failed\".\n            assembly {\n                revert(add(ret, 0x20), mload(ret))\n            }\n        }\n\n        emit WalletCreated(wallet, initialCommitments, signaturesRequired);\n    }\n\n    // Minimal proxy deployment via CREATE. EIP-1167 with a 5-byte prefix that\n    // accepts plain ETH transfers locally instead of delegatecalling on empty\n    // calldata. Required because the Stylus impl is fragmented by cargo-stylus;\n    // the loader fragment dispatches on a 4-byte selector and reverts on empty\n    // calldata, which would otherwise make plain `addr.transfer(...)` deposits\n    // (and `receive()` routing) revert at gas estimation.\n    //\n    // Runtime layout (52 bytes):\n    //   00: 36 15 60 32 57          if calldatasize == 0 → JUMPI to 0x32\n    //   05..30: standard EIP-1167 body (PUSH1 jumpdest 0x2b shifted to 0x30)\n    //   31: f3                       (RETURN inside EIP-1167 body)\n    //   32: 5b 00                   JUMPDEST + STOP — empty-calldata branch\n    function _cloneEIP1167(address target) private returns (address instance) {\n        bytes20 targetBytes = bytes20(target);\n        assembly {\n            let ptr := mload(0x40)\n            // bytes [0..24]: creation prefix (10) + empty-calldata check (5) +\n            // EIP-1167 prelude up to PUSH20 (10); last 7 bytes of the word are\n            // zero padding that the next mstore overwrites with the address.\n            mstore(ptr, 0x3d603480600a3d3981f33615603257363d3d373d3d3d363d7300000000000000)\n            // bytes [25..44]: 20-byte impl address (bytes20 left-aligned).\n            mstore(add(ptr, 25), targetBytes)\n            // bytes [45..61]: EIP-1167 suffix with internal JUMPDEST shifted\n            // from 0x2b to 0x30, followed by the empty-calldata JUMPDEST + STOP.\n            mstore(add(ptr, 45), 0x5af43d82803e903d91603057fd5bf35b00000000000000000000000000000000)\n            instance := create(0, ptr, 62)\n        }\n        require(instance != address(0), \"Clone failed\");\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "evmVersion": "paris",
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}

@@ -4,9 +4,6 @@ import {
   createPublicClient,
   http,
   decodeFunctionData,
-  encodeAbiParameters,
-  toFunctionSelector,
-  concatHex,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import {
@@ -14,9 +11,8 @@ import {
   getChainById,
   getContractConfigByChainId,
   isStylusChain,
-  STYLUS_DEPLOYER_ADDRESS,
-  STYLUS_DEPLOYER_ABI,
-  METAMULTISIG_STYLUS_CONSTRUCTOR_ABI,
+  getStylusFactoryAddress,
+  METAMULTISIG_STYLUS_FACTORY_ABI,
 } from '@polypay/shared';
 import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
@@ -41,8 +37,6 @@ export class RelayerService {
   private readonly logger = new Logger(RelayerService.name);
   private readonly account;
   private readonly clientsByChainId = new Map<number, RelayerChainClient>();
-  private readonly stylusDeployBytecode?: string;
-  private readonly stylusDeployerAddress: `0x${string}`;
 
   constructor(private readonly configService: ConfigService) {
     const privateKey = this.configService.get<string>(
@@ -54,14 +48,6 @@ export class RelayerService {
     }
 
     this.account = privateKeyToAccount(privateKey);
-
-    // Stylus (Arbitrum) deployment config — optional; only needed for Stylus chains.
-    this.stylusDeployBytecode = this.configService.get<string>(
-      CONFIG_KEYS.STYLUS_MULTISIG_DEPLOY_BYTECODE,
-    );
-    this.stylusDeployerAddress = (this.configService.get<string>(
-      CONFIG_KEYS.STYLUS_DEPLOYER_ADDRESS,
-    ) || STYLUS_DEPLOYER_ADDRESS) as `0x${string}`;
 
     // Initialize clients for all supported chains
     const supportedChainIds = SUPPORTED_CHAIN_IDS;
@@ -157,13 +143,15 @@ export class RelayerService {
   }
 
   /**
-   * Deploy the Stylus (Rust/WASM) MetaMultiSigWallet on an Arbitrum Stylus chain.
+   * Deploy a per-account MetaMultiSigWallet on an Arbitrum Stylus chain via an
+   * EIP-1167 minimal proxy in front of the shared Stylus impl.
    *
-   * Unlike the EVM path, a Stylus contract with a constructor must be deployed
-   * through the StylusDeployer, which deploys the WASM program, activates it, and
-   * runs the constructor in a single transaction. The constructor takes the same
-   * args as the EVM contract plus the PoseidonT3 address (Stylus has no linked
-   * libraries, so the wallet STATICCALLs PoseidonT3 by address at runtime).
+   * Why the proxy: the Stylus impl is ~29 KB compressed (over the 24 KB EVM
+   * code-size limit) so cargo-stylus fragments it on-chain, which makes
+   * single-bytecode StylusDeployer deploys unusable for per-account creation.
+   * The factory clones a tiny EVM proxy whose fallback delegatecalls into the
+   * impl, then atomically calls `init(...)` on the clone in the same tx so we
+   * never expose a half-initialized wallet.
    */
   private async deployStylusAccount(
     commitments: string[],
@@ -173,56 +161,32 @@ export class RelayerService {
     const { chain, walletClient, publicClient, contractConfig } =
       this.getChainClient(chainId);
 
-    if (!this.stylusDeployBytecode) {
-      throw new Error(
-        `STYLUS_MULTISIG_DEPLOY_BYTECODE is not set; cannot deploy Stylus account on chain ${chainId}`,
-      );
-    }
-
-    const bytecode = (
-      this.stylusDeployBytecode.startsWith('0x')
-        ? this.stylusDeployBytecode
-        : `0x${this.stylusDeployBytecode}`
-    ) as `0x${string}`;
+    const factoryAddress = getStylusFactoryAddress(chainId);
 
     const commitmentsBigInt = commitments.map((c) => BigInt(c));
 
-    // StylusDeployer forwards initData to the new contract to run its constructor.
-    // Format (per stylus-tools): selector of `stylus_constructor()` followed by the
-    // ABI-encoded constructor args.
-    const constructorArgs = encodeAbiParameters(
-      METAMULTISIG_STYLUS_CONSTRUCTOR_ABI[0].inputs,
-      [
-        contractConfig.zkVerifyAddress,
-        contractConfig.vkHash as `0x${string}`,
-        contractConfig.poseidonT3Address as `0x${string}`,
-        BigInt(chain.id),
-        commitmentsBigInt,
-        BigInt(threshold),
-      ],
-    );
-    const initData = concatHex([
-      toFunctionSelector('stylus_constructor()'),
-      constructorArgs,
-    ]);
-
-    // Zero salt → StylusDeployer uses CREATE (nonce-based), unique per deploy.
-    const salt =
-      '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`;
-
-    // Simulate first to capture the deployed address returned by StylusDeployer.
+    // Simulate first to capture the proxy address returned by `createWallet`.
     const { result: deployedAddress, request } =
       await publicClient.simulateContract({
-        address: this.stylusDeployerAddress,
-        abi: STYLUS_DEPLOYER_ABI,
-        functionName: 'deploy',
-        args: [bytecode, initData, 0n, salt],
+        address: factoryAddress,
+        abi: METAMULTISIG_STYLUS_FACTORY_ABI,
+        functionName: 'createWallet',
+        args: [
+          contractConfig.zkVerifyAddress,
+          contractConfig.vkHash as `0x${string}`,
+          contractConfig.poseidonT3Address as `0x${string}`,
+          BigInt(chain.id),
+          commitmentsBigInt,
+          BigInt(threshold),
+        ],
         account: this.account,
         chain,
       });
 
     const txHash = await walletClient.writeContract(request);
-    this.logger.log(`Stylus deploy tx sent on chain ${chainId}: ${txHash}`);
+    this.logger.log(
+      `Stylus factory createWallet tx sent on chain ${chainId}: ${txHash}`,
+    );
 
     const receipt = await waitForReceiptWithRetry(publicClient, txHash);
     if (receipt.status === 'reverted') {
@@ -230,7 +194,7 @@ export class RelayerService {
     }
 
     const address = deployedAddress as string;
-    this.logger.log(`Stylus wallet deployed at: ${address}`);
+    this.logger.log(`Stylus wallet (proxy) deployed at: ${address}`);
 
     return { address, txHash };
   }
