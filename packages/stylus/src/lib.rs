@@ -104,6 +104,13 @@ sol_storage! {
         uint256[] commitments;
         mapping(uint256 => bool) used_nonces;
         mapping(uint256 => bool) used_nullifiers;
+        // Set to true on first successful constructor/init. Guards against
+        // double-init when this contract is used as an EIP-1167 clone target:
+        // the impl runs the constructor once at deploy (initialized=true on
+        // impl storage, which is unused), and each freshly-cloned proxy starts
+        // with initialized=false and must be initialized exactly once by the
+        // factory in the same transaction as the clone.
+        bool initialized;
     }
 }
 
@@ -119,37 +126,36 @@ impl MetaMultiSigWallet {
         initial_commitments: Vec<U256>,
         signatures_required: U256,
     ) -> Result<(), Error> {
-        if zkv_contract.is_zero() {
-            return Err(err("Invalid zkv address"));
-        }
-        if poseidon_t3.is_zero() {
-            return Err(err("Invalid poseidon address"));
-        }
-        if signatures_required.is_zero() {
-            return Err(err("Must be non-zero sigs required"));
-        }
-        if initial_commitments.is_empty() {
-            return Err(err("Need at least 1 signer"));
-        }
-        if signatures_required > U256::from(initial_commitments.len()) {
-            return Err(err("Sigs required too high"));
-        }
+        self.initialize_state(
+            zkv_contract,
+            vk_hash,
+            poseidon_t3,
+            chain_id,
+            initial_commitments,
+            signatures_required,
+        )
+    }
 
-        self.zkv_contract.set(zkv_contract);
-        self.vk_hash.set(vk_hash);
-        self.poseidon_t3.set(poseidon_t3);
-        self.chain_id.set(chain_id);
-        self.signatures_required.set(signatures_required);
-
-        for c in initial_commitments.iter() {
-            if c.is_zero() {
-                return Err(err("Invalid commitment"));
-            }
-            self.commitments.push(*c);
-            self.vm().log(Owner { commitment: *c, isAdded: true });
-        }
-
-        Ok(())
+    // Proxy-friendly initializer. Identical semantics to `constructor` but
+    // callable post-deploy through an EIP-1167 minimal proxy, which does not
+    // execute the impl's constructor. Reverts if already initialized.
+    pub fn init(
+        &mut self,
+        zkv_contract: Address,
+        vk_hash: B256,
+        poseidon_t3: Address,
+        chain_id: U256,
+        initial_commitments: Vec<U256>,
+        signatures_required: U256,
+    ) -> Result<(), Error> {
+        self.initialize_state(
+            zkv_contract,
+            vk_hash,
+            poseidon_t3,
+            chain_id,
+            initial_commitments,
+            signatures_required,
+        )
     }
 
     // ============ Main Execute Function ============
@@ -186,9 +192,24 @@ impl MetaMultiSigWallet {
 
         self.used_nonces.insert(nonce, true);
 
-        let context = Call::new_payable(self, value);
-        let result =
-            call(self.vm(), context, to, &data_bytes).map_err(|_| err("Tx failed"))?;
+        // Self-calls (onlySelf wallet management functions) are dispatched
+        // internally instead of going through an EVM CALL. Working theory: in
+        // Stylus's delegatecall context (impl running in proxy storage), the
+        // outbound CALL's msg.sender is not set to address(this) (= proxy) the
+        // way standard EVM semantics dictate, so the inner only_self() check
+        // in addSigners/removeSigners/etc. reverts. Routing the call through
+        // an internal Rust dispatch keeps the storage writes correct and
+        // avoids the EVM round-trip entirely. See packages/stylus/NOTES.md.
+        let result: Vec<u8> = if to == self.vm().contract_address() {
+            if !value.is_zero() {
+                return Err(err("Self-call: nonzero value"));
+            }
+            self.dispatch_self_call(&data_bytes)?;
+            Vec::new()
+        } else {
+            let context = Call::new_payable(self, value);
+            call(self.vm(), context, to, &data_bytes).map_err(|_| err("Tx failed"))?
+        };
 
         self.vm().log(TransactionExecuted {
             nonce,
@@ -202,44 +223,17 @@ impl MetaMultiSigWallet {
     }
 
     // ============ Signer Management (onlySelf) ============
+    // Public methods are thin wrappers around the *_internal helpers so that
+    // external direct calls still go through only_self(), while execute()'s
+    // self-call dispatcher (which can't rely on msg.sender under Stylus
+    // delegatecall) invokes the internals directly. See NOTES.md.
     pub fn add_signers(
         &mut self,
         new_commitments: Vec<U256>,
         new_sig_required: U256,
     ) -> Result<(), Error> {
         self.only_self()?;
-        if new_commitments.is_empty() {
-            return Err(err("Empty array"));
-        }
-        if new_sig_required.is_zero() {
-            return Err(err("Must be non-zero sigs required"));
-        }
-        let total = U256::from(self.commitments.len() + new_commitments.len());
-        if new_sig_required > total {
-            return Err(err("Sigs required too high"));
-        }
-
-        for i in 0..new_commitments.len() {
-            let nc = new_commitments[i];
-            if nc.is_zero() {
-                return Err(err("Invalid commitment"));
-            }
-            // Duplicate against existing signers.
-            if self.is_current_signer(nc) {
-                return Err(err("Commitment exists"));
-            }
-            // Duplicate within the input array.
-            for k in 0..i {
-                if new_commitments[k] == nc {
-                    return Err(err("Duplicate in input"));
-                }
-            }
-            self.commitments.push(nc);
-            self.vm().log(Owner { commitment: nc, isAdded: true });
-        }
-
-        self.signatures_required.set(new_sig_required);
-        Ok(())
+        self.add_signers_internal(new_commitments, new_sig_required)
     }
 
     pub fn remove_signers(
@@ -248,53 +242,12 @@ impl MetaMultiSigWallet {
         new_sig_required: U256,
     ) -> Result<(), Error> {
         self.only_self()?;
-        if commitments_to_remove.is_empty() {
-            return Err(err("Empty array"));
-        }
-        if self.commitments.len() <= commitments_to_remove.len() {
-            return Err(err("Cannot remove all signers"));
-        }
-        if new_sig_required.is_zero() {
-            return Err(err("Must be non-zero sigs required"));
-        }
-        let remaining = U256::from(self.commitments.len() - commitments_to_remove.len());
-        if new_sig_required > remaining {
-            return Err(err("Sigs required too high"));
-        }
-
-        for target in commitments_to_remove.iter() {
-            let mut found = false;
-            let len = self.commitments.len();
-            for j in 0..len {
-                if self.commitments.get(j).unwrap() == *target {
-                    // Swap-and-pop, same as the Solidity version.
-                    let last = self.commitments.get(len - 1).unwrap();
-                    self.commitments.setter(j).unwrap().set(last);
-                    self.commitments.pop();
-                    found = true;
-                    self.vm().log(Owner { commitment: *target, isAdded: false });
-                    break;
-                }
-            }
-            if !found {
-                return Err(err("Commitment not found"));
-            }
-        }
-
-        self.signatures_required.set(new_sig_required);
-        Ok(())
+        self.remove_signers_internal(commitments_to_remove, new_sig_required)
     }
 
     pub fn update_signatures_required(&mut self, new_sig_required: U256) -> Result<(), Error> {
         self.only_self()?;
-        if new_sig_required.is_zero() {
-            return Err(err("Must be non-zero sigs required"));
-        }
-        if new_sig_required > U256::from(self.commitments.len()) {
-            return Err(err("Sigs required too high"));
-        }
-        self.signatures_required.set(new_sig_required);
-        Ok(())
+        self.update_signatures_required_internal(new_sig_required)
     }
 
     // ============ Batch transfers (onlySelf) ============
@@ -304,20 +257,7 @@ impl MetaMultiSigWallet {
         amounts: Vec<U256>,
     ) -> Result<(), Error> {
         self.only_self()?;
-        if recipients.len() != amounts.len() {
-            return Err(err("Length mismatch"));
-        }
-        if recipients.is_empty() {
-            return Err(err("Empty batch"));
-        }
-        for i in 0..recipients.len() {
-            if recipients[i].is_zero() {
-                return Err(err("Invalid recipient"));
-            }
-            let ctx = Call::new_payable(self, amounts[i]);
-            call(self.vm(), ctx, recipients[i], &[]).map_err(|_| err("Transfer failed"))?;
-        }
-        Ok(())
+        self.batch_transfer_internal(recipients, amounts)
     }
 
     pub fn batch_transfer_multi(
@@ -327,46 +267,7 @@ impl MetaMultiSigWallet {
         token_addresses: Vec<Address>,
     ) -> Result<(), Error> {
         self.only_self()?;
-        if recipients.len() != amounts.len() || recipients.len() != token_addresses.len() {
-            return Err(err("Length mismatch"));
-        }
-        if recipients.is_empty() {
-            return Err(err("Empty batch"));
-        }
-
-        for i in 0..recipients.len() {
-            if recipients[i].is_zero() {
-                return Err(err("Invalid recipient"));
-            }
-
-            if token_addresses[i].is_zero() {
-                // Native ETH transfer.
-                let ctx = Call::new_payable(self, amounts[i]);
-                call(self.vm(), ctx, recipients[i], &[])
-                    .map_err(|_| err("ETH transfer failed"))?;
-            } else {
-                // ERC20 transfer via low-level call, tolerating non-standard
-                // tokens that return no data (same as the Solidity version).
-                // Manually packed (selector + padded address + amount) to avoid
-                // pulling the dynamic ABI codec into the WASM.
-                let mut calldata = Vec::with_capacity(68);
-                calldata.extend_from_slice(&[0xa9, 0x05, 0x9c, 0xbb]); // transfer(address,uint256)
-                calldata.extend_from_slice(&[0u8; 12]); // left-pad address to 32 bytes
-                calldata.extend_from_slice(recipients[i].as_slice());
-                calldata.extend_from_slice(&amounts[i].to_be_bytes::<32>());
-
-                let ctx = Call::new_mutating(self);
-                let ret = call(self.vm(), ctx, token_addresses[i], &calldata)
-                    .map_err(|_| err("ERC20 transfer failed"))?;
-
-                // Accept empty return (non-standard tokens) or an ABI bool `true`.
-                let ok = ret.is_empty() || (ret.len() == 32 && ret[31] != 0);
-                if !ok {
-                    return Err(err("ERC20 transfer failed"));
-                }
-            }
-        }
-        Ok(())
+        self.batch_transfer_multi_internal(recipients, amounts, token_addresses)
     }
 
     // ============ View functions ============
@@ -410,8 +311,311 @@ impl MetaMultiSigWallet {
     }
 }
 
+// Internal logic for the onlySelf methods + the self-call dispatcher used by
+// execute(). Kept outside `#[public]` so they are not part of the Solidity ABI.
+impl MetaMultiSigWallet {
+    fn add_signers_internal(
+        &mut self,
+        new_commitments: Vec<U256>,
+        new_sig_required: U256,
+    ) -> Result<(), Error> {
+        if new_commitments.is_empty() {
+            return Err(err("Empty array"));
+        }
+        if new_sig_required.is_zero() {
+            return Err(err("Must be non-zero sigs required"));
+        }
+        let total = U256::from(self.commitments.len() + new_commitments.len());
+        if new_sig_required > total {
+            return Err(err("Sigs required too high"));
+        }
+
+        for i in 0..new_commitments.len() {
+            let nc = new_commitments[i];
+            if nc.is_zero() {
+                return Err(err("Invalid commitment"));
+            }
+            // Duplicate against existing signers.
+            if self.is_current_signer(nc) {
+                return Err(err("Commitment exists"));
+            }
+            // Duplicate within the input array.
+            for k in 0..i {
+                if new_commitments[k] == nc {
+                    return Err(err("Duplicate in input"));
+                }
+            }
+            self.commitments.push(nc);
+            self.vm().log(Owner { commitment: nc, isAdded: true });
+        }
+
+        self.signatures_required.set(new_sig_required);
+        Ok(())
+    }
+
+    fn remove_signers_internal(
+        &mut self,
+        commitments_to_remove: Vec<U256>,
+        new_sig_required: U256,
+    ) -> Result<(), Error> {
+        if commitments_to_remove.is_empty() {
+            return Err(err("Empty array"));
+        }
+        if self.commitments.len() <= commitments_to_remove.len() {
+            return Err(err("Cannot remove all signers"));
+        }
+        if new_sig_required.is_zero() {
+            return Err(err("Must be non-zero sigs required"));
+        }
+        let remaining = U256::from(self.commitments.len() - commitments_to_remove.len());
+        if new_sig_required > remaining {
+            return Err(err("Sigs required too high"));
+        }
+
+        for target in commitments_to_remove.iter() {
+            let mut found = false;
+            let len = self.commitments.len();
+            for j in 0..len {
+                if self.commitments.get(j).unwrap() == *target {
+                    // Swap-and-pop, same as the Solidity version.
+                    let last = self.commitments.get(len - 1).unwrap();
+                    self.commitments.setter(j).unwrap().set(last);
+                    self.commitments.pop();
+                    found = true;
+                    self.vm().log(Owner { commitment: *target, isAdded: false });
+                    break;
+                }
+            }
+            if !found {
+                return Err(err("Commitment not found"));
+            }
+        }
+
+        self.signatures_required.set(new_sig_required);
+        Ok(())
+    }
+
+    fn update_signatures_required_internal(&mut self, new_sig_required: U256) -> Result<(), Error> {
+        if new_sig_required.is_zero() {
+            return Err(err("Must be non-zero sigs required"));
+        }
+        if new_sig_required > U256::from(self.commitments.len()) {
+            return Err(err("Sigs required too high"));
+        }
+        self.signatures_required.set(new_sig_required);
+        Ok(())
+    }
+
+    fn batch_transfer_internal(
+        &mut self,
+        recipients: Vec<Address>,
+        amounts: Vec<U256>,
+    ) -> Result<(), Error> {
+        if recipients.len() != amounts.len() {
+            return Err(err("Length mismatch"));
+        }
+        if recipients.is_empty() {
+            return Err(err("Empty batch"));
+        }
+        for i in 0..recipients.len() {
+            if recipients[i].is_zero() {
+                return Err(err("Invalid recipient"));
+            }
+            let ctx = Call::new_payable(self, amounts[i]);
+            call(self.vm(), ctx, recipients[i], &[]).map_err(|_| err("Transfer failed"))?;
+        }
+        Ok(())
+    }
+
+    fn batch_transfer_multi_internal(
+        &mut self,
+        recipients: Vec<Address>,
+        amounts: Vec<U256>,
+        token_addresses: Vec<Address>,
+    ) -> Result<(), Error> {
+        if recipients.len() != amounts.len() || recipients.len() != token_addresses.len() {
+            return Err(err("Length mismatch"));
+        }
+        if recipients.is_empty() {
+            return Err(err("Empty batch"));
+        }
+
+        for i in 0..recipients.len() {
+            if recipients[i].is_zero() {
+                return Err(err("Invalid recipient"));
+            }
+
+            if token_addresses[i].is_zero() {
+                // Native ETH transfer.
+                let ctx = Call::new_payable(self, amounts[i]);
+                call(self.vm(), ctx, recipients[i], &[])
+                    .map_err(|_| err("ETH transfer failed"))?;
+            } else {
+                // ERC20 transfer via low-level call, tolerating non-standard
+                // tokens that return no data (same as the Solidity version).
+                // Manually packed (selector + padded address + amount) to avoid
+                // pulling the dynamic ABI codec into the WASM.
+                let mut calldata = Vec::with_capacity(68);
+                calldata.extend_from_slice(&[0xa9, 0x05, 0x9c, 0xbb]); // transfer(address,uint256)
+                calldata.extend_from_slice(&[0u8; 12]); // left-pad address to 32 bytes
+                calldata.extend_from_slice(recipients[i].as_slice());
+                calldata.extend_from_slice(&amounts[i].to_be_bytes::<32>());
+
+                let ctx = Call::new_mutating(self);
+                let ret = call(self.vm(), ctx, token_addresses[i], &calldata)
+                    .map_err(|_| err("ERC20 transfer failed"))?;
+
+                // Accept empty return (non-standard tokens) or an ABI bool `true`.
+                let ok = ret.is_empty() || (ret.len() == 32 && ret[31] != 0);
+                if !ok {
+                    return Err(err("ERC20 transfer failed"));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    // Dispatch a self-call (to == address(this)) from execute() directly to the
+    // matching *_internal function. Mirrors the public Solidity selectors so
+    // the relayer's calldata works unchanged.
+    fn dispatch_self_call(&mut self, data: &[u8]) -> Result<(), Error> {
+        if data.len() < 4 {
+            return Err(err("Self-call: empty selector"));
+        }
+        let selector = [data[0], data[1], data[2], data[3]];
+        let args = &data[4..];
+        match selector {
+            // addSigners(uint256[],uint256)
+            [0xa8, 0xd2, 0xc8, 0x52] => {
+                let commitments = decode_u256_array(args, 0)?;
+                let sig_required = decode_u256(args, 32)?;
+                self.add_signers_internal(commitments, sig_required)
+            }
+            // removeSigners(uint256[],uint256)
+            [0x47, 0x91, 0xca, 0x34] => {
+                let commitments = decode_u256_array(args, 0)?;
+                let sig_required = decode_u256(args, 32)?;
+                self.remove_signers_internal(commitments, sig_required)
+            }
+            // updateSignaturesRequired(uint256)
+            [0x30, 0x34, 0xa7, 0x42] => {
+                let sig_required = decode_u256(args, 0)?;
+                self.update_signatures_required_internal(sig_required)
+            }
+            // batchTransfer(address[],uint256[])
+            [0x88, 0xd6, 0x95, 0xb2] => {
+                let recipients = decode_address_array(args, 0)?;
+                let amounts = decode_u256_array(args, 32)?;
+                self.batch_transfer_internal(recipients, amounts)
+            }
+            // batchTransferMulti(address[],uint256[],address[])
+            [0x64, 0x45, 0x12, 0x12] => {
+                let recipients = decode_address_array(args, 0)?;
+                let amounts = decode_u256_array(args, 32)?;
+                let tokens = decode_address_array(args, 64)?;
+                self.batch_transfer_multi_internal(recipients, amounts, tokens)
+            }
+            _ => Err(err("Self-call: unknown selector")),
+        }
+    }
+}
+
+// Hand-rolled Solidity ABI decoders for the static handful of types used by
+// dispatch_self_call(). Pulling the full alloy ABI codec into the WASM would
+// bloat the compressed contract size, and Stylus is already over the 24 KB
+// fragmentation threshold.
+fn decode_u256(data: &[u8], offset: usize) -> Result<U256, Error> {
+    if data.len() < offset + 32 {
+        return Err(err("Self-call: short uint256"));
+    }
+    Ok(U256::from_be_slice(&data[offset..offset + 32]))
+}
+
+fn decode_address(data: &[u8], offset: usize) -> Result<Address, Error> {
+    if data.len() < offset + 32 {
+        return Err(err("Self-call: short address"));
+    }
+    // Solidity left-pads addresses with 12 zero bytes inside a 32-byte word.
+    Ok(Address::from_slice(&data[offset + 12..offset + 32]))
+}
+
+fn decode_offset(data: &[u8], offset_word: usize) -> Result<usize, Error> {
+    let raw = decode_u256(data, offset_word)?;
+    // Calldata is bounded by gas; anything above u32::MAX is malformed.
+    if raw > U256::from(u32::MAX) {
+        return Err(err("Self-call: bad offset"));
+    }
+    Ok(raw.as_limbs()[0] as usize)
+}
+
+fn decode_u256_array(data: &[u8], offset_word: usize) -> Result<Vec<U256>, Error> {
+    let head = decode_offset(data, offset_word)?;
+    let len = decode_offset(data, head)?;
+    let mut out = Vec::with_capacity(len);
+    for i in 0..len {
+        out.push(decode_u256(data, head + 32 + 32 * i)?);
+    }
+    Ok(out)
+}
+
+fn decode_address_array(data: &[u8], offset_word: usize) -> Result<Vec<Address>, Error> {
+    let head = decode_offset(data, offset_word)?;
+    let len = decode_offset(data, head)?;
+    let mut out = Vec::with_capacity(len);
+    for i in 0..len {
+        out.push(decode_address(data, head + 32 + 32 * i)?);
+    }
+    Ok(out)
+}
+
 // Internal (non-ABI) helpers.
 impl MetaMultiSigWallet {
+    fn initialize_state(
+        &mut self,
+        zkv_contract: Address,
+        vk_hash: B256,
+        poseidon_t3: Address,
+        chain_id: U256,
+        initial_commitments: Vec<U256>,
+        signatures_required: U256,
+    ) -> Result<(), Error> {
+        if self.initialized.get() {
+            return Err(err("Already initialized"));
+        }
+        if zkv_contract.is_zero() {
+            return Err(err("Invalid zkv address"));
+        }
+        if poseidon_t3.is_zero() {
+            return Err(err("Invalid poseidon address"));
+        }
+        if signatures_required.is_zero() {
+            return Err(err("Must be non-zero sigs required"));
+        }
+        if initial_commitments.is_empty() {
+            return Err(err("Need at least 1 signer"));
+        }
+        if signatures_required > U256::from(initial_commitments.len()) {
+            return Err(err("Sigs required too high"));
+        }
+
+        self.zkv_contract.set(zkv_contract);
+        self.vk_hash.set(vk_hash);
+        self.poseidon_t3.set(poseidon_t3);
+        self.chain_id.set(chain_id);
+        self.signatures_required.set(signatures_required);
+
+        for c in initial_commitments.iter() {
+            if c.is_zero() {
+                return Err(err("Invalid commitment"));
+            }
+            self.commitments.push(*c);
+            self.vm().log(Owner { commitment: *c, isAdded: true });
+        }
+
+        self.initialized.set(true);
+        Ok(())
+    }
+
     fn only_self(&self) -> Result<(), Error> {
         if self.vm().msg_sender() != self.vm().contract_address() {
             return Err(err("Not Self"));

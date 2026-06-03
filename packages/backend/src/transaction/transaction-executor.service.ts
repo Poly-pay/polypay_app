@@ -292,7 +292,12 @@ export class TransactionExecutorService {
     const signers: SignerData[] = JSON.parse(transaction.signerData);
 
     const account = await tx.account.findUnique({
-      where: { address: transaction.accountAddress },
+      where: {
+        address_chainId: {
+          address: transaction.accountAddress,
+          chainId: transaction.chainId,
+        },
+      },
     });
 
     if (!account) return;
@@ -345,7 +350,12 @@ export class TransactionExecutorService {
     const signers: SignerData[] = JSON.parse(transaction.signerData);
 
     const account = await tx.account.findUnique({
-      where: { address: transaction.accountAddress },
+      where: {
+        address_chainId: {
+          address: transaction.accountAddress,
+          chainId: transaction.chainId,
+        },
+      },
     });
 
     if (!account) return;

@@ -2,14 +2,22 @@
 //
 // The Stylus contract exports the SAME Solidity ABI as the EVM contract for its
 // runtime methods (execute, getTransactionHash, ...), so the relayer/frontend
-// reuse `METAMULTISIG_ABI` for reads/writes. The ONLY differences are at deploy
-// time:
-//   1. Its constructor takes an extra `poseidonT3` address (Stylus has no linked
-//      libraries), so the constructor arg order is:
-//        (zkvContract, vkHash, poseidonT3, chainId, commitments, sigsRequired)
-//   2. A Stylus contract with a constructor cannot be deployed with a plain
-//      CREATE: it must go through the canonical StylusDeployer, which deploys the
-//      WASM program, activates it (ArbWasm), and runs the constructor in one tx.
+// reuse `METAMULTISIG_ABI` for reads/writes against deployed wallet addresses.
+//
+// Deployment is the only thing that differs from the EVM path:
+//   - The Stylus impl is ~29 KB compressed (above the 24 KB EVM code-size cap),
+//     so cargo-stylus fragments it on-chain. That makes the single-bytecode
+//     `StylusDeployer.deploy(bytecode, ...)` path unusable for per-account
+//     deploys from the relayer.
+//   - We deploy the Stylus impl ONCE (via `cargo stylus deploy`), then route
+//     all per-account creation through `MetaMultiSigWalletStylusFactory`, which
+//     clones an EIP-1167 minimal proxy in front of the impl and calls
+//     `init(...)` atomically. Each proxy gets its own storage, so signers /
+//     nonces / nullifiers stay isolated per wallet.
+//   - The Stylus contract exposes both a `constructor` (used once by
+//     cargo-stylus when deploying the impl) and an `init` function with the
+//     same args. The latter is what the factory calls on the freshly-cloned
+//     proxy through delegatecall.
 
 // Chains whose account contract is the Stylus port instead of the EVM .sol one.
 export const STYLUS_CHAIN_IDS: readonly number[] = [
@@ -19,38 +27,13 @@ export const STYLUS_CHAIN_IDS: readonly number[] = [
 export const isStylusChain = (chainId: number): boolean =>
   STYLUS_CHAIN_IDS.includes(chainId);
 
-// Canonical StylusDeployer address. VERIFY against the current Arbitrum Stylus
-// docs for the target chain before relying on it; override via env if needed.
-export const STYLUS_DEPLOYER_ADDRESS =
-  "0xcEcba2F1DC234f70Dd89F2041029807F8D03A990";
-
-// Minimal StylusDeployer ABI: deploy(bytecode, initData, initValue, salt).
-// `initData` is the abi-encoded constructor call (selector + args) that the
-// deployer forwards to the freshly deployed program. Returns the new address.
-export const STYLUS_DEPLOYER_ABI = [
+// Minimal factory ABI: createWallet(...) returns the proxy address and emits
+// WalletCreated. `init` is included so callers can build calldata for the
+// proxy if they ever need to skip the factory (testing/manual).
+export const METAMULTISIG_STYLUS_FACTORY_ABI = [
   {
     type: "function",
-    name: "deploy",
-    stateMutability: "payable",
-    inputs: [
-      { name: "bytecode", type: "bytes" },
-      { name: "initData", type: "bytes" },
-      { name: "initValue", type: "uint256" },
-      { name: "salt", type: "bytes32" },
-    ],
-    outputs: [{ name: "", type: "address" }],
-  },
-  {
-    type: "event",
-    name: "ContractDeployed",
-    inputs: [{ name: "deployedContract", type: "address", indexed: false }],
-  },
-] as const;
-
-// Constructor ABI for the Stylus MetaMultiSigWallet, used to encode `initData`.
-export const METAMULTISIG_STYLUS_CONSTRUCTOR_ABI = [
-  {
-    type: "constructor",
+    name: "createWallet",
     stateMutability: "nonpayable",
     inputs: [
       { name: "zkvContract", type: "address" },
@@ -60,5 +43,36 @@ export const METAMULTISIG_STYLUS_CONSTRUCTOR_ABI = [
       { name: "initialCommitments", type: "uint256[]" },
       { name: "signaturesRequired", type: "uint256" },
     ],
+    outputs: [{ name: "wallet", type: "address" }],
+  },
+  {
+    type: "function",
+    name: "implementation",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "event",
+    name: "WalletCreated",
+    inputs: [
+      { name: "wallet", type: "address", indexed: true },
+      { name: "commitments", type: "uint256[]", indexed: false },
+      { name: "signaturesRequired", type: "uint256", indexed: false },
+    ],
+  },
+  {
+    type: "function",
+    name: "init",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "zkvContract", type: "address" },
+      { name: "vkHash", type: "bytes32" },
+      { name: "poseidonT3", type: "address" },
+      { name: "chainId", type: "uint256" },
+      { name: "initialCommitments", type: "uint256[]" },
+      { name: "signaturesRequired", type: "uint256" },
+    ],
+    outputs: [],
   },
 ] as const;

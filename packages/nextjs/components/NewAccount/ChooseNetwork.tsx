@@ -16,6 +16,8 @@ interface ChooseNetworkProps {
 
 const HORIZEN_MAINNET = 26514;
 const BASE_MAINNET = 8453;
+// Arbitrum is testnet-only (zkVerify has no Arbitrum One mainnet verifier yet).
+const ARBITRUM_SEPOLIA = 421614;
 
 const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
   className,
@@ -27,12 +29,16 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
 }) => {
   const defaultChainId = getDefaultChainId();
 
+  const isTestnet = defaultChainId === 2651420;
+
   const networks = [
     { chainId: HORIZEN_MAINNET, fallbackChainId: 2651420 },
     { chainId: BASE_MAINNET, fallbackChainId: 84532 },
+    // Arbitrum has no mainnet entry; only surfaced on testnet.
+    ...(isTestnet ? [{ chainId: ARBITRUM_SEPOLIA, fallbackChainId: ARBITRUM_SEPOLIA }] : []),
   ].map(n => {
     // If we are on testnet env, use testnet ids instead
-    const chainId = defaultChainId === 2651420 ? n.fallbackChainId : n.chainId;
+    const chainId = isTestnet ? n.fallbackChainId : n.chainId;
     return { chainId, meta: getNetworkMeta(chainId) };
   });
 

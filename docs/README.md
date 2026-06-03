@@ -34,6 +34,7 @@ PolyPay uses **zero-knowledge proofs** and **multi-chain deployment** (Horizen a
 
 * **Horizen** (mainnet & testnet)
 * **Base** (mainnet & Sepolia)
+* **Arbitrum Sepolia** (testnet only; account contract is a Rust/WASM port via [Arbitrum Stylus](arbitrum-stylus.md))
 
 ### Roadmap
 

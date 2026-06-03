@@ -100,36 +100,46 @@ cargo stylus deploy \
 ```
 
 `cargo stylus deploy` deploys + activates the program and runs the constructor via
-the StylusDeployer.
+the StylusDeployer. This deploys the **implementation** that all per-account
+proxies will delegatecall into; the impl's own storage is unused, so any valid
+constructor args are fine.
 
-## Wire the backend relayer (per-account auto deploy)
+Record the deployed impl address — you need it for the factory step below.
 
-The relayer (`packages/backend/src/relayer-wallet/relayer-wallet.service.ts`)
-deploys an account per user on account creation. For Stylus chains it routes
-through `StylusDeployer`. Set these env vars on the backend:
+## Deploy the EIP-1167 factory
+
+Per-account wallets are not deployed as fresh Stylus contracts (the impl is
+~29 KB compressed, above the EVM 24 KB code-size limit, so `cargo stylus
+get-initcode` errors with "fragmented contracts not currently supported").
+Instead each account is a tiny EIP-1167 minimal proxy that delegatecalls into
+the impl. Deploy the factory once:
 
 ```bash
-# Stylus deployment bytecode = `cargo stylus get-initcode` output (EVM creation
-# prelude + compressed WASM). This is the `bytecode` arg StylusDeployer expects.
-STYLUS_MULTISIG_DEPLOY_BYTECODE=$(cd packages/stylus && cargo stylus get-initcode)
-# Optional: override the StylusDeployer address (default is the canonical one).
-STYLUS_DEPLOYER_ADDRESS=0xcEcba2F1DC234f70Dd89F2041029807F8D03A990
+STYLUS_IMPL_ADDRESS=0x<stylus-impl-from-above> \
+  yarn deploy --tags StylusFactory --network arbitrumSepolia
 ```
 
-The relayer builds the StylusDeployer `initData` as `selector("stylus_constructor()")`
-+ ABI-encoded constructor args (matching stylus-tools), and uses the canonical
-deployer `0xcEcba2F1DC234f70Dd89F2041029807F8D03A990` with a zero salt.
+Then update `stylusImplAddress` and `stylusFactoryAddress` for chain 421614 in
+`packages/shared/src/contracts/contracts-config.ts`.
 
-Also fund the relayer wallet (`RELAYER_WALLET_KEY`) with Arbitrum Sepolia ETH so
-it can pay deploy + execute gas.
+## Wire the backend relayer
+
+With the factory address baked into `@polypay/shared`, the relayer needs no
+extra Stylus env vars; it routes Stylus-chain deploys through
+`factory.createWallet(...)`.
+
+Fund the relayer wallet (`RELAYER_WALLET_KEY`) with Arbitrum Sepolia ETH so it
+can pay deploy + execute gas.
 
 ## End-to-end test flow (staging/testnet)
 
 1. Set `NEXT_PUBLIC_NETWORK=testnet` (frontend) and `NETWORK=testnet` (backend) so
    Arbitrum Sepolia appears in the network list.
-2. Deploy PoseidonT3 on Arbitrum Sepolia; set `STYLUS_MULTISIG_DEPLOY_BYTECODE`.
-3. In the app: create an account, pick **Arbitrum Sepolia** → relayer deploys the
-   Stylus wallet. Confirm the deployed address on the Arbitrum Sepolia explorer.
+2. Deploy PoseidonT3 + Stylus impl + factory on Arbitrum Sepolia (steps above),
+   and update the addresses in `packages/shared/src/contracts/contracts-config.ts`.
+3. In the app: create an account, pick **Arbitrum Sepolia** → relayer calls the
+   factory and a new EIP-1167 proxy is created. Confirm the deployed address on
+   the Arbitrum Sepolia explorer.
 4. Deposit ETH to the account, then submit a transfer. The flow: frontend builds
    `getTransactionHash` → ZK proof → Kurier aggregation (`chainId 421614`) →
    relayer calls `execute`. Confirm the tx succeeds on-chain.

@@ -37,11 +37,6 @@ export const validationSchema = Joi.object({
     'any.required': 'RELAYER_WALLET_KEY is required',
   }),
 
-  // Stylus (Arbitrum) account deployment - optional, only needed to deploy
-  // accounts on Stylus chains (e.g. Arbitrum Sepolia).
-  STYLUS_MULTISIG_DEPLOY_BYTECODE: Joi.string().optional().allow(''),
-  STYLUS_DEPLOYER_ADDRESS: Joi.string().optional().allow(''),
-
   // Telegram alerts - optional
   TELEGRAM_BOT_TOKEN: Joi.string().optional(),
   TELEGRAM_CHAT_ID: Joi.string().optional(),
