@@ -40,11 +40,16 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
     // address if redeployed via the same CREATE2 factory; otherwise update this.
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
     // Stylus MetaMultiSigWallet impl (deployed via `cargo stylus deploy`).
-    // Update after redeploying with the `init()` entry added in this branch.
+    // Current build: original STATICCALL-based Poseidon (uses the on-chain
+    // poseidon-solidity PoseidonT3 library at `poseidonT3Address`). The
+    // in-process Rust Poseidon experiment was reverted — see NOTES.md.
     stylusImplAddress: "0x0395b99f3a45bd08d018d3d3060a0e2bf8dc8978",
-    // EIP-1167 factory that clones the impl and calls init() per account.
-    // Update after running `yarn deploy --tags StylusFactory --network arbitrumSepolia`.
-    stylusFactoryAddress: "0x8F5f249210fFc91a2b1D86828764562f97C9eEdd",
+    // Stylus/Rust EIP-1167 factory (packages/stylus-factory) bound to the
+    // STATICCALL-Poseidon impl above. Emits byte-identical proxy bytecode to
+    // the previous Solidity factory, so accounts created here are
+    // indistinguishable on-chain from accounts created against the legacy
+    // factory.
+    stylusFactoryAddress: "0xc35c0693286ebdc18bdf257f102dec9632a7ce77",
   },
 } as const;
 

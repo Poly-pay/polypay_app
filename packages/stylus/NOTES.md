@@ -175,6 +175,87 @@ Re-deploy is required (impl bytecode changed). Factory does not need to
 change. Update `stylusImplAddress` in
 `packages/shared/src/contracts/contracts-config.ts` after re-deploy.
 
+## Future: in-process Poseidon (no STATICCALL)
+
+Today `verify_proof` `STATICCALL`s the deployed `poseidon-solidity` PoseidonT3
+contract (`0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93`) for every proof. The
+output is validated bit-identical to the Noir circuit's `bn254::hash_2`, so
+the cross-contract call is correct — just adds ~5 KB gas per proof vs hashing
+in-process.
+
+Researched options (2026-06-04) for porting Poseidon into the Stylus impl:
+
+| Source | Variant | Compat with Noir `bn254::hash_2`? | no_std / Stylus-ready? |
+|---|---|---|---|
+| [OZ `rust-contracts-stylus/poseidon2`](https://github.com/OpenZeppelin/rust-contracts-stylus/blob/main/lib/crypto/src/poseidon2/mod.rs) | **Poseidon2** | ❌ different algorithm, different output | ✅ |
+| [`light-poseidon` v0.4.0](https://github.com/Lightprotocol/light-poseidon) (Sep 2025) | Original Poseidon, circomlib-compatible (x^5 S-box, BN254, t=3, 8 full + 57 partial rounds) | ✅ very likely (params match circomlib) | ❌ `thiserror = "1.0"` is std-only; `ark-ff`/`ark-bn254` deps not gated with `no_std` features |
+| [`TaceoLabs/poseidon-rust`](https://github.com/TaceoLabs/poseidon-rust) | Original, Circom-compatible | ⚠️ likely yes | ❓ unverified, no tagged releases |
+| Custom in-tree crate using `ark-ff` + `ark-bn254` (both no_std-ready behind a feature flag) + circomlib constants | Original by construction | ✅ | ✅ — verified by spike 2026-06-04, see below |
+
+**Conclusion**: cannot drop in any existing crate as-is. Two viable paths if
+we decide the gas saving is worth it:
+
+1. **Fork `light-poseidon`** — swap `thiserror` for a hand-rolled error type,
+   add `#![no_std]` + `extern crate alloc`, enable `no_std` features on the
+   `ark-*` deps. ~1–2 days, we own the fork.
+2. **Write a ~200-line in-tree Poseidon** using `ark-ff` / `ark-bn254` with
+   hardcoded circomlib constants. More code, fully under our control, no
+   third-party fork to maintain. ~2–3 days plus a parity harness against the
+   on-chain `PoseidonT3` (we already have the testing harness).
+
+Either path MUST end with a bit-for-bit parity check vs
+`PoseidonT3.hash([a,b])` on a set of vectors before swapping into
+`verify_proof`. The current STATICCALL path is correct and not blocking the
+demo, so this is opportunistic optimization, not on the critical path.
+
+### Spike verified (2026-06-04)
+
+Confirmed `ark-ff` 0.5 + `ark-bn254` 0.5 build clean to the Stylus WASM
+target (`wasm32-unknown-unknown`, `--release`) and `cargo stylus check`
+against Arbitrum Sepolia succeeds. Required Cargo.toml flags:
+
+```toml
+ark-ff = { version = "0.5.0", default-features = false }
+ark-bn254 = { version = "0.5.0", default-features = false, features = ["scalar_field"] }
+```
+
+Contract size before adding the deps: 31.1 KB / 2 fragments. After the spike
+(with a trivial `Fr::one() != Fr::zero()` touch): 31.1 KB / 2 fragments —
+unused arkworks code was stripped by the linker, so the real size impact only
+shows up once a full Poseidon round function is wired in. Headroom is fine
+since cargo-stylus already handles fragmentation for us.
+
+So path 2 (custom in-tree Poseidon) is **dep-level unblocked**. Remaining
+work is the algorithm + circomlib constants + parity harness.
+
+## Poseidon stays as STATICCALL — not portable to Stylus
+
+The Stylus impl keeps calling the on-chain `PoseidonT3` Solidity library
+(`0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93`) via STATICCALL for every
+`verify_proof`. Porting Poseidon into the Stylus contract is **not feasible**
+without breaking compatibility with our Noir circuit:
+
+- **OpenZeppelin `rust-contracts-stylus/poseidon2`** — the only Stylus-native
+  Poseidon library — implements **Poseidon2**, a different algorithm with
+  different constants and different output. Using it requires rewriting the
+  Noir circuit, regenerating the UltraHonk verification key, re-registering
+  the new vk on zkVerify, and migrating every existing account.
+- **`light-poseidon`** / **`TaceoLabs/poseidon-rust`** — right algorithm
+  (original Poseidon, circomlib-compatible), but std-only. Don't build for
+  the Stylus WASM target without a fork.
+
+Hand-rolling Poseidon in our own crate would get the math right but defeats
+the only reason to do this in the first place (marketing: "uses a real
+Stylus Poseidon library"). So we leave it on STATICCALL.
+
+### Active build
+
+| Component | Address | Source |
+|---|---|---|
+| Impl (Rust/Stylus, STATICCALLs PoseidonT3) | `0x0395b99f3a45bd08d018d3d3060a0e2bf8dc8978` | `packages/stylus/src/lib.rs` |
+| Factory (Rust/Stylus) | `0xc35c0693286ebdc18bdf257f102dec9632a7ce77` | `packages/stylus-factory/src/lib.rs` |
+| PoseidonT3 (on-chain library) | `0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93` | poseidon-solidity, deterministic |
+
 ## Constraint reminder
 
 Arbitrum is **testnet-only** in PolyPay: zkVerify has a verifier on Arbitrum
