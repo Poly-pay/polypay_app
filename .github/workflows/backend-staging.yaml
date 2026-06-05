@@ -1,6 +1,9 @@
 name: Backend Staging
 
 on:
+  # Manual run, e.g. `gh workflow run backend-staging.yaml --ref feat/foo`,
+  # to deploy any branch to staging without merging it to develop.
+  workflow_dispatch:
   push:
     branches:
       - "develop"
