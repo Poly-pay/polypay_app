@@ -13,11 +13,14 @@ creation and `execute` both flow through normal EVM tooling on Arbitrum.
   both `constructor(...)` (used at impl deploy by cargo-stylus) and `init(...)`
   with identical args; an `initialized` storage flag guards against double
   init.
-- **Factory** (`packages/hardhat/contracts/MetaMultiSigWalletStylusFactory.sol`)
-  — deployed once, parameterized by the impl address. `createWallet(...)`
-  clones an EIP-1167 minimal proxy (~45 bytes of EVM bytecode, well under the
-  24 KB cap) and atomically calls `init(...)` on the clone via delegatecall.
-  Bubbles up the underlying revert reason on failure.
+- **Factory** (`packages/stylus-factory/src/lib.rs`) — Rust/Stylus contract,
+  deployed once, parameterized by the impl address. `createWallet(...)` builds
+  the 62-byte proxy creation bytecode in pure Rust, deploys it via
+  `RawDeploy` (CREATE), then calls `init(...)` on the clone. Bubbles up the
+  underlying revert reason on failure. A legacy Solidity factory at
+  `packages/hardhat/contracts/MetaMultiSigWalletStylusFactory.sol` is kept as
+  a reference; both factories emit byte-identical proxy bytecode (unit test
+  in `packages/stylus-factory/src/lib.rs` guards against drift).
 - **Per account** — every PolyPay account on Arbitrum Sepolia is one EIP-1167
   proxy with its own storage (signers/nonces/nullifiers) delegating into the
   shared impl's WASM. `execute(...)` calls go through the proxy and are
@@ -49,12 +52,14 @@ creation and `execute` both flow through normal EVM tooling on Arbitrum.
 2. Update `stylusImplAddress` for chain 421614 in
    `packages/shared/src/contracts/contracts-config.ts` with the new impl
    address.
-3. Deploy the factory:
-   `STYLUS_IMPL_ADDRESS=0x<impl> yarn deploy --tags StylusFactory --network arbitrumSepolia`
+3. Deploy the Rust/Stylus factory pointing at the new impl:
+   `cd packages/stylus-factory && cargo stylus deploy \`
+   `  --endpoint https://sepolia-rollup.arbitrum.io/rpc \`
+   `  --private-key 0x<pk> --no-verify --max-fee-per-gas-gwei 0.1 \`
+   `  --constructor-args 0x<impl>`
 4. Update `stylusFactoryAddress` for chain 421614 in the same shared config.
 5. Backend can now deploy accounts on Arbitrum Sepolia without any extra env
-   vars; an optional `STYLUS_FACTORY_ADDRESS` env override is available for
-   pointing at a custom factory.
+   vars.
 
 ### On-chain reference addresses (Arbitrum Sepolia, chain 421614)
 
@@ -69,7 +74,9 @@ creation and `execute` both flow through normal EVM tooling on Arbitrum.
 
 - Stylus impl + build/deploy guide: `packages/stylus/` (`src/lib.rs`,
   `README.md`).
-- Factory contract + deploy script:
+- Stylus factory (Rust/WASM): `packages/stylus-factory/src/lib.rs`. Build
+  with `cargo stylus deploy` from that directory.
+- Legacy Solidity factory (kept as reference, not wired into the app):
   `packages/hardhat/contracts/MetaMultiSigWalletStylusFactory.sol`,
   `packages/hardhat/deploy/02_deploy_stylus_factory.ts`.
 - Shared addresses + ABIs: `packages/shared/src/chains/arbitrumSepolia.ts`,
