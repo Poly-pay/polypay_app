@@ -33,12 +33,11 @@ creating an account; everything else works the same as Horizen / Base:
 Fund the account from any wallet (MetaMask, Rabby, …) by sending Arbitrum
 Sepolia ETH to the proxy address shown in the account detail page.
 
-### One thing to be aware of: aggregation cadence
+### Aggregation cadence
 
-zkVerify publishes aggregation receipts to Arbitrum Sepolia **at most every 6
-hours** ([kurier docs][zkv-cadence]). So a freshly-submitted transaction can
-sit in "pending aggregation" for hours before `execute()` becomes possible. For
-fast end-to-end demos, prefer Horizen Testnet (≈2 min cadence).
+zkVerify now publishes aggregation receipts to Arbitrum Sepolia in **≈2
+minutes** ([kurier docs][zkv-cadence]), on par with Horizen Testnet, so a
+freshly-submitted transaction becomes executable shortly after it is approved.
 
 [zkv-cadence]: https://testnet.kurier.xyz/docs/FAQ#5-how-long-does-it-take-for-an-aggregation-to-finalize
 
