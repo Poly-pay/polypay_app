@@ -1,0 +1,136 @@
+{
+  "address": "0xd9E9103693014b00db0Bf262b65CB2226062e732",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_implementation",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "wallet",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256[]",
+          "name": "commitments",
+          "type": "uint256[]"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "signaturesRequired",
+          "type": "uint256"
+        }
+      ],
+      "name": "WalletCreated",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "zkvContract",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "vkHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "poseidonT3",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "chainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "initialCommitments",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256",
+          "name": "signaturesRequired",
+          "type": "uint256"
+        }
+      ],
+      "name": "createWallet",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "wallet",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "implementation",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xb6af33ee1c7f63614651a18c35174b444e6d11a42008c352814c26c04f2f44ba",
+  "receipt": {
+    "to": null,
+    "from": "0xd95E85e86D3Be5C86846435b8F0C3a476C5a9e42",
+    "contractAddress": "0xd9E9103693014b00db0Bf262b65CB2226062e732",
+    "transactionIndex": 1,
+    "gasUsed": "434670",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x2db1111116a4bba517ac909993ffb32a9a9f54278a799ca20bfa9b5b74125039",
+    "transactionHash": "0xb6af33ee1c7f63614651a18c35174b444e6d11a42008c352814c26c04f2f44ba",
+    "logs": [],
+    "blockNumber": 273654497,
+    "cumulativeGasUsed": "434670",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0xb2e50ca8f57d9f293ddc378effeef0bc25f3d7de"
+  ],
+  "numDeployments": 4,
+  "solcInputHash": "85dffce1f60a7637c1cae920f9b4a60d",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.20+commit.a1b79de6\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_implementation\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"wallet\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256[]\",\"name\":\"commitments\",\"type\":\"uint256[]\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"signaturesRequired\",\"type\":\"uint256\"}],\"name\":\"WalletCreated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"zkvContract\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"vkHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"poseidonT3\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256[]\",\"name\":\"initialCommitments\",\"type\":\"uint256[]\"},{\"internalType\":\"uint256\",\"name\":\"signaturesRequired\",\"type\":\"uint256\"}],\"name\":\"createWallet\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"wallet\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"implementation\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/MetaMultiSigWalletStylusFactory.sol\":\"MetaMultiSigWalletStylusFactory\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/MetaMultiSigWalletStylusFactory.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.20;\\n\\n// EIP-1167 minimal-proxy factory for the Stylus MetaMultiSigWallet.\\n//\\n// The Stylus port of MetaMultiSigWallet is ~29 KB compressed on Arbitrum, which\\n// exceeds the 24 KB EVM code-size limit. cargo-stylus deploys it as a\\n// fragmented contract, which means the canonical StylusDeployer's single-\\n// bytecode `deploy(bytecode, initData, ...)` path cannot represent it. Instead\\n// we deploy the Stylus contract ONCE as an implementation, then for each user\\n// account we deploy a tiny EIP-1167 proxy (~45 bytes of EVM bytecode, well\\n// under the limit) that delegatecalls into the impl. The proxy holds its own\\n// storage, so each account has independent signers/nonces/nullifiers while\\n// sharing one piece of WASM logic.\\n//\\n// Stylus/EVM interop note: when an EVM contract DELEGATECALLs a Stylus\\n// program, the Arbitrum runtime routes the call into the WASM VM with the\\n// caller's storage context \\u2014 confirmed compatible with EIP-1167 proxies (see\\n// the Stylus Saturdays \\\"Writing proxies in Arbitrum Stylus\\\" issue).\\ncontract MetaMultiSigWalletStylusFactory {\\n    // Stylus impl whose code every proxy will delegatecall into. Immutable so\\n    // the factory commits to a single, audited impl version per deployment.\\n    address public immutable implementation;\\n\\n    event WalletCreated(address indexed wallet, uint256[] commitments, uint256 signaturesRequired);\\n\\n    constructor(address _implementation) {\\n        require(_implementation != address(0), \\\"Invalid implementation\\\");\\n        implementation = _implementation;\\n    }\\n\\n    // Atomically clone the impl and call init() on the new proxy. Reverts if\\n    // init reverts so we never return a half-initialized wallet address.\\n    function createWallet(\\n        address zkvContract,\\n        bytes32 vkHash,\\n        address poseidonT3,\\n        uint256 chainId,\\n        uint256[] calldata initialCommitments,\\n        uint256 signaturesRequired\\n    ) external returns (address wallet) {\\n        wallet = _cloneEIP1167(implementation);\\n\\n        (bool ok, bytes memory ret) = wallet.call(\\n            abi.encodeWithSignature(\\n                \\\"init(address,bytes32,address,uint256,uint256[],uint256)\\\",\\n                zkvContract,\\n                vkHash,\\n                poseidonT3,\\n                chainId,\\n                initialCommitments,\\n                signaturesRequired\\n            )\\n        );\\n        if (!ok) {\\n            // Bubble up the original revert data so the relayer sees the real\\n            // reason (e.g. WalletError(reason)) rather than a generic \\\"init\\n            // failed\\\".\\n            assembly {\\n                revert(add(ret, 0x20), mload(ret))\\n            }\\n        }\\n\\n        emit WalletCreated(wallet, initialCommitments, signaturesRequired);\\n    }\\n\\n    // Minimal proxy deployment via CREATE. EIP-1167 with a 5-byte prefix that\\n    // accepts plain ETH transfers locally instead of delegatecalling on empty\\n    // calldata. Required because the Stylus impl is fragmented by cargo-stylus;\\n    // the loader fragment dispatches on a 4-byte selector and reverts on empty\\n    // calldata, which would otherwise make plain `addr.transfer(...)` deposits\\n    // (and `receive()` routing) revert at gas estimation.\\n    //\\n    // Runtime layout (52 bytes):\\n    //   00: 36 15 60 32 57          if calldatasize == 0 \\u2192 JUMPI to 0x32\\n    //   05..30: standard EIP-1167 body (PUSH1 jumpdest 0x2b shifted to 0x30)\\n    //   31: f3                       (RETURN inside EIP-1167 body)\\n    //   32: 5b 00                   JUMPDEST + STOP \\u2014 empty-calldata branch\\n    function _cloneEIP1167(address target) private returns (address instance) {\\n        bytes20 targetBytes = bytes20(target);\\n        assembly {\\n            let ptr := mload(0x40)\\n            // bytes [0..24]: creation prefix (10) + empty-calldata check (5) +\\n            // EIP-1167 prelude up to PUSH20 (10); last 7 bytes of the word are\\n            // zero padding that the next mstore overwrites with the address.\\n            mstore(ptr, 0x3d603480600a3d3981f33615603257363d3d373d3d3d363d7300000000000000)\\n            // bytes [25..44]: 20-byte impl address (bytes20 left-aligned).\\n            mstore(add(ptr, 25), targetBytes)\\n            // bytes [45..61]: EIP-1167 suffix with internal JUMPDEST shifted\\n            // from 0x2b to 0x30, followed by the empty-calldata JUMPDEST + STOP.\\n            mstore(add(ptr, 45), 0x5af43d82803e903d91603057fd5bf35b00000000000000000000000000000000)\\n            instance := create(0, ptr, 62)\\n        }\\n        require(instance != address(0), \\\"Clone failed\\\");\\n    }\\n}\\n\",\"keccak256\":\"0xf43f56c35db36443fa23ac096dd33183d688696a388cca617cb730f88eee7ff7\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60a060405234801561001057600080fd5b5060405161052838038061052883398101604081905261002f9161009a565b6001600160a01b0381166100895760405162461bcd60e51b815260206004820152601660248201527f496e76616c696420696d706c656d656e746174696f6e00000000000000000000604482015260640160405180910390fd5b6001600160a01b03166080526100ca565b6000602082840312156100ac57600080fd5b81516001600160a01b03811681146100c357600080fd5b9392505050565b60805161043e6100ea60003960008181604001526093015261043e6000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80635c60da1b1461003b578063e8fbf4d91461007e575b600080fd5b6100627f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b03909116815260200160405180910390f35b61006261008c366004610280565b60006100b77f00000000000000000000000000000000000000000000000000000000000000006101be565b9050600080826001600160a01b03168a8a8a8a8a8a8a6040516024016100e39796959493929190610366565b60408051601f198184030181529181526020820180516001600160e01b0316630f5ebddd60e31b1790525161011891906103b5565b6000604051808303816000865af19150503d8060008114610155576040519150601f19603f3d011682016040523d82523d6000602084013e61015a565b606091505b50915091508161016c57805160208201fd5b826001600160a01b03167f42ee8ab389d0f668ad3d714d22ab7a5112414d6c43f79a8167b849019b6cf4e28787876040516101a9939291906103e4565b60405180910390a25050979650505050505050565b6000808260601b90506040517f3d603480600a3d3981f33615603257363d3d373d3d3d363d730000000000000081528160198201526f5af43d82803e903d91603057fd5bf35b60801b602d820152603e816000f09250506001600160a01b03821661025e5760405162461bcd60e51b815260206004820152600c60248201526b10db1bdb994819985a5b195960a21b604482015260640160405180910390fd5b50919050565b80356001600160a01b038116811461027b57600080fd5b919050565b600080600080600080600060c0888a03121561029b57600080fd5b6102a488610264565b9650602088013595506102b960408901610264565b945060608801359350608088013567ffffffffffffffff808211156102dd57600080fd5b818a0191508a601f8301126102f157600080fd5b81358181111561030057600080fd5b8b60208260051b850101111561031557600080fd5b60208301955080945050505060a0880135905092959891949750929550565b81835260006001600160fb1b0383111561034d57600080fd5b8260051b80836020870137939093016020019392505050565b6001600160a01b03888116825260208201889052861660408201526060810185905260c0608082018190526000906103a19083018587610334565b90508260a083015298975050505050505050565b6000825160005b818110156103d657602081860181015185830152016103bc565b506000920191825250919050565b6040815260006103f8604083018587610334565b905082602083015294935050505056fea264697066735822122080130a10d20e7d222c75e9fe23fbe4b0623fd7ad2364634949902cea3b2c619c64736f6c63430008140033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100365760003560e01c80635c60da1b1461003b578063e8fbf4d91461007e575b600080fd5b6100627f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b03909116815260200160405180910390f35b61006261008c366004610280565b60006100b77f00000000000000000000000000000000000000000000000000000000000000006101be565b9050600080826001600160a01b03168a8a8a8a8a8a8a6040516024016100e39796959493929190610366565b60408051601f198184030181529181526020820180516001600160e01b0316630f5ebddd60e31b1790525161011891906103b5565b6000604051808303816000865af19150503d8060008114610155576040519150601f19603f3d011682016040523d82523d6000602084013e61015a565b606091505b50915091508161016c57805160208201fd5b826001600160a01b03167f42ee8ab389d0f668ad3d714d22ab7a5112414d6c43f79a8167b849019b6cf4e28787876040516101a9939291906103e4565b60405180910390a25050979650505050505050565b6000808260601b90506040517f3d603480600a3d3981f33615603257363d3d373d3d3d363d730000000000000081528160198201526f5af43d82803e903d91603057fd5bf35b60801b602d820152603e816000f09250506001600160a01b03821661025e5760405162461bcd60e51b815260206004820152600c60248201526b10db1bdb994819985a5b195960a21b604482015260640160405180910390fd5b50919050565b80356001600160a01b038116811461027b57600080fd5b919050565b600080600080600080600060c0888a03121561029b57600080fd5b6102a488610264565b9650602088013595506102b960408901610264565b945060608801359350608088013567ffffffffffffffff808211156102dd57600080fd5b818a0191508a601f8301126102f157600080fd5b81358181111561030057600080fd5b8b60208260051b850101111561031557600080fd5b60208301955080945050505060a0880135905092959891949750929550565b81835260006001600160fb1b0383111561034d57600080fd5b8260051b80836020870137939093016020019392505050565b6001600160a01b03888116825260208201889052861660408201526060810185905260c0608082018190526000906103a19083018587610334565b90508260a083015298975050505050505050565b6000825160005b818110156103d657602081860181015185830152016103bc565b506000920191825250919050565b6040815260006103f8604083018587610334565b905082602083015294935050505056fea264697066735822122080130a10d20e7d222c75e9fe23fbe4b0623fd7ad2364634949902cea3b2c619c64736f6c63430008140033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}

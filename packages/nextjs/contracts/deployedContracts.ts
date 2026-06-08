@@ -5,6 +5,108 @@
 import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
+  421614: {
+    MetaMultiSigWalletStylusFactory: {
+      address: "0xd9E9103693014b00db0Bf262b65CB2226062e732",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_implementation",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "wallet",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256[]",
+              name: "commitments",
+              type: "uint256[]",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "signaturesRequired",
+              type: "uint256",
+            },
+          ],
+          name: "WalletCreated",
+          type: "event",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "zkvContract",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "vkHash",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "poseidonT3",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "chainId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256[]",
+              name: "initialCommitments",
+              type: "uint256[]",
+            },
+            {
+              internalType: "uint256",
+              name: "signaturesRequired",
+              type: "uint256",
+            },
+          ],
+          name: "createWallet",
+          outputs: [
+            {
+              internalType: "address",
+              name: "wallet",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "implementation",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {},
+      deployedOnBlock: 273654497,
+    },
+  },
   2651420: {
     MetaMultiSigWallet: {
       address: "0xE146bA86fef4056566D7EE9dBB9fFaCf8A994AC2",

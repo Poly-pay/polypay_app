@@ -20,12 +20,15 @@ const HORIZEN_MAINNET = 26514;
 const HORIZEN_TESTNET = 2651420;
 const BASE_MAINNET = 8453;
 const BASE_SEPOLIA = 84532;
+// Arbitrum is testnet-only in PolyPay (zkVerify has no Arbitrum One verifier).
+const ARBITRUM_SEPOLIA = 421614;
 
 const ALL_CHAIN_IDS = [
   HORIZEN_MAINNET,
   HORIZEN_TESTNET,
   BASE_MAINNET,
   BASE_SEPOLIA,
+  ARBITRUM_SEPOLIA,
 ];
 
 export const NATIVE_ETH: Token = {
@@ -75,6 +78,8 @@ export const USDC_TOKEN: Token = {
     [HORIZEN_MAINNET]: "0xDF7108f8B10F9b9eC1aba01CCa057268cbf86B6c",
     [BASE_MAINNET]: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     [BASE_SEPOLIA]: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    // Circle official USDC on Arbitrum Sepolia (source: developers.circle.com).
+    [ARBITRUM_SEPOLIA]: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
   },
   symbol: "USDC",
   name: "USD Coin",

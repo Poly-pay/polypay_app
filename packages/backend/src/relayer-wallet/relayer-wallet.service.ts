@@ -10,6 +10,9 @@ import {
   ZERO_ADDRESS,
   getChainById,
   getContractConfigByChainId,
+  isStylusChain,
+  getStylusFactoryAddress,
+  METAMULTISIG_STYLUS_FACTORY_ABI,
 } from '@polypay/shared';
 import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
@@ -95,6 +98,11 @@ export class RelayerService {
     threshold: number,
     chainId: number,
   ): Promise<{ address: string; txHash: string }> {
+    // Stylus chains (Arbitrum) deploy the Rust/WASM port via StylusDeployer.
+    if (isStylusChain(chainId)) {
+      return this.deployStylusAccount(commitments, threshold, chainId);
+    }
+
     const { chain, walletClient, publicClient, contractConfig } =
       this.getChainClient(chainId);
 
@@ -132,6 +140,63 @@ export class RelayerService {
       address: receipt.contractAddress,
       txHash,
     };
+  }
+
+  /**
+   * Deploy a per-account MetaMultiSigWallet on an Arbitrum Stylus chain via an
+   * EIP-1167 minimal proxy in front of the shared Stylus impl.
+   *
+   * Why the proxy: the Stylus impl is ~29 KB compressed (over the 24 KB EVM
+   * code-size limit) so cargo-stylus fragments it on-chain, which makes
+   * single-bytecode StylusDeployer deploys unusable for per-account creation.
+   * The factory clones a tiny EVM proxy whose fallback delegatecalls into the
+   * impl, then atomically calls `init(...)` on the clone in the same tx so we
+   * never expose a half-initialized wallet.
+   */
+  private async deployStylusAccount(
+    commitments: string[],
+    threshold: number,
+    chainId: number,
+  ): Promise<{ address: string; txHash: string }> {
+    const { chain, walletClient, publicClient, contractConfig } =
+      this.getChainClient(chainId);
+
+    const factoryAddress = getStylusFactoryAddress(chainId);
+
+    const commitmentsBigInt = commitments.map((c) => BigInt(c));
+
+    // Simulate first to capture the proxy address returned by `createWallet`.
+    const { result: deployedAddress, request } =
+      await publicClient.simulateContract({
+        address: factoryAddress,
+        abi: METAMULTISIG_STYLUS_FACTORY_ABI,
+        functionName: 'createWallet',
+        args: [
+          contractConfig.zkVerifyAddress,
+          contractConfig.vkHash as `0x${string}`,
+          contractConfig.poseidonT3Address as `0x${string}`,
+          BigInt(chain.id),
+          commitmentsBigInt,
+          BigInt(threshold),
+        ],
+        account: this.account,
+        chain,
+      });
+
+    const txHash = await walletClient.writeContract(request);
+    this.logger.log(
+      `Stylus factory createWallet tx sent on chain ${chainId}: ${txHash}`,
+    );
+
+    const receipt = await waitForReceiptWithRetry(publicClient, txHash);
+    if (receipt.status === 'reverted') {
+      throw new Error(`Stylus deployment reverted. TxHash: ${txHash}`);
+    }
+
+    const address = deployedAddress as string;
+    this.logger.log(`Stylus wallet (proxy) deployed at: ${address}`);
+
+    return { address, txHash };
   }
 
   /**

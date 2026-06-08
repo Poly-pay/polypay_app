@@ -1,0 +1,6 @@
+# Stylus manifest (required by cargo-stylus >= 0.10).
+# This crate is its own cargo workspace root, so cargo-stylus loads this file as
+# the workspace manifest. Its mere presence next to Cargo.toml also marks the
+# package as a Stylus contract.
+[workspace.networks.arbitrum-sepolia]
+endpoint = "https://sepolia-rollup.arbitrum.io/rpc"

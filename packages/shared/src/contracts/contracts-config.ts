@@ -27,6 +27,30 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
       "0xb3c5381523a496996868370791ec7ae490be7e2c996296fb67708daed8a6ea38",
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
   },
+  421614: {
+    // Arbitrum Sepolia (testnet only — zkVerify has no Arbitrum One mainnet verifier yet).
+    // On this chain the account contract is the Stylus (Rust/WASM) port of
+    // MetaMultiSigWallet, deployed once as `stylusImplAddress` and fronted by
+    // EIP-1167 minimal proxies created per-account through `stylusFactoryAddress`.
+    // The Stylus impl STATICCALLs the PoseidonT3 + zkVerify contracts below.
+    zkVerifyAddress: "0xd007494945580eEb25522c8e0b2fa798B3F0FDE2",
+    vkHash:
+      "0xb3c5381523a496996868370791ec7ae490be7e2c996296fb67708daed8a6ea38",
+    // PoseidonT3 must be deployed on Arbitrum Sepolia. Use the deterministic
+    // address if redeployed via the same CREATE2 factory; otherwise update this.
+    poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
+    // Stylus MetaMultiSigWallet impl (deployed via `cargo stylus deploy`).
+    // Current build: original STATICCALL-based Poseidon (uses the on-chain
+    // poseidon-solidity PoseidonT3 library at `poseidonT3Address`). The
+    // in-process Rust Poseidon experiment was reverted — see NOTES.md.
+    stylusImplAddress: "0x0395b99f3a45bd08d018d3d3060a0e2bf8dc8978",
+    // Stylus/Rust EIP-1167 factory (packages/stylus-factory) bound to the
+    // STATICCALL-Poseidon impl above. Emits byte-identical proxy bytecode to
+    // the previous Solidity factory, so accounts created here are
+    // indistinguishable on-chain from accounts created against the legacy
+    // factory.
+    stylusFactoryAddress: "0xc35c0693286ebdc18bdf257f102dec9632a7ce77",
+  },
 } as const;
 
 export const getContractConfigByChainId = (chainId: number) => {
@@ -38,4 +62,20 @@ export const getContractConfigByChainId = (chainId: number) => {
     throw new Error(`Unsupported chainId for contract config: ${chainId}`);
   }
   return config;
+};
+
+// Returns the Stylus factory address for a chain whose account contract is the
+// Stylus port. Throws if the chain is not Stylus-backed or the factory has not
+// been wired yet (zero address sentinel).
+export const getStylusFactoryAddress = (chainId: number): `0x${string}` => {
+  const config = getContractConfigByChainId(chainId) as {
+    stylusFactoryAddress?: string;
+  };
+  const addr = config.stylusFactoryAddress;
+  if (!addr || addr === "0x0000000000000000000000000000000000000000") {
+    throw new Error(
+      `stylusFactoryAddress is not configured for chainId ${chainId}`,
+    );
+  }
+  return addr as `0x${string}`;
 };

@@ -29,6 +29,12 @@ const NETWORK_META_BY_CHAIN_ID: Record<number, NetworkMeta> = {
     icon: "/token/base.svg",
     badge: "/token/base.svg",
   },
+  // Arbitrum (testnet only). Add /token/arbitrum.svg asset for the icon/badge.
+  421614: {
+    name: "Arbitrum Sepolia",
+    icon: "/token/arbitrum.svg",
+    badge: "/token/arbitrum.svg",
+  },
 };
 
 export const getDefaultChainId = (): number => {

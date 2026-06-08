@@ -66,7 +66,8 @@ const config: HardhatUserConfig = {
       accounts: [deployerPrivateKey],
     },
     arbitrumSepolia: {
-      url: `https://arb-sepolia.g.alchemy.com/v2/${providerApiKey}`,
+      // Default Alchemy key is IP-whitelisted; use the public RPC unless overridden.
+      url: process.env.ARBITRUM_SEPOLIA_RPC || "https://sepolia-rollup.arbitrum.io/rpc",
       accounts: [deployerPrivateKey],
     },
     optimism: {
