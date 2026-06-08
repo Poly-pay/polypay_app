@@ -20,9 +20,6 @@ export const CONFIG_KEYS = {
   RELAYER_ZK_VERIFY_API_KEY: 'relayer.zkVerifyApiKey',
   RELAYER_WALLET_KEY: 'relayer.walletKey',
   REWARD_WALLET_KEY: 'relayer.rewardWalletKey',
-  // Telegram
-  TELEGRAM_BOT_TOKEN: 'telegram.botToken',
-  TELEGRAM_CHAT_ID: 'telegram.chatId',
 
   // Snag Solutions
   SNAG_API_KEY: 'snag.apiKey',
