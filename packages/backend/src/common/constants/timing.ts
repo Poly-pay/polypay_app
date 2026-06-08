@@ -11,7 +11,7 @@ export const ZEN_TRANSFER_RETRY_DELAY = 2_000; // 2s
 export const PRICE_CAPTURE_RETRY_DELAY = 5_000; // 5s
 export const ZK_POLLING_DELAY = 5_000; // 5s
 export const PROOF_AGGREGATION_INTERVAL = 10_000; // 10s
-export const CROSS_CHAIN_FINALIZATION_WAIT = 120_000; // 2min
+export const CROSS_CHAIN_FINALIZATION_WAIT = 40_000; // 40s
 
 // Retry limits
 export const ZK_API_MAX_RETRIES = 3;
