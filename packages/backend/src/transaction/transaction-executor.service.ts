@@ -596,7 +596,7 @@ export class TransactionExecutorService {
 
     if (hasRecentAggregation) {
       this.logger.log(
-        'Recent aggregation detected, waiting 40s for cross-chain finalization...',
+        `Recent aggregation detected, waiting ${CROSS_CHAIN_FINALIZATION_WAIT / 1000}s for cross-chain finalization...`,
       );
       await this.sleep(CROSS_CHAIN_FINALIZATION_WAIT);
     } else {
