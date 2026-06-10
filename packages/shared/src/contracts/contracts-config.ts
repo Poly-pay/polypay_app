@@ -43,13 +43,13 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
     // Current build: original STATICCALL-based Poseidon (uses the on-chain
     // poseidon-solidity PoseidonT3 library at `poseidonT3Address`). The
     // in-process Rust Poseidon experiment was reverted — see NOTES.md.
-    stylusImplAddress: "0x3e3f8bfb2dc0e2224808fa7da83e1cbbbf0a56ea",
+    stylusImplAddress: "0x61fddf7cde02d4527b7d1086671d3f948e59f1d1",
     // Stylus/Rust EIP-1167 factory (packages/stylus-factory) bound to the
     // STATICCALL-Poseidon impl above. Emits byte-identical proxy bytecode to
     // the previous Solidity factory, so accounts created here are
     // indistinguishable on-chain from accounts created against the legacy
     // factory.
-    stylusFactoryAddress: "0xe4a4520b1ac45300cbe9d94723780d920681719d",
+    stylusFactoryAddress: "0x73d33f803600087ed1259035f9ff46f16f15c11a",
   },
   42161: {
     // Arbitrum One mainnet. Account contract is the Stylus (Rust/WASM) port,
@@ -61,8 +61,8 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
     // Deployed in Phase 2 via cargo stylus on Arbitrum One. Zero-address
     // sentinel until then (getStylusFactoryAddress throws on zero).
-    stylusImplAddress: "0x0000000000000000000000000000000000000000",
-    stylusFactoryAddress: "0x0000000000000000000000000000000000000000",
+    stylusImplAddress: "0x49e772bd7efd483c043402331fbf03533852850f",
+    stylusFactoryAddress: "0x740b6a46585474eb113f81999c1117e69d4be1be",
   },
 } as const;
 

@@ -28,7 +28,7 @@ use stylus_sdk::{
     abi::Bytes,
     alloy_primitives::{uint, Address, B256, U256},
     alloy_sol_types::sol,
-    call::call,
+    call::{call, static_call},
     crypto::keccak,
     prelude::*,
     stylus_core::calls::Call,
@@ -60,10 +60,6 @@ sol! {
         uint256 index;
     }
 
-    event Deposit(address indexed sender, uint256 amount, uint256 balance);
-    event TransactionExecuted(uint256 indexed nonce, address to, uint256 value, bytes data, bytes result);
-    event Owner(uint256 indexed commitment, bool isAdded);
-
     error WalletError(string reason);
 }
 
@@ -74,23 +70,6 @@ pub enum Error {
 
 fn err(reason: &str) -> Error {
     Error::Wallet(WalletError { reason: reason.into() })
-}
-
-sol_interface! {
-    interface IVerifyProofAggregation {
-        function verifyProofAggregation(
-            uint256 domainId,
-            uint256 aggregationId,
-            bytes32 leaf,
-            bytes32[] merklePath,
-            uint256 leafCount,
-            uint256 index
-        ) external view returns (bool);
-    }
-
-    interface IPoseidonT3 {
-        function hash(uint256[2] inputs) external view returns (uint256);
-    }
 }
 
 sol_storage! {
@@ -211,14 +190,6 @@ impl MetaMultiSigWallet {
             call(self.vm(), context, to, &data_bytes).map_err(|_| err("Tx failed"))?
         };
 
-        self.vm().log(TransactionExecuted {
-            nonce,
-            to,
-            value,
-            data: data_bytes.into(),
-            result: result.clone().into(),
-        });
-
         Ok(result.into())
     }
 
@@ -302,11 +273,6 @@ impl MetaMultiSigWallet {
     #[receive]
     #[payable]
     pub fn receive(&mut self) -> Result<(), Vec<u8>> {
-        let sender = self.vm().msg_sender();
-        let amount = self.vm().msg_value();
-        let addr = self.vm().contract_address();
-        let balance = self.vm().balance(addr);
-        self.vm().log(Deposit { sender, amount, balance });
         Ok(())
     }
 }
@@ -346,7 +312,6 @@ impl MetaMultiSigWallet {
                 }
             }
             self.commitments.push(nc);
-            self.vm().log(Owner { commitment: nc, isAdded: true });
         }
 
         self.signatures_required.set(new_sig_required);
@@ -382,7 +347,6 @@ impl MetaMultiSigWallet {
                     self.commitments.setter(j).unwrap().set(last);
                     self.commitments.pop();
                     found = true;
-                    self.vm().log(Owner { commitment: *target, isAdded: false });
                     break;
                 }
             }
@@ -609,7 +573,6 @@ impl MetaMultiSigWallet {
                 return Err(err("Invalid commitment"));
             }
             self.commitments.push(*c);
-            self.vm().log(Owner { commitment: *c, isAdded: true });
         }
 
         self.initialized.set(true);
@@ -648,10 +611,17 @@ impl MetaMultiSigWallet {
     fn poseidon_hash2_internal(&mut self, a: U256, b: U256) -> Result<U256, Error> {
         let safe_a = a % BN254_PRIME;
         let safe_b = b % BN254_PRIME;
-        let poseidon = IPoseidonT3::new(self.poseidon_t3.get());
-        poseidon
-            .hash(self.vm(), Call::new(), [safe_a, safe_b])
-            .map_err(|_| err("Poseidon call failed"))
+        // hash(uint256[2]) — static array, encoded inline as two words.
+        let mut cd = Vec::with_capacity(68);
+        cd.extend_from_slice(&[0x56, 0x15, 0x58, 0xfe]);
+        cd.extend_from_slice(&safe_a.to_be_bytes::<32>());
+        cd.extend_from_slice(&safe_b.to_be_bytes::<32>());
+        let ret = static_call(self.vm(), Call::new(), self.poseidon_t3.get(), &cd)
+            .map_err(|_| err("Poseidon call failed"))?;
+        if ret.len() < 32 {
+            return Err(err("Poseidon call failed"));
+        }
+        Ok(U256::from_be_slice(&ret[..32]))
     }
 
     fn verify_proof(&mut self, tx_hash: B256, proof: &ZkProof) -> Result<bool, Error> {
@@ -676,20 +646,24 @@ impl MetaMultiSigWallet {
         leaf_pre.extend_from_slice(inputs_hash.as_slice());
         let leaf = keccak(&leaf_pre);
 
-        let verifier = IVerifyProofAggregation::new(self.zkv_contract.get());
-        let merkle_path: Vec<B256> = proof.zkMerklePath.clone();
-        verifier
-            .verify_proof_aggregation(
-                self.vm(),
-                Call::new(),
-                proof.domainId,
-                proof.aggregationId,
-                leaf,
-                merkle_path,
-                proof.leafCount,
-                proof.index,
-            )
-            .map_err(|_| err("Verifier call failed"))
+        // verifyProofAggregation(uint256,uint256,bytes32,bytes32[],uint256,uint256)
+        // Head is 6 words; the bytes32[] is at offset 0xC0, then length + elements.
+        let mp = &proof.zkMerklePath;
+        let mut cd = Vec::with_capacity(4 + 32 * 7 + 32 * mp.len());
+        cd.extend_from_slice(&[0xa7, 0x8f, 0x9e, 0x36]);
+        cd.extend_from_slice(&proof.domainId.to_be_bytes::<32>());
+        cd.extend_from_slice(&proof.aggregationId.to_be_bytes::<32>());
+        cd.extend_from_slice(leaf.as_slice());
+        cd.extend_from_slice(&U256::from(0xC0).to_be_bytes::<32>());
+        cd.extend_from_slice(&proof.leafCount.to_be_bytes::<32>());
+        cd.extend_from_slice(&proof.index.to_be_bytes::<32>());
+        cd.extend_from_slice(&U256::from(mp.len()).to_be_bytes::<32>());
+        for w in mp.iter() {
+            cd.extend_from_slice(w.as_slice());
+        }
+        let ret = static_call(self.vm(), Call::new(), self.zkv_contract.get(), &cd)
+            .map_err(|_| err("Verifier call failed"))?;
+        Ok(ret.len() == 32 && ret[31] != 0)
     }
 }
 
