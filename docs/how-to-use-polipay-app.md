@@ -2,9 +2,9 @@
 
 ## Polypay App (Beta v0.1)
 
-Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web application that allows you to create and manage a multisig account on **Horizen**, **Base**, or **Arbitrum Sepolia** (testnet) with a focus on privacy. Current version includes the following features:
+Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web application that allows you to create and manage a multisig account on **Horizen**, **Base**, or **Arbitrum** with a focus on privacy. Current version includes the following features:
 
-- Choose between Horizen, Base, and Arbitrum Sepolia networks
+- Choose between Horizen, Base, and Arbitrum networks
 - Create and manage a multisig account
 - Hide signers(multisig account owners) identities with ZK proofs
 - Execute payroll payments: Transfer funds to multiple recipients
