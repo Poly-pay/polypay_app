@@ -4,7 +4,6 @@ import databaseConfig from './database.config';
 import appConfig from './app.config';
 import jwtConfig from './jwt.config';
 import relayerConfig from './relayer.config';
-import telegramConfig from './telegram.config';
 import snagConfig from './snag.config';
 import x402Config from './x402.config';
 import { validationSchema } from './env.validation';
@@ -18,7 +17,6 @@ import { validationSchema } from './env.validation';
         databaseConfig,
         jwtConfig,
         relayerConfig,
-        telegramConfig,
         snagConfig,
         x402Config,
       ],
