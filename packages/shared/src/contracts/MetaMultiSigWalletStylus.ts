@@ -22,6 +22,7 @@
 // Chains whose account contract is the Stylus port instead of the EVM .sol one.
 export const STYLUS_CHAIN_IDS: readonly number[] = [
   421614, // Arbitrum Sepolia
+  42161, // Arbitrum One
 ];
 
 export const isStylusChain = (chainId: number): boolean =>

@@ -1,3 +1,5 @@
+import { CHAIN_IDS } from "./chains";
+
 export type TokenAddresses = Record<number, string>;
 
 export interface Token {
@@ -15,13 +17,15 @@ export interface ResolvedToken extends Omit<Token, "addresses"> {
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-// Chain IDs
-const HORIZEN_MAINNET = 26514;
-const HORIZEN_TESTNET = 2651420;
-const BASE_MAINNET = 8453;
-const BASE_SEPOLIA = 84532;
-// Arbitrum is testnet-only in PolyPay (zkVerify has no Arbitrum One verifier).
-const ARBITRUM_SEPOLIA = 421614;
+// Chain IDs (single source of truth in ./chains).
+const {
+  HORIZEN_MAINNET,
+  HORIZEN_TESTNET,
+  BASE_MAINNET,
+  BASE_SEPOLIA,
+  ARBITRUM_SEPOLIA,
+  ARBITRUM_ONE,
+} = CHAIN_IDS;
 
 const ALL_CHAIN_IDS = [
   HORIZEN_MAINNET,
@@ -29,6 +33,7 @@ const ALL_CHAIN_IDS = [
   BASE_MAINNET,
   BASE_SEPOLIA,
   ARBITRUM_SEPOLIA,
+  ARBITRUM_ONE,
 ];
 
 export const NATIVE_ETH: Token = {
@@ -80,6 +85,8 @@ export const USDC_TOKEN: Token = {
     [BASE_SEPOLIA]: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
     // Circle official USDC on Arbitrum Sepolia (source: developers.circle.com).
     [ARBITRUM_SEPOLIA]: "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+    // Circle native USDC on Arbitrum One (NOT bridged USDC.e; source: developers.circle.com).
+    [ARBITRUM_ONE]: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   },
   symbol: "USDC",
   name: "USD Coin",

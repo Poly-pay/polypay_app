@@ -12,8 +12,7 @@ interface NetworkChooserSidebarProps {
   onSelectNetwork: (chainId: number | null) => void;
 }
 
-const NETWORKS_MAINNET = [26514, 8453];
-// Arbitrum Sepolia (421614) is testnet-only — no Arbitrum One mainnet entry.
+const NETWORKS_MAINNET = [26514, 8453, 42161];
 const NETWORKS_TESTNET = [2651420, 84532, 421614];
 
 export default function NetworkChooserSidebar({ isOpen, accounts, onSelectNetwork }: NetworkChooserSidebarProps) {

@@ -68,10 +68,9 @@ const scaffoldConfig = {
   // The networks on which your DApp is live
   // targetNetworks: [chains.sepolia],
   // targetNetworks: [chains.hardhat],
-  // Arbitrum is testnet-only: zkVerify has a verifier on Arbitrum Sepolia but not Arbitrum One.
   targetNetworks:
     process.env.NEXT_PUBLIC_NETWORK === NetworkValue.mainnet
-      ? [horizenMainnet, chains.base]
+      ? [horizenMainnet, chains.base, chains.arbitrum]
       : [horizenTestnet, chains.baseSepolia, chains.arbitrumSepolia],
   // The interval at which your front-end polls the RPC servers for new data (it has no effect if you only target the local network (default is 4000))
   pollingInterval: RPC_POLLING_INTERVAL,

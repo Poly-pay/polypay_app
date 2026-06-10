@@ -1,269 +1,115 @@
-# Arbitrum Stylus support — status
+# Arbitrum Stylus support
 
-Working notes for the `feat/arbitrum-support` branch. The Stylus port of
-`MetaMultiSigWallet` is wired end-to-end: per-account wallets are created as
-EIP-1167 minimal proxies in front of a single Stylus implementation, so account
-creation and `execute` both flow through normal EVM tooling on Arbitrum.
+Stylus (Rust/WASM) port of `MetaMultiSigWallet` for Arbitrum. Each PolyPay
+account is an EIP-1167 minimal proxy in front of one shared Stylus impl, so
+account creation and `execute()` use normal EVM tooling.
 
-## Architecture
+Stylus runs on Arbitrum Sepolia only. Arbitrum One is blocked by the Stylus
+code-size limit — see "Arbitrum One blocker" below.
 
-- **Stylus impl** (`packages/stylus/src/lib.rs`) — deployed ONCE per chain via
-  `cargo stylus deploy`. Holds all the WASM logic (signer set, nonce/nullifier
-  tracking, ZK proof verification through zkVerify, batch transfers). Exposes
-  both `constructor(...)` (used at impl deploy by cargo-stylus) and `init(...)`
-  with identical args; an `initialized` storage flag guards against double
-  init.
-- **Factory** (`packages/stylus-factory/src/lib.rs`) — Rust/Stylus contract,
-  deployed once, parameterized by the impl address. `createWallet(...)` builds
-  the 62-byte proxy creation bytecode in pure Rust, deploys it via
-  `RawDeploy` (CREATE), then calls `init(...)` on the clone. Bubbles up the
-  underlying revert reason on failure. A legacy Solidity factory at
-  `packages/hardhat/contracts/MetaMultiSigWalletStylusFactory.sol` is kept as
-  a reference; both factories emit byte-identical proxy bytecode (unit test
-  in `packages/stylus-factory/src/lib.rs` guards against drift).
-- **Per account** — every PolyPay account on Arbitrum Sepolia is one EIP-1167
-  proxy with its own storage (signers/nonces/nullifiers) delegating into the
-  shared impl's WASM. `execute(...)` calls go through the proxy and are
-  delegatecalled into the Stylus runtime, which sees the proxy's storage as
-  its own — confirmed compatible per the Stylus Saturdays "Writing proxies in
-  Arbitrum Stylus" issue (2024-09-21).
+## How it fits together
 
-## Why this shape
+- **Impl** — `packages/stylus/src/lib.rs`. Deployed once per chain via
+  `cargo stylus deploy`. Holds all logic (signers, nonces/nullifiers, ZK proof
+  verification, batch transfers). Has `constructor(...)` (run at deploy) and
+  `init(...)` (run on each clone); an `initialized` flag blocks double-init.
+- **Factory** — `packages/stylus-factory/src/lib.rs`. Deployed once, bound to
+  the impl address. `createWallet(...)` deploys an EIP-1167 proxy and `init`s
+  it in one tx.
+- **Per account** — one EIP-1167 proxy with its own storage, delegatecalling
+  into the shared impl.
 
-- The Stylus impl is ~29 KB brotli-compressed (the on-chain form), above the
-  24 KB EVM code-size limit, so cargo-stylus fragments it across two
-  contracts. That makes the single-bytecode `StylusDeployer.deploy(bytecode,
-  initData, ...)` path unusable for per-account creation: `cargo stylus
-  get-initcode` errors with "fragmented contracts not currently supported".
-- Shrinking under 24 KB was not realistic: `wasm-opt -Oz` cut the raw wasm 97 KB
-  → 76 KB (-22%) but compressed size barely moved (30.5 KB → 29 KB) because
-  brotli already removes that redundancy, and dropping public getters / the
-  dynamic ABI codec only saved ~0.8 KB compressed. The bulk is core multisig
-  logic + alloy ABI codec for `ZkProof` + keccak + Stylus runtime.
-- EIP-1167 sidesteps the limit entirely — the proxy is plain EVM bytecode,
-  unfragmented, and the impl is deployed exactly once.
+Why a proxy instead of a fresh Stylus contract per account: the impl is ~31 KB
+compressed (>24 KB EVM limit), so cargo-stylus fragments it and the
+single-bytecode deploy path can't be used per-account. The proxy is plain EVM
+bytecode and sidesteps this.
 
-## Operational steps
+## Deploy
 
-1. Deploy the Stylus impl: `cd packages/stylus && cargo stylus deploy
-   --no-verify --max-fee-per-gas-gwei 0.1 --constructor-args <args>`. Use any
-   valid set of constructor args (e.g. the existing test args); the impl's own
-   storage is unused since all live state lives in proxies.
-2. Update `stylusImplAddress` for chain 421614 in
-   `packages/shared/src/contracts/contracts-config.ts` with the new impl
-   address.
-3. Deploy the Rust/Stylus factory pointing at the new impl:
-   `cd packages/stylus-factory && cargo stylus deploy \`
-   `  --endpoint https://sepolia-rollup.arbitrum.io/rpc \`
-   `  --private-key 0x<pk> --no-verify --max-fee-per-gas-gwei 0.1 \`
-   `  --constructor-args 0x<impl>`
-4. Update `stylusFactoryAddress` for chain 421614 in the same shared config.
-5. Backend can now deploy accounts on Arbitrum Sepolia without any extra env
-   vars.
+Use `packages/stylus/deploy-arbitrum-sepolia.sh` — deploys impl + factory and
+patches `stylusImplAddress` / `stylusFactoryAddress` (chain 421614) in
+`packages/shared/src/contracts/contracts-config.ts`.
 
-### On-chain reference addresses (Arbitrum Sepolia, chain 421614)
+```bash
+export PK=0x<deployer-key-with-arb-sepolia-eth>
+bash packages/stylus/deploy-arbitrum-sepolia.sh
+```
 
-- PoseidonT3 (deterministic): `0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93`
-  (deploy via `yarn deploy --tags PoseidonT3 --network arbitrumSepolia`)
-- zkVerify aggregation (proxy): `0xd007494945580eEb25522c8e0b2fa798B3F0FDE2`
-- Stylus impl: redeploy from this branch (has `init()` + `initialized` guard);
-  the previous test wallet at `0x1e8483112db2c393ef28185768a2aaa52a453b9b` was
-  the pre-proxy version.
+PoseidonT3 must already be on-chain (deterministic
+`0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93`; redeploy with
+`yarn deploy --tags PoseidonT3 --network arbitrumSepolia` if missing).
+
+## Self-call routing (onlySelf functions)
+
+`execute()` routes a self-call (`to == address(this)`) for the onlySelf
+functions (`addSigners`, `removeSigners`, `updateSignaturesRequired`,
+`batchTransfer`, `batchTransferMulti`) through `dispatch_self_call` instead of
+an EVM `CALL`: it matches the 4-byte selector, decodes the calldata, and calls
+the matching `*_internal` helper directly. This avoids a Stylus
+delegatecall-context `msg.sender` quirk that broke the original
+`address(this).call(...)` path. Covered by unit tests in `src/lib.rs`.
+
+## Poseidon: STATICCALL only
+
+`verify_proof` STATICCALLs the on-chain PoseidonT3 library. Porting Poseidon
+into the impl was researched and rejected: the only Stylus-native lib (OZ
+`poseidon2`) is a different algorithm with different output (would require
+rewriting the Noir circuit + new vk + account migration); the
+circomlib-compatible Rust libs are std-only. STATICCALL is correct and not a
+bottleneck, so it stays.
+
+## Active build (Arbitrum Sepolia, 421614)
+
+| Component | Address |
+|---|---|
+| Impl | `0x3e3f8bfb2dc0e2224808fa7da83e1cbbbf0a56ea` |
+| Factory | `0xe4a4520b1ac45300cbe9d94723780d920681719d` |
+| PoseidonT3 | `0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93` |
+| zkVerify aggregation | `0xd007494945580eEb25522c8e0b2fa798B3F0FDE2` |
 
 ## Code map
 
-- Stylus impl + build/deploy guide: `packages/stylus/` (`src/lib.rs`,
-  `README.md`).
-- Stylus factory (Rust/WASM): `packages/stylus-factory/src/lib.rs`. Build
-  with `cargo stylus deploy` from that directory.
-- Legacy Solidity factory (kept as reference, not wired into the app):
-  `packages/hardhat/contracts/MetaMultiSigWalletStylusFactory.sol`,
-  `packages/hardhat/deploy/02_deploy_stylus_factory.ts`.
-- Shared addresses + ABIs: `packages/shared/src/chains/arbitrumSepolia.ts`,
-  `contracts/contracts-config.ts` (421614 entry,
-  `stylusImplAddress`/`stylusFactoryAddress`),
-  `contracts/MetaMultiSigWalletStylus.ts` (factory ABI + `isStylusChain`).
-- Backend relayer: `packages/backend/src/relayer-wallet/relayer-wallet.service.ts`
-  (`deployStylusAccount` now routes through `factory.createWallet`).
-- Frontend: `packages/nextjs/scaffold.config.ts`, `utils/network.ts`.
-- PoseidonT3 deploy script: `packages/hardhat/deploy/01_deploy_poseidon_t3.ts`.
+- Impl + build guide: `packages/stylus/` (`src/lib.rs`, `README.md`)
+- Factory: `packages/stylus-factory/src/lib.rs`
+- Shared config: `packages/shared/src/contracts/contracts-config.ts` (421614),
+  `chains/arbitrumSepolia.ts`, `contracts/MetaMultiSigWalletStylus.ts`
+- Relayer: `packages/backend/src/relayer-wallet/relayer-wallet.service.ts`
+  (`deployStylusAccount` -> `factory.createWallet`)
+- Frontend: `packages/nextjs/scaffold.config.ts`, `utils/network.ts`
 
-## Open issue — `execute()` self-call reverts with `WalletError("Tx failed")`
+## Arbitrum One blocker — Stylus code-size limit
 
-Submitting an `add_signer` (or any onlySelf) transaction through `execute()` on
-the Arbitrum proxy reverts with `0x78cd39ed` = `WalletError(string)` payload
-`"Tx failed"`. That string only comes from the `.map_err(|_| err("Tx failed"))`
-wrapper around the inner self-call in `execute()`, so the actual revert is
-swallowed at that layer.
+As of 2026-06-10 the Stylus impl does not deploy to Arbitrum One: the deploy
+reverts with empty `execution reverted, data: "0x"`. The brotli-compressed
+Stylus code-size limit is 24576 bytes (24 KiB), same as the EVM. The impl is
+31202 bytes (2 fragments), over the limit. zkVerify mainnet is available on
+Arbitrum One; the size limit is the only blocker.
 
-### What we observed (not a confirmed root-cause — just a guess)
+Findings:
+- `stylusVersion()` on ArbWasm (`0x...071`): Arbitrum One = 2, Arbitrum Sepolia = 3.
+- The limit is 24576 bytes: on Arbitrum One a 24323-byte contract (1 fragment)
+  deploy-estimates successfully; a 24618-byte contract (2 fragments) reverts `0x`.
+- The revert is at code storage, not activation: `--no-activate` still reverts,
+  and a small Stylus contract deploys on Arbitrum One.
 
-`eth_call` probes on Arbitrum Sepolia against proxy
-`0x44Fe2002723a7975cefc784DFeF101c1D523Ac91` (impl
-`0x0907a7c0e73ef119d06e082914fc83aad1465aae`):
+**ArbOS 60 "Elara"** raises the Stylus code-size limit. Live on Arbitrum
+Sepolia since 2026-05-18 (why the 31 KB impl deploys there). NOT yet on
+Arbitrum One — pending an on-chain Constitutional vote; **no firm mainnet date**.
+- Upgrade notice: https://docs.arbitrum.io/notices/arbos60-upgrade-notice
+- AIP / governance status: https://forum.arbitrum.foundation/t/constitutional-aip-arbos-60-elara/30601
+- 24 KB Stylus limit: https://docs.arbitrum.io/stylus/how-tos/optimizing-binaries
 
-- `addSigners(...)` direct, `from = proxy` → succeeds (so the function body
-  itself and `only_self()` are fine when `msg.sender == address(this)`).
-- `addSigners(...)` direct, `from = impl` or `from = relayer EOA` →
-  `WalletError("Not Self")`.
-- Full `execute(...)` end-to-end → `WalletError("Tx failed")` (= inner call
-  reverted, original reason hidden).
+Options for Arbitrum One:
+1. Wait for ArbOS 60 on Arbitrum One, then redeploy the same impl — no code
+   change. ETA unknown (governance).
+2. Ship the Solidity `MetaMultiSigWallet.sol` on Arbitrum One instead (EVM
+   bytecode is under 24 KB), keeping Stylus only on Arbitrum Sepolia. Works on
+   the same deploy path as Base/Horizen; PoseidonT3 is already deployed on
+   Arbitrum One. Trade-off: the mainnet wallet would be EVM, not Stylus.
+3. Shrink the impl under 24576 bytes compressed — impractical without cutting
+   features (best wasm-opt result was ~29 KB compressed).
 
-### Working hypothesis
-
-When the Stylus impl runs in the proxy's delegatecall context and issues an
-outgoing `CALL` via `Call::new_payable(self, value)` + `call(...)`, the
-`msg.sender` of the new frame may not be `address(this)` (= proxy address) as
-standard EVM semantics would dictate. If Stylus's CALL host uses a cached
-"self address" set at activation (= impl address) instead of reading
-`address(this)` at runtime, the inner call would arrive at the proxy with
-`msg.sender = impl`, which delegatecalls back into the impl with that same
-`msg.sender`, failing `only_self()`.
-
-**This is a guess, not verified.** We did NOT:
-- Instrument the impl to log `msg.sender` of the inner frame
-- Inspect Stylus SDK / Nitro source to confirm the host call sets `msg.sender`
-  to address(this) at runtime vs. a cached value
-- File or find a matching upstream issue (issue #4114 on `OffchainLabs/nitro`
-  about Stylus-to-Stylus revert/return data being lost is in the same area but
-  isn't the same bug)
-
-The pattern works fine on the original Solidity contract (Horizen/Base), where
-`address(this).call(data)` from a delegatecalled implementation correctly
-delivers `msg.sender = address(this)`.
-
-### Status after the workaround
-
-On-chain results after deploying the new impl (with `dispatch_self_call`) and
-factory:
-
-- **`batch_transfer` via `execute()` → PASS** on Arbitrum Sepolia. So the
-  internal dispatcher reaches the `*_internal` helpers and storage / external
-  CALLs from there work fine.
-- **`add_signer` via `execute()` → still reverts with
-  `WalletError("Tx failed")`**. Same selector as before. We did not dig
-  further — left as an open core-team item.
-
-Possible directions (NOT investigated):
-- Difference between `add_signers_internal` and `batch_transfer_internal` is
-  mostly that the former mutates `commitments: uint256[]` storage (push) and
-  emits an `Owner` event per element, while the latter makes external CALLs.
-  Maybe Stylus storage array push under delegatecall has an issue, or the ABI
-  decode of `uint256[]` in `dispatch_self_call` (hand-rolled) is wrong for
-  some encoding.
-- Verify the decoded `(commitments, sig_required)` from the inner self-call
-  calldata matches what was submitted — could be off-by-one in the offset
-  math.
-- Try `remove_signers` / `update_signatures_required` to narrow which
-  internal is broken.
-
-### Workaround (implemented in lib.rs — partially works)
-
-`execute()` detects `to == self.vm().contract_address()` and routes the call
-through a Rust-level dispatcher (`dispatch_self_call`) that matches the
-selector against the onlySelf functions and invokes their `*_internal`
-helpers directly. This bypasses the EVM `CALL` round-trip entirely, so
-whatever Stylus is doing wrong with `msg.sender` in delegatecall-then-CALL no
-longer matters for self-calls.
-
-Each onlySelf public method (`add_signers`, `remove_signers`,
-`update_signatures_required`, `batch_transfer`, `batch_transfer_multi`) is now
-a thin wrapper that runs `only_self()` and delegates to its `*_internal`
-sibling. External direct calls keep their `only_self()` protection unchanged;
-only the in-process self-call from `execute()` bypasses it (and execute's own
-ZK-proof gating provides the access control).
-
-`dispatch_self_call` hand-rolls Solidity ABI decoding for the static set of
-parameter shapes used (`uint256`, `uint256[]`, `address[]`) to avoid pulling
-the full alloy ABI codec into the WASM (the impl is already over the 24 KB
-fragmentation threshold).
-
-Re-deploy is required (impl bytecode changed). Factory does not need to
-change. Update `stylusImplAddress` in
-`packages/shared/src/contracts/contracts-config.ts` after re-deploy.
-
-## Future: in-process Poseidon (no STATICCALL)
-
-Today `verify_proof` `STATICCALL`s the deployed `poseidon-solidity` PoseidonT3
-contract (`0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93`) for every proof. The
-output is validated bit-identical to the Noir circuit's `bn254::hash_2`, so
-the cross-contract call is correct — just adds ~5 KB gas per proof vs hashing
-in-process.
-
-Researched options (2026-06-04) for porting Poseidon into the Stylus impl:
-
-| Source | Variant | Compat with Noir `bn254::hash_2`? | no_std / Stylus-ready? |
-|---|---|---|---|
-| [OZ `rust-contracts-stylus/poseidon2`](https://github.com/OpenZeppelin/rust-contracts-stylus/blob/main/lib/crypto/src/poseidon2/mod.rs) | **Poseidon2** | ❌ different algorithm, different output | ✅ |
-| [`light-poseidon` v0.4.0](https://github.com/Lightprotocol/light-poseidon) (Sep 2025) | Original Poseidon, circomlib-compatible (x^5 S-box, BN254, t=3, 8 full + 57 partial rounds) | ✅ very likely (params match circomlib) | ❌ `thiserror = "1.0"` is std-only; `ark-ff`/`ark-bn254` deps not gated with `no_std` features |
-| [`TaceoLabs/poseidon-rust`](https://github.com/TaceoLabs/poseidon-rust) | Original, Circom-compatible | ⚠️ likely yes | ❓ unverified, no tagged releases |
-| Custom in-tree crate using `ark-ff` + `ark-bn254` (both no_std-ready behind a feature flag) + circomlib constants | Original by construction | ✅ | ✅ — verified by spike 2026-06-04, see below |
-
-**Conclusion**: cannot drop in any existing crate as-is. Two viable paths if
-we decide the gas saving is worth it:
-
-1. **Fork `light-poseidon`** — swap `thiserror` for a hand-rolled error type,
-   add `#![no_std]` + `extern crate alloc`, enable `no_std` features on the
-   `ark-*` deps. ~1–2 days, we own the fork.
-2. **Write a ~200-line in-tree Poseidon** using `ark-ff` / `ark-bn254` with
-   hardcoded circomlib constants. More code, fully under our control, no
-   third-party fork to maintain. ~2–3 days plus a parity harness against the
-   on-chain `PoseidonT3` (we already have the testing harness).
-
-Either path MUST end with a bit-for-bit parity check vs
-`PoseidonT3.hash([a,b])` on a set of vectors before swapping into
-`verify_proof`. The current STATICCALL path is correct and not blocking the
-demo, so this is opportunistic optimization, not on the critical path.
-
-### Spike verified (2026-06-04)
-
-Confirmed `ark-ff` 0.5 + `ark-bn254` 0.5 build clean to the Stylus WASM
-target (`wasm32-unknown-unknown`, `--release`) and `cargo stylus check`
-against Arbitrum Sepolia succeeds. Required Cargo.toml flags:
-
-```toml
-ark-ff = { version = "0.5.0", default-features = false }
-ark-bn254 = { version = "0.5.0", default-features = false, features = ["scalar_field"] }
-```
-
-Contract size before adding the deps: 31.1 KB / 2 fragments. After the spike
-(with a trivial `Fr::one() != Fr::zero()` touch): 31.1 KB / 2 fragments —
-unused arkworks code was stripped by the linker, so the real size impact only
-shows up once a full Poseidon round function is wired in. Headroom is fine
-since cargo-stylus already handles fragmentation for us.
-
-So path 2 (custom in-tree Poseidon) is **dep-level unblocked**. Remaining
-work is the algorithm + circomlib constants + parity harness.
-
-## Poseidon stays as STATICCALL — not portable to Stylus
-
-The Stylus impl keeps calling the on-chain `PoseidonT3` Solidity library
-(`0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93`) via STATICCALL for every
-`verify_proof`. Porting Poseidon into the Stylus contract is **not feasible**
-without breaking compatibility with our Noir circuit:
-
-- **OpenZeppelin `rust-contracts-stylus/poseidon2`** — the only Stylus-native
-  Poseidon library — implements **Poseidon2**, a different algorithm with
-  different constants and different output. Using it requires rewriting the
-  Noir circuit, regenerating the UltraHonk verification key, re-registering
-  the new vk on zkVerify, and migrating every existing account.
-- **`light-poseidon`** / **`TaceoLabs/poseidon-rust`** — right algorithm
-  (original Poseidon, circomlib-compatible), but std-only. Don't build for
-  the Stylus WASM target without a fork.
-
-Hand-rolling Poseidon in our own crate would get the math right but defeats
-the only reason to do this in the first place (marketing: "uses a real
-Stylus Poseidon library"). So we leave it on STATICCALL.
-
-### Active build
-
-| Component | Address | Source |
-|---|---|---|
-| Impl (Rust/Stylus, STATICCALLs PoseidonT3) | `0x0395b99f3a45bd08d018d3d3060a0e2bf8dc8978` | `packages/stylus/src/lib.rs` |
-| Factory (Rust/Stylus) | `0xc35c0693286ebdc18bdf257f102dec9632a7ce77` | `packages/stylus-factory/src/lib.rs` |
-| PoseidonT3 (on-chain library) | `0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93` | poseidon-solidity, deterministic |
-
-## Constraint reminder
-
-Arbitrum is **testnet-only** in PolyPay: zkVerify has a verifier on Arbitrum
-Sepolia but not Arbitrum One mainnet, so this cannot go to production yet.
+Decision (2026-06-10): option 1. Stylus on mainnet is required, so the Solidity
+wallet (option 2) is not used. Arbitrum One mainnet is deferred until ArbOS 60
+activates there; Phase 1 wiring stays in place, deploy via
+`deploy-arbitrum-one.sh` once `stylusVersion()` on Arbitrum One returns 3.
