@@ -15,8 +15,8 @@ export const QUEST_POINTS_ACCOUNT_FIRST_TX = 100;
 export const QUEST_POINTS_SUCCESSFUL_TX = 50;
 
 // Supported chain IDs
-// 421614 = Arbitrum Sepolia (testnet only; account contract is the Stylus port).
-export const SUPPORTED_CHAIN_IDS = [2651420, 84532, 26514, 8453, 421614];
+// 421614 = Arbitrum Sepolia, 42161 = Arbitrum One (account contract is the Stylus port).
+export const SUPPORTED_CHAIN_IDS = [2651420, 84532, 26514, 8453, 421614, 42161];
 
 // External APIs
 export const COINGECKO_API_URL =

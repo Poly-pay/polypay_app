@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { CHAIN_IDS } from "@polypay/shared";
 import { getDefaultChainId, getNetworkMeta } from "~~/utils/network";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -14,10 +15,7 @@ interface ChooseNetworkProps {
   isWalletConnected: boolean;
 }
 
-const HORIZEN_MAINNET = 26514;
-const BASE_MAINNET = 8453;
-// Arbitrum is testnet-only (zkVerify has no Arbitrum One mainnet verifier yet).
-const ARBITRUM_SEPOLIA = 421614;
+const { HORIZEN_MAINNET, HORIZEN_TESTNET, BASE_MAINNET, BASE_SEPOLIA, ARBITRUM_ONE, ARBITRUM_SEPOLIA } = CHAIN_IDS;
 
 const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
   className,
@@ -29,13 +27,12 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
 }) => {
   const defaultChainId = getDefaultChainId();
 
-  const isTestnet = defaultChainId === 2651420;
+  const isTestnet = defaultChainId === HORIZEN_TESTNET;
 
   const networks = [
-    { chainId: HORIZEN_MAINNET, fallbackChainId: 2651420 },
-    { chainId: BASE_MAINNET, fallbackChainId: 84532 },
-    // Arbitrum has no mainnet entry; only surfaced on testnet.
-    ...(isTestnet ? [{ chainId: ARBITRUM_SEPOLIA, fallbackChainId: ARBITRUM_SEPOLIA }] : []),
+    { chainId: HORIZEN_MAINNET, fallbackChainId: HORIZEN_TESTNET },
+    { chainId: BASE_MAINNET, fallbackChainId: BASE_SEPOLIA },
+    { chainId: ARBITRUM_ONE, fallbackChainId: ARBITRUM_SEPOLIA },
   ].map(n => {
     // If we are on testnet env, use testnet ids instead
     const chainId = isTestnet ? n.fallbackChainId : n.chainId;

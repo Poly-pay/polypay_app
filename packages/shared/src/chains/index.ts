@@ -3,6 +3,7 @@ import { horizenMainnet } from "./horizenMainnet";
 import { baseSepolia } from "./baseSepolia";
 import { baseMainnet } from "./baseMainnet";
 import { arbitrumSepolia } from "./arbitrumSepolia";
+import { arbitrumOne } from "./arbitrumOne";
 
 export {
   horizenTestnet,
@@ -10,6 +11,7 @@ export {
   baseSepolia,
   baseMainnet,
   arbitrumSepolia,
+  arbitrumOne,
 };
 
 export type NetworkType = "testnet" | "mainnet";
@@ -38,6 +40,8 @@ export const getChainById = (chainId: number) => {
       return baseMainnet;
     case arbitrumSepolia.id:
       return arbitrumSepolia;
+    case arbitrumOne.id:
+      return arbitrumOne;
     default:
       throw new Error(`Unsupported chainId: ${chainId}`);
   }
