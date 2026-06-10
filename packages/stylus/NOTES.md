@@ -4,8 +4,8 @@ Stylus (Rust/WASM) port of `MetaMultiSigWallet` for Arbitrum. Each PolyPay
 account is an EIP-1167 minimal proxy in front of one shared Stylus impl, so
 account creation and `execute()` use normal EVM tooling.
 
-Stylus runs on Arbitrum Sepolia only. Arbitrum One is blocked by the Stylus
-code-size limit — see "Arbitrum One blocker" below.
+Runs on Arbitrum Sepolia, and on Arbitrum One after slimming the impl under the
+24 KiB code-size limit — see "Arbitrum One code-size limit" below.
 
 ## How it fits together
 
@@ -58,14 +58,25 @@ rewriting the Noir circuit + new vk + account migration); the
 circomlib-compatible Rust libs are std-only. STATICCALL is correct and not a
 bottleneck, so it stays.
 
-## Active build (Arbitrum Sepolia, 421614)
+## Active build (slim impl, 24295 bytes)
+
+Arbitrum Sepolia (421614):
 
 | Component | Address |
 |---|---|
-| Impl | `0x3e3f8bfb2dc0e2224808fa7da83e1cbbbf0a56ea` |
-| Factory | `0xe4a4520b1ac45300cbe9d94723780d920681719d` |
+| Impl | `0x61fddf7cde02d4527b7d1086671d3f948e59f1d1` |
+| Factory | `0x73d33f803600087ed1259035f9ff46f16f15c11a` |
 | PoseidonT3 | `0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93` |
 | zkVerify aggregation | `0xd007494945580eEb25522c8e0b2fa798B3F0FDE2` |
+
+Arbitrum One (42161), deployed 2026-06-10:
+
+| Component | Address |
+|---|---|
+| Impl | `0x49e772bd7efd483c043402331fbf03533852850f` |
+| Factory | `0x740b6a46585474eb113f81999c1117e69d4be1be` |
+| PoseidonT3 | `0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93` |
+| zkVerify aggregation | `0xCb47A3C3B9Eb2E549a3F2EA4729De28CafbB2b69` |
 
 ## Code map
 
@@ -77,39 +88,45 @@ bottleneck, so it stays.
   (`deployStylusAccount` -> `factory.createWallet`)
 - Frontend: `packages/nextjs/scaffold.config.ts`, `utils/network.ts`
 
-## Arbitrum One blocker — Stylus code-size limit
+## Arbitrum One code-size limit — resolved by slimming the impl
 
-As of 2026-06-10 the Stylus impl does not deploy to Arbitrum One: the deploy
-reverts with empty `execution reverted, data: "0x"`. The brotli-compressed
-Stylus code-size limit is 24576 bytes (24 KiB), same as the EVM. The impl is
-31202 bytes (2 fragments), over the limit. zkVerify mainnet is available on
-Arbitrum One; the size limit is the only blocker.
+The brotli-compressed Stylus code-size limit is 24576 bytes (24 KiB), same as
+the EVM; deploying over it reverts with empty `execution reverted, data: "0x"`.
+The original impl was 31202 bytes (2 fragments) and would not deploy to
+Arbitrum One. ArbOS 60 "Elara" raises this limit (live on Arbitrum Sepolia
+2026-05-18, not yet on Arbitrum One, pending an on-chain vote with no firm
+date), but instead the impl was slimmed to 24295 bytes (1 fragment), which
+deploys on Arbitrum One today without waiting for ArbOS 60.
 
-Findings:
-- `stylusVersion()` on ArbWasm (`0x...071`): Arbitrum One = 2, Arbitrum Sepolia = 3.
-- The limit is 24576 bytes: on Arbitrum One a 24323-byte contract (1 fragment)
-  deploy-estimates successfully; a 24618-byte contract (2 fragments) reverts `0x`.
-- The revert is at code storage, not activation: `--no-activate` still reverts,
-  and a small Stylus contract deploys on Arbitrum One.
+How the impl was slimmed (31202 -> 24295 bytes):
+- Removed the on-chain events (Deposit / TransactionExecuted / Owner). The app
+  tracks transactions via the backend DB + relayer, not on-chain logs, so there
+  is no functional impact. Largest saving (~6 KB — alloy event encoding for
+  dynamic bytes).
+- Hand-rolled the PoseidonT3 and zkVerify STATICCALLs instead of the generated
+  `sol_interface!` bindings (internal only, no ABI change).
 
-**ArbOS 60 "Elara"** raises the Stylus code-size limit. Live on Arbitrum
-Sepolia since 2026-05-18 (why the 31 KB impl deploys there). NOT yet on
-Arbitrum One — pending an on-chain Constitutional vote; **no firm mainnet date**.
-- Upgrade notice: https://docs.arbitrum.io/notices/arbos60-upgrade-notice
-- AIP / governance status: https://forum.arbitrum.foundation/t/constitutional-aip-arbos-60-elara/30601
+Kept unchanged: execute (same ABI, `ZkProof[]`), transfer, batch_transfer,
+batch_transfer_multi, signer management, getters, proof verification. No backend
+or frontend changes required (only the events were dropped from the ABI).
+
+Margin is 281 bytes under 24576. Future additions can push it back over the
+limit (-> 2 fragments -> will not deploy on Arbitrum One until ArbOS 60).
+
+Tested on Arbitrum Sepolia 2026-06-10: a new account against the slim impl ran a
+transfer and a batch successfully (proof verification passed), confirming the
+hand-rolled poseidon/zkVerify calls.
+
+References:
 - 24 KB Stylus limit: https://docs.arbitrum.io/stylus/how-tos/optimizing-binaries
+- ArbOS 60 (raises the limit): https://docs.arbitrum.io/notices/arbos60-upgrade-notice
 
-Options for Arbitrum One:
-1. Wait for ArbOS 60 on Arbitrum One, then redeploy the same impl — no code
-   change. ETA unknown (governance).
-2. Ship the Solidity `MetaMultiSigWallet.sol` on Arbitrum One instead (EVM
-   bytecode is under 24 KB), keeping Stylus only on Arbitrum Sepolia. Works on
-   the same deploy path as Base/Horizen; PoseidonT3 is already deployed on
-   Arbitrum One. Trade-off: the mainnet wallet would be EVM, not Stylus.
-3. Shrink the impl under 24576 bytes compressed — impractical without cutting
-   features (best wasm-opt result was ~29 KB compressed).
+Next: deploy the slim impl to Arbitrum One via `deploy-arbitrum-one.sh`, then run
+the same transfer/batch test on Arbitrum One.
 
-Decision (2026-06-10): option 1. Stylus on mainnet is required, so the Solidity
-wallet (option 2) is not used. Arbitrum One mainnet is deferred until ArbOS 60
-activates there; Phase 1 wiring stays in place, deploy via
-`deploy-arbitrum-one.sh` once `stylusVersion()` on Arbitrum One returns 3.
+The slimming is a temporary measure to fit the current 24 KiB limit. Once ArbOS
+60 is live on Arbitrum One (`stylusVersion()` returns 3, the limit is raised),
+revert the slim changes — restore the on-chain events (Deposit /
+TransactionExecuted / Owner); the `sol_interface!` hand-roll can stay since it
+has no functional downside — then redeploy the full impl on both chains. The
+pre-slim impl is the parent commit of the slimming commit.
