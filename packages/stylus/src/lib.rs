@@ -692,3 +692,136 @@ impl MetaMultiSigWallet {
             .map_err(|_| err("Verifier call failed"))
     }
 }
+
+// ============================================================================
+// Unit tests — exercise the execute() self-call dispatcher in isolation.
+//
+// The reported bug: add/remove signer and updateSignaturesRequired submitted
+// through execute() reverted, while batchTransfer worked. execute() routes a
+// self-call (to == address(this)) through dispatch_self_call(), which selects
+// the onlySelf *_internal helper by 4-byte selector and hand-rolls the
+// Solidity ABI decode (no full alloy codec, to keep WASM size down). These
+// tests feed canonical ABI-encoded calldata straight into dispatch_self_call
+// and assert the storage mutation, covering exactly the decode + routing path
+// that was suspected broken. The ZK-proof gating in execute() is orthogonal
+// (it only guards entry) so it is not needed here.
+// ============================================================================
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use stylus_sdk::testing::*;
+
+    fn word(v: U256) -> [u8; 32] {
+        v.to_be_bytes::<32>()
+    }
+
+    // ABI-encode `f(uint256[],uint256)` calldata (addSigners / removeSigners).
+    fn calldata_u256arr_u256(selector: [u8; 4], arr: &[U256], tail: U256) -> Vec<u8> {
+        let mut d = Vec::from(selector);
+        d.extend_from_slice(&word(U256::from(0x40))); // offset to the array
+        d.extend_from_slice(&word(tail)); // the static uint256
+        d.extend_from_slice(&word(U256::from(arr.len())));
+        for c in arr {
+            d.extend_from_slice(&word(*c));
+        }
+        d
+    }
+
+    // ABI-encode `updateSignaturesRequired(uint256)` calldata.
+    fn calldata_update_sig(sig: U256) -> Vec<u8> {
+        let mut d = vec![0x30, 0x34, 0xa7, 0x42];
+        d.extend_from_slice(&word(sig));
+        d
+    }
+
+    fn fresh_wallet(vm: &TestVM, commitments: &[U256], sig_required: u64) -> MetaMultiSigWallet {
+        let mut c = MetaMultiSigWallet::from(vm);
+        let r = c.initialize_state(
+            Address::from([0x11; 20]), // zkv (non-zero)
+            B256::ZERO,
+            Address::from([0x22; 20]), // poseidon (non-zero)
+            U256::from(421614),
+            commitments.to_vec(),
+            U256::from(sig_required),
+        );
+        assert!(r.is_ok(), "init failed");
+        c
+    }
+
+    fn read_commitments(c: &MetaMultiSigWallet) -> Vec<U256> {
+        let len = c.commitments.len();
+        (0..len).map(|i| c.commitments.get(i).unwrap()).collect()
+    }
+
+    #[test]
+    fn add_signers_via_dispatch_updates_storage() {
+        let vm = TestVM::default();
+        let mut c = fresh_wallet(&vm, &[U256::from(11), U256::from(22)], 1);
+
+        // addSigners([33], 2) — selector 0xa8d2c852
+        let data = calldata_u256arr_u256([0xa8, 0xd2, 0xc8, 0x52], &[U256::from(33)], U256::from(2));
+        assert!(c.dispatch_self_call(&data).is_ok(), "addSigners dispatch");
+
+        assert_eq!(read_commitments(&c), vec![U256::from(11), U256::from(22), U256::from(33)]);
+        assert_eq!(c.signatures_required.get(), U256::from(2));
+    }
+
+    #[test]
+    fn remove_signers_via_dispatch_updates_storage() {
+        let vm = TestVM::default();
+        let mut c = fresh_wallet(&vm, &[U256::from(11), U256::from(22), U256::from(33)], 1);
+
+        // removeSigners([22], 2) — selector 0x4791ca34. Internal uses swap-with-last + pop.
+        let data = calldata_u256arr_u256([0x47, 0x91, 0xca, 0x34], &[U256::from(22)], U256::from(2));
+        assert!(c.dispatch_self_call(&data).is_ok(), "removeSigners dispatch");
+
+        let got = read_commitments(&c);
+        assert_eq!(got.len(), 2);
+        assert!(got.contains(&U256::from(11)) && got.contains(&U256::from(33)));
+        assert!(!got.contains(&U256::from(22)));
+        assert_eq!(c.signatures_required.get(), U256::from(2));
+    }
+
+    #[test]
+    fn update_signatures_required_via_dispatch() {
+        let vm = TestVM::default();
+        let mut c = fresh_wallet(&vm, &[U256::from(11), U256::from(22), U256::from(33)], 1);
+
+        assert!(
+            c.dispatch_self_call(&calldata_update_sig(U256::from(3))).is_ok(),
+            "updateSignaturesRequired dispatch",
+        );
+        assert_eq!(c.signatures_required.get(), U256::from(3));
+    }
+
+    #[test]
+    fn update_signatures_required_rejects_above_signer_count() {
+        let vm = TestVM::default();
+        let mut c = fresh_wallet(&vm, &[U256::from(11), U256::from(22)], 1);
+
+        // 3 > 2 signers must revert and leave signatures_required untouched.
+        let res = c.dispatch_self_call(&calldata_update_sig(U256::from(3)));
+        assert!(res.is_err());
+        assert_eq!(c.signatures_required.get(), U256::from(1));
+    }
+
+    #[test]
+    fn add_signers_rejects_duplicate_commitment() {
+        let vm = TestVM::default();
+        let mut c = fresh_wallet(&vm, &[U256::from(11), U256::from(22)], 1);
+
+        // 22 already a signer -> "Commitment exists".
+        let data = calldata_u256arr_u256([0xa8, 0xd2, 0xc8, 0x52], &[U256::from(22)], U256::from(2));
+        assert!(c.dispatch_self_call(&data).is_err());
+        assert_eq!(read_commitments(&c).len(), 2);
+    }
+
+    #[test]
+    fn unknown_selector_is_rejected() {
+        let vm = TestVM::default();
+        let mut c = fresh_wallet(&vm, &[U256::from(11), U256::from(22)], 1);
+
+        let data = vec![0xde, 0xad, 0xbe, 0xef, 0x00, 0x00, 0x00, 0x00];
+        assert!(c.dispatch_self_call(&data).is_err());
+    }
+}
