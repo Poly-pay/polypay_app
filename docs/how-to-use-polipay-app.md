@@ -24,7 +24,7 @@ Polypay app beta v0.1 is an initial release of the Polypay platform. It is a web
 
 1. **Connect Wallet**: Connect your wallet
 2. **Generate Identity**: Sign a message to create your secret
-3. **Choose Network**: Select Horizen, Base, or Arbitrum Sepolia (see [Arbitrum Stylus Support](arbitrum-stylus.md) for current limitations on Arbitrum)
+3. **Choose Network**: Select Horizen, Base, or Arbitrum(see [Arbitrum Stylus Support](arbitrum-stylus.md) for current limitations on Arbitrum)
 4. **Create/Join Account**: Deploy new multisig or join existing one
 4. **Propose Transaction**: Create transfer and generate ZK proof
 5. **Sign**: Other signers approve with their ZK proofs
