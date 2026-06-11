@@ -1,0 +1,39 @@
+[package]
+name = "polypay-multisig-stylus"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "PolyPay MetaMultiSigWallet ported to Arbitrum Stylus (Rust/WASM)"
+
+[dependencies]
+# Match cargo-stylus 0.10.x so `#[constructor]` is detected and deployed.
+stylus-sdk = "0.10.7"
+# The `sol!` / `sol_storage!` macros expand to `::alloy_*` extern-crate paths, so
+# these must be direct dependencies (versions matched to stylus-sdk).
+alloy-primitives = "1.6"
+alloy-sol-types = "1.6"
+
+[dev-dependencies]
+stylus-sdk = { version = "0.10.7", features = ["stylus-test"] }
+
+[features]
+# `cargo stylus export-abi` needs this feature to emit the Solidity ABI.
+export-abi = ["stylus-sdk/export-abi"]
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+# The binary only exists to print the ABI; it must not be built for the WASM target.
+[[bin]]
+name = "polypay-multisig-stylus"
+path = "src/main.rs"
+required-features = ["export-abi"]
+
+# WASM size matters: Stylus rejects programs whose compressed code exceeds the limit.
+# These flags keep the binary small.
+[profile.release]
+codegen-units = 1
+strip = true
+lto = true
+panic = "abort"
+opt-level = "z"

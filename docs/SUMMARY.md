@@ -8,6 +8,7 @@
 - [Zero-Knowledge Implementation](zero-knowledge-implementation.md)
 - [ZK Authentication](zk-authentication.md)
 - [zkVerify, Horizen & Base Integration](zkverify-horizen-integration.md)
+- [Arbitrum Stylus Support](arbitrum-stylus.md)
 - [Gasless USDC Deposits (x402)](x402-deposits.md)
 - [PolyPay for AI Agents](llms-txt-for-agents.md)
 - [Architecture](architecture.md)

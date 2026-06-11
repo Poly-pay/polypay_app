@@ -29,6 +29,17 @@ const NETWORK_META_BY_CHAIN_ID: Record<number, NetworkMeta> = {
     icon: "/token/base.svg",
     badge: "/token/base.svg",
   },
+  // Arbitrum
+  42161: {
+    name: "Arbitrum",
+    icon: "/token/arbitrum.svg",
+    badge: "/token/arbitrum.svg",
+  },
+  421614: {
+    name: "Arbitrum Sepolia",
+    icon: "/token/arbitrum.svg",
+    badge: "/token/arbitrum.svg",
+  },
 };
 
 export const getDefaultChainId = (): number => {

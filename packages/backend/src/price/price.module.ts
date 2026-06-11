@@ -4,7 +4,10 @@ import { CacheModule } from '@nestjs/cache-manager';
 import axiosRetry from 'axios-retry';
 import { PriceController } from './price.controller';
 import { PriceService } from './price.service';
-import { PriceScheduler } from './price.scheduler';
+// Weekly ZEN price capture only fed the Quest/Reward payout flow, which is
+// disabled. Keep price.scheduler.ts for future reuse but leave it unregistered
+// so its Friday cron stops running. Re-add PriceScheduler below to re-enable.
+// import { PriceScheduler } from './price.scheduler';
 import {
   HTTP_TIMEOUT_PRICE,
   PRICE_CACHE_TTL,
@@ -22,7 +25,7 @@ import {
     }),
   ],
   controllers: [PriceController],
-  providers: [PriceService, PriceScheduler],
+  providers: [PriceService],
   exports: [PriceService],
 })
 export class PriceModule {

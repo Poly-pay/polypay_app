@@ -292,7 +292,12 @@ export class TransactionExecutorService {
     const signers: SignerData[] = JSON.parse(transaction.signerData);
 
     const account = await tx.account.findUnique({
-      where: { address: transaction.accountAddress },
+      where: {
+        address_chainId: {
+          address: transaction.accountAddress,
+          chainId: transaction.chainId,
+        },
+      },
     });
 
     if (!account) return;
@@ -345,7 +350,12 @@ export class TransactionExecutorService {
     const signers: SignerData[] = JSON.parse(transaction.signerData);
 
     const account = await tx.account.findUnique({
-      where: { address: transaction.accountAddress },
+      where: {
+        address_chainId: {
+          address: transaction.accountAddress,
+          chainId: transaction.chainId,
+        },
+      },
     });
 
     if (!account) return;
@@ -596,7 +606,7 @@ export class TransactionExecutorService {
 
     if (hasRecentAggregation) {
       this.logger.log(
-        'Recent aggregation detected, waiting 40s for cross-chain finalization...',
+        `Recent aggregation detected, waiting ${CROSS_CHAIN_FINALIZATION_WAIT / 1000}s for cross-chain finalization...`,
       );
       await this.sleep(CROSS_CHAIN_FINALIZATION_WAIT);
     } else {

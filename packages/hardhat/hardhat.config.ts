@@ -62,11 +62,13 @@ const config: HardhatUserConfig = {
       accounts: [deployerPrivateKey],
     },
     arbitrum: {
-      url: `https://arb-mainnet.g.alchemy.com/v2/${providerApiKey}`,
+      // Default Alchemy key is IP-whitelisted; use the public RPC unless overridden.
+      url: process.env.ARBITRUM_RPC || "https://arb1.arbitrum.io/rpc",
       accounts: [deployerPrivateKey],
     },
     arbitrumSepolia: {
-      url: `https://arb-sepolia.g.alchemy.com/v2/${providerApiKey}`,
+      // Default Alchemy key is IP-whitelisted; use the public RPC unless overridden.
+      url: process.env.ARBITRUM_SEPOLIA_RPC || "https://sepolia-rollup.arbitrum.io/rpc",
       accounts: [deployerPrivateKey],
     },
     optimism: {

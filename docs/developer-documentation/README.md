@@ -29,6 +29,8 @@ This section covers:
 | Horizen | Testnet | 2651420 | [horizen-testnet.explorer.caldera.xyz](https://horizen-testnet.explorer.caldera.xyz/) |
 | Base | Mainnet | 8453 | [basescan.org](https://basescan.org/) |
 | Base | Sepolia | 84532 | [sepolia.basescan.org](https://sepolia.basescan.org/) |
+| Arbitrum | Mainnet (Arbitrum One, Stylus WASM contract) | 42161 | [arbiscan.io](https://arbiscan.io/) |
+| Arbitrum | Sepolia (Stylus WASM contract) | 421614 | [sepolia.arbiscan.io](https://sepolia.arbiscan.io/) |
 
 ## Quick Links
 

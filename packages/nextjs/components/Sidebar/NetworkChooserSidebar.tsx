@@ -12,8 +12,8 @@ interface NetworkChooserSidebarProps {
   onSelectNetwork: (chainId: number | null) => void;
 }
 
-const NETWORKS_MAINNET = [26514, 8453];
-const NETWORKS_TESTNET = [2651420, 84532];
+const NETWORKS_MAINNET = [26514, 8453, 42161];
+const NETWORKS_TESTNET = [2651420, 84532, 421614];
 
 export default function NetworkChooserSidebar({ isOpen, accounts, onSelectNetwork }: NetworkChooserSidebarProps) {
   const { selectedNetworkChainId } = useSidebarStore();
