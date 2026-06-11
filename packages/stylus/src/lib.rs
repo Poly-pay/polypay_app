@@ -486,8 +486,8 @@ impl MetaMultiSigWallet {
 
 // Hand-rolled Solidity ABI decoders for the static handful of types used by
 // dispatch_self_call(). Pulling the full alloy ABI codec into the WASM would
-// bloat the compressed contract size, and Stylus is already over the 24 KB
-// fragmentation threshold.
+// bloat the compressed contract size, which has to stay under the 24 KiB Stylus
+// code-size limit to deploy on Arbitrum One.
 fn decode_u256(data: &[u8], offset: usize) -> Result<U256, Error> {
     if data.len() < offset + 32 {
         return Err(err("Self-call: short uint256"));

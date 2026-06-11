@@ -29,7 +29,7 @@ A complete playbook covering the five most common agent flows:
 | # | Flow | What the agent can do |
 |---|---|---|
 | 1 | **Login** | Generate a ZK auth proof and obtain a JWT |
-| 2 | **Create multisig account** | Deploy a new PolyPay multisig on Horizen, Base, or Arbitrum Sepolia (testnet, see [Arbitrum Stylus Support](arbitrum-stylus.md) for limitations) |
+| 2 | **Create multisig account** | Deploy a new PolyPay multisig on Horizen, Base, or Arbitrum (see [Arbitrum Stylus Support](arbitrum-stylus.md)) |
 | 3 | **Single transfer** | Propose, vote, and execute a private payroll payment |
 | 4 | **Batch transfer** | Propose and execute multi-recipient payroll in one transaction |
 | 5 | **Gasless USDC deposit (x402)** | Fund any PolyPay multisig with USDC on Base without holding ETH |

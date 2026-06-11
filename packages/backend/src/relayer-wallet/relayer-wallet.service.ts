@@ -146,12 +146,11 @@ export class RelayerService {
    * Deploy a per-account MetaMultiSigWallet on an Arbitrum Stylus chain via an
    * EIP-1167 minimal proxy in front of the shared Stylus impl.
    *
-   * Why the proxy: the Stylus impl is ~29 KB compressed (over the 24 KB EVM
-   * code-size limit) so cargo-stylus fragments it on-chain, which makes
-   * single-bytecode StylusDeployer deploys unusable for per-account creation.
-   * The factory clones a tiny EVM proxy whose fallback delegatecalls into the
-   * impl, then atomically calls `init(...)` on the clone in the same tx so we
-   * never expose a half-initialized wallet.
+   * Why the proxy: deploying a full Stylus contract (with its activation fee)
+   * per account would be far more expensive than a tiny EVM proxy. The factory
+   * clones a ~52-byte proxy whose fallback delegatecalls into the shared impl,
+   * then atomically calls `init(...)` on the clone in the same tx so we never
+   * expose a half-initialized wallet.
    */
   private async deployStylusAccount(
     commitments: string[],

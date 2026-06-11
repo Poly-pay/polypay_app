@@ -7,9 +7,8 @@
 // of the immutable `implementation` Stylus contract and atomically invokes
 // `init(...)` on it. The proxy bytecode is the same custom variant the
 // Solidity factory emits: a 5-byte prefix that STOPs on empty calldata (so
-// plain ETH transfers succeed despite the fragmented Stylus loader's
-// dispatcher reverting on empty calldata) followed by the standard EIP-1167
-// delegatecall sequence.
+// plain ETH transfers succeed despite the Stylus loader's dispatcher reverting
+// on empty calldata) followed by the standard EIP-1167 delegatecall sequence.
 //
 // Why Rust here: the entire Arbitrum on-chain footprint is now Stylus/WASM
 // end-to-end (impl + factory). Functionally identical to the Solidity
@@ -162,8 +161,8 @@ fn build_proxy_creation_code(implementation: Address) -> Vec<u8> {
     ]);
     // Runtime prefix (5 bytes): if calldatasize == 0 → JUMPI to offset 0x32
     // (the STOP at the very end of the runtime). Accepts plain ETH transfers
-    // without falling into the delegatecall path that the fragmented Stylus
-    // loader would revert on.
+    // without falling into the delegatecall path that the Stylus loader would
+    // revert on.
     code.extend_from_slice(&[0x36, 0x15, 0x60, 0x32, 0x57]);
     // EIP-1167 prelude up to and including the PUSH20 opcode (10 bytes).
     code.extend_from_slice(&[

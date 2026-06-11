@@ -108,11 +108,10 @@ Record the deployed impl address — you need it for the factory step below.
 
 ## Deploy the EIP-1167 factory
 
-Per-account wallets are not deployed as fresh Stylus contracts (the impl is
-~29 KB compressed, above the EVM 24 KB code-size limit, so `cargo stylus
-get-initcode` errors with "fragmented contracts not currently supported").
-Instead each account is a tiny EIP-1167 minimal proxy that delegatecalls into
-the impl. Deploy the factory once:
+Per-account wallets are not deployed as fresh Stylus contracts — deploying a
+full Stylus contract (with its activation fee) per account would be far more
+expensive. Instead each account is a tiny EIP-1167 minimal proxy that
+delegatecalls into the impl. Deploy the factory once:
 
 ```bash
 STYLUS_IMPL_ADDRESS=0x<stylus-impl-from-above> \

@@ -28,7 +28,7 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
   },
   421614: {
-    // Arbitrum Sepolia (testnet only — zkVerify has no Arbitrum One mainnet verifier yet).
+    // Arbitrum Sepolia (testnet; Arbitrum One mainnet 42161 is below).
     // On this chain the account contract is the Stylus (Rust/WASM) port of
     // MetaMultiSigWallet, deployed once as `stylusImplAddress` and fronted by
     // EIP-1167 minimal proxies created per-account through `stylusFactoryAddress`.
@@ -40,15 +40,12 @@ export const CONTRACT_CONFIG_BY_CHAIN_ID = {
     // address if redeployed via the same CREATE2 factory; otherwise update this.
     poseidonT3Address: "0x3333333C0A88F9BE4fd23ed0536F9B6c427e3B93",
     // Stylus MetaMultiSigWallet impl (deployed via `cargo stylus deploy`).
-    // Current build: original STATICCALL-based Poseidon (uses the on-chain
-    // poseidon-solidity PoseidonT3 library at `poseidonT3Address`). The
-    // in-process Rust Poseidon experiment was reverted — see NOTES.md.
+    // STATICCALLs the on-chain poseidon-solidity PoseidonT3 library at
+    // `poseidonT3Address` for ZK proof verification.
     stylusImplAddress: "0x61fddf7cde02d4527b7d1086671d3f948e59f1d1",
-    // Stylus/Rust EIP-1167 factory (packages/stylus-factory) bound to the
-    // STATICCALL-Poseidon impl above. Emits byte-identical proxy bytecode to
-    // the previous Solidity factory, so accounts created here are
-    // indistinguishable on-chain from accounts created against the legacy
-    // factory.
+    // Stylus/Rust EIP-1167 factory (packages/stylus-factory) bound to the impl
+    // above. Emits byte-identical proxy bytecode to the reference Solidity
+    // factory, so accounts created here are indistinguishable on-chain.
     stylusFactoryAddress: "0x73d33f803600087ed1259035f9ff46f16f15c11a",
   },
   42161: {

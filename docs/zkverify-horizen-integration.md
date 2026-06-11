@@ -8,7 +8,7 @@ PolyPay uses multiple blockchain layers for privacy-preserving multisig operatio
 - **[Horizen](https://www.horizen.io/)**: EVM-compatible L3 blockchain where multisig accounts (`MetaMultiSigWallet` contracts) are deployed and transactions are executed
 - **[Base](https://base.org/)**: EVM-compatible L2 blockchain, also supported as a destination chain for account deployment and transaction execution
 
-> **"Destination Chain"** refers to the EVM chain where the multisig account is deployed — **Horizen** (L3, chain ID 26514), **Base** (L2, chain ID 8453), or **Arbitrum Sepolia** (L2 testnet, chain ID 421614). The user selects the destination chain when creating an account, and all subsequent operations for that account happen on the same chain. Arbitrum support uses a Rust/WASM port of the account contract via [Arbitrum Stylus](arbitrum-stylus.md) — see that page for current scope and limitations.
+> **"Destination Chain"** refers to the EVM chain where the multisig account is deployed — **Horizen** (L3, chain ID 26514), **Base** (L2, chain ID 8453), or **Arbitrum** (L2; Arbitrum One chain ID 42161, Sepolia 421614). The user selects the destination chain when creating an account, and all subsequent operations for that account happen on the same chain. Arbitrum support uses a Rust/WASM port of the account contract via [Arbitrum Stylus](arbitrum-stylus.md).
 
 ## Blockchain Classification
 

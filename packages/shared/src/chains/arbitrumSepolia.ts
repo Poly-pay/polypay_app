@@ -1,6 +1,6 @@
 import { arbitrumSepolia } from "viem/chains";
 
-// Re-export viem's Arbitrum Sepolia chain definition for consistency with other chains module.
-// Arbitrum is testnet-only in PolyPay: zkVerify has a verifier on Arbitrum Sepolia (421614)
-// but not on Arbitrum One mainnet yet.
+// Re-export viem's Arbitrum Sepolia chain definition for consistency with the
+// other chains module. Arbitrum One mainnet (42161) is also supported — see
+// arbitrumOne.ts.
 export { arbitrumSepolia };

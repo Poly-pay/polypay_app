@@ -5,15 +5,13 @@
 // reuse `METAMULTISIG_ABI` for reads/writes against deployed wallet addresses.
 //
 // Deployment is the only thing that differs from the EVM path:
-//   - The Stylus impl is ~29 KB compressed (above the 24 KB EVM code-size cap),
-//     so cargo-stylus fragments it on-chain. That makes the single-bytecode
-//     `StylusDeployer.deploy(bytecode, ...)` path unusable for per-account
-//     deploys from the relayer.
 //   - We deploy the Stylus impl ONCE (via `cargo stylus deploy`), then route
 //     all per-account creation through `MetaMultiSigWalletStylusFactory`, which
 //     clones an EIP-1167 minimal proxy in front of the impl and calls
 //     `init(...)` atomically. Each proxy gets its own storage, so signers /
-//     nonces / nullifiers stay isolated per wallet.
+//     nonces / nullifiers stay isolated per wallet. A proxy per account is used
+//     because deploying a full Stylus contract (with its activation fee) per
+//     account would be far more expensive than a ~52-byte EVM proxy.
 //   - The Stylus contract exposes both a `constructor` (used once by
 //     cargo-stylus when deploying the impl) and an `init` function with the
 //     same args. The latter is what the factory calls on the freshly-cloned
