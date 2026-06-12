@@ -3,12 +3,7 @@ name: Backend Production
 on:
   push:
     branches:
-      - "feature/terraform/deploy"
-    paths:
-      - "packages/backend/**"
-      - "packages/shared/**"
-      - "docker/backend.Dockerfile"
-      - ".github/workflows/backend-prod-v2.yaml"
+      - "feature/terraform-deploy"
 
 jobs:
   build-and-deploy:
