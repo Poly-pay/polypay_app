@@ -83,6 +83,7 @@ jobs:
               FEATURE_X402_DEPOSIT=${{ vars.FEATURE_X402_DEPOSIT }},\
               X402_FACILITATOR_URL=${{ vars.X402_FACILITATOR_URL }},\
               X402_CDP_FACILITATOR_URL=${{ vars.X402_CDP_FACILITATOR_URL }}"
+              
 
 
       # # --- Slack notifications ---
