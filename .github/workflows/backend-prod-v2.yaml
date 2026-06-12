@@ -73,8 +73,7 @@ jobs:
           gcloud run deploy ${CLOUD_RUN_SERVICE} \
             --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA} \
             --region ${GCP_LOCATION} \
-            --update-env-vars \
-              RESTRICTED_IPS=${{ vars.RESTRICTED_IPS }},\
+            --update-env-vars="RESTRICTED_IPS=${{ vars.RESTRICTED_IPS }},\
               CORS_ORIGIN=${{ vars.CORS_ORIGIN }},\
               NODE_ENV=${{ vars.NODE_ENV }},\
               API_PREFIX=${{ vars.API_PREFIX }},\
@@ -83,7 +82,7 @@ jobs:
               NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }},\
               FEATURE_X402_DEPOSIT=${{ vars.FEATURE_X402_DEPOSIT }},\
               X402_FACILITATOR_URL=${{ vars.X402_FACILITATOR_URL }},\
-              X402_CDP_FACILITATOR_URL=${{ vars.X402_CDP_FACILITATOR_URL }}
+              X402_CDP_FACILITATOR_URL=${{ vars.X402_CDP_FACILITATOR_URL }}"
 
 
       # # --- Slack notifications ---
