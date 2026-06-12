@@ -28,24 +28,23 @@ jobs:
 
       - name: Set short SHA
         run: |
-          # echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "SHORT_SHA=4284eef" >> $GITHUB_ENV
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-      # - name: Build and push image
-      #   env:
-      #     GCP_LOCATION: ${{ vars.GCP_LOCATION }}
-      #     GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      #     APPNAME: ${{ vars.APPNAME }}
-      #     GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
-      #   run: |
-      #     docker build \
-      #       --quiet \
-      #       --platform linux/amd64 \
-      #       -f docker/backend.Dockerfile \
-      #       -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA} \
-      #       .
+      - name: Build and push image
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          APPNAME: ${{ vars.APPNAME }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+        run: |
+          docker build \
+            --quiet \
+            --platform linux/amd64 \
+            -f docker/backend.Dockerfile \
+            -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA} \
+            .
 
-      #     docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA}
+          docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA}
 
       - name: Update and Run Prisma Migration Job
         env:
