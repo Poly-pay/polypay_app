@@ -35,47 +35,56 @@ jobs:
       #   env:
       #     GCP_LOCATION: ${{ vars.GCP_LOCATION }}
       #     GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      #     GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+      #     APPNAME: ${{ vars.APPNAME }}
       #     GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
       #   run: |
       #     docker build \
       #       --quiet \
       #       --platform linux/amd64 \
       #       -f docker/backend.Dockerfile \
-      #       -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
+      #       -t ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA} \
       #       .
 
-      #     docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA}
+      #     docker push ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA}
 
       - name: Update and Run Prisma Migration Job
         env:
           GCP_LOCATION: ${{ vars.GCP_LOCATION }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-          GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
+          APPNAME: ${{ vars.APPNAME }}
           GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
         run: |
           gcloud run jobs update ${{ vars.GCP_BACKEND_NAME }} \
-            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA} \
             --region ${{ vars.GCP_LOCATION }}
 
           gcloud run jobs execute ${{ vars.GCP_BACKEND_NAME }} \
             --region ${{ vars.GCP_LOCATION }} \
             --wait
 
-      # - name: Deploy to Cloud Run
-      #   env:
-      #     GCP_LOCATION: ${{ vars.GCP_LOCATION }}
-      #     GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      #     GCP_REPOSITORY: ${{ vars.GCP_REPOSITORY }}
-      #     GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
-      #     CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
-      #   run: |
-      #     gcloud run deploy ${CLOUD_RUN_SERVICE} \
-      #       --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_REPOSITORY}/${GCP_IMAGE}:${SHORT_SHA} \
-      #       --region ${GCP_LOCATION} \
-      #       --platform managed \
-      #       --allow-unauthenticated \
-      #       --update-env-vars NETWORK=${{ vars.NETWORK }}
+      - name: Deploy to Cloud Run
+        env:
+          GCP_LOCATION: ${{ vars.GCP_LOCATION }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          APPNAME: ${{ vars.APPNAME }}
+          GCP_IMAGE: ${{ vars.GCP_BACKEND_NAME }}
+          CLOUD_RUN_SERVICE: ${{ vars.GCP_BACKEND_NAME }}
+        run: |
+          gcloud run deploy ${CLOUD_RUN_SERVICE} \
+            --image ${GCP_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${APPNAME}/${GCP_IMAGE}:${SHORT_SHA} \
+            --region ${GCP_LOCATION} \
+            --update-env-vars \
+              RESTRICTED_IPS=${{ vars.RESTRICTED_IPS }},\
+              CORS_ORIGIN=${{ vars.CORS_ORIGIN }},\
+              NODE_ENV=${{ vars.NODE_ENV }},\
+              API_PREFIX=${{ vars.API_PREFIX }},\
+              LOG_LEVEL=${{ vars.LOG_LEVEL }},\
+              NETWORK=${{ vars.NETWORK }},\
+              NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }},\
+              FEATURE_X402_DEPOSIT=${{ vars.FEATURE_X402_DEPOSIT }},\
+              X402_FACILITATOR_URL=${{ vars.X402_FACILITATOR_URL }},\
+              X402_CDP_FACILITATOR_URL=${{ vars.X402_CDP_FACILITATOR_URL }}
+
 
       # # --- Slack notifications ---
       # - name: Notify Success to Slack Channel
