@@ -15,7 +15,9 @@ invisible to users.
 No setup — pick "Arbitrum" in the network chooser when creating an account.
 Notes specific to Arbitrum:
 
-- **Tokens**: ETH and Circle USDC. Gasless x402 deposit is Base-only.
+- **Tokens**: ETH and Circle USDC. Gasless x402 deposits are supported on
+  Arbitrum (One 42161 and Sepolia 421614) via the PayAI facilitator, in
+  addition to Base.
 - **Approval time**: zkVerify publishes the aggregation receipt in ≈2 minutes,
   then the transaction is executable.
 - **MetaMask warning**: MetaMask's security checker can't read Stylus bytecode

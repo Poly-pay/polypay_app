@@ -27,7 +27,7 @@ export function useX402Deposit() {
         throw new Error("RPC client not ready");
       }
       if (!isX402SupportedChain(chainId)) {
-        throw new Error("Connect to Base or Base Sepolia to deposit via x402");
+        throw new Error("Connect to a network that supports x402 gasless deposits");
       }
 
       const usdc = USDC_TOKEN.addresses[chainId] as `0x${string}` | undefined;
@@ -62,8 +62,9 @@ export function useX402Deposit() {
     },
     onSuccess: (_data, params) => {
       notification.success("Deposit submitted");
-      // x402 only operates on Base, so the chainId in the query key is the
-      // wallet's current connected chain.
+      // The deposit is signed on the wallet's connected chain, which (after the
+      // wrong-chain guard in the modal) matches the multisig's chain — so the
+      // connected chainId is the right key to invalidate.
       void queryClient.invalidateQueries({
         queryKey: accountKeys.byAddress(params.multisigAddress, chainId),
       });
