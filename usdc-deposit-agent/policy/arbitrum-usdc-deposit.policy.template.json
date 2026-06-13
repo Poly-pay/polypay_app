@@ -1,0 +1,17 @@
+{
+  "id": "arbitrum-usdc-deposit",
+  "name": "Arbitrum One USDC deposit to a single PolyPay multisig",
+  "version": 1,
+  "created_at": "__CREATED_AT__",
+  "rules": [
+    { "type": "allowed_chains", "chain_ids": ["eip155:42161"] },
+    { "type": "expires_at", "timestamp": "__EXPIRES_AT__" }
+  ],
+  "executable": "__CHECK_PATH__",
+  "config": {
+    "multisig": "__MULTISIG__",
+    "usdc": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "max_value": "__MAX_VALUE__"
+  },
+  "action": "deny"
+}
