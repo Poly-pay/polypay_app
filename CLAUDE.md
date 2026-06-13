@@ -231,6 +231,30 @@ useSocketEvent("transaction:updated", (data) => { /* handle */ });
 // hooks/app/useAppRouter.ts - type-safe navigation (goToDashboard, goToTransfer, etc.)
 ```
 
+## Deployment & CI/CD
+
+The app deploys to **GCP Cloud Run** in the Quantum3Labs org. Full operational details live in `.claude/agents/polypay-devops-expert.md`; this section is the at-a-glance summary every contributor needs.
+
+### Branch → environment
+- `develop` → **staging** (`staging-apps-482206`, region `asia-southeast1`)
+- `main` → **production** (`polypay-481601`, region `asia-southeast1`)
+
+### Workflows (`.github/workflows/`)
+| File | Trigger | Pipeline |
+|------|---------|----------|
+| `backend-{staging,prod}.yaml` | push to develop/main + paths in `packages/backend/**`, `packages/shared/**`, `docker/backend.Dockerfile` | Build → Prisma migration (Cloud Run Job) → Cloud Run deploy → Slack |
+| `frontend-{staging,prod}.yaml` | push to develop/main + paths in `packages/nextjs/**`, `packages/shared/**` | Build (with `NEXT_PUBLIC_*` build args) → Cloud Run deploy → Slack |
+| `lint.yaml` | PR + push to main | `yarn format` + `yarn build` |
+| `test.yaml` | PR + manual | Backend E2E tests against postgres:15 |
+
+### Auth & config
+- **GCP auth**: Workload Identity Federation (no JSON keys). Config comes from GitHub Environment `vars` (`GCP_PROJECT_ID`, `GCP_LOCATION`, `GCP_BACKEND_NAME`, etc.).
+- **Image tag**: 7-char commit SHA (`${GITHUB_SHA::7}`). No `latest` tag.
+- **Slack notifications**: every deploy posts success/failure to `SLACK_CHANNEL_ID`.
+
+### Runtime env vars — critical gotcha
+CI deploys use `gcloud run deploy ... --update-env-vars NETWORK=...`, which **only** sets the `NETWORK` variable. **Every other env var on the Cloud Run service is managed out-of-band** (manual `gcloud run services update` or Console) and **survives CI deploys**. The repo is not the source of truth for runtime env — the Cloud Run service is. Secrets must use Secret Manager bindings (`--set-secrets`), never plaintext values.
+
 ## Environment Setup
 
 ### Prerequisites

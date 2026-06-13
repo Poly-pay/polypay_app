@@ -40,6 +40,9 @@ export class X402Controller {
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
+    // Default deposit path uses PayAI (x402 v1) for all supported chains —
+    // Base and Arbitrum (One + Sepolia) are all on PayAI's v1 facilitator. The
+    // CDP/v2 path is reserved for the /bazaar routes below.
     const body = await this.x402Service.buildDiscoveryResponse(
       multisigAddress,
       resourceUrlFromRequest(req),
@@ -56,6 +59,9 @@ export class X402Controller {
     @Body() body: DepositRequestDto,
     @Req() req: Request,
   ): Promise<X402DepositResponse> {
+    // All supported chains (Base, Arbitrum One + Sepolia) settle through PayAI's
+    // x402 v1 facilitator (network labels "base"/"arbitrum"/"arbitrum-sepolia").
+    // The CDP/v2 path is used only by the /bazaar routes.
     return this.x402Service.processDeposit(
       multisigAddress,
       paymentHeader,
