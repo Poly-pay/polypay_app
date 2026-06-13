@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError } from 'axios';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, getAddress, http } from 'viem';
 import {
   USDC_TOKEN,
   getChainById,
@@ -44,6 +44,37 @@ export const Facilitator = {
   CDP: 'cdp',
 } as const;
 export type Facilitator = (typeof Facilitator)[keyof typeof Facilitator];
+
+// CAIP-2 networks the Coinbase CDP facilitator actually settles, per
+// https://docs.cdp.coinbase.com/x402/network-support (verified 2026-06-13):
+// Base, Base Sepolia, Polygon, Arbitrum One, World, World Sepolia, Solana
+// (+ devnet). NOTE: Arbitrum *Sepolia* (eip155:421614) is NOT supported by
+// CDP, and PayAI lists "arbitrum"/"arbitrum-sepolia" in /supported but rejects
+// them on verify with invalid_exact_evm_network_mismatch — so Arbitrum One is
+// the only Arbitrum chain that settles anywhere, and it must go through CDP.
+const CDP_SUPPORTED_NETWORKS: ReadonlySet<string> = new Set([
+  'eip155:8453', // Base
+  'eip155:84532', // Base Sepolia
+  'eip155:137', // Polygon
+  'eip155:42161', // Arbitrum One
+  'eip155:480', // World
+  'eip155:4801', // World Sepolia
+]);
+
+// Chains routed to CDP (x402 v2). Everything else falls back to PayAI (v1).
+// Only Arbitrum One settles via CDP today; Base stays on PayAI to keep the
+// existing, working v1 path untouched.
+const CDP_ROUTED_CHAIN_IDS: ReadonlySet<number> = new Set([42161]);
+
+/**
+ * Chain-aware facilitator selection. Arbitrum One (42161) is only settleable
+ * through Coinbase CDP (x402 v2); all other supported chains keep using PayAI.
+ */
+export function facilitatorForChain(chainId: number): Facilitator {
+  return CDP_ROUTED_CHAIN_IDS.has(chainId)
+    ? Facilitator.CDP
+    : Facilitator.PayAI;
+}
 
 // --- x402 v2 wire types -----------------------------------------------------
 // Mirrors @x402/core/types/payments.ts. Inlined so we don't pull the package
@@ -115,6 +146,18 @@ export class X402Service {
 
   // ---------- public surface ----------
 
+  /**
+   * Resolve which facilitator a multisig's deposits route through, based on the
+   * account's chainId. Arbitrum One (42161) → CDP (x402 v2, the only facilitator
+   * that settles it); every other supported chain → PayAI (x402 v1). Lets the
+   * default /deposit routes stay chain-aware without the controller knowing
+   * about chains. Throws (via assertAccount) for unknown/unsupported chains.
+   */
+  async resolveFacilitator(multisigAddress: string): Promise<Facilitator> {
+    const account = await this.assertAccount(multisigAddress);
+    return facilitatorForChain(account.chainId);
+  }
+
   async buildDiscoveryResponse(
     multisigAddress: string,
     resourceUrl: string,
@@ -123,6 +166,7 @@ export class X402Service {
     if (facilitator === Facilitator.CDP) {
       this.assertCdpEnabled();
       const account = await this.assertAccount(multisigAddress);
+      this.assertCdpNetworkSupported(account.chainId);
       return this.buildV2PaymentRequired(
         account.chainId,
         account.address,
@@ -165,6 +209,9 @@ export class X402Service {
       );
     }
     const account = await this.assertAccount(multisigAddress);
+    if (facilitator === Facilitator.CDP) {
+      this.assertCdpNetworkSupported(account.chainId);
+    }
     const payload = decodeXPaymentHeader(paymentHeader);
 
     await this.validatePayloadAgainstMultisig(
@@ -222,7 +269,14 @@ export class X402Service {
           resource: this.buildV2Resource(resourceUrl, account.address),
           accepted: v2Requirements,
           payload: {
-            authorization: payload.payload.authorization,
+            // Checksum the EIP-3009 authorization addresses for CDP's strict
+            // v2 EIP-55 validation. Safe for the signature: EIP-712 encodes
+            // addresses to the 20-byte value regardless of display casing.
+            authorization: {
+              ...payload.payload.authorization,
+              from: getAddress(payload.payload.authorization.from),
+              to: getAddress(payload.payload.authorization.to),
+            },
             signature: payload.payload.signature,
           },
           extensions: { bazaar: this.buildCdpBazaarExtension(resourceUrl) },
@@ -408,6 +462,20 @@ export class X402Service {
     }
   }
 
+  // Fail fast (and clearly) when a chain is routed to CDP but CDP cannot settle
+  // it — otherwise the request would die deep inside cdpVerify with an opaque
+  // facilitator error. Notably guards Arbitrum Sepolia (eip155:421614), which
+  // CDP does not support and PayAI rejects, so it has no working facilitator.
+  private assertCdpNetworkSupported(chainId: number): void {
+    const network = `eip155:${chainId}`;
+    if (!CDP_SUPPORTED_NETWORKS.has(network)) {
+      throw new BadRequestException(
+        `Chain ${chainId} (${network}) is not supported by the Coinbase CDP ` +
+          `x402 facilitator. CDP settles: ${[...CDP_SUPPORTED_NETWORKS].join(', ')}.`,
+      );
+    }
+  }
+
   private buildPaymentRequirements(
     chainId: number,
     payTo: string,
@@ -495,11 +563,20 @@ export class X402Service {
     return {
       scheme: 'exact',
       network: `eip155:${chainId}`,
-      asset: USDC_TOKEN.addresses[chainId],
+      // CDP's v2 validator requires EIP-55 checksummed EVM addresses; sending
+      // lowercase makes the payload fail its oneOf and surface a misleading
+      // "x402V1PaymentPayload requires 'scheme'" error. Checksum here.
+      asset: getAddress(USDC_TOKEN.addresses[chainId]),
       amount,
-      payTo,
+      payTo: getAddress(payTo),
       maxTimeoutSeconds: 120,
       extra: {
+        // `assetTransferMethod: "eip3009"` is part of the canonical v2 exact-EVM
+        // scheme payload (specs/schemes/exact/scheme_exact_evm.md). USDC supports
+        // transferWithAuthorization natively, so we declare eip3009 explicitly.
+        assetTransferMethod: 'eip3009',
+        // EIP-712 domain — required by the facilitator to verify the signature
+        // against the asset contract for the "exact" scheme on EVM.
         name: domain.name,
         version: domain.version,
         minDeposit: MIN_DEPOSIT.toString(),

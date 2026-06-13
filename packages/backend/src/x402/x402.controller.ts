@@ -40,13 +40,15 @@ export class X402Controller {
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
-    // Default deposit path uses PayAI (x402 v1) for all supported chains —
-    // Base and Arbitrum (One + Sepolia) are all on PayAI's v1 facilitator. The
-    // CDP/v2 path is reserved for the /bazaar routes below.
+    // Chain-aware facilitator selection: Arbitrum One (42161) settles only via
+    // Coinbase CDP (x402 v2); Base (8453/84532) stays on PayAI (x402 v1). The
+    // /bazaar routes below force CDP regardless, for agentic.market indexing.
+    const facilitator =
+      await this.x402Service.resolveFacilitator(multisigAddress);
     const body = await this.x402Service.buildDiscoveryResponse(
       multisigAddress,
       resourceUrlFromRequest(req),
-      Facilitator.PayAI,
+      facilitator,
     );
     res.status(HttpStatus.PAYMENT_REQUIRED).json(body);
   }
@@ -59,15 +61,20 @@ export class X402Controller {
     @Body() body: DepositRequestDto,
     @Req() req: Request,
   ): Promise<X402DepositResponse> {
-    // All supported chains (Base, Arbitrum One + Sepolia) settle through PayAI's
-    // x402 v1 facilitator (network labels "base"/"arbitrum"/"arbitrum-sepolia").
-    // The CDP/v2 path is used only by the /bazaar routes.
+    // Chain-aware: Arbitrum One (42161) → CDP (x402 v2, the only facilitator
+    // that settles it); everything else (Base 8453/84532, Arbitrum Sepolia
+    // 421614) → PayAI (x402 v1). Arbitrum Sepolia has no working facilitator
+    // (CDP unsupported, PayAI returns invalid_exact_evm_network_mismatch); it
+    // routes to PayAI and fails there cleanly rather than hitting a broken CDP
+    // path. The /bazaar routes below force CDP regardless.
+    const facilitator =
+      await this.x402Service.resolveFacilitator(multisigAddress);
     return this.x402Service.processDeposit(
       multisigAddress,
       paymentHeader,
       body?.memo,
       resourceUrlFromRequest(req),
-      Facilitator.PayAI,
+      facilitator,
     );
   }
 
