@@ -192,7 +192,12 @@ export class RelayerService {
       throw new Error(`Stylus deployment reverted. TxHash: ${txHash}`);
     }
 
-    const address = deployedAddress as string;
+    // Normalize to lowercase to match the EVM deploy path (viem returns
+    // receipt.contractAddress lowercased) and the address lookups in x402
+    // (assertAccount lowercases) and the rest of the system. simulateContract
+    // ABI-decodes the returned address to EIP-55 checksum, so without this the
+    // account would be stored checksummed and lowercasing lookups would 404.
+    const address = (deployedAddress as string).toLowerCase();
     this.logger.log(`Stylus wallet (proxy) deployed at: ${address}`);
 
     return { address, txHash };

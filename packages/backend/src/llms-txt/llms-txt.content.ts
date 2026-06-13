@@ -34,6 +34,8 @@ Supported chains (use the matching \`chainId\` for account creation):
 | Horizen testnet | 2651420 |
 | Base mainnet | 8453 |
 | Base Sepolia | 84532 |
+| Arbitrum One | 42161 |
+| Arbitrum Sepolia | 421614 |
 `;
 
 const OVERVIEW_SECTION = `## Overview
@@ -376,7 +378,20 @@ const FLOW_5_X402 = `## Flow 5 — Gasless USDC deposit (x402)
 
 This is the *one* write-side endpoint that is fully agent-friendly: no
 PolyPay account, no JWT, no ZK proof. Use it when an external agent (or
-human) wants to fund an existing PolyPay multisig with USDC on Base.
+human) wants to fund an existing PolyPay multisig with USDC.
+
+Supported chains for x402 deposits (the multisig's own \`chainId\` decides;
+GET the discovery response in 5a to read the exact \`network\`/\`asset\`):
+
+| Chain | chainId | x402 network label | CAIP-2 | USDC asset |
+|---|---|---|---|---|
+| Base mainnet | 8453 | \`base\` | \`eip155:8453\` | \`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\` |
+| Base Sepolia | 84532 | \`base-sepolia\` | \`eip155:84532\` | \`0x036CbD53842c5426634e7929541eC2318f3dCF7e\` |
+| Arbitrum One | 42161 | \`arbitrum\` | \`eip155:42161\` | \`0xaf88d065e77c8cC2239327C5EDb3A432268e5831\` |
+| Arbitrum Sepolia | 421614 | \`arbitrum-sepolia\` | \`eip155:421614\` | \`0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d\` |
+
+All chains route through the PayAI x402 facilitator; you do not choose it —
+just sign for the chain the discovery response names.
 
 It implements the [x402 protocol](https://x402.org).
 
@@ -427,6 +442,9 @@ const auth = {
 
 const signature = await agentWallet.signTypedData({
   domain: {
+    // chainId + verifyingContract must match the chain from the 5a discovery
+    // response. Base mainnet shown; for Arbitrum One use chainId: 42161,
+    // verifyingContract: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".
     name: "USD Coin", version: "2", chainId: 8453,
     verifyingContract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   },
@@ -444,7 +462,8 @@ const signature = await agentWallet.signTypedData({
   message: auth,
 });
 
-// Build X-PAYMENT header per x402 v1 spec.
+// Build X-PAYMENT header per x402 v1 spec. \`network\` is the label from the
+// 5a discovery response ("base" / "base-sepolia" / "arbitrum" / "arbitrum-sepolia").
 const payload = {
   x402Version: 1,
   scheme: "exact",

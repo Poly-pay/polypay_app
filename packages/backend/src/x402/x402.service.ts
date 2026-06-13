@@ -279,9 +279,9 @@ export class X402Service {
     if (!/^0x[a-fA-F0-9]{40}$/.test(multisigAddress)) {
       throw new BadRequestException('Invalid address format');
     }
-    // x402 only supports Base chains, so we scope the lookup to those — this
-    // also disambiguates when the same address exists on multiple chains
-    // (Horizen + Base) due to wallet nonces colliding.
+    // x402 supports Base and Arbitrum chains; the isX402SupportedChain gate
+    // below rejects anything else (e.g. Horizen). The lookup itself is by
+    // address — disambiguation between chains relies on that gate.
     const account = await this.prisma.account.findFirst({
       where: { address: multisigAddress.toLowerCase() },
     });

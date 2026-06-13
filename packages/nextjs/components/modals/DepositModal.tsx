@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import ModalContainer from "./ModalContainer";
-import { USDC_TOKEN, formatTokenAmount, isX402SupportedChain } from "@polypay/shared";
+import { USDC_TOKEN, formatTokenAmount, getChainById, isX402SupportedChain } from "@polypay/shared";
 import { ArrowLeft, Check, X } from "lucide-react";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useChainId, useReadContract, useSwitchChain } from "wagmi";
@@ -40,7 +40,15 @@ export interface DepositModalProps extends ModalProps {
 }
 
 function txExplorerUrl(chainId: number, txHash: string): string {
-  return chainId === 84532 ? `https://sepolia.basescan.org/tx/${txHash}` : `https://basescan.org/tx/${txHash}`;
+  // Resolve the explorer from the viem chain def so each supported chain
+  // (Base -> Basescan, Arbitrum Sepolia -> Arbiscan, ...) links correctly.
+  try {
+    const base = getChainById(chainId).blockExplorers?.default.url;
+    if (base) return `${base.replace(/\/$/, "")}/tx/${txHash}`;
+  } catch {
+    // Unknown chain — fall through to a chain-neutral default.
+  }
+  return `https://basescan.org/tx/${txHash}`;
 }
 
 const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, multisigAddress, multisigChainId }) => {
@@ -162,7 +170,9 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, multisigAd
             </div>
           )}
           {unsupported && !wrongChain && (
-            <p className="mx-5 mt-3 text-sm text-red-600">Connect to Base or Base Sepolia to continue.</p>
+            <p className="mx-5 mt-3 text-sm text-red-600">
+              Connect to a network that supports gasless deposits to continue.
+            </p>
           )}
 
           {/* Amount input */}
