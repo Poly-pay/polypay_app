@@ -10,9 +10,11 @@ A privacy-preserving payroll platform built on Horizen. PolyPay enables organiza
 
 ## Features
 
-- **Private Payments**: Salary amounts and recipients stay confidential
-- **Private Multisig**: Team approvals without exposing signer identities
-- **Flexible Payment Logic**: Escrow, milestone-based, and recurring transfers
+- **Private Multisig**: Team approvals without exposing signer identities — only a relayer wallet appears on-chain
+- **ZK Authentication**: Login via zero-knowledge proof; secrets never leave your device
+- **Batch Payroll**: Single and batch transfers
+
+> **Roadmap:** Confidential payment amounts and recipients ("private payments") are in active development — not yet live. Today's privacy guarantee covers signer identities.
 
 ## Quick Start
 
