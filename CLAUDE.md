@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-PolyPay is a privacy-preserving payroll platform built on Horizen blockchain. It enables organizations, DAOs, and global teams to run payroll privately using zero-knowledge proofs (Noir circuits). Key features: private payments, private multisig approvals, escrow/milestone-based transfers, real-time notifications via WebSocket, and JWT authentication.
+PolyPay is a privacy-preserving payroll & multisig platform built on Horizen (primary), Base, and Arbitrum (Stylus). It enables organizations, DAOs, and global teams to run payroll while keeping signer identities private, using zero-knowledge proofs (Noir circuits). Key shipped features: private multisig approvals (signer identities hidden — only a relayer appears on-chain), ZK authentication, single + batch transfers, gasless USDC deposits (x402), real-time notifications via WebSocket, and JWT auth. Note: confidential payment **amounts and recipients** ("private payments") are roadmap, **not yet implemented** — today's privacy covers signer identities only.
 
 ## Tech Stack
 

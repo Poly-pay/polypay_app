@@ -16,12 +16,14 @@ This lack of privacy prevents businesses from adopting crypto payroll.
 
 ### Our Solution
 
-PolyPay uses **zero-knowledge proofs** and **multi-chain deployment** (Horizen and Base) to provide:
+PolyPay uses **zero-knowledge proofs** and **multi-chain deployment** (Horizen, Base, and Arbitrum) to provide:
 
-* **Private Payments**: Salary amounts and recipients stay confidential
-* **Private Multisig**: Team approvals without exposing signer identities
+* **Private Multisig**: Team approvals without exposing signer identities — only a relayer wallet appears on-chain
+* **ZK Authentication**: Login via zero-knowledge proof; secrets never leave your device
 * **Flexible Payment Logic**: Single and batch transfers
-* **Gasless USDC Deposit (x402)**: Fund a multisig on Base with one signature, no ETH required — works for human users and AI agents via the [x402 protocol](https://www.x402.org/)
+* **Gasless USDC Deposit (x402)**: Fund a multisig with one signature, no ETH required — works for human users and AI agents via the [x402 protocol](https://www.x402.org/)
+
+> **On the roadmap:** confidential payment amounts and recipients ("private payments"). Today's ZK privacy covers signer identities and authentication; we're actively building toward fully private transfers.
 
 ### Who Is It For?
 

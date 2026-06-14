@@ -1,0 +1,24 @@
+{
+  "name": "polypay-usdc-deposit-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Autonomous agent that deposits USDC into a PolyPay multisig on Arbitrum One via gasless x402, signing through an OWS policy-gated vault (no private key in the agent process).",
+  "engines": {
+    "node": ">=20.18.3"
+  },
+  "scripts": {
+    "deposit": "node --env-file-if-exists=.env --import tsx src/index.ts",
+    "test:policy": "node test/policy-gate.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@open-wallet-standard/core": "^1.3.2",
+    "viem": "2.31.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.22.4",
+    "typescript": "^5.8.2"
+  }
+}
