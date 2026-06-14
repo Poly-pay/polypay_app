@@ -6,9 +6,12 @@ name: Claude PR Review
 # Prerequisites (one-time, set by a maintainer):
 #   1. Install the Claude GitHub App on the Poly-pay/polypay_app repo:
 #        https://github.com/apps/claude
-#   2. Add the repo/Actions secret ANTHROPIC_API_KEY (Settings → Secrets and
-#      variables → Actions). Alternatively swap to claude_code_oauth_token.
+#   2. Generate a token from a Claude Pro/Max subscription (`claude setup-token`)
+#      and add it as the repo/Actions secret CLAUDE_CODE_OAUTH_TOKEN (Settings →
+#      Secrets and variables → Actions).
 # Until both are in place the job runs but cannot authenticate.
+# Note: subscription-token usage counts against the account's Claude usage
+# limits. For a high-PR repo, an ANTHROPIC_API_KEY (API billing) avoids that.
 
 on:
   pull_request:
@@ -38,7 +41,7 @@ jobs:
       - name: Claude review
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           track_progress: true
           prompt: |
             REPO: ${{ github.repository }}
