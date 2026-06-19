@@ -44,7 +44,7 @@ Orochi deployment, so nothing here can replace a core component — only add a B
 |---|---|---|
 | Orocle V2 | Live on ~18 mainnets incl. Base | Redundant — see below |
 | Orand V3 | Live on ~20 mainnets incl. Base | No real use case — see below |
-| zkDatabase | npm `zkdb` v3.0.0; hosted service testnet-only | Only on-brand option; heavy caveats — see below |
+| zkDatabase | npm `zkdb` v3.0.0; **mainnet live (Feb 2026) but invite-only** | Only on-brand option; mainnet gated by whitelist — see below |
 | Orosign | BNB testnet only ([README](https://github.com/orochi-network/smart-contracts)) | Competes with PolyPay's own multisig |
 | ONProver | Campaign, not a product | N/A |
 
@@ -77,21 +77,28 @@ with Orochi. PolyPay has no feature that needs randomness (quest/leaderboard wer
 their rewards were rank-based). Note: the legacy `@orochi-network/sdk` GitHub repo is
 **archived** ([repo](https://github.com/orochi-network/sdk)), though npm still shows v2.2.1.
 
-### zkDatabase — only on-brand fit, but testnet + Mina
+### zkDatabase — only on-brand fit; mainnet exists but is invite-only
 
 Off-chain DB (MongoDB) with ZK integrity proofs. Sources: SDK examples in
 [zkDatabase repo](https://github.com/orochi-network/zkDatabase/tree/main/examples/src),
-docs [zkDatabase-doc](https://github.com/orochi-network/zkDatabase-doc/tree/main/docs).
+docs [docs.orochi.network/zkDatabase](https://docs.orochi.network/zkDatabase/database/database-create/).
 
 Verified facts:
-- npm `zkdb` v3.0.0, published 2026-03 (registry.npmjs.org) — usable from the NestJS backend.
+- npm `zkdb` v3.0.0 (registry.npmjs.org) — usable from the NestJS backend.
 - Schema uses o1js circuit types (`CircuitString`, `UInt32`); proofs are o1js/Kimchi, verified
-  via o1js `verify()` → anchored to **Mina**, not EVM/Horizen/zkVerify.
-- **Testnet/dev only (verified):** hosted endpoint is `https://test-serverless.zkdatabase.org/graphql`
-  (`examples/src/connection.ts`); getting-started docs set `network: "testnet"`; `.env.example`
-  uses `NODE_ENV=development` with a `localhost:4000` serverless URI. No production/mainnet
-  endpoint exists anywhere in the repo or docs.
-- Auth requires a **Mina private key** (mina-signer / Auro Wallet), Mina testnet.
+  via o1js `verify()` → Mina-based (blog claims multi-chain compatibility, but the SDK is o1js).
+- **Mainnet IS live:** Orochi blog "zkDatabase Mainnet is now live" (2026-02-02,
+  [source](https://orochi.network/blog/where-orochi-is-now-looking-towards-2026)); production
+  console at `app.zkdatabase.org` / `dashboard.orochi.network` with public pricing.
+- **But production access is whitelist / invite-only.** The console shows: *"Production access
+  is currently limited to whitelisted users. To access the product, you'll need an invite code.
+  Please contact us to get your invite code link and log in."* — buttons "Request Invite Code" /
+  "Try Testnet". This is why no production endpoint is publicly reachable.
+- All **public** endpoints are testnet: repo `examples/src/connection.ts` →
+  `test-serverless.zkdatabase.org/graphql`; docs connect snippet → `serverless.zkdatabase.org/graphql`
+  explicitly annotated *"This URL is for test environment"*. The mainnet endpoint + credentials are
+  issued per-account after invite-gated login, not published.
+- Auth requires a **Mina private key** (mina-signer / Auro Wallet).
 - Data is stored on Orochi's hosted MongoDB.
 
 Possible feature: a **verifiable payroll audit trail** — write each approved batch as a
@@ -99,10 +106,10 @@ zkDatabase document, generate a ZK integrity proof, show an "integrity verified 
 zkDatabase" badge. This is real code and on-brand with PolyPay's privacy pitch.
 
 Blockers:
-1. Hosted service is **testnet only** → conflicts with the mainnet requirement.
-2. Anchors to **Mina** — cannot settle on Horizen/Base/zkVerify.
-3. Adds a **second ZK stack** (Mina/o1js) alongside PolyPay's Noir/UltraHonk.
-4. Sends payroll data to **Orochi-hosted MongoDB** — privacy/compliance concern for a payroll app.
+1. Mainnet is **invite-only** → must request an invite code from Orochi before any production
+   integration (this is also the natural partnership touchpoint for listing their name).
+2. Mina-based o1js stack — adds a **second ZK stack** alongside PolyPay's Noir/UltraHonk.
+3. Sends payroll data to **Orochi-hosted MongoDB** — privacy/compliance concern for a payroll app.
 
 ## Conclusion
 
@@ -110,11 +117,13 @@ Hard requirements are (a) real code in PolyPay and (b) mainnet. No product satis
 
 | Option | Code | Mainnet | Trade-off |
 |---|---|---|---|
-| Orocle V2 on Base | ✅ | ✅ | Duplicates CoinGecko; ZEN coverage unverified |
-| zkDatabase audit trail | ✅ | ❌ testnet | On-brand, but Mina dependency + data on Orochi's server |
+| Orocle V2 on Base | ✅ | ✅ public | Duplicates CoinGecko; ZEN coverage unverified |
+| zkDatabase audit trail | ✅ | ⚠️ live but invite-only | On-brand; needs Orochi invite + Mina stack + data on Orochi's server |
 
-Decision required: keep the mainnet requirement → Orocle on Base (accept redundancy); or
-prioritise an on-brand feature → zkDatabase audit trail (accept testnet + Mina).
+Decision required: keep an immediately usable mainnet → Orocle on Base (accept redundancy); or
+prioritise an on-brand feature → zkDatabase audit trail (request an Orochi invite code first,
+accept the Mina stack). The zkDatabase path requires a partnership contact anyway, which doubles
+as the reason to list Orochi's name.
 
 Rejected: Orosign (competitor), ONProver (not a product), co-marketing-only (needs no code,
 out of scope).
@@ -123,6 +132,5 @@ out of scope).
 
 1. Can Orocle V2 on Base feed **ZEN** and the exact tokens PolyPay pays in? Feeds are
    provisioned on request, so this is a partnership ask, not a published fact.
-
-(zkDatabase production/mainnet availability is resolved: testnet/dev only, per the verified
-sources above.)
+2. zkDatabase mainnet **invite code** — production access is whitelisted; the mainnet endpoint
+   and credentials are only issued after Orochi grants an invite (`app.zkdatabase.org`).
