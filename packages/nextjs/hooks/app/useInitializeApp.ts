@@ -10,8 +10,15 @@ import { ErrorCode, handleError, parseError } from "~~/utils/errorHandler";
 // const ROUTES_WITHOUT_ACCOUNT = [Routes.QUEST.path, Routes.LEADERBOARD.path];
 const ROUTES_WITHOUT_ACCOUNT: string[] = [];
 
+// Arc routes have their own independent auth (nonce-signature login, see
+// hooks/app/arc/useArcAuth.ts) and must never be redirected by the ZK gate.
+const ARC_ROUTE_PREFIX = "/arc";
+
 // Helper function to check if route requires account
 const requiresAccount = (pathname: string) => {
+  if (pathname.startsWith(ARC_ROUTE_PREFIX)) {
+    return false;
+  }
   return !ROUTES_WITHOUT_ACCOUNT.includes(pathname as any);
 };
 
@@ -26,6 +33,13 @@ export const useInitializeApp = () => {
 
   // Prevent race conditions
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Live pathname ref: the effect below intentionally excludes pathname from its
+  // dependency array (navigating shouldn't re-trigger getMyAccounts()), so any
+  // redirect decision made after an await must read the current path via this ref
+  // instead of the pathname captured in the effect's closure.
+  const pathnameRef = useRef(router.pathname);
+  pathnameRef.current = router.pathname;
 
   // Mark mounted after first render to make sure hydration is done
   useEffect(() => {
@@ -50,7 +64,7 @@ export const useInitializeApp = () => {
         setIsInitialized(true);
 
         // Only redirect if on a route that requires account
-        if (requiresAccount(router.pathname)) {
+        if (requiresAccount(pathnameRef.current)) {
           router.goToDashboardNewAccount();
         }
         return;
@@ -66,8 +80,11 @@ export const useInitializeApp = () => {
         }
 
         if (accounts && accounts.length > 0) {
-          // Has accounts
-          const isCurrentAccountValid = currentAccount && accounts.some(a => a.address === currentAccount.address);
+          // Has ZK accounts. Keep an Arc (ECDSA) account selected if the user picked one -
+          // Arc accounts are not part of the ZK account list.
+          const isCurrentAccountValid =
+            currentAccount &&
+            (currentAccount.chainType === "ecdsa" || accounts.some(a => a.address === currentAccount.address));
 
           if (!isCurrentAccountValid) {
             setCurrentAccount(accounts[0]);
@@ -76,12 +93,18 @@ export const useInitializeApp = () => {
           if (router.pathname === Routes.DASHBOARD.subroutes.NEW_ACCOUNT.path) {
             router.goToDashboard();
           }
+        } else if (currentAccount?.chainType === "ecdsa") {
+          // No ZK accounts, but the user is on an Arc (ECDSA) account. The ZK account
+          // count excludes Arc accounts, so keep them here instead of forcing new-account.
+          if (router.pathname === Routes.DASHBOARD.subroutes.NEW_ACCOUNT.path) {
+            router.goToDashboard();
+          }
         } else {
           // No accounts
           clearCurrentAccount();
 
           // Only redirect if on a route that requires account
-          if (requiresAccount(router.pathname)) {
+          if (requiresAccount(pathnameRef.current)) {
             router.goToDashboardNewAccount();
           }
         }
@@ -100,7 +123,7 @@ export const useInitializeApp = () => {
           clearCurrentAccount();
 
           // Only redirect if on a route that requires account
-          if (requiresAccount(router.pathname)) {
+          if (requiresAccount(pathnameRef.current)) {
             router.goToDashboardNewAccount();
           }
         } else if (appError.code === ErrorCode.NOT_FOUND) {
@@ -108,7 +131,7 @@ export const useInitializeApp = () => {
           clearCurrentAccount();
 
           // Only redirect if on a route that requires account
-          if (requiresAccount(router.pathname)) {
+          if (requiresAccount(pathnameRef.current)) {
             router.goToDashboardNewAccount();
           }
         } else {

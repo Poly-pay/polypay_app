@@ -40,6 +40,12 @@ const NETWORK_META_BY_CHAIN_ID: Record<number, NetworkMeta> = {
     icon: "/token/arbitrum.svg",
     badge: "/token/arbitrum.svg",
   },
+  // Circle Arc testnet (non-private, USDC-native). No mainnet yet.
+  5042002: {
+    name: "Arc Testnet",
+    icon: "/token/usdc.svg",
+    badge: "/token/usdc.svg",
+  },
 };
 
 export const getDefaultChainId = (): number => {

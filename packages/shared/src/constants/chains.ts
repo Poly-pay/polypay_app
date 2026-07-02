@@ -10,3 +10,11 @@ export const CHAIN_IDS = {
 } as const;
 
 export type SupportedChainId = (typeof CHAIN_IDS)[keyof typeof CHAIN_IDS];
+
+export const ARC_TESTNET_CHAIN_ID = 5042002;
+
+// A chain is "ecdsa" (non-private) when it has no zkVerify deployment (Arc). All
+// currently-supported chains except Arc are "zk".
+export function getChainType(chainId: number): "zk" | "ecdsa" {
+  return chainId === ARC_TESTNET_CHAIN_ID ? "ecdsa" : "zk";
+}

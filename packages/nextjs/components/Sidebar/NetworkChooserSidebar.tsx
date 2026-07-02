@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Account } from "@polypay/shared";
+import { ARC_TESTNET_CHAIN_ID, Account } from "@polypay/shared";
 import { useSidebarStore } from "~~/services/store";
 import { getDefaultChainId, getNetworkMeta } from "~~/utils/network";
 
@@ -13,7 +13,7 @@ interface NetworkChooserSidebarProps {
 }
 
 const NETWORKS_MAINNET = [26514, 8453, 42161];
-const NETWORKS_TESTNET = [2651420, 84532, 421614];
+const NETWORKS_TESTNET = [2651420, 84532, 421614, ARC_TESTNET_CHAIN_ID];
 
 export default function NetworkChooserSidebar({ isOpen, accounts, onSelectNetwork }: NetworkChooserSidebarProps) {
   const { selectedNetworkChainId } = useSidebarStore();

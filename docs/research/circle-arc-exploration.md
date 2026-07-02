@@ -58,6 +58,33 @@ verification, but a partner ask; or (b) PolyPay ships the standalone UltraHonk v
 our control, at higher gas + engineering cost. Do not target Arc for production until its mainnet
 exists.
 
+### Non-private option: a plain multisig on Arc testnet
+
+If the goal is only to have a **live contract address on Arc testnet** — a "we can build on Arc"
+milestone, not a product integration — this is easy and separate from everything above.
+
+- The ZK `MetaMultiSigWallet.sol` can't be reused: its `execute()` hard-requires zkVerify proofs
+  (`MetaMultiSigWallet.sol:86-105`), with no toggle. A demo needs a **standard ECDSA multisig**
+  (signers = addresses, `execute` verifies `ecrecover` signatures — the scaffold-eth pattern the
+  wallet was forked from before its ZK conversion).
+- No zkVerify, Kurier, Poseidon, or relayer needed (privacy off → signers submit directly). Deploy
+  with a viem/ethers script; gas is paid in testnet USDC from [faucet.circle.com](https://faucet.circle.com).
+- Scope: a contract address plus a basic transfer / batch demo. Effort ~1 day.
+- Caveat: a generic multisig on Arc carries **no PolyPay differentiation** (no signer privacy) — it
+  is a presence milestone, not a feature.
+
+Implemented in this branch: `packages/hardhat/contracts/MetaMultiSigWalletArc.sol` (same
+transfer/batch surface, ECDSA instead of ZK), the `arcTestnet` network in `hardhat.config.ts`, and
+standalone `packages/hardhat/scripts/deployArc.ts` + `scripts/testArc.ts`. Deploy with
+`yarn hardhat run scripts/deployArc.ts --network arcTestnet` from a funded Arc testnet account.
+
+**Verified live on Arc testnet** (chainId 5042002): deployed at
+[`0xE51f56D21b4d58f336C15c71D5B4A3F040EEd9fa`](https://testnet.arcscan.app/address/0xE51f56D21b4d58f336C15c71D5B4A3F040EEd9fa),
+and a 1-of-1 `execute(nonce, to, value, data, signatures)` (owner signs → transfer out) succeeded,
+confirming signature verification and execution work with USDC as the gas token. The wallet
+parameterizes the nonce (with a `usedNonces` mapping) so off-chain signatures stay valid regardless
+of execution ordering.
+
 ## 2. Why PolyPay's privacy is chain-bound (context for the blocker)
 
 Signer anonymity has two layers:
@@ -74,10 +101,11 @@ zkVerify is deployed there. It fails on any chain that lacks the zkVerify contra
 
 ## 3. Circle products worth integrating (no Arc needed)
 
-Runnable on PolyPay's existing chains, higher value than an Arc deploy. Today PolyPay has **no**
-CCTP / Circle Wallets / Circle Paymaster / ERC-4337 code; the only Circle-adjacent pieces are
-Coinbase CDP as an x402 facilitator and Circle's native USDC addresses (`x402.service.ts`,
-`packages/shared/src/constants/token.ts`). Product list per [circle.com/developer](https://www.circle.com/developer).
+Runnable on PolyPay's existing chains, higher value than an Arc deploy. The only Circle product
+already in the app is **USDC itself** — Circle's native USDC token contracts, whose EIP-3009 support
+powers the x402 gasless deposit (`packages/shared/src/constants/token.ts`). There is no CCTP / Circle
+Wallets / Circle Paymaster / ERC-4337 code. (Note: x402 and its facilitators — Coinbase CDP, PayAI —
+are Coinbase / third-party, **not** Circle products.) Product list per [circle.com/developer](https://www.circle.com/developer).
 
 | Product | What it does, and the feature PolyPay would gain | Verdict |
 |---|---|---|
@@ -93,9 +121,10 @@ ZK-identity model.
 ## 4. Conclusion
 
 1. **Arc:** demo-only, not production. Arc has no live mainnet (testnet only; mainnet targeted
-   "summer 2026", no exact date) and no zkVerify. Privacy on an Arc testnet demo is possible either
-   by asking Horizen Labs to deploy zkVerify on Arc, or by shipping a standalone UltraHonk
-   `Verifier.sol` (see section 1) — the latter is in our control but costs more gas + a contract fork.
+   "summer 2026", no exact date) and no zkVerify. For a quick "present on Arc" milestone, deploy a
+   plain ECDSA multisig on Arc testnet (no privacy, ~1 day — see section 1). A *private* Arc testnet
+   demo is also possible but heavier: either ask Horizen Labs to deploy zkVerify on Arc, or ship a
+   standalone UltraHonk `Verifier.sol` (in our control, higher gas + a contract fork).
 2. **Best Circle integration is CCTP** — fund a multisig cross-chain with native USDC (Base/Arbitrum
    only, no ZK rework). **Gateway** is a larger follow-up for treasury UX. Neither reaches Horizen,
    so both are scoped to PolyPay's Base/Arbitrum deployments.

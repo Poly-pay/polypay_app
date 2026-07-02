@@ -1,4 +1,5 @@
 import { validators } from "./validation";
+import { parseUnits } from "viem";
 import { z } from "zod";
 
 // ==================== Contact Book ====================
@@ -40,7 +41,16 @@ export const transferSchema = z.object({
     .refine(val => val.startsWith("0x") && val.length === 42, {
       message: "Invalid address format",
     }),
-  amount: z.string(),
+  amount: z.string().refine(
+    val => {
+      try {
+        return parseUnits(val, 18) > 0n;
+      } catch {
+        return false;
+      }
+    },
+    { message: "Enter a valid positive amount" },
+  ),
 });
 export type TransferFormData = z.infer<typeof transferSchema>;
 
@@ -69,6 +79,26 @@ export const updateThresholdSchema = z.object({
   threshold: z.number().min(1, "Threshold must be at least 1"),
 });
 export type UpdateThresholdFormData = z.infer<typeof updateThresholdSchema>;
+
+// ==================== Arc Multisig ====================
+
+export const createArcAccountSchema = z
+  .object({
+    owners: z.array(z.object({ address: validators.ethereumAddress })).min(1, "At least one owner is required"),
+    threshold: z.number().min(1, "Threshold must be at least 1"),
+  })
+  .refine(data => data.threshold <= data.owners.length, {
+    message: "Threshold cannot exceed the number of owners",
+    path: ["threshold"],
+  })
+  .refine(
+    data => {
+      const addresses = data.owners.map(o => o.address.toLowerCase());
+      return new Set(addresses).size === addresses.length;
+    },
+    { message: "Owner addresses must be unique", path: ["owners"] },
+  );
+export type CreateArcAccountFormData = z.infer<typeof createArcAccountSchema>;
 
 // ==================== Feature Request ====================
 

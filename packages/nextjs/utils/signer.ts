@@ -36,3 +36,24 @@ export const getValidSigners = <T extends { commitment: string }>(signers: T[]):
     return !isDuplicateCommitment(signers, index);
   });
 };
+
+/**
+ * Arc (ECDSA) signers reuse the `commitment` field to hold an Ethereum ADDRESS.
+ * Validation is therefore address-based instead of commitment (digit) based.
+ */
+export const isValidArcSigner = (value: string): boolean => {
+  return /^0x[a-fA-F0-9]{40}$/.test(value?.trim() ?? "");
+};
+
+export const isDuplicateArcSigner = (signers: ISigner[], index: number): boolean => {
+  const current = signers[index]?.commitment?.trim().toLowerCase();
+  if (!current) return false;
+  return signers.some((signer, i) => i !== index && signer?.commitment?.trim().toLowerCase() === current);
+};
+
+export const getValidArcSigners = <T extends { commitment: string }>(signers: T[]): T[] => {
+  return signers.filter((signer, index) => {
+    if (!isValidArcSigner(signer.commitment)) return false;
+    return !isDuplicateArcSigner(signers as unknown as ISigner[], index);
+  });
+};

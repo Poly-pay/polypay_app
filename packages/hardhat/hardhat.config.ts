@@ -137,6 +137,12 @@ const config: HardhatUserConfig = {
       accounts: [deployerPrivateKey],
       chainId: 26514,
     },
+    // Circle Arc public testnet (USDC is the native gas token). Docs: https://docs.arc.io/arc/references/connect-to-arc
+    arcTestnet: {
+      url: process.env.ARC_TESTNET_RPC || "https://rpc.testnet.arc.network",
+      accounts: [deployerPrivateKey],
+      chainId: 5042002,
+    },
   },
   // Configuration for harhdat-verify plugin
   etherscan: {

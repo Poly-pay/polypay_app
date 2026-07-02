@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { CHAIN_IDS } from "@polypay/shared";
+import { ARC_TESTNET_CHAIN_ID, CHAIN_IDS } from "@polypay/shared";
 import { getDefaultChainId, getNetworkMeta } from "~~/utils/network";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -35,9 +35,15 @@ const ChooseNetwork: React.FC<ChooseNetworkProps> = ({
     { chainId: ARBITRUM_ONE, fallbackChainId: ARBITRUM_SEPOLIA },
   ].map(n => {
     // If we are on testnet env, use testnet ids instead
-    const chainId = isTestnet ? n.fallbackChainId : n.chainId;
+    const chainId: number = isTestnet ? n.fallbackChainId : n.chainId;
     return { chainId, meta: getNetworkMeta(chainId) };
   });
+
+  // Arc is a non-private (ECDSA) testnet-only network. Selecting it routes to the Arc create
+  // flow; it cannot be combined with the ZK chains above (different contract + signer model).
+  if (isTestnet) {
+    networks.push({ chainId: ARC_TESTNET_CHAIN_ID, meta: getNetworkMeta(ARC_TESTNET_CHAIN_ID) });
+  }
 
   const isSelected = (chainId: number) => selectedChainIds.includes(chainId);
 

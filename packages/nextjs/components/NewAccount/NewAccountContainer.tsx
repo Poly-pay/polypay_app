@@ -7,9 +7,12 @@ import ChooseNetwork from "./ChooseNetwork";
 import SignersConfirmations from "./SignersConfirmations";
 import StatusContainer from "./StatusContainer";
 import SuccessScreen from "./SuccessScreen";
-import { Account } from "@polypay/shared";
+import { ARC_TESTNET_CHAIN_ID, Account } from "@polypay/shared";
 import { useWalletClient } from "wagmi";
+import { arcAccountToAccount } from "~~/components/Sidebar/ArcAccountItem";
 import { useCreateAccount, useCreateAccountBatch } from "~~/hooks/api";
+import { useArcAuth } from "~~/hooks/app/arc/useArcAuth";
+import { useArcCreateAccount } from "~~/hooks/app/arc/useArcCreateAccount";
 import { useZodForm } from "~~/hooks/form";
 import { CreateAccountFormData, createAccountSchema } from "~~/lib/form";
 import { useAccountStore } from "~~/services/store";
@@ -17,7 +20,7 @@ import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { notifyError } from "~~/utils/errorHandler";
 import { getDefaultChainId } from "~~/utils/network";
 import { notification } from "~~/utils/scaffold-eth";
-import { getValidSigners } from "~~/utils/signer";
+import { getValidArcSigners, getValidSigners } from "~~/utils/signer";
 
 export default function NewAccountContainer() {
   const { commitment } = useIdentityStore();
@@ -27,9 +30,16 @@ export default function NewAccountContainer() {
   const { mutateAsync: createAccount, isPending: isCreatingSingle } = useCreateAccount();
   const { mutateAsync: createAccountBatch, isPending: isCreatingBatch } = useCreateAccountBatch();
 
+  // Arc (non-private, ECDSA) path: same wizard UI, but signers are addresses.
+  const { login: arcLogin } = useArcAuth();
+  const { createAccount: createArcAccount, isPending: isCreatingArc } = useArcCreateAccount();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedChainIds, setSelectedChainIds] = useState<number[]>([]);
   const [createdAccounts, setCreatedAccounts] = useState<Account[] | null>(null);
+
+  const walletAddress = walletClient?.account?.address;
+  const isArc = selectedChainIds.length === 1 && selectedChainIds[0] === ARC_TESTNET_CHAIN_ID;
 
   const form = useZodForm({
     schema: createAccountSchema,
@@ -56,6 +66,26 @@ export default function NewAccountContainer() {
   };
 
   const handleCreateAccount = async () => {
+    // Arc path: address signers, ECDSA, no ZK commitment. Requires a one-time Arc wallet sign-in.
+    if (isArc) {
+      try {
+        // Always refresh the Arc session so create never uses a stale/expired token
+        // (the persisted isAuthenticated flag can outlive the JWT / a backend restart).
+        const ok = await arcLogin();
+        if (!ok) return;
+        const owners = getValidArcSigners(formData.signers).map(s => s.commitment);
+        const arcAccount = await createArcAccount(owners, formData.threshold, ARC_TESTNET_CHAIN_ID, formData.name);
+        // Same success flow as ZK: show the success screen, then the dashboard.
+        const asAccount = arcAccountToAccount({ ...arcAccount, name: formData.name });
+        setCreatedAccounts([asAccount]);
+        setCurrentAccount(asAccount);
+        setCurrentStep(4);
+      } catch (err: any) {
+        notifyError(err, "Failed to create Arc account");
+      }
+      return;
+    }
+
     if (!commitment) {
       notification.error("You need to have a membership ID to create an account.");
       return;
@@ -121,12 +151,22 @@ export default function NewAccountContainer() {
     }
   }, [commitment, form]);
 
+  // Seed the first signer with the connected wallet address (Arc) or the ZK commitment.
+  // Arc reuses the `commitment` form field to carry an address.
+  useEffect(() => {
+    if (isArc && walletAddress) {
+      form.setValue("signers.0.commitment", walletAddress);
+    } else if (!isArc && commitment) {
+      form.setValue("signers.0.commitment", commitment);
+    }
+  }, [isArc, walletAddress, commitment, form]);
+
   // Validation
-  const validSigners = getValidSigners(formData.signers);
+  const validSigners = isArc ? getValidArcSigners(formData.signers) : getValidSigners(formData.signers);
   const isNameValid = formData.name.trim().length > 0;
   const isSignersValid =
     validSigners.length >= 1 && formData.threshold >= 1 && formData.threshold <= validSigners.length;
-  const isCreating = isCreatingSingle || isCreatingBatch;
+  const isCreating = isCreatingSingle || isCreatingBatch || isCreatingArc;
 
   const EarthBackground = (
     <div className="w-full relative z-1">
@@ -168,11 +208,20 @@ export default function NewAccountContainer() {
               selectedChainIds={selectedChainIds}
               hasCommitment={!!commitment}
               isWalletConnected={!!walletClient?.account}
-              onToggleChain={chainId =>
-                setSelectedChainIds(prev =>
-                  prev.includes(chainId) ? prev.filter(id => id !== chainId) : [...prev, chainId],
-                )
-              }
+              onToggleChain={chainId => {
+                if (chainId === ARC_TESTNET_CHAIN_ID) {
+                  // Arc is exclusive: selecting it clears any ZK chains.
+                  setSelectedChainIds(prev => (prev.length === 1 && prev[0] === chainId ? [] : [chainId]));
+                } else {
+                  // Selecting a ZK chain drops Arc if it was selected.
+                  setSelectedChainIds(prev => {
+                    const withoutArc = prev.filter(id => id !== ARC_TESTNET_CHAIN_ID);
+                    return withoutArc.includes(chainId)
+                      ? withoutArc.filter(id => id !== chainId)
+                      : [...withoutArc, chainId];
+                  });
+                }
+              }}
               onNextStep={() => setCurrentStep(2)}
             />
           )}
@@ -185,7 +234,9 @@ export default function NewAccountContainer() {
               isValid={isNameValid}
             />
           )}
-          {currentStep === 3 && <SignersConfirmations className="flex-1" form={form} onGoBack={handleGoBack} />}
+          {currentStep === 3 && (
+            <SignersConfirmations className="flex-1" form={form} onGoBack={handleGoBack} isArc={isArc} />
+          )}
         </div>
       </div>
 

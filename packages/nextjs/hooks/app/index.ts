@@ -6,6 +6,7 @@ export * from "./useMobileDetection";
 export * from "./useModalApp";
 export * from "./useAuthProof";
 export * from "./useAuth";
+export * from "./arc/useArcAuth";
 export * from "./useCommitmentGuard";
 export * from "./transaction/useSignerTransaction";
 export * from "./transaction/useTransferTransaction";

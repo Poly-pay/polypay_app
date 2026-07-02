@@ -6,6 +6,8 @@ export { batchItemApi } from "./batchItemApi";
 export { transactionApi } from "./transactionApi";
 export { notificationApi } from "./notificationApi";
 export { authApi } from "./authApi";
+export { arcApi } from "./arcApi";
+export type { ArcAccount, ArcTransaction } from "./arcApi";
 export { featureRequestApi } from "./featureRequestApi";
 export { queryClient } from "../queryClient";
 // Quest + Leaderboard hidden — APIs orphaned.

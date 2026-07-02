@@ -34,6 +34,8 @@ export default function AccountItem({
   onToggleExpand,
 }: AccountItemProps) {
   const avatarSrc = getAccountAvatar(account, allAccounts);
+  // Arc (ECDSA) accounts reuse this item but hide ZK-only actions (name edit hits the ZK API).
+  const isArc = account.chainType === "ecdsa";
   const { mutate: updateAccount } = useUpdateAccount();
   const { setCurrentAccount, currentAccount } = useAccountStore();
   const { openModal } = useModalApp();
@@ -171,7 +173,7 @@ export default function AccountItem({
                     {account.name}
                   </span>
                 )}
-                {isSelected && (
+                {isSelected && !isArc && (
                   <Image
                     src="/icons/actions/edit-pink.svg"
                     alt="Edit"
@@ -180,6 +182,11 @@ export default function AccountItem({
                     className={`cursor-pointer ${isSelected || isExpanded ? "opacity-100" : "opacity-50"}`}
                     onClick={handleEditClick}
                   />
+                )}
+                {isArc && (
+                  <span className="px-1.5 py-0.5 text-[10px] font-semibold text-orange-500 bg-orange-50 rounded-md whitespace-nowrap">
+                    Non-private
+                  </span>
                 )}
               </div>
 

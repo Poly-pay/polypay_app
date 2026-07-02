@@ -100,6 +100,11 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^@polypay/shared$": "<rootDir>/../../shared/src/index.ts",
+      "^@polypay/shared/(.*)$": "<rootDir>/../../shared/src/$1",
+      "^@/(.*)$": "<rootDir>/$1"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

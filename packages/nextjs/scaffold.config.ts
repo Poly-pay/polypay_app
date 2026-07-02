@@ -1,4 +1,4 @@
-import { NetworkValue } from "@polypay/shared";
+import { ARC_TESTNET_CHAIN_ID, NetworkValue } from "@polypay/shared";
 import { defineChain } from "viem";
 import * as chains from "viem/chains";
 import { RPC_POLLING_INTERVAL } from "~~/constants/timing";
@@ -51,6 +51,31 @@ export const horizenMainnet = defineChain({
   testnet: false,
 });
 
+// Circle Arc testnet - ECDSA multisig chain (no zkVerify deployment, see getChainType()).
+// Duplicated as a local defineChain for the same reason as horizenTestnet above
+// (viem version mismatch between packages/shared and packages/nextjs).
+export const arcTestnet = defineChain({
+  id: ARC_TESTNET_CHAIN_ID,
+  name: "Arc Testnet",
+  nativeCurrency: {
+    name: "USD Coin",
+    symbol: "USDC",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://rpc.testnet.arc.network"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Arc Explorer",
+      url: "https://testnet.arcscan.app",
+    },
+  },
+  testnet: true,
+});
+
 export type BaseConfig = {
   targetNetworks: readonly chains.Chain[];
   pollingInterval: number;
@@ -71,7 +96,7 @@ const scaffoldConfig = {
   targetNetworks:
     process.env.NEXT_PUBLIC_NETWORK === NetworkValue.mainnet
       ? [horizenMainnet, chains.base, chains.arbitrum]
-      : [horizenTestnet, chains.baseSepolia, chains.arbitrumSepolia],
+      : [horizenTestnet, chains.baseSepolia, chains.arbitrumSepolia, arcTestnet],
   // The interval at which your front-end polls the RPC servers for new data (it has no effect if you only target the local network (default is 4000))
   pollingInterval: RPC_POLLING_INTERVAL,
   // This is ours Alchemy's default API key.

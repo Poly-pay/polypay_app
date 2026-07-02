@@ -6,15 +6,17 @@ import { UseFormReturn, useFieldArray } from "react-hook-form";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~~/components/ui/tooltip";
 import { useIdentityStore } from "~~/services/store/useIdentityStore";
 import { IAccountFormData } from "~~/types/form/account";
-import { isDuplicateCommitment, isValidCommitment } from "~~/utils/signer";
+import { isDuplicateArcSigner, isDuplicateCommitment, isValidArcSigner, isValidCommitment } from "~~/utils/signer";
 
 interface SignersConfirmationsProps {
   className?: string;
   form: UseFormReturn<IAccountFormData>;
   onGoBack: () => void;
+  // Arc (ECDSA) accounts: signers are addresses, not ZK commitments.
+  isArc?: boolean;
 }
 
-const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, form, onGoBack }) => {
+const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, form, onGoBack, isArc }) => {
   const { commitment: myCommitment } = useIdentityStore();
   const { register, watch, setValue } = form;
   const { fields, append, remove } = useFieldArray({
@@ -25,6 +27,11 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
   const signers = watch("signers");
   const threshold = watch("threshold");
 
+  const signerPlaceholder = isArc ? "Signer address (0x...)" : "Signer membership ID";
+  const listHint = isArc
+    ? "The wallet addresses added below are the account signers; they approve future transactions. Signer addresses are public on Arc."
+    : "Those membership IDs added to the signers list below will play an important role in approving future transactions as team members.";
+
   const handleAddSigner = () => {
     append({ name: "", commitment: "" });
   };
@@ -32,7 +39,9 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
   const handleRemoveSigner = (index: number) => {
     if (fields.length <= 1) return;
 
-    // Dont allow to remove my commitment
+    // Never remove the first signer (the creator: ZK commitment or connected Arc address)
+    if (index === 0) return;
+    // Dont allow to remove my commitment (ZK)
     if (signers[index]?.commitment === myCommitment) return;
 
     remove(index);
@@ -68,16 +77,16 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
         {/* Signers list */}
         <div className="w-full flex flex-col gap-2">
           <div className="text-text-secondary text-base font-medium">Account signers</div>
-          <span className="w-[420px] text-sm text-gray-700 mb-1">
-            Those membership IDs added to the signers list below will play an important role in approving future
-            transactions as team members.
-          </span>
+          <span className="w-[420px] text-sm text-gray-700 mb-1">{listHint}</span>
 
           {fields.map((field, index) => {
             const isFirstSigner = index === 0;
-            const hasDuplicate = !isFirstSigner && isDuplicateCommitment(signers, index);
+            const hasDuplicate =
+              !isFirstSigner && (isArc ? isDuplicateArcSigner(signers, index) : isDuplicateCommitment(signers, index));
             const hasInvalidFormat =
-              !isFirstSigner && signers[index]?.commitment?.trim() && !isValidCommitment(signers[index]?.commitment);
+              !isFirstSigner &&
+              signers[index]?.commitment?.trim() &&
+              !(isArc ? isValidArcSigner(signers[index]?.commitment) : isValidCommitment(signers[index]?.commitment));
 
             return (
               <div key={field.id} className="flex gap-2 items-center">
@@ -97,7 +106,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                         type="text"
                         {...register(`signers.${index}.commitment`)}
                         disabled
-                        placeholder="Signer membership ID"
+                        placeholder={signerPlaceholder}
                         className={`h-input flex-1 px-4 py-3 rounded-[16px] border bg-gray-50 text-base focus:outline-none opacity-60 cursor-not-allowed`}
                       />
                     </TooltipTrigger>
@@ -106,7 +115,9 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                       sideOffset={8}
                       className="max-w-[500px] bg-[#444444] rounded-md px-4 py-1.5 text-white text-xs leading-5"
                     >
-                      <span className="block">This is your membership ID.</span>
+                      <span className="block">
+                        {isArc ? "This is your connected wallet address." : "This is your membership ID."}
+                      </span>
                       <span className="w-full block">
                         You can&apos;t edit or delete it, but you can add a name to easily distinguish it from others.
                       </span>
@@ -117,7 +128,7 @@ const SignersConfirmations: React.FC<SignersConfirmationsProps> = ({ className, 
                   <input
                     type="text"
                     {...register(`signers.${index}.commitment`)}
-                    placeholder="Signer membership ID"
+                    placeholder={signerPlaceholder}
                     className={`h-input flex-1 px-4 py-3 rounded-[16px] border bg-gray-50 text-base focus:outline-none ${hasDuplicate || hasInvalidFormat ? "border-red-500 focus:border-red-500 bg-red-50" : "border-gray-200 focus:border-primary"}`}
                   />
                 )}
