@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
+import ArcAccountPanel from "../Arc/ArcAccountPanel";
 import { Skeleton } from "../ui/skeleton";
 import InfoCardContainer from "./InfoCardContainer";
 import { TransactionRow, convertToRowData } from "./TransactionRow";
@@ -60,6 +61,17 @@ export default function DashboardContainer() {
       <span>There is no transaction found in your account</span>
     </span>
   );
+
+  // Arc (ECDSA) accounts use the Arc panel (address signers, ECDSA transfers) in place
+  // of the ZK dashboard, reusing the same page shell.
+  if (currentAccount?.chainType === "ecdsa") {
+    return (
+      <div className="flex flex-col gap-5 px-[100px] py-[30px] h-full bg-grey-25 border-2 border-white">
+        <Header />
+        <ArcAccountPanel accountId={currentAccount.id} transactionsOnly />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5 px-[100px] py-[30px] h-full bg-grey-25 border-2 border-white">

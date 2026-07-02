@@ -10,7 +10,8 @@ datasource db {
 
 model User {
   id                    String          @id @default(cuid())
-  commitment            String          @unique
+  commitment            String?         @unique
+  address               String?         @unique
   createdAt             DateTime        @default(now()) @map("created_at")
   updatedAt             DateTime        @updatedAt @map("updated_at")
   accounts              AccountSigner[]
@@ -30,6 +31,7 @@ model Account {
   threshold       Int
   chainId         Int             @default(26514) @map("chain_id")
   contractVersion Int             @default(1) @map("contract_version")
+  chainType       String          @default("zk") @map("chain_type")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   signers         AccountSigner[]
@@ -51,6 +53,7 @@ model AccountSigner {
   accountId   String   @map("account_id")
   isCreator   Boolean  @default(false) @map("is_creator")
   displayName String?  @map("display_name")
+  address     String?
   createdAt   DateTime @default(now()) @map("created_at")
   account     Account  @relation(fields: [accountId], references: [id])
   user        User     @relation(fields: [userId], references: [id])
@@ -114,6 +117,9 @@ model Vote {
   jobId          String?      @unique @map("job_id")
   proofStatus    ProofStatus? @map("proof_status")
   zkVerifyTxHash String?      @map("zkverify_tx_hash")
+
+  // ECDSA signature (Arc / non-private multisig)
+  signature String?
 
   aggregationId String?  @map("aggregation_id")
   domainId      Int?     @map("domain_id")

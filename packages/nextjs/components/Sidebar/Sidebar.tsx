@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import AccountSidebar from "./AccountSidebar";
+import { arcAccountToAccount } from "./ArcAccountItem";
 import ManageAccountsSidebar from "./ManageAccountsSidebar";
 import NetworkChooserSidebar from "./NetworkChooserSidebar";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import Routes from "~~/configs/routes.config";
 import { useMyAccounts } from "~~/hooks";
+import { useArcAccounts } from "~~/hooks/app/arc/useArcAccounts";
 import { useModalApp } from "~~/hooks/app/useModalApp";
 import { useAppRouter } from "~~/hooks/app/useRouteApp";
 import { useAccountStore, useIdentityStore, useSidebarStore } from "~~/services/store";
@@ -158,7 +160,12 @@ const SectionItem = ({
 export default function Sidebar() {
   const { openModal } = useModalApp();
   const router = useAppRouter();
-  const { data: accounts = [], isLoading: isLoadingAccounts } = useMyAccounts();
+  const { data: zkAccounts = [], isLoading: isLoadingAccounts } = useMyAccounts();
+  const { data: arcAccounts = [] } = useArcAccounts();
+  // Arc accounts are unified into the same list as ZK accounts (converted to the shared
+  // Account shape). Everything downstream - the list, network chooser, selection, nav
+  // gating - treats them the same; only chainType distinguishes them.
+  const accounts = useMemo(() => [...zkAccounts, ...arcAccounts.map(arcAccountToAccount)], [zkAccounts, arcAccounts]);
   const { commitment } = useIdentityStore();
   const { data: walletClient } = useWalletClient();
   const { currentAccount, setCurrentAccount } = useAccountStore();

@@ -4,6 +4,7 @@ import {
   createPublicClient,
   http,
   decodeFunctionData,
+  defineChain,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import {
@@ -13,6 +14,9 @@ import {
   isStylusChain,
   getStylusFactoryAddress,
   METAMULTISIG_STYLUS_FACTORY_ABI,
+  ARC_TESTNET_CHAIN_ID,
+  META_MULTISIG_ARC_ABI,
+  META_MULTISIG_ARC_BYTECODE,
 } from '@polypay/shared';
 import { METAMULTISIG_ABI, METAMULTISIG_BYTECODE } from '@polypay/shared';
 import { ConfigService } from '@nestjs/config';
@@ -20,6 +24,25 @@ import { CONFIG_KEYS } from '@/config/config.keys';
 import { waitForReceiptWithRetry } from '@/common/utils/retry';
 import { SUPPORTED_CHAIN_IDS } from '@/common/constants/campaign';
 import { GAS_BUFFER_EXECUTE } from '@/common/constants/timing';
+import { recoverArcSigner } from '@/arc/arc-transaction/signature.util';
+
+// Arc testnet has no zkVerify deployment (it's "ecdsa", not "zk" - see
+// getChainType in @polypay/shared), so it is intentionally excluded from
+// SUPPORTED_CHAIN_IDS / clientsByChainId below. Defined locally until a
+// shared chain object exists (the frontend defines its own equivalent via
+// viem's defineChain in scaffold.config.ts).
+const arcTestnet = defineChain({
+  id: ARC_TESTNET_CHAIN_ID,
+  name: 'Arc Testnet',
+  nativeCurrency: { name: 'USD Coin', symbol: 'USDC', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://rpc.testnet.arc.network'] },
+  },
+  blockExplorers: {
+    default: { name: 'Arc Explorer', url: 'https://testnet.arcscan.app' },
+  },
+  testnet: true,
+});
 
 type RelayerChainClient = {
   chain: any;
@@ -88,6 +111,138 @@ export class RelayerService {
       throw new Error(`Relayer: unsupported chainId ${chainId}`);
     }
     return client;
+  }
+
+  /**
+   * Deploy MetaMultiSigWalletArc for an Arc account. Owners are plain ECDSA
+   * addresses (no ZK commitments/proof verifier), so this is a sibling of
+   * deployAccount rather than a branch inside it - same viem client/account
+   * construction, different ABI/bytecode/args and no cached per-chain client
+   * (Arc is not in SUPPORTED_CHAIN_IDS / clientsByChainId).
+   */
+  async deployArcAccount(
+    owners: string[],
+    threshold: number,
+    chainId: number,
+  ): Promise<string> {
+    if (chainId !== ARC_TESTNET_CHAIN_ID) {
+      throw new Error(`Relayer: unsupported Arc chainId ${chainId}`);
+    }
+
+    // Typed `any` like RelayerChainClient above: with a concrete chain type,
+    // viem's deployContract overload resolution gets confused by EIP-4844
+    // fields and demands a `kzg` param that doesn't apply here.
+    const chain: any = arcTestnet;
+
+    const publicClient: any = createPublicClient({
+      chain,
+      transport: http(),
+    });
+
+    const walletClient: any = createWalletClient({
+      account: this.account,
+      chain,
+      transport: http(),
+    });
+
+    const hash = await walletClient.deployContract({
+      abi: META_MULTISIG_ARC_ABI,
+      bytecode: META_MULTISIG_ARC_BYTECODE as `0x${string}`,
+      args: [BigInt(chainId), owners as `0x${string}`[], BigInt(threshold)],
+      account: this.account,
+      chain,
+    });
+
+    this.logger.log(
+      `Arc deploy tx sent on chain ${chainId} for relayer ${this.account.address}: ${hash}`,
+    );
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+    if (!receipt.contractAddress) {
+      throw new Error('Arc wallet deploy: no contractAddress in receipt');
+    }
+
+    this.logger.log(`Arc wallet deployed at: ${receipt.contractAddress}`);
+
+    return receipt.contractAddress;
+  }
+
+  /**
+   * Execute a transaction on MetaMultiSigWalletArc once enough owner
+   * signatures have been collected. Sibling of deployArcAccount: same
+   * ad-hoc client construction (Arc is not in clientsByChainId), different
+   * ABI call. The contract requires signatures strictly ascending by
+   * recovered signer address, so they are sorted here before submission.
+   */
+  async executeArcTransaction(
+    walletAddress: string,
+    nonce: number,
+    to: string,
+    value: bigint,
+    data: string,
+    signatures: string[],
+    chainId: number,
+  ): Promise<string> {
+    if (chainId !== ARC_TESTNET_CHAIN_ID) {
+      throw new Error(`Relayer: unsupported Arc chainId ${chainId}`);
+    }
+
+    const chain: any = arcTestnet;
+
+    const publicClient: any = createPublicClient({
+      chain,
+      transport: http(),
+    });
+
+    const walletClient: any = createWalletClient({
+      account: this.account,
+      chain,
+      transport: http(),
+    });
+
+    const withAddr = await Promise.all(
+      signatures.map(async (s) => ({
+        s,
+        a: (
+          await recoverArcSigner(
+            walletAddress,
+            chainId,
+            nonce,
+            to,
+            value,
+            data,
+            s,
+          )
+        ).toLowerCase(),
+      })),
+    );
+    withAddr.sort((x, y) => (x.a < y.a ? -1 : x.a > y.a ? 1 : 0));
+
+    const hash = await walletClient.writeContract({
+      address: walletAddress as `0x${string}`,
+      abi: META_MULTISIG_ARC_ABI,
+      functionName: 'execute',
+      args: [
+        BigInt(nonce),
+        to as `0x${string}`,
+        value,
+        data as `0x${string}`,
+        withAddr.map((x) => x.s as `0x${string}`),
+      ],
+      account: this.account,
+      chain,
+    });
+
+    this.logger.log(`Arc execute tx sent on chain ${chainId}: ${hash}`);
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+    if (receipt.status === 'reverted') {
+      throw new Error(`Arc transaction reverted on-chain. TxHash: ${hash}`);
+    }
+
+    return receipt.transactionHash;
   }
 
   /**

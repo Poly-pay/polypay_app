@@ -14,4 +14,7 @@ export interface Account {
   createdAt: string;
   updatedAt: string;
   signers: AccountSigner[];
+  // "zk" (default, privacy-preserving) or "ecdsa" (Arc, non-private). Optional so
+  // existing ZK payloads without the field are still valid.
+  chainType?: "zk" | "ecdsa";
 }

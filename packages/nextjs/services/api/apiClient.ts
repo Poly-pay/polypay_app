@@ -22,9 +22,13 @@ apiClient.interceptors.request.use(
       config.timeout = API_TIMEOUT_ZK;
     }
 
-    // Add auth header if token exists
+    // Add auth header if token exists. Skip Arc requests: they use a
+    // separate Arc JWT attached by the interceptor in arcApi.ts, and since
+    // axios runs request interceptors in reverse registration order, this
+    // one (registered first, at import) would otherwise run last and
+    // overwrite the Arc token with the ZK token.
     const { accessToken } = useIdentityStore.getState();
-    if (accessToken) {
+    if (accessToken && !config.url?.includes("/api/arc/")) {
       config.headers.Authorization = AUTHORIZATION_HEADER(accessToken);
     }
 
@@ -49,8 +53,15 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Auto refresh token on 401
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    // Auto refresh token on 401. Arc requests use a separate Arc JWT/session
+    // (see arc-auth.store.ts / arcApi.ts) and are not covered by the ZK
+    // refresh flow, so let Arc 401s propagate to the caller instead.
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/api/arc/")
+    ) {
       // Skip auto-refresh for auth endpoints (prevent loop)
       if (originalRequest.url?.includes("/auth/")) {
         const { logout } = useIdentityStore.getState();

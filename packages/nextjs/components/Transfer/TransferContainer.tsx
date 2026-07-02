@@ -9,6 +9,7 @@ import { TokenPillPopover } from "~~/components/popovers/TokenPillPopover";
 import { Spinner } from "~~/components/ui/Spinner";
 import { useMetaMultiSigWallet, useTransferTransaction } from "~~/hooks";
 import { useCreateBatchItem } from "~~/hooks/api";
+import { useArcTransfer } from "~~/hooks/app/arc/useArcTransfer";
 import { useNetworkTokens } from "~~/hooks/app/useNetworkTokens";
 import { useTokenBalances } from "~~/hooks/app/useTokenBalance";
 import { useZodForm } from "~~/hooks/form";
@@ -26,9 +27,14 @@ export default function TransferContainer() {
   const { mutateAsync: createBatchItem } = useCreateBatchItem();
   const { commitment } = useIdentityStore();
 
+  // Arc's native token is USDC (not ETH) - reuse the same token pill but relabel + reicon it.
+  const isArc = selectedAccount?.chainType === "ecdsa";
+  const arcNativeToken = { ...nativeEth, symbol: "USDC", icon: "/token/usdc.svg" };
+
   useEffect(() => {
-    setSelectedToken(nativeEth);
-  }, [nativeEth]);
+    setSelectedToken(isArc ? arcNativeToken : nativeEth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nativeEth, isArc]);
 
   const metaMultiSigWallet = useMetaMultiSigWallet();
   const { balances, isLoading: isLoadingBalances } = useTokenBalances(
@@ -79,7 +85,25 @@ export default function TransferContainer() {
 
   const isNativeETH = selectedToken.address === nativeEth.address;
 
+  // Arc (ECDSA) accounts: same transfer form, but propose via ECDSA signature (no ZK proof).
+  const { propose: arcPropose, isProposing: isProposingArc } = useArcTransfer();
+
   const handleTransfer = async (data: TransferFormData) => {
+    if (isArc && selectedAccount) {
+      const arcAccount = {
+        id: selectedAccount.id,
+        address: selectedAccount.address,
+        name: selectedAccount.name,
+        threshold: selectedAccount.threshold,
+        chainId: selectedAccount.chainId,
+        chainType: "ecdsa",
+        signers: selectedAccount.signers.map(s => s.commitment),
+      };
+      await arcPropose(arcAccount, data.recipient, data.amount);
+      form.reset();
+      setSelectedContactId(null);
+      return;
+    }
     await transfer({
       recipient: data.recipient,
       amount: data.amount,
@@ -158,7 +182,10 @@ export default function TransferContainer() {
     }
   })();
 
-  const canSubmit = isAmountValid && !!watchedRecipient && !hasInsufficientBalance && !isLoading;
+  // Arc reads balance from a different (ECDSA) contract; skip the ZK balance gate for it
+  // (the on-chain execute enforces funds anyway).
+  const canSubmit =
+    isAmountValid && !!watchedRecipient && (isArc || !hasInsufficientBalance) && !isLoading && !isProposingArc;
 
   return (
     <div className="overflow-hidden relative w-full h-full flex flex-col rounded-lg">
